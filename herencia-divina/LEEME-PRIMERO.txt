@@ -1,0 +1,31 @@
+HERENCIA DIVINA — SITIO WEB
+===========================
+
+Incluye:
+- index.html: la página web principal, lista para abrir en el navegador.
+- netlify/functions/refresh-popular.mjs: busca los videos largos del canal, los ordena por visualizaciones y guarda los seis primeros una vez al día.
+- netlify/functions/popular-videos.mjs: entrega a la página la lista actualizada.
+- netlify.toml y package.json: configuración para Netlify.
+
+IMPORTANTE SOBRE LA ACTUALIZACIÓN AUTOMÁTICA
+La web se muestra sin API y conserva una selección inicial de videos. Para que la lista se actualice automáticamente, publica TODO el contenido de esta carpeta en Netlify y añade una variable de entorno:
+  YOUTUBE_API_KEY = TU_CLAVE_DE_API_DE_YOUTUBE
+
+La clave se configura en el panel de Netlify, no dentro del HTML. No la compartas públicamente ni la pegues en index.html.
+
+Pasos generales para Netlify:
+1. Entra en https://app.netlify.com/ y abre tu sitio (o crea uno nuevo).
+2. Publica la carpeta completa del proyecto, no solo el archivo HTML. Para funciones y dependencias, lo más fiable es conectar el proyecto a un repositorio Git; también puedes usar Netlify CLI.
+3. En Site configuration / Environment variables, añade YOUTUBE_API_KEY con tu clave de YouTube Data API v3.
+4. Vuelve a desplegar el sitio después de añadir la variable.
+5. En la sección Functions, comprueba que aparece refresh-popular como Scheduled. Puedes usar “Run now” para probarla sin esperar al siguiente horario.
+6. Tras la primera ejecución correcta, la sección “Videos que inspiran” usará la lista guardada en Netlify Blobs y se refrescará diariamente.
+
+API DE YOUTUBE
+Crea un proyecto en Google Cloud Console, habilita YouTube Data API v3 y genera una API key. Restringe la clave a YouTube Data API v3 cuando sea posible. Guarda la clave como variable de entorno de Netlify.
+
+LIMITACIÓN IMPORTANTE SOBRE SHORTS
+La API pública no entrega un indicador inequívoco de “este video es un Short”. El código excluye videos de hasta 180 segundos como aproximación práctica, por lo que podría excluir algún video corto normal o incluir un Short que supere ese criterio si la clasificación de YouTube cambia. La lista se calcula entre las hasta 500 subidas más recientes del canal.
+
+PRUEBA LOCAL
+Puedes abrir index.html con doble clic para probar el diseño, las oraciones, el versículo y los reproductores de playlists. La actualización automática no funcionará al abrir el archivo directamente; requiere el despliegue de Netlify y la variable de API.

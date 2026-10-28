@@ -1,0 +1,10 @@
+{
+  "name": "herencia-divina-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sitio de Herencia Divina con actualización programada de videos populares de YouTube",
+  "dependencies": {
+    "@netlify/blobs": "^8.2.0"
+  }
+}
