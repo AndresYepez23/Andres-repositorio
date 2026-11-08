@@ -253,10 +253,57 @@ function buildLocalPlan(userText){
   else if(has('quita tildes','quitar tildes'))selected=[pick('text-remove-accents',{text:userText})];
   else if(has('ordena alfabeticamente','ordenar alfabeticamente'))selected=[pick('text-sort',{text:userText})];
   else if(has('mayusculas','mayúsculas','uppercase'))selected=[pick('text-case',{text:userText,mode:'upper'})];
+  else if(has('formatea json','formatear json','embellece json','pretty json'))selected=[pick('json-format',{text:userText.slice(userText.indexOf('{')>=0?userText.indexOf('{'):0)})];
+  else if(has('minifica json','minificar json'))selected=[pick('json-minify',{text:userText.slice(userText.indexOf('{')>=0?userText.indexOf('{'):0)})];
+  else if(has('formatea html','formatear html','indenta html'))selected=[pick('html-format',{text:userText})];
+  else if(has('formatea css','formatear css','indenta css'))selected=[pick('css-format',{text:userText})];
+  else if(has('formatea javascript','formatear javascript','formatea js','formatear js'))selected=[pick('js-format',{text:userText})];
+  else if(has('formatea sql','formatear sql','indenta sql'))selected=[pick('sql-format',{text:userText})];
+  else if(has('formatea xml','formatear xml'))selected=[pick('xml-format',{text:userText})];
+  else if(has('expresion regular','regex','coincidencias regex'))selected=[pick('regex-test',{text:userText,pattern:'',flags:'gi'})];
+  else if(has('estadisticas csv','analiza csv','resumen csv'))selected=[pick('csv-stats',{text:userText})];
+  else if(has('paleta de colores','colores armonicos','paleta armonica'))selected=[pick('color-palette',{text:userText})];
+  else if(has('gradiente css','gradient css','degradado css'))selected=[pick('css-gradient',{color1:'#9adbd2',color2:'#a9a0ee',angle:135})];
+  else if(has('compara textos','comparar textos','diferencias entre textos'))selected=[pick('text-diff',{textA:'',textB:''})];
+  else if(has('resume','resumen','sintetiza'))selected=[pick('text-summary-local',{text:userText,sentences:5})];
+  else if(has('tiempo de lectura','cuanto tardo en leer','duracion de lectura'))selected=[pick('reading-time-local',{text:userText})];
+  else if(has('analiza este texto','analizar texto','estadisticas del texto'))selected=[pick('text-analyzer-local',{text:userText})];
+  else if(has('csv a tsv','csv-to-tsv'))selected=[pick('csv-to-tsv-local',{text:userText})];
+  else if(has('tsv a csv','tsv-to-csv'))selected=[pick('tsv-to-csv-local',{text:userText})];
+  else if(has('json a xml','json-to-xml'))selected=[pick('json-to-xml-local',{text:userText.slice(userText.indexOf('{')>=0?userText.indexOf('{'):0)})];
+  else if(has('xml a json','xml-to-json'))selected=[pick('xml-to-json-local',{text:userText.slice(userText.indexOf('<')>=0?userText.indexOf('<'):0)})];
+  else if(has('html a markdown','html-to-markdown'))selected=[pick('html-to-markdown-local',{text:userText.slice(userText.indexOf('<')>=0?userText.indexOf('<'):0)})];
+  else if(has('contraste wcag','contraste entre colores','comprobar contraste'))selected=[pick('contrast-check-local',{color1:'#000000',color2:'#ffffff'})];
+  else if(has('palabras repetidas','repeticiones consecutivas'))selected=[pick('text-dedupe-words-local',{text:userText})];
   selected=selected.filter(Boolean);
   if(!selected.length)return {message:'Puedo trabajar sin conectar motores externos cuando la tarea corresponde a una capacidad local. Por ahora no encuentro una operación local suficientemente segura para esta solicitud. Puedes adjuntar un PDF, imagen, documento u hoja de cálculo, o pedirme una conversión o transformación compatible.',needs_clarification:false,question:'',steps:[]};
   const toolNames=selected.map(item=>item.tool.name).join(' y ');
   return {message:'Entendí lo que necesitas. Voy a utilizar '+toolNames+' directamente en tu dispositivo, sin solicitar una API key ni enviar el archivo a un proveedor de IA.',needs_clarification:false,question:'',steps:selected.map(item=>({tool_id:item.tool.id,reason:item.reason,params:item.params})),userRequest:String(userText||'')};
+}
+async function requestNativeBrowserPlan(userText,attachmentContext=''){
+  const NativeModel=globalThis.LanguageModel;
+  if(!NativeModel||typeof NativeModel.create!=='function')return null;
+  let session;
+  try{
+    const availability=typeof NativeModel.availability==='function'?await NativeModel.availability(): 'available';
+    if(availability==='unavailable'||availability==='after-download'||availability==='downloadable')return null;
+    session=await NativeModel.create({systemPrompt:[
+      'Eres Prisma Core, un agente local privado que organiza tareas usando herramientas del navegador.',
+      'Devuelve exclusivamente JSON con message, needs_clarification, question y steps. Cada step contiene tool_id, reason y params.',
+      'Selecciona solo herramientas con modo local o browser y estado ready o beta del catálogo. No inventes herramientas ni parámetros.',
+      'Planifica máximo 6 pasos. No envíes datos a servicios externos. No uses herramientas byok, online ni acciones irreversibles.',
+      'Si el pedido no se puede resolver localmente, devuelve steps vacíos y explica honestamente la limitación.',
+      'Para análisis de documentos, utiliza el texto adjunto y selecciona una operación local que pueda procesarlo.'
+    ].join(' ')});
+    const catalog=availableCatalog().filter(tool=>['local','browser'].includes(tool.mode));
+    const prompt='CATÁLOGO LOCAL:\\n'+JSON.stringify(catalog)+'\\nCONTEXTO DE ARCHIVOS:\\n'+attachmentContext.slice(0,12000)+'\\nMENSAJES RECIENTES:\\n'+messages.slice(-6).map(m=>(m.role==='user'?'Usuario: ':'Prisma: ')+m.content).join('\\n').slice(-4000)+'\\nSOLICITUD:\\n'+userText;
+    const answer=await session.prompt(prompt);
+    const plan=parsePlan(answer);
+    if(!plan||!Array.isArray(plan.steps)||plan.steps.length>6)return null;
+    if(plan.steps.some(step=>!catalog.some(tool=>tool.id===step.tool_id)))return null;
+    return plan;
+  }catch(error){console.info('El modelo nativo del navegador no está disponible en esta sesión:',error?.message||error);return null;}
+  finally{try{session?.destroy?.();}catch{}}
 }
 async function requestPlan(userText){
   const creds=credentials();
@@ -280,7 +327,9 @@ async function requestPlan(userText){
       }
       if(extracted.length)attachmentContext='\\n\\nCONTENIDO LEÍDO LOCALMENTE (no enviado a ningún modelo):\\n'+extracted.join('\\n\\n').slice(0,18000);
     }
-    const localPlan=buildLocalPlan(userText);
+    status('Comprobando si el navegador ofrece un modelo de IA local…');
+    const nativePlan=await requestNativeBrowserPlan(userText,attachmentContext);
+    const localPlan=nativePlan||buildLocalPlan(userText);
     let localSteps;
     try{localSteps=validatePlan(localPlan);}catch(error){addMessage('assistant','No pude preparar una operación local segura: '+error.message);status('No se pudo preparar el trabajo.','warning');return;}
     if(!localSteps.length){addMessage('assistant',localPlan.message);status('Sin conexión de IA: capacidad local no disponible para esta solicitud.','warning');return;}

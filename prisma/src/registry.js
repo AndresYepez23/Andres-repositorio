@@ -135,6 +135,17 @@ export const tools = [
   { id:'audio-normalize', name:'Normalizar volumen de audio', description:'Equilibra el volumen para conseguir una escucha más uniforme.', category:'media', icon:'volume-2', status:'beta', mode:'browser', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac,.flac', tag:'FFmpeg WebAssembly' },
   { id:'ai-transcribe', name:'Transcribir audio con IA', description:'Convierte grabaciones en texto con modelos de transcripción.', category:'ai', icon:'audio-lines', status:'beta', mode:'byok', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac,.mp4,.webm', tag:'Pollinations Connect' }
 
+  ,{ id:'text-summary-local', name:'Resumen extractivo local', description:'Extrae las frases más representativas de un texto sin enviar contenido a la nube.', category:'text', icon:'list-filter', status:'beta', mode:'local', file:false, tag:'Heurística local · Privado' }
+  ,{ id:'reading-time-local', name:'Tiempo de lectura', description:'Calcula duración de lectura y estimación de palabras por minuto.', category:'text', icon:'clock', status:'ready', mode:'local', file:false, tag:'Instantáneo' }
+  ,{ id:'text-analyzer-local', name:'Analizador de texto', description:'Mide palabras, frases, diversidad léxica y términos frecuentes.', category:'data', icon:'chart-no-axes-combined', status:'ready', mode:'local', file:false, tag:'Análisis local' }
+  ,{ id:'csv-to-tsv-local', name:'CSV a TSV', description:'Convierte datos separados por comas a valores separados por tabulaciones.', category:'data', icon:'table', status:'ready', mode:'local', file:false, tag:'Conversión local' }
+  ,{ id:'tsv-to-csv-local', name:'TSV a CSV', description:'Convierte tablas tabuladas a CSV con escape correcto de comillas.', category:'data', icon:'table', status:'ready', mode:'local', file:false, tag:'Conversión local' }
+  ,{ id:'json-to-xml-local', name:'JSON a XML', description:'Transforma objetos y listas JSON en una estructura XML.', category:'dev', icon:'file-code', status:'beta', mode:'local', file:false, tag:'Conversión local' }
+  ,{ id:'xml-to-json-local', name:'XML a JSON', description:'Convierte estructuras XML sencillas en objetos JSON.', category:'dev', icon:'file-code', status:'beta', mode:'local', file:false, tag:'DOMParser · Local' }
+  ,{ id:'html-to-markdown-local', name:'HTML a Markdown', description:'Convierte contenido HTML básico a Markdown legible.', category:'dev', icon:'file-code', status:'beta', mode:'local', file:false, tag:'DOMParser · Local' }
+  ,{ id:'contrast-check-local', name:'Comprobador de contraste WCAG', description:'Calcula contraste entre dos colores y evalúa criterios AA y AAA.', category:'image', icon:'contrast', status:'ready', mode:'local', file:false, tag:'WCAG · Local' }
+  ,{ id:'text-dedupe-words-local', name:'Eliminar palabras repetidas', description:'Detecta y elimina repeticiones consecutivas de palabras en un texto.', category:'text', icon:'list-checks', status:'ready', mode:'local', file:false, tag:'Procesamiento local' }
+
 ];
 
 export const statusLabels = { ready:'Disponible', beta:'Beta', soon:'Próximamente' };
