@@ -66,7 +66,7 @@ const iconPaths = {
 };
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(iconPaths[name]||iconPaths.grid)+'</svg>';}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-$('[data-icon]').forEach(element=>{if(!element.innerHTML.trim())element.innerHTML=icon(element.dataset.icon);});
+document.querySelectorAll('[data-icon]').forEach(element=>{if(!element.innerHTML.trim())element.innerHTML=icon(element.dataset.icon);});
 function readStoredArray(key){
   try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return [];}
 }
