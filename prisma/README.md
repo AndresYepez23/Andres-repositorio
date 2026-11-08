@@ -19,15 +19,16 @@ No requiere instalación ni build:
 2. Usar un navegador moderno con módulos ES y conexión para cargar las bibliotecas bajo demanda.
 3. Abrir `index.html`.
 
-## Publicación en Netlify
+## Publicación
 
-Conectar el repositorio y seleccionar:
-- Base directory: `prisma`
-- Build command: vacío
-- Publish directory: `.`
-- Functions directory: no aplica en esta primera versión
+PRISMA se publica como sitio estático en Wix Headless. El código fuente se mantiene en GitHub. Las herramientas locales no requieren un servidor de aplicación.
 
-La configuración `netlify.toml` está dentro de esta carpeta. Si Netlify no la detecta automáticamente, seleccionar `prisma/netlify.toml` como archivo de configuración.
+## Inteligencia artificial
+
+- Pollinations Connect usa OAuth 2.0 Authorization Code + PKCE. Cada visitante autoriza su propio presupuesto; el token temporal permanece en `sessionStorage` y no se guarda en `localStorage`.
+- La App Key pública de Pollinations se configura desde la interfaz. El administrador debe registrar como Redirect URI exacta la URL pública del sitio.
+- Hugging Face es una alternativa BYOK. Las cuentas Free no incluyen créditos mensuales para Inference Providers; PRO incluye USD 2 mensuales, sujeto a las condiciones vigentes.
+- Nunca incrustar claves secretas de proveedor en el frontend.
 
 ## Privacidad
 

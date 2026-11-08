@@ -5,7 +5,9 @@ export const categories = [
   { id: 'ai', name: 'IA y creación', icon: 'sparkles' },
   { id: 'media', name: 'Audio y video', icon: 'film' },
   { id: 'text', name: 'Texto y datos', icon: 'code' },
-  { id: 'utility', name: 'Utilidades', icon: 'sliders' }
+  { id: 'utility', name: 'Utilidades', icon: 'sliders' },
+  { id: 'dev', name: 'Desarrollo web', icon: 'code' },
+  { id: 'office', name: 'Hojas de cálculo', icon: 'file-text' }
 ];
 
 export const tools = [
@@ -69,7 +71,26 @@ export const tools = [
   { id:'text-sort', name:'Ordenar líneas', description:'Ordena listas alfabéticamente respetando el idioma español.', category:'text', icon:'list', status:'ready', mode:'local', file:false, tag:'Limpieza de listas' },
   { id:'word-frequency', name:'Frecuencia de palabras', description:'Analiza un texto y muestra las palabras más repetidas.', category:'text', icon:'text-cursor', status:'ready', mode:'local', file:false, tag:'Análisis de texto' },
   { id:'qr-scan', name:'Leer código QR', description:'Detecta y extrae el contenido de un código QR desde una imagen.', category:'utility', icon:'qr-code', status:'beta', mode:'browser', file:true, accept:'image/*', tag:'jsQR · Navegador' },
-  { id:'barcode', name:'Generar código de barras', description:'Crea códigos Code 128 y EAN-13 descargables en PNG.', category:'utility', icon:'qr-code', status:'ready', mode:'local', file:false, tag:'PNG descargable' }
+  { id:'barcode', name:'Generar código de barras', description:'Crea códigos Code 128 y EAN-13 descargables en PNG.', category:'utility', icon:'qr-code', status:'ready', mode:'local', file:false, tag:'PNG descargable' },
+  { id:'pdf-split', name:'Separar PDF por páginas', description:'Divide un documento en archivos individuales y los descarga en ZIP.', category:'pdf', icon:'files', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'ZIP · Local' },
+  { id:'docx-pdf', name:'Word a PDF', description:'Prepara un documento Word para imprimirlo o guardarlo como PDF desde el navegador.', category:'pdf', icon:'file-output', status:'beta', mode:'browser', file:true, accept:'.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document', tag:'Vista de impresión' },
+  { id:'image-grayscale', name:'Blanco y negro', description:'Convierte una fotografía a escala de grises con un solo clic.', category:'image', icon:'image', status:'ready', mode:'local', file:true, accept:'image/*', tag:'Edición local' },
+  { id:'image-blur', name:'Desenfocar imagen', description:'Aplica desenfoque ajustable para fondos y efectos suaves.', category:'image', icon:'scan', status:'ready', mode:'local', file:true, accept:'image/*', tag:'Edición local' },
+  { id:'image-adjust', name:'Ajustar luz y contraste', description:'Corrige brillo y contraste de una imagen.', category:'image', icon:'sliders', status:'ready', mode:'local', file:true, accept:'image/*', tag:'Edición local' },
+  { id:'image-rounded', name:'Esquinas redondeadas', description:'Crea una imagen PNG con esquinas transparentes y redondeadas.', category:'image', icon:'crop', status:'ready', mode:'local', file:true, accept:'image/*', tag:'PNG transparente' },
+  { id:'image-metadata', name:'Ver metadatos de imagen', description:'Consulta dimensiones, formato y metadatos EXIF cuando estén disponibles.', category:'image', icon:'info', status:'beta', mode:'local', file:true, accept:'image/*', tag:'Privado · Local' },
+  { id:'audio-waveform', name:'Visualizar forma de onda', description:'Convierte la forma de onda de un audio en una imagen PNG.', category:'media', icon:'audio-lines', status:'beta', mode:'browser', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac', tag:'Procesamiento local' },
+  { id:'hash-file', name:'Generar hash SHA-256', description:'Calcula la huella digital SHA-256 de cualquier archivo.', category:'dev', icon:'binary', status:'ready', mode:'local', file:true, accept:'*/*', tag:'Verificación local' },
+  { id:'jwt-decode', name:'Decodificar JWT', description:'Lee el encabezado y el payload de un token sin verificar su firma.', category:'dev', icon:'key-round', status:'ready', mode:'local', file:false, tag:'No verifica firmas' },
+  { id:'regex-test', name:'Probador de expresiones regulares', description:'Prueba patrones, flags y coincidencias sobre un texto.', category:'dev', icon:'code', status:'ready', mode:'local', file:false, tag:'Desarrollo' },
+  { id:'json-yaml', name:'JSON ↔ YAML', description:'Convierte estructuras JSON a YAML y viceversa.', category:'dev', icon:'braces', status:'beta', mode:'local', file:false, tag:'Datos estructurados' },
+  { id:'excel-json', name:'Excel a JSON', description:'Lee hojas XLSX, XLS o CSV y exporta los datos como JSON.', category:'office', icon:'file-text', status:'beta', mode:'local', file:true, accept:'.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv', tag:'Primera hoja' },
+  { id:'css-gradient', name:'Generador de degradados CSS', description:'Crea degradados lineales o radiales y copia el código CSS.', category:'dev', icon:'palette', status:'ready', mode:'local', file:false, tag:'Diseño web' },
+  { id:'text-diff', name:'Comparar textos', description:'Compara dos textos y resalta las líneas añadidas y eliminadas.', category:'text', icon:'files', status:'ready', mode:'local', file:false, tag:'Diferencias' },
+  { id:'ai-assistant', name:'Asistente de texto IA', description:'Redacta, resume, explica y transforma textos con modelos intercambiables.', category:'ai', icon:'sparkles', status:'beta', mode:'byok', file:false, tag:'Pollinations Connect' },
+  { id:'ai-voice', name:'Texto a voz IA', description:'Convierte texto en audio descargable con voces generadas por IA.', category:'ai', icon:'mic', status:'beta', mode:'byok', file:false, tag:'Pollinations Connect' },
+  { id:'ai-transcribe', name:'Transcribir audio con IA', description:'Convierte grabaciones en texto con modelos de transcripción.', category:'ai', icon:'audio-lines', status:'beta', mode:'byok', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac,.mp4,.webm', tag:'Pollinations Connect' }
+
 ];
 
 export const statusLabels = { ready:'Disponible', beta:'Beta', soon:'Próximamente' };

@@ -2,6 +2,7 @@ import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
 import { runTool } from './engines.js';
 
+const POLLINATIONS_APP_KEY = '';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const iconPaths = {
@@ -59,7 +60,8 @@ const iconPaths = {
   play:'<path d="m8 5 11 7-11 7V5Z"/>',
   upload:'<path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 16v4h16v-4"/>',
   download:'<path d="M12 4v12m-5-5 5 5 5-5"/><path d="M4 20h16"/>',
-  copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>'
+  copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  'message-circle':'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/>'
 };
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(iconPaths[name]||iconPaths.grid)+'</svg>';}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -115,8 +117,38 @@ function textareaField(label,name,value='',hint=''){
 function selectField(label,name,options,value,hint=''){
   return '<div class="form-field"><label for="field-'+name+'">'+label+'</label><select class="form-control" id="field-'+name+'" name="'+name+'">'+options.map(o=>'<option value="'+o[0]+'" '+(o[0]===value?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+(hint?'<small>'+hint+'</small>':'')+'</div>';
 }
+function pollinationsAuthFields(){
+  const saved=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;
+  return '<div class="provider-config" id="polli-config">'+
+    field('App Key pública de PRISMA','polliAppKey','text',saved,'Registra una App Key en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">Pollinations Connect</a>. No es una clave secreta.','autocomplete="off" spellcheck="false"')+
+    '<div class="provider-connect-row"><button type="button" class="button button-primary" id="polli-connect">'+icon('sparkles')+' Conectar mi cuenta</button><button type="button" class="button button-quiet" id="polli-disconnect">Desconectar</button><span class="provider-connection-status" id="polli-status">Aún no conectado</span></div>'+
+    '<div class="provider-redirect"><span>Registra esta Redirect URI en tu App Key:</span><code id="polli-redirect">'+escapeHtml(location.origin+location.pathname)+'</code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URI</button></div>'+
+    '<div class="tool-hint">Cada persona autoriza su propio saldo y puede fijar un presupuesto máximo y una vigencia. PRISMA no comparte una cuota de generación entre visitantes. El consumo puede tener coste en Pollen.</div>'+
+  '</div>';
+}
+function huggingFaceAuthFields(){
+  return '<div class="provider-config hidden" id="hf-config">'+
+    field('Token personal de Hugging Face','hfToken','password','','Necesita permiso Inference Providers. <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Crear token</a>. No se guarda en PRISMA.','autocomplete="off" spellcheck="false"')+
+    '<div class="tool-hint">Importante: las cuentas Free no incluyen créditos mensuales de Inference Providers. Hugging Face PRO incluye USD 2 mensuales; el consumo adicional puede ser de pago.</div>'+
+  '</div>';
+}
+
 function buildFields(t){
   switch(t.id){
+    case 'pdf-split':return '<div class="tool-hint">Cada página se guardará como un PDF independiente dentro de un archivo ZIP.</div>';
+    case 'docx-pdf':return '<div class="tool-hint">PRISMA convertirá el documento a una vista HTML de impresión. Desde la ventana que se abre, selecciona <strong>Guardar como PDF</strong> en el diálogo de impresión del navegador. El diseño puede variar respecto a Microsoft Word.</div>';
+    case 'image-blur':return field('Intensidad del desenfoque (px)','blur','number','5','','min="1" max="30"');
+    case 'image-adjust':return '<div class="inline-fields">'+field('Brillo (%)','brightness','number','110','','min="10" max="200"')+field('Contraste (%)','contrast','number','110','','min="10" max="200"')+'</div>';
+    case 'image-rounded':return field('Radio de esquina (px)','radius','number','48','','min="0" max="500"')+field('Tamaño máximo (px)','maxSize','number','1600','Limita el tamaño del PNG exportado.','min="128" max="5000"');
+    case 'image-metadata':return '<div class="tool-hint">Lee dimensiones y metadatos EXIF que estén presentes. Algunas plataformas eliminan estos datos al compartir imágenes.</div>';
+    case 'audio-waveform':return selectField('Color de la onda','color',[['#9adbd2','Turquesa'],['#a9a0ee','Lavanda'],['#ffffff','Blanco'],['#f0b77a','Ámbar']],'#9adbd2');
+    case 'hash-file':return '<div class="tool-hint">Calcula SHA-256 directamente en tu navegador. El archivo no se sube a PRISMA.</div>';
+    case 'jwt-decode':return textareaField('Token JWT','token','','Pega el token completo. PRISMA solo decodifica su contenido: no valida firma, emisor ni vencimiento.');
+    case 'regex-test':return field('Expresión regular','pattern','text','\\bPRISMA\\b','No incluyas las barras /.../.','maxlength="200"')+field('Flags','flags','text','gi','Flags permitidos: g, i, m, s, u.','maxlength="5"')+textareaField('Texto de prueba','text','PRISMA reúne herramientas. Prisma es un espacio digital.');
+    case 'json-yaml':return textareaField('Contenido','text','nombre: PRISMA\\nversion: 1','Pega JSON o YAML.')+selectField('Conversión','mode',[['json-to-yaml','JSON a YAML'],['yaml-to-json','YAML a JSON']],'json-to-yaml');
+    case 'excel-json':return selectField('Hoja','sheet',[['0','Primera hoja'],['all','Todas las hojas']],'0')+selectField('Formato de salida','format',[['json','JSON'],['csv','CSV']],'json');
+    case 'css-gradient':return '<div class="inline-fields">'+field('Color inicial','color1','color','#9adbd2')+field('Color final','color2','color','#a9a0ee')+'</div>'+field('Ángulo (grados)','angle','number','135','','min="0" max="360"')+selectField('Tipo','type',[['linear','Lineal'],['radial','Radial']],'linear');
+    case 'text-diff':return textareaField('Texto original','textA','','Pega aquí la primera versión.')+textareaField('Texto modificado','textB','','Pega aquí la segunda versión.');
     case 'pdf-extract':return field('Páginas que deseas conservar','pages','text','1-3','Ejemplos: 1, 3, 5-8. La numeración comienza en 1.');
     case 'pdf-remove-pages':return field('Páginas que deseas eliminar','pages','text','2, 4-5','Ejemplos: 2, 4-5. Las páginas restantes se conservarán.');
     case 'pdf-page-numbers':return selectField('Ubicación de la numeración','position',[['bottom','Inferior'],['top','Superior']],'bottom');
@@ -129,7 +161,28 @@ function buildFields(t){
     case 'image-resize':return '<div class="inline-fields">'+field('Ancho (px)','width','number','1200','Ancho final.','min="1" max="12000"')+field('Alto (px)','height','number','800','Alto final.','min="1" max="12000"')+'</div><label class="check-line"><input type="checkbox" name="keep" checked> Mantener proporción original</label>';
     case 'image-convert':return selectField('Formato de salida','format',[['image/png','PNG'],['image/jpeg','JPG'],['image/webp','WebP']],'image/webp');
     case 'image-crop':return '<div class="inline-fields">'+field('Ancho del recorte (%)','widthPct','number','80','Porcentaje del ancho.','min="10" max="100"')+field('Alto del recorte (%)','heightPct','number','80','Porcentaje del alto.','min="10" max="100"')+'</div><div class="tool-hint">Se realiza un recorte centrado. Para edición libre con selección visual añadiremos un editor dedicado.</div>';
-    case 'image-gen':return textareaField('Describe la imagen que quieres crear','prompt','','Describe sujeto, ambiente, composición, iluminación y estilo.')+selectField('Modelo de IA','model',[['black-forest-labs/FLUX.1-schnell','FLUX.1 Schnell · Rápido'],['Qwen/Qwen-Image','Qwen Image · Detalle'],['black-forest-labs/FLUX.1-Krea-dev','FLUX.1 Krea · Creativo']],'black-forest-labs/FLUX.1-schnell')+selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+selectField('Formato','ratio',[['square','Cuadrado · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámico · 16:9']],'square')+field('Pasos de inferencia','steps','number','4','Más pasos pueden tardar más. Modelo Schnell recomendado: 4.','min="4" max="30"')+textareaField('Prompt negativo (opcional)','negativePrompt','','Elementos que prefieres evitar.')+field('Token personal de Hugging Face','hfToken','password','','Necesita permiso Inference Providers. <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Crear token</a>. No se guarda en PRISMA.','autocomplete="off" spellcheck="false"');
+    case 'image-gen':return selectField('Proveedor de generación','provider',[['pollinations','Pollinations Connect · recomendado'],['huggingface','Hugging Face · token personal']],'pollinations')+
+      selectField('Modelo de IA','model',[['black-forest-labs/flux.1-schnell','FLUX.1 Schnell · rápido'],['tongyi-mai/z-image-turbo','Z-Image Turbo · rápido']],'black-forest-labs/flux.1-schnell')+
+      textareaField('Describe la imagen que quieres crear','prompt','','Describe sujeto, ambiente, composición, iluminación y estilo.')+
+      selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+
+      selectField('Formato','ratio',[['square','Cuadrado · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámico · 16:9']],'square')+
+      field('Semilla (opcional)','seed','number','','Usa el mismo número para intentar reproducir una composición.','min="0" step="1"')+
+      textareaField('Prompt negativo (opcional)','negativePrompt','','Elementos que prefieres evitar.')+
+      pollinationsAuthFields()+huggingFaceAuthFields();
+    case 'ai-assistant':return textareaField('¿Qué necesitas crear o resolver?','prompt','','Ejemplo: redacta una descripción profesional para un producto...')+
+      selectField('Modelo de texto','model',[['openai/gpt-5.4-nano','GPT-5.4 Nano · rápido'],['deepseek/deepseek-v4-flash-0731','DeepSeek V4 Flash'],['qwen/qwen3-32b','Qwen 3 · general']],'openai/gpt-5.4-nano')+
+      selectField('Tono','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Directo y breve']],'professional')+
+      selectField('Extensión','length',[['short','Breve'],['medium','Media'],['long','Detallada']],'medium')+
+      textareaField('Contexto adicional (opcional)','context','','Añade datos que el modelo deba tener en cuenta.')+
+      pollinationsAuthFields();
+    case 'ai-voice':return textareaField('Texto que quieres convertir en voz','prompt','','Escribe el texto que quieres escuchar.')+
+      selectField('Modelo de voz','model',[['openai/tts-1','TTS estándar'],['openai/tts-1-hd','TTS alta calidad']],'openai/tts-1')+
+      selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina']],'nova')+
+      selectField('Formato de audio','format',[['mp3','MP3'],['wav','WAV'],['opus','Opus']],'mp3')+
+      pollinationsAuthFields();
+    case 'ai-transcribe':return selectField('Modelo de transcripción','model',[['openai/whisper-1','Whisper · automático']],'openai/whisper-1')+
+      selectField('Idioma','language',[['es','Español'],['en','Inglés'],['auto','Detectar automáticamente']],'es')+
+      pollinationsAuthFields();
     case 'image-watermark':return field('Texto de la marca','watermark','text','PRISMA','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
     case 'image-flip':return selectField('Dirección','direction',[['horizontal','Horizontal'],['vertical','Vertical']],'horizontal');
     case 'image-collage':return selectField('Fondo del mosaico','background',[['#ffffff','Blanco'],['#101218','Oscuro'],['#9adbd2','Turquesa claro']],'#ffffff');
@@ -170,6 +223,111 @@ function buildFields(t){
     default:return '';
   }
 }
+
+function base64Url(bytes){
+  let binary='';new Uint8Array(bytes).forEach(b=>binary+=String.fromCharCode(b));
+  return btoa(binary).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');
+}
+function randomBase64Url(length=32){const bytes=new Uint8Array(length);crypto.getRandomValues(bytes);return base64Url(bytes);}
+function getPollinationsToken(){
+  const token=sessionStorage.getItem('prisma-polli-token')||'';
+  const expiry=Number(sessionStorage.getItem('prisma-polli-expiry')||0);
+  if(expiry&&Date.now()>expiry){sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');return '';}
+  return token;
+}
+async function connectPollinations(){
+  const input=$('#field-polliAppKey');
+  const appKey=(input?.value||localStorage.getItem('prisma-polli-client-id')||'').trim();
+  if(!appKey.startsWith('pk_')){toast('Introduce primero la App Key pública pk_ de PRISMA.','error');return;}
+  localStorage.setItem('prisma-polli-client-id',appKey);
+  const verifier=randomBase64Url(48),state=randomBase64Url(24);
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
+  const challenge=base64Url(digest),redirectUri=location.origin+location.pathname;
+  sessionStorage.setItem('prisma-polli-verifier',verifier);
+  sessionStorage.setItem('prisma-polli-state',state);
+  const params=new URLSearchParams({response_type:'code',client_id:appKey,redirect_uri:redirectUri,state,code_challenge:challenge,code_challenge_method:'S256',models:'image,text,audio',budget:'5',expiry:'7'});
+  location.href='https://enter.pollinations.ai/authorize?'+params.toString();
+}
+async function finishPollinationsAuth(){
+  const url=new URL(location.href),code=url.searchParams.get('code');
+  if(!code)return;
+  try{
+    const state=url.searchParams.get('state'),expected=sessionStorage.getItem('prisma-polli-state');
+    if(!expected||state!==expected)throw Error('No se pudo validar la autorización. Intenta conectar de nuevo.');
+    const verifier=sessionStorage.getItem('prisma-polli-verifier')||'';
+    const clientId=localStorage.getItem('prisma-polli-client-id')||'';
+    const redirectUri=location.origin+location.pathname;
+    const response=await fetch('https://enter.pollinations.ai/api/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,client_id:clientId,redirect_uri:redirectUri,code_verifier:verifier})});
+    const data=await response.json();
+    if(!response.ok||!data.access_token)throw Error(data.error_description||data.error||'Pollinations no pudo completar la conexión.');
+    sessionStorage.setItem('prisma-polli-token',data.access_token);
+    sessionStorage.setItem('prisma-polli-expiry',String(Date.now()+Number(data.expires_in||604800)*1000));
+    toast('Pollinations conectado. Tu presupuesto personal está activo.','success');
+  }catch(error){toast(error.message||'No se pudo completar la conexión.','error');}
+  finally{
+    sessionStorage.removeItem('prisma-polli-verifier');sessionStorage.removeItem('prisma-polli-state');
+    history.replaceState({},'',location.pathname);
+  }
+}
+const pollinationsModelCache={image:[],text:[],audio:[]};
+const fallbackModels={
+  image:[['black-forest-labs/flux.1-schnell','FLUX.1 Schnell · rápido'],['tongyi-mai/z-image-turbo','Z-Image Turbo · rápido']],
+  text:[['openai/gpt-5.4-nano','GPT-5.4 Nano · rápido'],['deepseek/deepseek-v4-flash-0731','DeepSeek V4 Flash'],['qwen/qwen3-32b','Qwen 3 · general']],
+  audio:[['openai/tts-1','TTS estándar'],['openai/tts-1-hd','TTS alta calidad'],['openai/whisper-1','Whisper · transcripción']]
+};
+function modelOptions(kind,provider){
+  if(kind==='image'&&provider==='huggingface')return [['black-forest-labs/FLUX.1-schnell','FLUX.1 Schnell · rápido'],['Qwen/Qwen-Image','Qwen Image · detalle'],['black-forest-labs/FLUX.1-Krea-dev','FLUX.1 Krea · creativo']];
+  return pollinationsModelCache[kind].length?pollinationsModelCache[kind]:fallbackModels[kind];
+}
+async function loadPollinationsModels(kind,provider='pollinations'){
+  const select=$('#field-model');if(!select)return;
+  const selected=select.value;
+  const options=modelOptions(kind,provider);
+  select.innerHTML=options.map(([value,label])=>'<option value="'+escapeHtml(value)+'">'+escapeHtml(label)+'</option>').join('');
+  if(options.some(o=>o[0]===selected))select.value=selected;
+  if(provider!=='pollinations'||pollinationsModelCache[kind].length)return;
+  try{
+    const response=await fetch('https://gen.pollinations.ai/'+kind+'/models');
+    if(!response.ok)return;
+    const raw=await response.json(),list=Array.isArray(raw)?raw:raw.models||raw.data||raw.items||[];
+    const options=list.map(item=>{
+      if(typeof item==='string')return [item,item];
+      const id=item.id||item.model||item.name||item.slug;
+      if(!id)return null;
+      const label=item.name&&item.name!==id?item.name+' · '+id:id;
+      return [id,label];
+    }).filter(Boolean);
+    if(!options.length)return;
+    pollinationsModelCache[kind]=options;
+    const current=$('#field-model');if(current){current.innerHTML=options.map(([v,l])=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(l)+'</option>').join('');if(options.some(o=>o[0]===selected))current.value=selected;}
+  }catch(error){console.info('Catálogo de modelos Pollinations no disponible; se usan opciones de respaldo.',error);}
+}
+function setupAIAuthorization(tool){
+  const appKey=$('#field-polliAppKey');
+  if(appKey){
+    appKey.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;
+    appKey.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',appKey.value.trim()));
+  }
+  const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
+  const status=$('#polli-status');
+  const refresh=()=>{if(!status)return;const connected=!!getPollinationsToken();status.textContent=connected?'Conectado · autorización en esta pestaña':'No conectado';status.classList.toggle('connected',connected);};
+  refresh();
+  $('#polli-connect')?.addEventListener('click',connectPollinations);
+  $('#polli-disconnect')?.addEventListener('click',()=>{sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refresh();toast('Conexión desconectada en esta pestaña.');});
+  $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('Redirect URI copiada.');});
+  const provider=$('#field-provider');
+  const update=()=>{
+    const selected=provider?.value||'pollinations';
+    $('#polli-config')?.classList.toggle('hidden',selected!=='pollinations');
+    $('#hf-config')?.classList.toggle('hidden',selected!=='huggingface');
+    if(tool.id==='image-gen')loadPollinationsModels('image',selected);
+  };
+  provider?.addEventListener('change',update);
+  update();
+  if(tool.id==='ai-assistant')loadPollinationsModels('text');
+  if(tool.id==='ai-voice')loadPollinationsModels('audio');
+}
+
 function openTool(t){
   currentTool=t;selectedFiles=[];running=false;
   $('#modal-title').textContent=t.name;$('#modal-kicker').textContent=categories.find(c=>c.id===t.category)?.name.toUpperCase()||'HERRAMIENTA';
@@ -194,6 +352,7 @@ function openTool(t){
     drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');addSelectedFiles([...e.dataTransfer.files],t);});
     $('#file-list').addEventListener('click',e=>{const remove=e.target.closest('[data-remove-file]');if(remove){selectedFiles.splice(Number(remove.dataset.removeFile),1);renderFileList();return;}if(e.target.closest('[data-clear-files]')){selectedFiles=[];renderFileList();}});
   }
+  if(['image-gen','ai-assistant','ai-voice','ai-transcribe'].includes(t.id))setupAIAuthorization(t);
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
 }
@@ -247,6 +406,7 @@ async function executeCurrentTool(){
   updateProgress(.02,'Preparando herramienta...');
   try{
     const params=readParams();
+    params.polliToken=getPollinationsToken();
     const result=await runTool(currentTool.id,selectedFiles,params,updateProgress);
     if($('#field-hfToken'))$('#field-hfToken').value='';
     if(result?.blob){if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=result.previewUrl&&result.previewUrl.startsWith('blob:')?result.previewUrl:URL.createObjectURL(result.blob);if(!result.previewUrl)result.previewUrl=outputUrl;}
@@ -268,13 +428,16 @@ function renderOutput(result){
   if(result.blob)html+='<button class="mini-button" id="download-output">'+icon('download')+' Descargar</button>';
   if(result.text)html+='<button class="mini-button" id="copy-output">'+icon('copy')+' Copiar</button>';
   html+='</div></div>';
-  if(result.previewUrl)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
+  if(result.previewUrl&&!result.audio)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
+  if(result.audio&&result.previewUrl)html+='<audio class="output-audio" controls src="'+result.previewUrl+'"></audio>';
+  if(result.printHtml)html+='<button class="mini-button" id="print-output">Abrir vista para guardar como PDF</button>';
   if(result.text)html+='<pre class="output-text" id="output-text">'+escapeHtml(result.text)+'</pre>';
   if(result.html)html+='<pre class="output-text">'+escapeHtml(result.html)+'</pre>';
   if(result.colors?.length)html+='<div class="color-palette-results">'+result.colors.map(color=>'<button class="color-swatch" type="button" data-color="'+escapeHtml(color)+'" title="Copiar '+escapeHtml(color)+'"><span style="background:'+escapeHtml(color)+'"></span><code>'+escapeHtml(color)+'</code></button>').join('')+'</div>';
   if(result.summary)html+='<p class="tool-hint" style="margin:10px 0 0">'+escapeHtml(result.summary)+'</p>';
   panel.innerHTML=html;$('#tool-output').append(panel);
   if(result.blob)$('#download-output').addEventListener('click',()=>downloadBlob(result.blob,result.filename||'prisma-result'));
+  if(result.printHtml)$('#print-output').addEventListener('click',()=>{const win=window.open('','_blank');if(!win){toast('Permite las ventanas emergentes para imprimir el documento.','error');return;}win.document.open();win.document.write(result.printHtml);win.document.close();win.addEventListener('load',()=>win.print());});
   if(result.text)$('#copy-output').addEventListener('click',async()=>{await navigator.clipboard.writeText(result.text);toast('Texto copiado.');});
   $('.color-swatch',panel).forEach(b=>b.addEventListener('click',async()=>{await navigator.clipboard.writeText(b.dataset.color);toast(b.dataset.color+' copiado.');}));
 }
@@ -282,7 +445,10 @@ function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=doc
 function closeTool(){if($('#field-hfToken'))$('#field-hfToken').value='';if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}$('#modal-body').innerHTML='';$('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;}
 function showView(view){activeView=view;activeCategory='all';searchTerm='';$('#global-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
 renderCategories();renderProviders();render();
+void finishPollinationsAuth();
 $('#open-image-gen')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
+$('#open-image-gen-hero')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
+$('#open-ai-assistant')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='ai-assistant');if(tool)openTool(tool);});
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 $$('[data-view-jump]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewJump)));
 $('#global-search').addEventListener('input',e=>{searchTerm=e.target.value;activeView='explore';activeCategory='all';render();});

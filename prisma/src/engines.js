@@ -30,6 +30,17 @@ async function pdfTool(id,files,p,cb){
   return download(makeBlob(await out.save(),'application/pdf'),'prisma-documento-unido.pdf');
  }
  const src=await PDFDocument.load(await bytes(files[0]));const out=await PDFDocument.create();const total=src.getPageCount();
+ if(id==='pdf-split'){
+  const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
+  const pages=src.getPageIndices();
+  for(let i=0;i<pages.length;i++){
+   const single=await PDFDocument.create(),copied=await single.copyPages(src,[pages[i]]);
+   single.addPage(copied[0]);zip.file('pagina-'+String(i+1).padStart(3,'0')+'.pdf',await single.save());
+   progress(cb,(i+1)/pages.length*.85,'Separando página '+(i+1)+' de '+pages.length+'...');
+  }
+  const blob=await zip.generateAsync({type:'blob'});return download(blob,fileName(files[0])+'-paginas.zip');
+ }
+
  if(id==='pdf-extract'){const ids=parsePages(p.pages,total);const pages=await out.copyPages(src,ids);pages.forEach(x=>out.addPage(x));}
  if(id==='pdf-rotate'){src.getPages().forEach(pg=>pg.setRotation(degrees((pg.getRotation().angle+Number(p.degrees))%360)));return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-rotado.pdf');}
  if(id==='pdf-remove-pages'){const ids=parsePages(p.pages,total);ids.sort((a,b)=>b-a).forEach(i=>src.removePage(i));if(!src.getPageCount())throw Error('No puedes eliminar todas las páginas del documento.');return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-paginas.pdf');}
@@ -49,6 +60,12 @@ async function imageTool(id,files,p,cb){
   const blob=await removeBackground(f,{quality:'quality',onProgress:e=>progress(cb,.25+(e.progress||0)*.65,e.message||'Eliminando fondo...')});
   return {...download(blob,fileName(f)+'-sin-fondo.png'),previewUrl:URL.createObjectURL(blob)};
  }
+ if(id==='image-metadata'){
+  const exifr=await import('https://esm.sh/exifr@7.1.3');
+  const meta=await exifr.parse(f).catch(()=>null);
+  const bitmap=await createImageBitmap(f);const dimensions=bitmap.width+' × '+bitmap.height+' px';bitmap.close?.();const info={archivo:f.name,tamaño:formatBytesEngine(f.size),tipo:f.type||'desconocido',dimensiones,metadatos:meta||'No se encontraron metadatos EXIF'};
+  return {text:JSON.stringify(info,null,2),summary:'Lectura local. Si existen datos GPS, podrían aparecer en los metadatos.'};
+ }
  if(id==='image-ocr'){
   const {createWorker}=await load(TESS);const worker=await createWorker(p.language||'spa');progress(cb,.2,'Reconociendo texto...');
   const result=await worker.recognize(f);await worker.terminate();return {text:result.data.text||'No se detectó texto.',summary:'Confianza estimada: '+Math.round(result.data.confidence)+'%'};
@@ -56,6 +73,24 @@ async function imageTool(id,files,p,cb){
  const img=new Image(),url=URL.createObjectURL(f);
  try{await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(Error('No se pudo abrir la imagen.'));img.src=url;});
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+ if(['image-grayscale','image-blur','image-adjust','image-rounded'].includes(id)){
+  const max=Math.max(128,Math.min(5000,Number(p.maxSize)||1600));
+  const scale=id==='image-rounded'?Math.min(1,max/Math.max(img.width,img.height)):1;
+  const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+  const pad=id==='image-blur'?Math.ceil(Math.max(1,Math.min(30,Number(p.blur)||5))*3):0;
+  canvas.width=w+pad*2;canvas.height=h+pad*2;
+  if(id==='image-rounded'){
+   const radius=Math.max(0,Math.min(Math.min(w,h)/2,Number(p.radius)||48));
+   ctx.beginPath();ctx.roundRect(0,0,w,h,radius);ctx.clip();ctx.drawImage(img,0,0,w,h);
+  }else{
+   if(id==='image-grayscale')ctx.filter='grayscale(1)';
+   if(id==='image-blur')ctx.filter='blur('+Math.max(1,Math.min(30,Number(p.blur)||5))+'px)';
+   if(id==='image-adjust')ctx.filter='brightness('+Math.max(10,Math.min(200,Number(p.brightness)||100))+'%) contrast('+Math.max(10,Math.min(200,Number(p.contrast)||100))+'%)';
+   ctx.drawImage(img,pad,pad,w,h);ctx.filter='none';
+  }
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+  return {...download(blob,fileName(f)+'-'+id+'.png'),previewUrl:URL.createObjectURL(blob),summary:w+' × '+h+' px'};
+ }
  if(id==='image-crop'){const w=Math.max(1,Math.round(img.width*Number(p.widthPct||80)/100)),h=Math.max(1,Math.round(img.height*Number(p.heightPct||80)/100));canvas.width=w;canvas.height=h;ctx.drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,w,h);}
  else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  let type=p.format||'image/png',quality=Math.max(.1,Math.min(1,Number(p.quality||82)/100));
@@ -90,9 +125,62 @@ function convertUnits(p){
  else result=v*factors[kind][from]/factors[kind][to];
  return {text:v+' '+from+' = '+Number(result.toPrecision(10))+' '+to};
 }
+
+function formatBytesEngine(bytes){if(!bytes)return '0 B';const u=['B','KB','MB','GB'],i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];}
+async function audioWaveform(file,p,cb){
+ const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)throw Error('Este navegador no permite procesar audio.');
+ const ctx=new AudioCtx();
+ try{
+  progress(cb,.15,'Leyendo audio...');const buffer=await ctx.decodeAudioData(await file.arrayBuffer());
+  const canvas=document.createElement('canvas');canvas.width=1800;canvas.height=460;
+  const c=canvas.getContext('2d');c.fillStyle='#101218';c.fillRect(0,0,canvas.width,canvas.height);
+  const data=buffer.getChannelData(0),step=Math.max(1,Math.floor(data.length/1800)),mid=canvas.height/2;
+  c.strokeStyle=p.color||'#9adbd2';c.lineWidth=1.3;c.beginPath();
+  for(let x=0;x<1800;x++){let min=1,max=-1;for(let j=0;j<step;j++){const v=data[x*step+j]||0;if(v<min)min=v;if(v>max)max=v;}c.moveTo(x,mid+min*mid*.88);c.lineTo(x,mid+max*mid*.88);}
+  c.stroke();c.fillStyle='rgba(255,255,255,.62)';c.font='18px Arial';c.fillText(file.name.slice(0,70),28,32);
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));return {...download(blob,fileName(file)+'-onda.png'),previewUrl:URL.createObjectURL(blob),summary:'Duración: '+buffer.duration.toFixed(2)+' s · '+buffer.numberOfChannels+' canal(es) · '+buffer.sampleRate+' Hz'};
+ }finally{await ctx.close();}
+}
+async function hashFile(file){
+ const digest=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());
+ const hex=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+ return {text:'SHA-256  '+hex+'\\nArchivo: '+file.name+'\\nTamaño: '+formatBytesEngine(file.size),summary:'Huella calculada localmente con Web Crypto.'};
+}
+async function excelToJson(file,p,cb){
+ const mod=await import('https://esm.sh/xlsx@0.18.5'),XLSX=mod.default||mod;
+ progress(cb,.2,'Leyendo libro de cálculo...');
+ const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+ if(!wb.SheetNames.length)throw Error('El archivo no contiene hojas legibles.');
+ let output;
+ if(p.sheet==='all')output=Object.fromEntries(wb.SheetNames.map(name=>[name,XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:''})]));
+ else output=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+ if(p.format==='csv'&&p.sheet!=='all'){const csv=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);return download(new Blob([csv],{type:'text/csv;charset=utf-8'}),fileName(file)+'.csv');}
+ const text=JSON.stringify(output,null,2);return {...download(new Blob([text],{type:'application/json'}),fileName(file)+'.json'),text,summary:wb.SheetNames.length+' hoja(s) leídas: '+wb.SheetNames.join(', ')};
+}
+function decodeJwt(token){
+ const parts=String(token||'').trim().split('.');if(parts.length!==3)throw Error('Un JWT debe tener tres segmentos separados por puntos.');
+ const decode=part=>{const normalized=part.replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(escape(atob(normalized.padEnd(Math.ceil(normalized.length/4)*4,'=')))));};
+ const header=decode(parts[0]),payload=decode(parts[1]);
+ return {text:'ENCABEZADO\\n'+JSON.stringify(header,null,2)+'\\n\\nPAYLOAD\\n'+JSON.stringify(payload,null,2),summary:'Contenido decodificado. La firma no se ha verificado y no debe confiarse en este resultado para autenticar usuarios.'};
+}
+function textDiff(a,b){
+ const A=String(a||'').split(/\\r?\\n/),B=String(b||'').split(/\\r?\\n/);
+ if(A.length>450||B.length>450)throw Error('Para mantener la respuesta rápida, compara hasta 450 líneas por texto.');
+ const dp=Array.from({length:A.length+1},()=>new Uint16Array(B.length+1));
+ for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+ const out=[];let i=0,j=0,added=0,removed=0;
+ while(i<A.length||j<B.length){if(i<A.length&&j<B.length&&A[i]===B[j]){out.push('  '+A[i]);i++;j++;}else if(j<B.length&&(i===A.length||dp[i][j+1]>=dp[i+1][j])){out.push('+ '+B[j++]);added++;}else{out.push('- '+A[i++]);removed++;}}
+ return {text:out.join('\\n'),summary:added+' línea(s) añadida(s) · '+removed+' línea(s) eliminada(s)'};
+}
+
 async function runText(id,p){
  const text=String(p.text||'');
  switch(id){
+ case 'jwt-decode':return decodeJwt(p.token);
+ case 'text-diff':return textDiff(p.textA,p.textB);
+ case 'regex-test':{const pattern=String(p.pattern||'');if(pattern.length>200||text.length>5000)throw Error('Limita el patrón a 200 caracteres y el texto a 5.000.');let re;try{re=new RegExp(pattern,String(p.flags||'').replace(/[^gimsu]/g,''));}catch(e){throw Error('Expresión regular inválida: '+e.message)}const matches=[...text.matchAll(re.global?re:new RegExp(re.source,re.flags+'g'))].slice(0,100);return {text:matches.length?matches.map((m,i)=>(i+1)+'. '+m[0]+' · posición '+m.index).join('\\n'):'Sin coincidencias.',summary:matches.length+' coincidencia(s).'};}
+ case 'json-yaml':{const yaml=await import('https://esm.sh/js-yaml@4.1.0');if(p.mode==='yaml-to-json'){const obj=yaml.load(text);return {text:JSON.stringify(obj,null,2)};}let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:yaml.dump(obj,{noRefs:true,lineWidth:100})};}
+ case 'css-gradient':{const a=p.color1||'#9adbd2',b=p.color2||'#a9a0ee',angle=Math.max(0,Math.min(360,Number(p.angle)||135));const css=p.type==='radial'?'background: radial-gradient(circle, '+a+', '+b+');':'background: linear-gradient('+angle+'deg, '+a+', '+b+');';return {text:css,summary:'Copia esta declaración y pégala dentro de una regla CSS.'};}
  case 'json-format':{let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:JSON.stringify(obj,p.indent==='tab'?'\t':Number(p.indent||2))};}
  case 'base64':try{return {text:p.mode==='decode'?decodeURIComponent(escape(atob(text.trim()))):btoa(unescape(encodeURIComponent(text)))}}catch{throw Error('No se pudo convertir. Comprueba el contenido.');}
  case 'word-count':{const words=text.trim()?text.trim().split(/\s+/u).length:0;return {text:'Palabras: '+words+'\nCaracteres: '+text.length+'\nSin espacios: '+text.replace(/\s/g,'').length+'\nLíneas: '+(text?text.split(/\r\n|\r|\n/).length:0)+'\nLectura estimada: '+Math.ceil(words/200)+' min'};}
@@ -127,10 +215,12 @@ async function runQr(p,cb){
  const dataUrl=await QRCode.toDataURL(data,{width:900,margin:2,errorCorrectionLevel:'H',color:{dark:'#111827',light:'#ffffff'}});
  const blob=await (await fetch(dataUrl)).blob();return {...download(blob,'prisma-codigo-qr.png'),previewUrl:dataUrl};
 }
-async function runDocx(files,cb){
+async function runDocx(id,files,cb){
  const mammoth=await load(MAMMOTH);const result=await mammoth.convertToHtml({arrayBuffer:await bytes(files[0])});
  if(!result.value.trim())throw Error('No se encontró contenido de texto.');
- return download(new Blob([ '<!doctype html><meta charset="utf-8"><article>'+result.value+'</article>'],{type:'text/html'}),fileName(files[0])+'.html');
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+fileName(files[0])+'</title><style>body{font:12pt/1.55 Arial,sans-serif;color:#222;max-width:850px;margin:35px auto;padding:0 24px}img{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:6px}@page{size:A4;margin:20mm}@media print{body{margin:0;max-width:none;padding:0}}</style></head><body>'+result.value+'</body></html>';
+ if(id==='docx-pdf')return {printHtml:html,summary:'Vista de impresión preparada. En la ventana nueva elige “Guardar como PDF”. La conversión conserva el contenido, pero la maquetación puede variar respecto a Word.'};
+ return download(new Blob([html],{type:'text/html'}),fileName(files[0])+'.html');
 }
 async function runCurrency(p,cb){
  const amount=Number(p.amount);if(!Number.isFinite(amount))throw Error('Cantidad inválida.');
@@ -179,13 +269,8 @@ async function pdfToText(file,cb){
  return {text:parts.join('\n\n'),summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
 }
 async function generateImage(p,cb){
- const token=String(p.hfToken||'').trim();
- if(!token.startsWith('hf_'))throw Error('Introduce un token de Hugging Face válido (comienza por hf_).');
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<8)throw Error('Describe la imagen con un poco más de detalle.');
- progress(cb,.12,'Conectando con Hugging Face Inference...');
- const {InferenceClient}=await import(HF_INFERENCE);
- const client=new InferenceClient(token);
  const sizes={square:[1024,1024],landscape:[1024,768],portrait:[768,1024],wide:[1344,768]};
  const [width,height]=sizes[p.ratio]||sizes.square;
  const styles={
@@ -196,15 +281,77 @@ async function generateImage(p,cb){
   anime:'Detailed anime illustration, expressive visual storytelling, clean line art, polished colors. ',
   product:'Premium commercial product photography, clean studio setup, realistic materials, luxury advertising art direction. '
  };
- const fullPrompt=(styles[p.style]||'')+prompt;
+ let fullPrompt=(styles[p.style]||'')+prompt;
+ if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
+ if(p.provider==='pollinations'){
+  const token=String(p.polliToken||'').trim();
+  if(!token)throw Error('Conecta tu cuenta de Pollinations antes de generar. Cada visitante usa su propio presupuesto.');
+  progress(cb,.16,'Conectando con Pollinations...');
+  const url=new URL('https://gen.pollinations.ai/image/'+encodeURIComponent(fullPrompt));
+  url.searchParams.set('model',p.model||'black-forest-labs/flux.1-schnell');
+  url.searchParams.set('width',String(width));url.searchParams.set('height',String(height));
+  if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))url.searchParams.set('seed',String(Number(p.seed)));
+  progress(cb,.3,'Generando con '+(p.model||'FLUX.1 Schnell')+'...');
+  const response=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+  if(!response.ok){let detail='';try{detail=await response.text();}catch{}throw Error('Pollinations respondió '+response.status+'. '+detail.slice(0,240));}
+  const blob=await response.blob();
+  if(!blob.type.startsWith('image/'))throw Error('El proveedor no devolvió una imagen. Revisa el modelo y el saldo autorizado.');
+  progress(cb,1,'Imagen generada.');
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('png')?'png':'jpg')),previewUrl:URL.createObjectURL(blob),summary:'Modelo: '+p.model+' · '+width+' × '+height+' px · Generación con tu presupuesto personal de Pollinations.'};
+ }
+ const token=String(p.hfToken||'').trim();
+ if(!token.startsWith('hf_'))throw Error('Introduce un token de Hugging Face válido (comienza por hf_).');
+ progress(cb,.12,'Conectando con Hugging Face Inference...');
+ const {InferenceClient}=await import(HF_INFERENCE);
+ const client=new InferenceClient(token);
  const parameters={width,height,num_inference_steps:Math.max(4,Math.min(30,Number(p.steps)||4))};
- if(String(p.negativePrompt||'').trim())parameters.negative_prompt=String(p.negativePrompt).trim();
  if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))parameters.seed=Number(p.seed);
  progress(cb,.24,'Generando imagen con '+p.model+'...');
  const image=await client.textToImage({provider:'auto',model:p.model||'black-forest-labs/FLUX.1-schnell',inputs:fullPrompt,parameters});
  const blob=image instanceof Blob?image:new Blob([image],{type:'image/png'});
  progress(cb,1,'Imagen generada.');
- return {...download(blob,'prisma-imagen-'+Date.now()+'.png'),summary:'Modelo: '+(p.model||'FLUX.1-schnell')+' · '+width+' × '+height+' px · La imagen se generó con tu cuenta de Hugging Face.'};
+ return {...download(blob,'prisma-imagen-'+Date.now()+'.png'),previewUrl:URL.createObjectURL(blob),summary:'Modelo: '+(p.model||'FLUX.1 Schnell')+' · '+width+' × '+height+' px · Se utilizó tu token personal de Hugging Face.'};
+}
+async function generateText(p,cb){
+ const token=String(p.polliToken||'').trim(),prompt=String(p.prompt||'').trim();
+ if(!token)throw Error('Conecta tu cuenta de Pollinations antes de usar el asistente.');
+ if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
+ const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
+ const lengths={short:500,medium:1200,long:2600};
+ const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
+ const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
+ progress(cb,.2,'Consultando el modelo de texto...');
+ const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/gpt-5.4-nano',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
+ const text=data.choices?.[0]?.message?.content||data.output_text||'';
+ if(!text)throw Error('El modelo no devolvió texto.');
+ progress(cb,1,'Respuesta lista.');
+ return {text,summary:'Modelo: '+(p.model||'openai/gpt-5.4-nano')+' · Respuesta generada con tu autorización personal.'};
+}
+async function generateSpeech(p,cb){
+ const token=String(p.polliToken||'').trim(),input=String(p.prompt||'').trim();
+ if(!token)throw Error('Conecta tu cuenta de Pollinations antes de generar audio.');
+ if(!input)throw Error('Escribe el texto que quieres convertir en voz.');
+ progress(cb,.2,'Generando voz...');
+ const response=await fetch('https://gen.pollinations.ai/v1/audio/speech',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/tts-1',input,voice:p.voice||'nova',response_format:p.format||'mp3'})});
+ if(!response.ok){let msg='';try{msg=await response.text();}catch{}throw Error('No se pudo generar el audio ('+response.status+'). '+msg.slice(0,180));}
+ const blob=await response.blob();if(!blob.type.startsWith('audio/'))throw Error('El proveedor no devolvió un archivo de audio.');
+ progress(cb,1,'Audio listo.');
+ return {...download(blob,'prisma-voz.'+(p.format||'mp3')),previewUrl:URL.createObjectURL(blob),audio:true,summary:'Voz: '+(p.voice||'nova')+' · Modelo: '+(p.model||'openai/tts-1')};
+}
+async function transcribeAudio(files,p,cb){
+ const token=String(p.polliToken||'').trim();if(!token)throw Error('Conecta tu cuenta de Pollinations antes de transcribir.');
+ if(!files[0])throw Error('Selecciona un archivo de audio.');
+ const form=new FormData();form.append('file',files[0]);form.append('model',p.model||'openai/whisper-1');
+ if(p.language&&p.language!=='auto')form.append('language',p.language);
+ progress(cb,.2,'Transcribiendo audio...');
+ const response=await fetch('https://gen.pollinations.ai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error?.message||data.message||'No se pudo transcribir el audio ('+response.status+').');
+ if(!data.text)throw Error('El modelo no devolvió una transcripción.');
+ progress(cb,1,'Transcripción lista.');
+ return {text:data.text,summary:'Archivo: '+files[0].name+' · Modelo: '+(p.model||'openai/whisper-1')};
 }
 async function imageAdvanced(id,files,p,cb){
  if(id==='image-gen')return generateImage(p,cb);
@@ -337,9 +484,15 @@ export async function runTool(id,files=[],p={},cb){
  }
  if(id==='image-gen'||['image-collage','image-palette','image-flip','image-watermark','image-favicon'].includes(id))return imageAdvanced(id,files,p,cb);
  if(id.startsWith('image-'))return imageTool(id,files,p,cb);
- if(id==='docx-html')return runDocx(files,cb);
+ if(id==='docx-html'||id==='docx-pdf')return runDocx(id,files,cb);
  if(id==='video-thumbnail'||id==='video-gif'||id==='video-mute'||id==='audio-trim')return mediaAdvanced(id,files,p,cb);
  if(id==='qr-scan')return scanQr(files[0]);
+ if(id==='hash-file')return hashFile(files[0]);
+ if(id==='excel-json')return excelToJson(files[0],p,cb);
+ if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
+ if(id==='ai-assistant')return generateText(p,cb);
+ if(id==='ai-voice')return generateSpeech(p,cb);
+ if(id==='ai-transcribe')return transcribeAudio(files,p,cb);
  if(id==='barcode')return makeBarcode(p);
  if(id.startsWith('video-'))return runVideo(id,files,p,cb);
  if(id==='qr')return runQr(p,cb);
