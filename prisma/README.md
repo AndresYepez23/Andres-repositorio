@@ -4,8 +4,8 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 
 ## Catálogo
 
-- **90 herramientas** organizadas en nueve categorías.
-- PDF y documentos, imágenes, audio y vídeo, texto, productividad, utilidades y desarrollo.
+- **104 herramientas registradas** organizadas en 13 categorías: 67 listas, 34 beta y 3 en preparación. Estos estados describen el registro del catálogo; no equivalen a 104 pruebas funcionales independientes.
+- Categorías: PDF y documentos (14), imágenes (18), audio y vídeo (13), texto y datos (18), utilidades (14), IA y creación (4), desarrollo (7), hojas de cálculo (1), diseño y desarrollo web (5), datos y análisis (3), privacidad y archivos (4), creación de contenido (1), estudio e investigación (2).
 - Generación de imágenes y laboratorio IA con proveedores seleccionables.
 - Herramientas que procesan archivos localmente siempre que el navegador lo permite.
 
@@ -17,7 +17,8 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 - `src/providers.js`: proveedores IA.
 - `src/main.js`: navegación y experiencia.
 - `src/engines.js`: motores de ejecución.
-- `src/workflows.js`: orquestación de flujos de varios pasos (imágenes, PDF y creación con IA).
+- `src/workflows.js`: orquestación de cuatro flujos de varios pasos (imágenes, PDF, creación con IA y tareas de texto).
+- La capa de agente general de Prisma Core, con planificación dinámica y llamadas a herramientas por el modelo, todavía está pendiente; los flujos actuales son secuencias predefinidas.
 - `build.mjs`: prepara el directorio de publicación `dist/`.
 - `_headers`: cabeceras HTTP de seguridad para Cloudflare Pages.
 - `worker.js`: prototipo independiente para futuras rutas dinámicas; no forma parte del sitio estático publicado.
@@ -46,6 +47,7 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - **Cambio de motor:** fallback opcional entre cuentas conectadas, desactivado por defecto para evitar consumo inesperado.
 - **Ideas iniciales:** ejemplos de prompts para comenzar la creación visual.
 - Los flujos reutilizan los motores existentes y reportan el avance por etapas; las tareas locales permanecen en el navegador.
+- Las herramientas registradas deben validarse individualmente por motor, entradas, salidas, errores, límites y privacidad antes de considerarse certificadas.
 
 ## Inteligencia artificial
 
