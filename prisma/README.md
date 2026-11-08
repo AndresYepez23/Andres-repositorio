@@ -43,6 +43,7 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - El planificador recibe únicamente las herramientas con estado `ready`; no puede invocar herramientas beta o en preparación.
 - Cada plan está limitado a diez pasos y debe ser autorizado antes de ejecutarse.
 - Los planes externos advierten que los datos pueden salir del navegador y que pueden existir costes del proveedor.
+- El enrutador incorpora metadatos por modalidad sobre motor, privacidad, coste orientativo y estrategia de respaldo. Cuando no se ha verificado una tarifa o licencia específica, no la presenta como garantizada.
 - Las operaciones se ejecutan secuencialmente; los archivos resultantes pueden alimentar el siguiente paso.
 - La conversación se guarda en el almacenamiento local del navegador. Los archivos adjuntos no se guardan en el historial.
 - Las credenciales personales se leen desde la sesión del navegador y no se incorporan al historial.
