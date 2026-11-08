@@ -137,7 +137,7 @@ function normalizeSearch(value){
 function renderCategories(){
   const nav=$('#category-nav');
   nav.innerHTML=categories.filter(c=>c.id!=='all').map(c=>'<button class="category-item" data-category="'+c.id+'"><span class="category-icon">'+icon(c.icon)+'</span><span>'+c.name+'</span></button>').join('');
-  $$('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
+  $$$('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
 }
 function renderProviders(){
   $('#provider-grid').innerHTML=providers.map(p=>'<article class="provider-card"><div class="provider-card-top"><span class="provider-stage">'+p.stage+'</span><span class="nav-dot"></span></div><h4>'+p.name+'</h4><div class="provider-kind">'+p.kind+'</div><div class="provider-tags">'+p.capabilities.map(t=>'<span>'+t+'</span>').join('')+'</div><p class="provider-note">'+p.note+'</p></article>').join('');
@@ -184,7 +184,7 @@ function render(){
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
   $('#category-label').classList.toggle('hidden',activeView==='ai');$('#category-nav').classList.toggle('hidden',activeView==='ai');
-  $('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
+  $$('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
   $('#favorite-count').textContent=favorites.size;$('#recent-count').textContent=recentTools.length;
   $('#filter-chips').classList.toggle('hidden',activeView!=='explore');
   $('#clear-recent').classList.toggle('hidden',activeView!=='recent'||!recentTools.length);
@@ -1029,7 +1029,7 @@ $('#modal-run').addEventListener('click',executeCurrentTool);
 $('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#mobile-menu').setAttribute('aria-expanded',String(open));});
 $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
 
-$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
+$$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
 safeStartup('Prisma Core',initPrismaCore);
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
