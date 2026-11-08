@@ -227,7 +227,9 @@ async function requestPlan(userText){
   plan.userRequest=userText;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
-  showPlan(plan,steps);status('Plan listo. Revisa las operaciones antes de autorizarlas.','success');setProgress(1,'Plan listo; esperando tu autorización');
+  const requiresApproval=steps.some(({tool})=>!['local','browser'].includes(tool.mode));
+  if(requiresApproval){showPlan(plan,steps);status('El plan incluye servicios externos. Revisa y autoriza antes de continuar.','warning');setProgress(1,'Esperando tu autorización');}
+  else{pendingPlan={plan,steps};$('#core-plan').classList.add('hidden');addMessage('assistant',plan.message||'Ya entendí lo que necesitas. Voy a ejecutar las herramientas locales disponibles y te entregaré el resultado aquí.');await executePlan();}
 }
 async function executePlan(){
   if(!pendingPlan||busy)return;
@@ -282,6 +284,7 @@ function renderExecutionResults(executed,partial){
       const copy=document.createElement('button');copy.type='button';copy.className='mini-button';copy.textContent='Copiar texto';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(entry.result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});card.append(copy);
     }
     if(entry.result?.blob){
+      if(String(entry.result.blob.type||'').startsWith('image/')){const preview=document.createElement('img');preview.className='core-result-preview';preview.alt=entry.result.filename||'Imagen generada';preview.src=URL.createObjectURL(entry.result.blob);card.append(preview);}
       const row=document.createElement('div');row.className='core-result-download';
       const label=document.createElement('span');label.textContent=entry.result.filename||'Archivo generado';
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
