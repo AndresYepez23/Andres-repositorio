@@ -2,10 +2,7 @@ name = "prismaspace"
 compatibility_date = "2026-11-08"
 pages_build_output_dir = "./dist"
 
-[[ratelimits]]
-name = "PRISMA_AI_LIMITER"
-namespace_id = "2026110801"
-
-  [ratelimits.simple]
-  limit = 20
-  period = 60
+[[d1_databases]]
+binding = "PRISMA_RATE_DB"
+database_name = "prisma-ai-limits"
+database_id = "e02104b5-0861-475a-a60f-7658439d4fe0"
