@@ -365,6 +365,12 @@ function buildFields(t){
     case 'timestamp':return selectField('Conversión','mode',[['unix-to-date','Unix a fecha'],['date-to-unix','Fecha a Unix']],'unix-to-date')+field('Valor','value','text','1762550400','Acepta segundos, milisegundos o una fecha ISO.');
     case 'url-code':return textareaField('Texto o URL','text','','')+selectField('Operación','mode',[['encode','Codificar'],['decode','Decodificar']],'encode');
     case 'text-case':return textareaField('Texto','text','')+selectField('Transformación','mode',[['upper','MAYÚSCULAS'],['lower','minúsculas'],['title','Tipo título'],['sentence','Tipo oración']],'upper');
+    case 'text-remove-empty-lines':return textareaField('Texto','text','','Se eliminan las líneas vacías y se conservan las líneas con contenido.');
+    case 'text-prefix-lines':return textareaField('Texto','text','','Cada línea recibirá el prefijo y sufijo indicados.')+'<div class="inline-fields">'+field('Prefijo','prefix','text','','')+field('Sufijo','suffix','text','','')+'</div>';
+    case 'text-replace':return textareaField('Texto original','text','','')+'<div class="inline-fields">'+field('Buscar','search','text','','')+field('Reemplazar por','replacement','text','','')+'</div><label class="check-line"><input type="checkbox" name="caseSensitive"> Distinguir mayúsculas y minúsculas</label><label class="check-line"><input type="checkbox" name="replaceAll" checked> Reemplazar todas las coincidencias</label>';
+    case 'text-extract-hashtags':return textareaField('Publicación o texto','text','','Se extraen hashtags únicos respetando tildes y caracteres Unicode.');
+    case 'text-extract-phones':return textareaField('Texto de origen','text','','Se detectan posibles teléfonos; verifica cada resultado antes de usarlo.');
+    case 'json-flatten':return textareaField('Contenido JSON','text','{\n  "usuario": { "nombre": "Ana", "ciudad": "Chinú" },\n  "activo": true\n}','Convierte objetos anidados en rutas como usuario.nombre.');
     case 'text-remove-accents':return textareaField('Texto','text','','Se eliminan las marcas diacríticas sin cambiar el resto del contenido.');
     case 'text-reverse':return textareaField('Texto','text','','Invierte los caracteres o las líneas.')+selectField('Qué invertir','mode',[['characters','Caracteres'],['lines','Orden de líneas']],'characters');
     case 'text-extract-emails':return textareaField('Texto de origen','text','','Se extraerán correos únicos sin enviar el texto a ningún servidor.');
