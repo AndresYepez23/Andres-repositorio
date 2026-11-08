@@ -40,7 +40,6 @@ async function pdfTool(id,files,p,cb){
   try{src.catalog.delete(PDFName.of('Metadata'));}catch{}
   return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-metadatos.pdf');
  }
- }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
   const pages=src.getPageIndices();
