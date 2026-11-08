@@ -197,23 +197,37 @@ async function executePlan(){
         const textArtifact=result.artifacts.find(item=>item.text);if(textArtifact)lastText=textArtifact.text;
       }
     }
-    const output=$('#core-results');output.replaceChildren();
-    const header=document.createElement('div');header.className='core-results-heading';header.textContent='✓ Trabajo completado';output.append(header);
-    executed.forEach((entry,index)=>{
-      const card=document.createElement('section');card.className='core-result-card';
-      const name=document.createElement('strong');name.textContent=(index+1)+'. '+entry.name;card.append(name);
-      if(entry.result?.summary){const summary=document.createElement('p');summary.textContent=entry.result.summary;card.append(summary);}
-      if(entry.result?.text){const pre=document.createElement('pre');pre.textContent=String(entry.result.text).slice(0,8000);card.append(pre);}
-      if(entry.result?.blob){const row=document.createElement('div');row.className='core-result-download';const label=document.createElement('span');label.textContent=entry.result.filename||'Archivo generado';const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';button.addEventListener('click',()=>{const url=URL.createObjectURL(entry.result.blob);const a=document.createElement('a');a.href=url;a.download=entry.result.filename||'prisma-resultado';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);});row.append(label,button);card.append(row);}
-      output.append(card);
-    });
+    renderExecutionResults(executed,false);
     addMessage('assistant','He completado '+executed.length+' operación(es). Revisa los resultados y descarga los archivos generados.');
     status('Ejecución completada.','success');
   }catch(error){
-    console.error(error);addMessage('assistant','La ejecución se detuvo: '+(error?.message||'error inesperado')+'. Los pasos anteriores que terminaron correctamente se conservan en los resultados.');status('Ejecución detenida.','error');
+    console.error(error);renderExecutionResults(executed,true);addMessage('assistant','La ejecución se detuvo: '+(error?.message||'error inesperado')+'. Los resultados de los pasos que sí terminaron están disponibles abajo.');status('Ejecución detenida.','error');
   }finally{
     setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
   }
+}
+function renderExecutionResults(executed,partial){
+  const output=$('#core-results');output.replaceChildren();
+  if(!executed.length)return;
+  const header=document.createElement('div');header.className='core-results-heading';header.textContent=partial?'Resultados parciales · ejecución detenida':'✓ Trabajo completado';output.append(header);
+  executed.forEach((entry,index)=>{
+    const card=document.createElement('section');card.className='core-result-card';
+    const name=document.createElement('strong');name.textContent=(index+1)+'. '+entry.name;card.append(name);
+    if(entry.result?.summary){const summary=document.createElement('p');summary.textContent=entry.result.summary;card.append(summary);}
+    if(entry.result?.text){
+      const pre=document.createElement('pre');pre.textContent=String(entry.result.text).slice(0,8000);card.append(pre);
+      const copy=document.createElement('button');copy.type='button';copy.className='mini-button';copy.textContent='Copiar texto';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(entry.result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});card.append(copy);
+    }
+    if(entry.result?.blob){
+      const row=document.createElement('div');row.className='core-result-download';
+      const label=document.createElement('span');label.textContent=entry.result.filename||'Archivo generado';
+      const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
+      button.addEventListener('click',()=>{const url=URL.createObjectURL(entry.result.blob);const a=document.createElement('a');a.href=url;a.download=entry.result.filename||'prisma-resultado';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);});
+      row.append(label,button);card.append(row);
+    }
+    if(entry.result?.html){const pre=document.createElement('pre');pre.textContent=String(entry.result.html).slice(0,8000);card.append(pre);}
+    output.append(card);
+  });
 }
 async function sendMessage(){
   if(busy)return;
