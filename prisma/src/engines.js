@@ -631,7 +631,7 @@ async function generateText(p,cb){
     cache:'no-store',
     body:JSON.stringify({
      provider,
-     model:preferred==='auto'?modelProfiles[provider]?.[tier]:(p.model||modelProfiles[provider]?.[tier]),
+     model:preferred==='auto'?(provider==='huggingface'?modelProfiles.huggingface.fast:modelProfiles[provider]?.[tier]):(p.model||modelProfiles[provider]?.[tier]),
      messages:[{role:'system',content:system},{role:'user',content:user}],
      temperature:.7,
      maxOutputTokens:lengths[p.length]||1200
