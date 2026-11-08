@@ -114,7 +114,6 @@ async function imageTool(id,files,p,cb){
  if(id==='image-crop'){const w=Math.max(1,Math.round(img.width*Number(p.widthPct||80)/100)),h=Math.max(1,Math.round(img.height*Number(p.heightPct||80)/100));canvas.width=w;canvas.height=h;ctx.drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,w,h);}
  else if(id==='image-pixelate'){/* pixelated canvas prepared above */}
  else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
- else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  let type=p.format||'image/png',quality=Math.max(.1,Math.min(1,Number(p.quality||82)/100));
  if(id==='image-compress')type=p.format||'image/webp';
  const blob=await new Promise(r=>canvas.toBlob(r,type,quality));if(!blob)throw Error('No se pudo convertir la imagen.');
