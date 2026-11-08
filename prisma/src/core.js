@@ -1,6 +1,6 @@
 import { tools } from './registry.js';
 import { runTool } from './engines.js';
-import { getProviderCredential, getCentralProviderStatus } from './provider-connections.js';
+import { getCentralProviderStatus } from './provider-connections.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -11,7 +11,7 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
-let centralProviders = { gemini: false, huggingface: false, groq: false };
+let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false };
 
 function readPollinationsToken(){
   const expiry=Number(sessionStorage.getItem('prisma-polli-expiry')||0);
@@ -21,9 +21,10 @@ function readPollinationsToken(){
 function credentials(){
   return {
     polliToken:readPollinationsToken(),
-    hfToken:getProviderCredential('huggingface'),
-    geminiKey:getProviderCredential('gemini'),
-    groqKey:getProviderCredential('groq'),
+    // Shared engines run only through Cloudflare Pages Functions.
+    hfToken:'',
+    geminiKey:'',
+    groqKey:'',
     centralProviders
   };
 }
@@ -381,7 +382,7 @@ async function answerConversation(text,creds){
 }
 async function requestPlan(userText){
   const centralStatus=await getCentralProviderStatus();
-  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false};
+  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
   if(isConversationWithoutTools(userText)){
@@ -579,7 +580,7 @@ export function initPrismaCore(){
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false};
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
     const creds=credentials();
     const ready=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
     $('#core-connect-banner')?.classList.toggle('hidden',ready);

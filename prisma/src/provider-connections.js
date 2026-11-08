@@ -80,8 +80,10 @@ export async function getCentralProviderStatus() {
   const empty = {
     ok: false,
     mode: "central",
-    providers: { gemini: false, huggingface: false, groq: false },
+    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false },
     models: {},
+    modelCatalog: {chat:{},image:{},audio:{}},
+    features: {cloudflareImages:false,huggingfaceImages:false,groqAudio:false},
   };
   try {
     const response = await fetch("/api/providers/status", {
@@ -97,6 +99,8 @@ export async function getCentralProviderStatus() {
       ok: data.ok === true,
       providers: { ...empty.providers, ...(data.providers || {}) },
       models: data.models || {},
+      modelCatalog: data.modelCatalog || empty.modelCatalog,
+      features: { ...empty.features, ...(data.features || {}) },
     };
   } catch {
     return empty;
