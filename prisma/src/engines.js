@@ -225,7 +225,7 @@ function textDiff(a,b){
  for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
  const out=[];let i=0,j=0,added=0,removed=0;
  while(i<A.length||j<B.length){if(i<A.length&&j<B.length&&A[i]===B[j]){out.push('  '+A[i]);i++;j++;}else if(j<B.length&&(i===A.length||dp[i][j+1]>=dp[i+1][j])){out.push('+ '+B[j++]);added++;}else{out.push('- '+A[i++]);removed++;}}
-  return {text:out.join('\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
+  return {text:out.join(String.fromCharCode(10)),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
 }
 
 async function formatSourceCode(p,kind){
@@ -332,9 +332,11 @@ async function runText(id,p){
  case 'date-diff':{const a=new Date(p.start+'T00:00:00Z'),b=new Date(p.end+'T00:00:00Z');if(isNaN(a)||isNaN(b))throw Error('Selecciona dos fechas válidas.');const days=Math.round((b-a)/86400000);return {text:Math.abs(days)+' días',summary:days===0?'Las fechas coinciden.':days>0?'La fecha final está '+days+' días después.':'La fecha final está '+Math.abs(days)+' días antes.'};}
  case 'timezone':{const d=new Date(p.datetime);if(isNaN(d))throw Error('Selecciona una fecha y hora válidas.');return {text:new Intl.DateTimeFormat('es-CO',{dateStyle:'full',timeStyle:'long',timeZone:p.zone||'America/Bogota'}).format(d),summary:'Zona horaria: '+(p.zone||'America/Bogota')};}
  case 'contrast':{const ratio=contrastRatio(p.foreground||'#111827',p.background||'#ffffff');return {text:ratio.toFixed(2)+':1',summary:'WCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+' · WCAG AAA: '+(ratio>=7?'Cumple':'No cumple')};}
-  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),cards=[];
- case 'word-frequency':{const words=text.toLocaleLowerCase('es').match(/[\p{L}\p{N}']+/gu)||[],counts=new Map();words.forEach(w=>counts.set(w,(counts.get(w)||0)+1));const rows=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,30);return {text:rows.map(([w,n])=>w+' — '+n).join('\n'),summary:words.length+' palabras analizadas · '+counts.size+' palabras únicas.'};}
- case 'html-format':return formatSourceCode(p,'html');
+  const lines=text.replace(/\r/g,'').split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean),cards=[];
+  for(const line of lines){let index=line.indexOf('|'),width=1;if(index<0){index=line.indexOf('::');width=2;}if(index<0){index=line.indexOf('\t');width=1;}if(index<0)continue;const front=line.slice(0,index).trim(),back=line.slice(index+width).trim();if(front&&back)cards.push([front,back]);}
+  if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
+  const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join(String.fromCharCode(10));
+  return {...download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'prisma-tarjetas-anki.csv'),text:csv,summary:cards.length+' tarjetas listas para importar en Anki.'};
  case 'css-format':return formatSourceCode(p,'css');
  case 'js-format':return formatSourceCode(p,'js');
  case 'sql-format':return formatSourceCode(p,'sql');
@@ -352,7 +354,7 @@ async function runText(id,p){
  case 'csv-stats':{
   const rows=parseCsv(text,p.delimiter||',');if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila.');
   const headers=rows[0],body=rows.slice(1),out=['FILAS: '+body.length,'COLUMNAS: '+headers.length,'','RESUMEN POR COLUMNA'];
-  headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('\n'+(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
+  headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('',(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
   return {text:out.join('\\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
  }
  case 'citation-generator':{
