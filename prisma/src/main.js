@@ -270,6 +270,19 @@ function huggingFaceAuthFields(){
   '</div>';
 }
 
+function setupApiExplorer(){
+  const preset=$('#field-preset'),url=$('#field-url');
+  const examples={
+    'github-repo':'https://api.github.com/repos/AndresYepez23/PRISMA',
+    'github-search':'https://api.github.com/search/repositories?q=generative-ai+language:javascript&sort=stars&order=desc&per_page=10',
+    jsonplaceholder:'https://jsonplaceholder.typicode.com/todos/1',
+    'open-meteo':'https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,relative_humidity_2m,wind_speed_10m'
+  };
+  preset?.addEventListener('change',()=>{
+    if(url&&examples[preset.value])url.value=examples[preset.value];
+    if(url&&preset.value==='custom')url.value='';
+  });
+}
 function buildFields(t){
   switch(t.id){
     case 'pdf-split':return '<div class="tool-hint">Cada página se guardará como un PDF independiente dentro de un archivo ZIP.</div>';
@@ -280,6 +293,15 @@ function buildFields(t){
     case 'image-metadata':return '<div class="tool-hint">Lee dimensiones y metadatos EXIF que estén presentes. Algunas plataformas eliminan estos datos al compartir imágenes.</div>';
     case 'audio-waveform':return selectField('Color de la onda','color',[['#9adbd2','Turquesa'],['#a9a0ee','Lavanda'],['#ffffff','Blanco'],['#f0b77a','Ámbar']],'#9adbd2');
     case 'hash-file':return '<div class="tool-hint">Calcula SHA-256 directamente en tu navegador. El archivo no se sube a Prisma Space.</div>';
+    case 'github-discover':return textareaField('¿Qué tipo de proyecto buscas?','query','open source AI tools','Describe la tecnología o el problema que quieres resolver.')+
+      selectField('Lenguaje','language',[['any','Cualquier lenguaje'],['javascript','JavaScript'],['typescript','TypeScript'],['python','Python'],['rust','Rust'],['go','Go']],'any')+
+      selectField('Ordenar resultados','sort',[['stars','Más estrellas'],['updated','Actualizados recientemente'],['forks','Más bifurcaciones']],'stars')+
+      selectField('Cantidad de resultados','limit',[['5','5 proyectos'],['10','10 proyectos'],['20','20 proyectos']],'10')+
+      '<div class="tool-hint">Consulta repositorios públicos de GitHub. No necesita token para búsquedas públicas, pero GitHub aplica límites por IP.</div>';
+    case 'api-explorer':return selectField('Ejemplo para probar','preset',[['github-repo','GitHub · repositorio público'],['github-search','GitHub · proyectos open source'],['jsonplaceholder','JSONPlaceholder · datos de prueba'],['open-meteo','Open-Meteo · datos meteorológicos'],['custom','Mi propia API pública']],'github-repo')+
+      field('URL pública (solo lectura)','url','url','https://api.github.com/repos/AndresYepez23/PRISMA','Solo HTTPS y endpoints públicos. No pegues claves API, contraseñas ni datos privados.')+
+      selectField('Cómo mostrar la respuesta','format',[['json','JSON organizado'],['text','Texto sin formato'],['raw','Respuesta original']],'json')+
+      '<div class="tool-hint">Prisma intentará consultar la API directamente. Si el navegador bloquea el acceso por CORS, probará cors.dev para una lectura pública GET. No se envían credenciales ni cookies.</div>';
     case 'jwt-decode':return textareaField('Token JWT','token','','Pega el token completo. Prisma Space solo decodifica su contenido: no valida firma, emisor ni vencimiento.');
     case 'regex-test':return field('Expresión regular','pattern','text','\\bPrisma Space\\b','No incluyas las barras /.../.','maxlength="200"')+field('Flags','flags','text','gi','Flags permitidos: g, i, m, s, u.','maxlength="5"')+textareaField('Texto de prueba','text','Prisma Space reúne herramientas. Prisma es un espacio digital.');
     case 'json-yaml':return textareaField('Contenido','text','nombre: Prisma Space\\nversion: 1','Pega JSON o YAML.')+selectField('Conversión','mode',[['json-to-yaml','JSON a YAML'],['yaml-to-json','YAML a JSON']],'json-to-yaml');
@@ -603,6 +625,7 @@ function openTool(t){
     $('#file-list').addEventListener('click',e=>{const remove=e.target.closest('[data-remove-file]');if(remove){selectedFiles.splice(Number(remove.dataset.removeFile),1);renderFileList();return;}if(e.target.closest('[data-clear-files]')){selectedFiles=[];renderFileList();}});
   }
   if(['image-gen','ai-assistant','ai-voice','ai-transcribe'].includes(t.id))setupAIAuthorization(t);
+  if(t.id==='api-explorer')setupApiExplorer();
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
   $('#modal-close').focus({preventScroll:true});
