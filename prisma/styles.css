@@ -181,3 +181,9 @@
  .global-search.is-open{width:min(215px,55vw)}
 }
 @media(prefers-reduced-motion:reduce){.goal-card:hover,.mini-tool-card:hover{transform:none}}
+
+.tool-card-launch{display:block;align-self:stretch;width:100%;margin:14px 0 5px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.tool-card-launch h3{margin:0;font-family:Manrope,sans-serif;font-size:13px;letter-spacing:-.02em}
+.tool-card-launch:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+.tool-grid.list-view .tool-card-launch{margin:0}
+@media(max-width:620px){.tool-card-launch{margin:12px 0 5px}.tool-card-launch h3{font-size:11px}}

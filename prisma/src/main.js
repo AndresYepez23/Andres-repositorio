@@ -182,7 +182,8 @@ function render(){
   $('#clear-search').classList.toggle('hidden',!searchTerm);
   const list=visibleTools();
   $('#tool-grid').classList.toggle('list-view',layout==='list');
-  $('#tool-grid').innerHTML=list.map(tool=>'<article class="tool-card '+(tool.status==='soon'?'is-disabled':'')+'" data-tool="'+tool.id+'" role="button" tabindex="'+(tool.status==='soon'?'-1':'0')+'" '+(tool.status==='soon'?'aria-disabled="true"':'')+' aria-label="'+escapeHtml(tool.name+'. '+tool.description+'. '+statusLabels[tool.status]+'. Abrir herramienta.')+'"><div class="tool-card-top"><span class="tool-icon">'+icon(tool.icon)+'</span><button type="button" class="tool-favorite '+(favorites.has(tool.id)?'active':'')+'" data-favorite="'+tool.id+'" aria-label="'+(favorites.has(tool.id)?'Quitar de favoritos':'Guardar en favoritos')+'" aria-pressed="'+favorites.has(tool.id)+'" title="'+(favorites.has(tool.id)?'Quitar de favoritos':'Guardar en favoritos')+'">'+icon('star')+'</button></div><h3>'+escapeHtml(tool.name)+'</h3><p>'+escapeHtml(tool.description)+'</p><div class="tool-card-bottom"><span class="tool-tag">'+escapeHtml(tool.tag||'')+'</span><span class="tool-status '+tool.status+'">'+statusLabels[tool.status]+'</span></div><span class="tool-open">Abrir herramienta →</span></article>').join('');
+  $('#tool-grid').innerHTML=list.map(tool=>'<article class="tool-card '+(tool.status==='soon'?'is-disabled':'')+'" data-tool="'+tool.id+'"><div class="tool-card-top"><span class="tool-icon">'+icon(tool.icon)+'</span><button type="button" class="tool-favorite '+(favorites.has(tool.id)?'active':'')+'" data-favorite="'+tool.id+'" aria-label="'+(favorites.has(tool.id)?'Quitar de favoritos':'Guardar en favoritos')+'" aria-pressed="'+favorites.has(tool.id)+'" title="'+(favorites.has(tool.id)?'Quitar de favoritos':'Guardar en favoritos')+'">'+icon('star')+'</button></div><button type="button" class="tool-card-launch" aria-label="'+escapeHtml('Abrir herramienta: '+tool.name)+'"><h3>'+escapeHtml(tool.name)+'</h3></button><p>'+escapeHtml(tool.description)+'</p><div class="tool-card-bottom"><span class="tool-tag">'+escapeHtml(tool.tag||'')+'</span><span class="tool-status '+tool.status+'">'+statusLabels[tool.status]+'</span></div><span class="tool-open">Abrir herramienta →</span></article>').join('');
+
   $('#empty-state').classList.toggle('hidden',list.length>0);$('#tool-grid').classList.toggle('hidden',list.length===0);
   $('#empty-title').textContent=activeView==='favorites'?'Todavía no tienes favoritos':activeView==='recent'?'Todavía no hay herramientas recientes':'No encontramos herramientas';
   $('#empty-description').textContent=activeView==='favorites'?'Guarda una herramienta con la estrella para tenerla siempre a mano.':activeView==='recent'?'Cuando abras una herramienta, aparecerá aquí para que puedas retomarla.':'Prueba con otras palabras o busca por lo que quieres conseguir.';
@@ -198,7 +199,6 @@ function render(){
       openTool(tool);
     };
     card.addEventListener('click',open);
-    card.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.target.closest('button')){event.preventDefault();open(event);}});
   });
   $$('#tool-grid [data-favorite]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();toggleFavorite(button.dataset.favorite);}));
   $$('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;render();}));
