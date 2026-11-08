@@ -9,6 +9,8 @@ let messages = [];
 let attachments = [];
 let pendingPlan = null;
 let busy = false;
+let executionActive = false;
+let cancelRequested = false;
 
 function readPollinationsToken(){
   const expiry=Number(sessionStorage.getItem('prisma-polli-expiry')||0);
@@ -71,6 +73,7 @@ function setBusy(value){
   $('#core-file-button').disabled=value;
   $('#core-send').textContent=value?'Trabajando…':'Enviar';
   $('#core-composer').setAttribute('aria-busy',String(value));
+  $('#core-cancel')?.classList.toggle('hidden',!(value&&executionActive));
   if(value)setProgress(.02,'Preparando…');
   else $('#core-progress')?.classList.add('hidden');
 }
@@ -230,10 +233,11 @@ async function requestPlan(userText){
 async function executePlan(){
   if(!pendingPlan||busy)return;
   const {plan,steps}=pendingPlan;pendingPlan=null;
-  $('#core-plan').classList.add('hidden');setBusy(true);
+  $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
   const executed=[];let currentFiles=[...attachments],lastText='';
   try{
     for(let index=0;index<steps.length;index++){
+      if(cancelRequested)break;
       const {tool,params:plannedParams,reason}=steps[index];
       status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');setProgress(index/steps.length,'Paso '+(index+1)+' de '+steps.length+': '+tool.name);
       const params={...plannedParams,...credentials()};
@@ -256,13 +260,12 @@ async function executePlan(){
         const textArtifact=result.artifacts.find(item=>item.text);if(textArtifact)lastText=textArtifact.text;
       }
     }
-    renderExecutionResults(executed,false);
-    addMessage('assistant','He completado '+executed.length+' operación(es). Revisa los resultados y descarga los archivos generados.');
-    status('Ejecución completada.','success');
+    if(cancelRequested){renderExecutionResults(executed,true);addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.');status('Ejecución detenida por ti.','warning');}
+    else{renderExecutionResults(executed,false);addMessage('assistant','He completado '+executed.length+' operación(es). Revisa los resultados y descarga los archivos generados.');status('Ejecución completada.','success');}
   }catch(error){
     console.error(error);renderExecutionResults(executed,true);addMessage('assistant','La ejecución se detuvo: '+(error?.message||'error inesperado')+'. Los resultados de los pasos que sí terminaron están disponibles abajo.');status('Ejecución detenida.','error');
   }finally{
-    setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
+    executionActive=false;setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
   }
 }
 function renderExecutionResults(executed,partial){
@@ -306,6 +309,7 @@ export function initPrismaCore(){
   try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(saved))messages=saved.slice(-40);}catch{messages=[];}
   renderMessages();
   $('#core-send').addEventListener('click',sendMessage);
+  $('#core-cancel').addEventListener('click',()=>{if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
   $('#core-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}});
   $('#core-input').addEventListener('input',event=>{event.target.style.height='auto';event.target.style.height=Math.min(event.target.scrollHeight,160)+'px';});
   $('#core-file-button').addEventListener('click',()=>$('#core-file-input').click());
@@ -320,4 +324,5 @@ export function initPrismaCore(){
   });
   $('#core-open-settings').addEventListener('click',()=>{document.querySelector('[data-view="ai"]')?.click();});
   status('Listo para planificar. Conecta un motor de texto si todavía no lo has hecho.','info');
+  $('#core-cancel').disabled=false;
 }
