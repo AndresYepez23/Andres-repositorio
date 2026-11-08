@@ -354,7 +354,7 @@ function buildFields(t){
     case 'ai-transcribe':return selectField('Motor de transcripción','provider',[['auto','Automático · recomendado'],['groq','Groq Whisper Turbo · central'],['huggingface','Hugging Face · créditos limitados'],['pollinations','Pollinations · cuenta personal']],'auto')+
       selectField('Modelo de transcripción','model',[['','Automático · según motor']],'')+
       selectField('Idioma','language',[['es','Español'],['en','Inglés'],['auto','Detectar automáticamente']],'es')+
-      pollinationsAuthFields();
+      '<div class="tool-hint">Automático: usa Groq Whisper cuando GROQ_API_KEY esté configurada. Hugging Face requiere activar explícitamente el consumo multimedia. Pollinations utiliza una cuenta autorizada por el usuario.</div>';
     case 'image-watermark':return field('Texto de la marca','watermark','text','Prisma Space','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
     case 'image-flip':return selectField('Dirección','direction',[['horizontal','Horizontal'],['vertical','Vertical']],'horizontal');
     case 'image-collage':return selectField('Fondo del mosaico','background',[['#ffffff','Blanco'],['#101218','Oscuro'],['#9adbd2','Turquesa claro']],'#ffffff');
