@@ -131,7 +131,7 @@ function normalizeSearch(value){
 function renderCategories(){
   const nav=$('#category-nav');
   nav.innerHTML=categories.filter(c=>c.id!=='all').map(c=>'<button class="category-item" data-category="'+c.id+'"><span class="category-icon">'+icon(c.icon)+'</span><span>'+c.name+'</span></button>').join('');
-  $$('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;render();$('#sidebar').classList.remove('open');}));
+  $('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
 }
 function renderProviders(){
   $('#provider-grid').innerHTML=providers.map(p=>'<article class="provider-card"><div class="provider-card-top"><span class="provider-stage">'+p.stage+'</span><span class="nav-dot"></span></div><h4>'+p.name+'</h4><div class="provider-kind">'+p.kind+'</div><div class="provider-tags">'+p.capabilities.map(t=>'<span>'+t+'</span>').join('')+'</div><p class="provider-note">'+p.note+'</p></article>').join('');
@@ -487,6 +487,7 @@ function openTool(t){
   html+='<div class="progress-wrap hidden" id="progress-wrap"><div class="progress-label"><span id="progress-message">Preparando...</span><span id="progress-value">0%</span></div><div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div></div><div id="tool-output" aria-live="polite"></div>';
   $('#modal-body').innerHTML=html;
   $('#tool-modal').classList.remove('hidden');
+  $('#tool-modal').setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
   $('#modal-run').classList.toggle('hidden',t.status==='soon');
   $('#modal-run').disabled=false;
   $('#modal-run').innerHTML=icon('play')+' Ejecutar herramienta';
@@ -594,16 +595,37 @@ function renderOutput(result){
 }
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 function closeTool(){
+  const modal=$('#tool-modal');
+  if(!modal||modal.classList.contains('hidden'))return;
   if($('#field-hfToken'))$('#field-hfToken').value='';
   if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}
   $('#modal-body').innerHTML='';$('#modal-body').setAttribute('aria-busy','false');
-  $('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];activeOperation++;running=false;
+  modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');
+  document.body.classList.remove('modal-open');
+  currentTool=null;selectedFiles=[];activeOperation++;running=false;
   if(activeView==='recent')render();
-  const target=lastFocusedElement?.isConnected?lastFocusedElement:$('#tool-grid [data-tool="'+lastOpenedToolId+'"]');
-  lastFocusedElement=null;target?.focus?.();
+  const target=lastFocusedElement?.isConnected?lastFocusedElement:
+    $('#tool-grid [data-tool="'+lastOpenedToolId+'"] .tool-card-launch')||
+    $('#home-recent [data-open-tool="'+lastOpenedToolId+'"]')||
+    $('#home-popular [data-open-tool="'+lastOpenedToolId+'"]');
+  lastFocusedElement=null;
+  requestAnimationFrame(()=>target?.focus?.({preventScroll:true}));
 }
-
-function showView(view){activeView=view;activeCategory='all';searchTerm='';$('#global-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
+function closeSidebar(){
+  $('#sidebar').classList.remove('open');
+  $('#mobile-menu').setAttribute('aria-expanded','false');
+}
+function scrollToCurrentView(){
+  const target=activeView==='ai'?$('#ai-section'):
+    activeView==='explore'&&activeCategory==='all'&&!searchTerm?$('#home-dashboard'):$('#tools-section');
+  if(!target)return;
+  const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+}
+function showView(view){
+  activeView=view;activeCategory='all';searchTerm='';$('#global-search').value='';
+  render();closeSidebar();scrollToCurrentView();
+}
 
 function setupHeroInteraction(){
   const art=$('.hero-art');
@@ -650,13 +672,16 @@ $('#open-image-gen-hero')?.addEventListener('click',()=>{const tool=tools.find(t
 $('#open-ai-assistant')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='ai-assistant');if(tool)openTool(tool);});
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 $$('[data-view-jump]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewJump)));
-$('#global-search').addEventListener('input',e=>{searchTerm=e.target.value;activeView='explore';activeCategory='all';render();});
+$('#global-search').addEventListener('input',e=>{const wasEmpty=!searchTerm.trim();searchTerm=e.target.value;activeView='explore';activeCategory='all';render();if((wasEmpty&&searchTerm.trim())||!searchTerm.trim())scrollToCurrentView();});
 $('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;$('#theme-toggle').innerHTML=icon(next==='dark'?'sun':'moon');localStorage.setItem('prisma-theme',next);});
 const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme){document.documentElement.dataset.theme=savedTheme;$('#theme-toggle').innerHTML=icon(savedTheme==='dark'?'sun':'moon');}
 $('#explore-tools').addEventListener('click',()=>$('#tools-section').scrollIntoView({behavior:'smooth'}));
-$('#clear-search').addEventListener('click',()=>{$('#global-search').value='';searchTerm='';render();});
-$('#modal-close').addEventListener('click',closeTool);$('#modal-cancel').addEventListener('click',closeTool);
-$('#tool-modal').addEventListener('click',e=>{if(e.target===$('#tool-modal'))closeTool();});
+$('#clear-search').addEventListener('click',()=>{$('#global-search').value='';searchTerm='';activeView='explore';activeCategory='all';render();scrollToCurrentView();});
+document.addEventListener('click',event=>{
+  const closeButton=event.target.closest?.('#modal-close, #modal-cancel');
+  if(closeButton){event.preventDefault();closeTool();return;}
+  if(event.target===$('#tool-modal'))closeTool();
+},true);
 $('#modal-run').addEventListener('click',executeCurrentTool);
 $('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#mobile-menu').setAttribute('aria-expanded',String(open));});
 $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
@@ -664,7 +689,7 @@ $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herra
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));render();}));
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
-  if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();}
+  if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar').classList.contains('open'))closeSidebar();}
   if(event.key==='Tab'&&!$('#tool-modal').classList.contains('hidden')){
     const focusable=$('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href]',$('#tool-modal')).filter(element=>!element.classList.contains('hidden')&&element.offsetParent!==null);
     if(!focusable.length)return;
