@@ -18,7 +18,7 @@ export async function onRequestGet({ env }) {
       cloudflare: limited && Boolean(env.AI?.run),
     },
     modelCatalog: modelsForUI(),
-    features: {cloudflareImages: limited && Boolean(env.AI?.run), huggingfaceImages: limited && Boolean(env.HF_TOKEN) && env.HF_MEDIA_ENABLED==="1", groqAudio: limited && Boolean(env.GROQ_API_KEY)},
+    features: {cloudflareImages: limited && Boolean(env.AI?.run), huggingfaceImages: limited && Boolean(env.HF_TOKEN) && env.HF_MEDIA_ENABLED==="1", huggingfaceAudio: limited && Boolean(env.HF_TOKEN) && env.HF_MEDIA_ENABLED==="1", groqAudio: limited && Boolean(env.GROQ_API_KEY)},
     models: {
       gemini: env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
       huggingface: "openai/gpt-oss-20b:cheapest",
