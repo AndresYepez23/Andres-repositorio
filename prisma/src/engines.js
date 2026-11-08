@@ -35,11 +35,11 @@ async function pdfTool(id,files,p,cb){
   return {text:JSON.stringify(info,null,2),summary:'Metadatos leídos localmente. No se modificó el PDF.'};
  }
  if(id==='pdf-metadata-clean'){
-  const {PDFName}=await load(PDF_LIB);
-  src.setTitle('');src.setAuthor('');src.setSubject('');src.setKeywords([]);src.setCreator('');src.setProducer('');
-  src.setCreationDate(new Date(0));src.setModificationDate(new Date(0));
+  const {PDFName,PDFDict}=await load(PDF_LIB);
+  try{const ref=src.context.trailerInfo.Info,info=ref?src.context.lookup(ref,PDFDict):null;if(info)for(const key of ['Title','Author','Subject','Keywords','Creator','Producer','CreationDate','ModDate','Trapped'])info.delete(PDFName.of(key));}catch{}
   try{src.catalog.delete(PDFName.of('Metadata'));}catch{}
   return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-metadatos.pdf');
+ }
  }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
