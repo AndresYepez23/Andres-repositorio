@@ -25,15 +25,15 @@
         <span class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 36 31H4L20 3Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m20 3 0 28M4 31l16-10 16 10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m20 21 8-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
         <span class="brand-copy"><strong>Prisma Space</strong><small>ECOSISTEMA DIGITAL</small></span>
       </a>
-      <div class="side-label">ESPACIO DE TRABAJO</div>
+      <div class="side-label">TU ASISTENTE</div>
       <nav class="primary-nav" aria-label="Navegación principal">
-        <button class="nav-item active" data-view="explore"><span class="nav-icon" data-icon="grid"></span><span>Explorar</span><kbd>⌘ 1</kbd></button>
+        <button class="nav-item active core-nav-item" data-view="core"><span class="nav-icon" data-icon="brain-circuit"></span><span>Prisma Core</span><span class="core-nav-badge">CENTRAL</span></button>
+        <button class="nav-item" data-view="explore"><span class="nav-icon" data-icon="grid"></span><span>Herramientas</span><kbd>⌘ 1</kbd></button>
+        <button class="nav-item" data-view="ai"><span class="nav-icon" data-icon="sparkles"></span><span>Laboratorio IA</span><span class="nav-dot"></span></button>
         <button class="nav-item" data-view="favorites"><span class="nav-icon" data-icon="star"></span><span>Favoritos</span><span class="nav-count" id="favorite-count">0</span></button>
         <button class="nav-item" data-view="recent"><span class="nav-icon" data-icon="history"></span><span>Recientes</span><span class="nav-count" id="recent-count">0</span></button>
-        <button class="nav-item" data-view="core"><span class="nav-icon" data-icon="brain-circuit"></span><span>Prisma Core</span><span class="nav-dot"></span></button>
-        <button class="nav-item" data-view="ai"><span class="nav-icon" data-icon="sparkles"></span><span>Laboratorio IA</span><span class="nav-dot"></span></button>
       </nav>
-      <div class="side-label side-label-spaced">CATEGORÍAS</div>
+      <div class="side-label side-label-spaced">EXPLORAR POR CATEGORÍA</div>
       <nav class="category-nav" id="category-nav" aria-label="Categorías"></nav>
       <div class="sidebar-bottom">
         <div class="privacy-card">
@@ -58,10 +58,10 @@
       <section class="page-content" id="page-content">
         <section class="core-section hidden" id="core-section">
           <div class="core-hero">
-            <div class="eyebrow"><span class="eyebrow-line"></span> PRISMA SPACE · INTELIGENCIA CENTRAL</div>
-            <h2>Cuéntame qué necesitas.<br><em>Yo coordino las herramientas.</em></h2>
-            <p>Un solo chat para planificar tareas, combinar motores y ejecutar operaciones del catálogo. Revisa cada plan antes de autorizarlo.</p>
-            <div class="core-capabilities"><span>116 herramientas registradas</span><span>79 listas para el agente</span><span>Planificación de hasta 10 pasos</span><span>Control antes de ejecutar</span></div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> TU ESPACIO DE TRABAJO CON IA</div>
+            <h2>¿Qué necesitas hacer?<br><em>Déjaselo a Prisma.</em></h2>
+            <p>No busques herramientas ni aprendas procesos. Describe el resultado, adjunta tus archivos y Prisma decidirá cómo resolverlo con las capacidades disponibles.</p>
+            <div class="core-capabilities"><span>PDF y documentos</span><span>Imágenes y diseño</span><span>Audio y vídeo</span><span>Investigación y creación</span><span>Procesamiento local y modelos IA</span></div>
           </div>
           <div class="core-workspace">
             <div class="core-chat-column">
@@ -78,7 +78,7 @@
                   <div class="core-composer-tools"><button type="button" class="mini-button" id="core-file-button"><span data-icon="paperclip"></span> Adjuntar archivos</button><input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.docx,.xlsx,.csv,.txt,.md,audio/*,video/*,.zip"></div>
                   <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
                 </div>
-                <small>Hasta 8 archivos · 100 MB en total. El texto de tus mensajes se envía al motor conectado para planificar; los archivos no se adjuntan automáticamente al modelo y se procesan según la herramienta que autorices.</small>
+                <small>Hasta 8 archivos · 100 MB en total. El archivo original se procesa localmente cuando es posible. Para analizar documentos, el texto extraído puede enviarse al motor de IA conectado para que lo entienda; los archivos no se adjuntan automáticamente al modelo.</small>
               </div>
             </div>
             <aside class="core-side">
