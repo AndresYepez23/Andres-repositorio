@@ -630,6 +630,14 @@ function buildWorkflowFields(workflow){
     '</div>'+selectField('Ubicación de la numeración','position',[['bottom','Parte inferior'],['top','Parte superior']],'bottom')+
       '<div class="tool-hint">Los PDF se procesan localmente. Los documentos escaneados necesitan OCR; si no contienen texto seleccionable, se conserva el PDF y se informa.</div>';
   }
+  if(workflow.id==='ai-task'){
+    return selectField('Qué necesitas hacer','task',[['write','Redactar algo'],['summarize','Resumir información'],['explain','Explicar un tema'],['translate','Traducir un texto'],['ideas','Generar ideas'],['improve','Mejorar un texto']],'write')+
+      textareaField('Cuéntanos qué necesitas','prompt','','Escribe la tarea con tus propias palabras. No necesitas conocer modelos ni proveedores.')+
+      textareaField('Contexto o contenido (opcional)','context','','Pega el texto, añade contexto o indica el público al que va dirigido.')+
+      selectField('Estilo de respuesta','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Breve y directo']],'professional')+
+      selectField('Nivel de detalle','length',[['short','Breve'],['medium','Equilibrado'],['long','Detallado']],'medium')+
+      '<div class="tool-hint">Prisma seleccionará automáticamente un motor conectado. Tus credenciales se configuran una sola vez en el Laboratorio IA.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+  }
   if(workflow.id==='ai-creation'){
     return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations · tu saldo autorizado'],['huggingface','Hugging Face · tu cuenta'],['gemini','Google Gemini · tu cuenta']],'auto','Prisma solo utilizará las cuentas que hayas conectado.')+
       selectField('Calidad de generación','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
