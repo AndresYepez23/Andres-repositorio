@@ -265,6 +265,16 @@ function buildLocalPlan(userText){
   else if(has('paleta de colores','colores armonicos','paleta armonica'))selected=[pick('color-palette',{text:userText})];
   else if(has('gradiente css','gradient css','degradado css'))selected=[pick('css-gradient',{color1:'#9adbd2',color2:'#a9a0ee',angle:135})];
   else if(has('compara textos','comparar textos','diferencias entre textos'))selected=[pick('text-diff',{textA:'',textB:''})];
+  else if(has('resume','resumen','sintetiza'))selected=[pick('text-summary-local',{text:userText,sentences:5})];
+  else if(has('tiempo de lectura','cuanto tardo en leer','duracion de lectura'))selected=[pick('reading-time-local',{text:userText})];
+  else if(has('analiza este texto','analizar texto','estadisticas del texto'))selected=[pick('text-analyzer-local',{text:userText})];
+  else if(has('csv a tsv','csv-to-tsv'))selected=[pick('csv-to-tsv-local',{text:userText})];
+  else if(has('tsv a csv','tsv-to-csv'))selected=[pick('tsv-to-csv-local',{text:userText})];
+  else if(has('json a xml','json-to-xml'))selected=[pick('json-to-xml-local',{text:userText.slice(userText.indexOf('{')>=0?userText.indexOf('{'):0)})];
+  else if(has('xml a json','xml-to-json'))selected=[pick('xml-to-json-local',{text:userText.slice(userText.indexOf('<')>=0?userText.indexOf('<'):0)})];
+  else if(has('html a markdown','html-to-markdown'))selected=[pick('html-to-markdown-local',{text:userText.slice(userText.indexOf('<')>=0?userText.indexOf('<'):0)})];
+  else if(has('contraste wcag','contraste entre colores','comprobar contraste'))selected=[pick('contrast-check-local',{color1:'#000000',color2:'#ffffff'})];
+  else if(has('palabras repetidas','repeticiones consecutivas'))selected=[pick('text-dedupe-words-local',{text:userText})];
   selected=selected.filter(Boolean);
   if(!selected.length)return {message:'Puedo trabajar sin conectar motores externos cuando la tarea corresponde a una capacidad local. Por ahora no encuentro una operación local suficientemente segura para esta solicitud. Puedes adjuntar un PDF, imagen, documento u hoja de cálculo, o pedirme una conversión o transformación compatible.',needs_clarification:false,question:'',steps:[]};
   const toolNames=selected.map(item=>item.tool.name).join(' y ');
