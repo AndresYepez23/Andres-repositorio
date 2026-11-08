@@ -272,7 +272,7 @@ function imageModelFor(provider,quality){
  const profiles={
   pollinations:{fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1-dev'},
   huggingface:{fast:'black-forest-labs/FLUX.1-schnell',balanced:'black-forest-labs/FLUX.1-dev',high:'Qwen/Qwen-Image'},
-  gemini:{fast:'gemini-3.1-flash-lite-image',balanced:'gemini-3.1-flash-image',high:'gemini-3-pro-image'}
+  gemini:{fast:'gemini-3.1-flash-lite-image',balanced:'gemini-nano-banana-2.1',high:'gemini-3-pro-image'}
  };
  return profiles[provider]?.[quality||'balanced']||profiles[provider]?.balanced;
 }
@@ -379,7 +379,7 @@ async function generateText(p,cb){
     if(!response.ok)throw Error(data.error?.message||'Groq respondió '+response.status+'.');
     text=data.choices?.[0]?.message?.content||'';
    }else if(provider==='gemini'){
-    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
+    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
     text=(data.candidates?.[0]?.content?.parts||[]).map(part=>part.text||'').join('').trim();
