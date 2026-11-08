@@ -253,6 +253,18 @@ function buildLocalPlan(userText){
   else if(has('quita tildes','quitar tildes'))selected=[pick('text-remove-accents',{text:userText})];
   else if(has('ordena alfabeticamente','ordenar alfabeticamente'))selected=[pick('text-sort',{text:userText})];
   else if(has('mayusculas','mayúsculas','uppercase'))selected=[pick('text-case',{text:userText,mode:'upper'})];
+  else if(has('formatea json','formatear json','embellece json','pretty json'))selected=[pick('json-format',{text:userText.slice(userText.indexOf('{')>=0?userText.indexOf('{'):0)})];
+  else if(has('minifica json','minificar json'))selected=[pick('json-minify',{text:userText.slice(userText.indexOf('{')>=0?userText.indexOf('{'):0)})];
+  else if(has('formatea html','formatear html','indenta html'))selected=[pick('html-format',{text:userText})];
+  else if(has('formatea css','formatear css','indenta css'))selected=[pick('css-format',{text:userText})];
+  else if(has('formatea javascript','formatear javascript','formatea js','formatear js'))selected=[pick('js-format',{text:userText})];
+  else if(has('formatea sql','formatear sql','indenta sql'))selected=[pick('sql-format',{text:userText})];
+  else if(has('formatea xml','formatear xml'))selected=[pick('xml-format',{text:userText})];
+  else if(has('expresion regular','regex','coincidencias regex'))selected=[pick('regex-test',{text:userText,pattern:'',flags:'gi'})];
+  else if(has('estadisticas csv','analiza csv','resumen csv'))selected=[pick('csv-stats',{text:userText})];
+  else if(has('paleta de colores','colores armonicos','paleta armonica'))selected=[pick('color-palette',{text:userText})];
+  else if(has('gradiente css','gradient css','degradado css'))selected=[pick('css-gradient',{color1:'#9adbd2',color2:'#a9a0ee',angle:135})];
+  else if(has('compara textos','comparar textos','diferencias entre textos'))selected=[pick('text-diff',{textA:'',textB:''})];
   selected=selected.filter(Boolean);
   if(!selected.length)return {message:'Puedo trabajar sin conectar motores externos cuando la tarea corresponde a una capacidad local. Por ahora no encuentro una operación local suficientemente segura para esta solicitud. Puedes adjuntar un PDF, imagen, documento u hoja de cálculo, o pedirme una conversión o transformación compatible.',needs_clarification:false,question:'',steps:[]};
   const toolNames=selected.map(item=>item.tool.name).join(' y ');
