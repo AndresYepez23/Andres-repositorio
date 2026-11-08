@@ -592,7 +592,7 @@ async function generateText(p,cb){
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const tier=p.reasoning||'balanced';
  const lengths={short:500,medium:1600,long:tier==='smart'?6000:3200};
- const modelProfiles={pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'openai/gpt-oss-120b:cheapest'},groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-120b',smart:'openai/gpt-oss-120b'},gemini:{fast:'gemini-3.8-flash',balanced:'gemini-3.8-flash',smart:'gemini-3.8-flash'}};
+ const modelProfiles={pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'openai/gpt-oss-120b:cheapest'},groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-120b',smart:'openai/gpt-oss-120b'},gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}};
  const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
  const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
  const preferred=p.provider||'auto';
