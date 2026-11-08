@@ -163,7 +163,7 @@ async function requestPlan(userText){
   const result=await runTool('ai-assistant',[],{
     prompt:buildPlannerPrompt(userText),provider:'auto',tone:'professional',length:'long',...creds
   },(p,msg)=>status(msg||'Planificando…'));
-  const plan=parsePlan(result.text);
+  const plan=parsePlan(result.text);plan.userRequest=userText;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
   const steps=validatePlan(plan);
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
@@ -179,7 +179,7 @@ async function executePlan(){
       const {tool,params:plannedParams,reason}=steps[index];
       status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');
       const params={...plannedParams,...credentials()};
-      if(tool.id==='ai-assistant')params.prompt=(params.prompt||plan.message||'Resuelve la tarea')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');
+      if(tool.id==='ai-assistant')params.prompt=(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');
       if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','json-minify','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
       let inputFiles=[];
       if(tool.file){
