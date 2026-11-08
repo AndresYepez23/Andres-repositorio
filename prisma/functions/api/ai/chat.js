@@ -206,21 +206,28 @@ export async function onRequestPost({ request, env }) {
     body.systemInstruction = { parts: [{ text: normalized.system.join("\n\n").slice(0, 12000) }] };
   }
 
-  let response;
+  const askGemini = targetModel => fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(targetModel) + ":generateContent", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": env.GEMINI_API_KEY,
+    },
+    body: JSON.stringify(body),
+  });
+
+  let response, data, activeModel = model;
   try {
-    response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify(body),
-    });
+    response = await askGemini(activeModel);
+    data = await response.json().catch(() => ({}));
+    if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
+      // The higher-capability model can be temporarily overloaded; use a lower-cost model.
+      activeModel = "gemini-3.5-flash-lite";
+      response = await askGemini(activeModel);
+      data = await response.json().catch(() => ({}));
+    }
   } catch {
     return json({ error: "No fue posible conectar con Google Gemini. Inténtalo nuevamente." }, 502);
   }
-
-  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const providerMessage = String(data.error?.message || "").slice(0, 300);
     const message = response.status === 429
@@ -236,7 +243,7 @@ export async function onRequestPost({ request, env }) {
   return json({
     ok: true,
     provider: "gemini",
-    model,
+    model: activeModel,
     text,
     usage: data.usageMetadata || null,
   });
