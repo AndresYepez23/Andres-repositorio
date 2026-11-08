@@ -19,6 +19,7 @@ const iconPaths = {
   'arrow-down':'<path d="M12 4v15m-6-6 6 6 6-6"/>',
   'arrow-right':'<path d="M5 12h14m-6-6 6 6-6 6"/>',
   list:'<path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+  history:'<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5m4-1v5l3 2"/>',
   'search-x':'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4m-7-7 4 4m0-4-4 4"/>',
   layers:'<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>',
   gauge:'<path d="M20 13a8 8 0 1 0-16 0"/><path d="m12 13 4-4"/><path d="M8 18h8"/>',
@@ -65,6 +66,7 @@ const iconPaths = {
 };
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(iconPaths[name]||iconPaths.grid)+'</svg>';}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+$('[data-icon]').forEach(element=>{if(!element.innerHTML.trim())element.innerHTML=icon(element.dataset.icon);});
 function readStoredArray(key){
   try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return [];}
 }
