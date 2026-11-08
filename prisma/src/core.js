@@ -167,7 +167,7 @@ function compactPlanningCatalog(userText){
   const query=normalize(userText).slice(0,2400);
   const words=new Set((query.match(/[a-z0-9]{3,}/g)||[]).filter(word=>!['para','con','que','como','este','esta','quiero','hacer','necesito','puedes','tengo','archivo','crear','prisma'].includes(word)));
   const categoryHints={
-    pdf:/pdf|documen|word|docx|pagina|paginas|pagina por pagina|archivo/i,
+    pdf:/pdf|documento|docx|\bword\b|pagina(?:s)?\s+(?:de|del|en|pdf)\b/i,
     image:/imagen|foto|miniatura|instagram|fondo|retrato|disen|ilustr|png|jpg|jpeg/i,
     media:/video|clip|audio|voz|subtitul|musica|sonido|mp3|mp4|transcrib/i,
     text:/texto|escrit|redact|resumen|palabra|traduc|correg|frase/i,
@@ -189,11 +189,23 @@ function compactPlanningCatalog(userText){
   if(fileType.startsWith('audio/')||fileType.startsWith('video/'))categories.add('media');
   if(/\.(xlsx|xls|csv)$/.test(fileName)){categories.add('data');categories.add('office');}
   if(/\.(docx|doc)$/.test(fileName)){categories.add('pdf');categories.add('text');}
+  const directIntent=[
+    [/divid|separ.*pagina|partir.*pdf/, 'pdf-split'],
+    [/pdf.*(?:word|docx)|(?:word|docx).*pdf/, 'pdf-to-word'],
+    [/quit.*fondo|elimin.*fondo|fondo.*transparen/, 'image-bg'],
+    [/redimension|cambiar.*tamano/, 'image-resize'],
+    [/comprim.*imagen|optimizar.*imagen/, 'image-compress'],
+    [/miniatura|imagen.*youtube/, 'image-social-kit'],
+    [/texto.*imagen|ocr/, 'image-ocr'],
+    [/analiz.*pdf|resumen.*pdf|extraer.*texto.*pdf/, 'pdf-text']
+  ];
+  const preferredToolIds=new Set(directIntent.filter(([pattern])=>pattern.test(query)).map(([,id])=>id));
   const ranked=availableCatalog().map(tool=>{
     const name=normalize(tool.name+' '+tool.id),description=normalize(tool.description);
     let score=categories.has(tool.category)?10:0;
     for(const word of words){if(name.includes(word))score+=10;else if(description.includes(word))score+=2;}
     if(tool.file&&attachments.length)score+=2;
+    if(preferredToolIds.has(tool.id))score+=50;
     if(tool.id==='ai-assistant')score+=6;
     return {...tool,score};
   });
@@ -355,7 +367,7 @@ function isConversationWithoutTools(text){
   if(attachments.length)return false;
   const normalized=String(text||'').trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   if(normalized.length>120)return false;
-  return /^(hola+|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|que tal|como estas|quien eres|que eres|gracias|muchas gracias|que puedes hacer|que sabes hacer|me escuchas|estas ahi|buenos dias|buenas noches)[!?.\s]*$/i.test(normalized);
+  return /^(hola+(?: prisma)?|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|que tal|como estas|quien eres|que eres|gracias|muchas gracias|que puedes hacer|que sabes hacer|me escuchas|estas ahi|buenos dias|buenas noches)[!?,.\s]*$/i.test(normalized);
 }
 async function answerConversation(text,creds){
   status('Prisma está respondiendo…');
