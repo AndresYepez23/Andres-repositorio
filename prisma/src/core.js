@@ -179,7 +179,7 @@ async function executePlan(){
       status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');
       const params={...plannedParams,...credentials()};
       if(tool.id==='ai-assistant')params.prompt=(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');
-      if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','json-minify','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
+      if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines','text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-flatten','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
       let inputFiles=[];
       if(tool.file){
         if(!currentFiles.length)throw new Error('El paso '+tool.name+' necesita un archivo y el paso anterior no produjo uno.');
