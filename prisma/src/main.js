@@ -131,7 +131,7 @@ function normalizeSearch(value){
 function renderCategories(){
   const nav=$('#category-nav');
   nav.innerHTML=categories.filter(c=>c.id!=='all').map(c=>'<button class="category-item" data-category="'+c.id+'"><span class="category-icon">'+icon(c.icon)+'</span><span>'+c.name+'</span></button>').join('');
-  $('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
+  $$('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
 }
 function renderProviders(){
   $('#provider-grid').innerHTML=providers.map(p=>'<article class="provider-card"><div class="provider-card-top"><span class="provider-stage">'+p.stage+'</span><span class="nav-dot"></span></div><h4>'+p.name+'</h4><div class="provider-kind">'+p.kind+'</div><div class="provider-tags">'+p.capabilities.map(t=>'<span>'+t+'</span>').join('')+'</div><p class="provider-note">'+p.note+'</p></article>').join('');
@@ -232,7 +232,7 @@ function setupProfileMenu(){
   });
 }
 function setupHomeDashboard(){
-  $('[data-home-category]').forEach(button=>button.addEventListener('click',()=>{
+  $$('[data-home-category]').forEach(button=>button.addEventListener('click',()=>{
     activeView='explore';activeCategory=button.dataset.homeCategory;searchTerm='';$('#global-search').value='';render();
     $('#tools-section').scrollIntoView({behavior:'smooth',block:'start'});
   }));
@@ -591,7 +591,7 @@ function renderOutput(result){
   if(result.blob)$('#download-output').addEventListener('click',()=>downloadBlob(result.blob,result.filename||'prisma-result'));
   if(result.printHtml)$('#print-output').addEventListener('click',()=>{const win=window.open('','_blank');if(!win){toast('Permite las ventanas emergentes para imprimir el documento.','error');return;}win.document.open();win.document.write(result.printHtml);win.document.close();win.addEventListener('load',()=>win.print());});
   if(result.text)$('#copy-output').addEventListener('click',async()=>{await navigator.clipboard.writeText(result.text);toast('Texto copiado.');});
-  $('.color-swatch',panel).forEach(b=>b.addEventListener('click',async()=>{await navigator.clipboard.writeText(b.dataset.color);toast(b.dataset.color+' copiado.');}));
+  $$('.color-swatch',panel).forEach(b=>b.addEventListener('click',async()=>{await navigator.clipboard.writeText(b.dataset.color);toast(b.dataset.color+' copiado.');}));
 }
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 function closeTool(){
