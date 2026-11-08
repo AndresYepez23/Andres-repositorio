@@ -357,7 +357,7 @@ async function runText(id,p){
  case 'citation-generator':{
   const author=String(p.author||'').trim(),year=String(p.year||'').trim(),title=String(p.title||'').trim(),source=String(p.source||'').trim(),url=String(p.url||'').trim(),doi=String(p.doi||'').trim();
   if(!author||!title||!year)throw Error('Autor, título y año son campos necesarios.');
-  const apa=author+'. ('+year+'). '+title+'.'+(source?' '+source+'.':'')+(doi?' https://doi.org/'+doi.replace(/^https?:\\/\\/doi.org\\//,''):url?' '+url:'');
+  const apa=author+'. ('+year+'). '+title+'.'+(source?' '+source+'.':'')+(doi?' https://doi.org/'+doi.replace(/^https?:\/\/doi\.org\//,''):url?' '+url:'');
   const vancouver=author+'. '+title+'. '+source+(source?'; ':'')+year+'.'+(doi?' doi:'+doi:url?' Disponible en: '+url:'');
   const mla=author+'. “'+title+'.” '+source+(source?', ':'')+year+'.'+(url?' '+url:'');
   const selected=p.style==='vancouver'?vancouver:p.style==='mla'?mla:apa;
