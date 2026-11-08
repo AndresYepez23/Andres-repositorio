@@ -41,7 +41,7 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 
 - Una conversación central para describir objetivos en lenguaje natural.
 - El planificador recibe únicamente las herramientas con estado `ready`; no puede invocar herramientas beta o en preparación.
-- Cada plan está limitado a cinco pasos y debe ser autorizado antes de ejecutarse.
+- Cada plan está limitado a diez pasos y debe ser autorizado antes de ejecutarse.
 - Los planes externos advierten que los datos pueden salir del navegador y que pueden existir costes del proveedor.
 - Las operaciones se ejecutan secuencialmente; los archivos resultantes pueden alimentar el siguiente paso.
 - La conversación se guarda en el almacenamiento local del navegador. Los archivos adjuntos no se guardan en el historial.
