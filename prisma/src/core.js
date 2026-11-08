@@ -326,7 +326,10 @@ export function initPrismaCore(){
     if(busy)return;
     messages=[];pendingPlan=null;localStorage.removeItem(STORAGE_KEY);renderMessages();$('#core-plan').classList.add('hidden');$('#core-results').replaceChildren();status('Conversación nueva. El historial local se ha limpiado.','success');
   });
-  $('#core-open-settings').addEventListener('click',()=>{document.querySelector('[data-view="ai"]')?.click();});
-  status('Listo para planificar. Conecta un motor de texto si todavía no lo has hecho.','info');
+  const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
+  $('#core-open-settings').addEventListener('click',openConnections);
+  $('#core-connect-now').addEventListener('click',openConnections);
+  $('#core-connect-banner').classList.toggle('hidden',!!(credentials().polliToken||credentials().hfToken||credentials().geminiKey||credentials().groqKey));
+  status('Listo. Escribe una tarea o adjunta un archivo.','info');
   $('#core-cancel').disabled=false;
 }
