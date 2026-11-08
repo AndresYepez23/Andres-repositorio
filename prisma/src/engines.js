@@ -539,6 +539,84 @@ function contrastRatio(hex1,hex2){
  return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
 }
 
+function validatePublicApiUrl(value){
+ const url=new URL(String(value||'').trim());
+ if(url.protocol!=='https:')throw Error('Por seguridad, utiliza una URL HTTPS pública.');
+ if(url.username||url.password)throw Error('No incluyas credenciales dentro de la URL.');
+ const host=url.hostname.toLowerCase();
+ if(host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host==='::1'||host.startsWith('fc')||host.startsWith('fd')||host.startsWith('fe80:'))throw Error('No se permiten direcciones locales o privadas.');
+ const ipv4=host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+ if(ipv4){
+  const a=Number(ipv4[1]),b=Number(ipv4[2]);
+  if(a===0||a===10||a===127||a>=224||a===169&&b===254||a===192&&b===168||a===172&&b>=16&&b<=31||a===100&&b>=64&&b<=127)throw Error('No se permiten direcciones IP privadas o reservadas.');
+ }
+ for(const key of url.searchParams.keys()){
+  if(/^(?:api[_-]?key|key|token|access[_-]?token|secret|password|authorization)$/i.test(key))throw Error('No incluyas claves ni tokens en una API pública. Las credenciales privadas deben conectarse desde un proveedor seguro.');
+ }
+ return url;
+}
+async function explorePublicApi(p,cb){
+ const url=validatePublicApiUrl(p.url);
+ progress(cb,.12,'Consultando el endpoint público...');
+ let response,source='Conexión directa';
+ try{
+  response=await fetch(url.href,{method:'GET',headers:{Accept:'application/json, text/plain, */*'},credentials:'omit',cache:'no-store'});
+ }catch(directError){
+  progress(cb,.38,'El navegador bloqueó la conexión directa. Probando cors.dev para lectura pública...');
+  try{
+   response=await fetch('https://proxy.cors.dev/'+url.href,{method:'GET',headers:{Accept:'application/json, text/plain, */*'},credentials:'omit',cache:'no-store'});
+   source='cors.dev';
+  }catch(proxyError){
+   throw Error('No fue posible leer la API. Comprueba que el endpoint sea público y esté disponible. '+(proxyError?.message||''));
+  }
+ }
+ const declared=Number(response.headers.get('content-length')||0);
+ if(declared>6*1024*1024)throw Error('La respuesta supera el límite de 6 MiB del explorador público.');
+ progress(cb,.7,'Leyendo respuesta...');
+ const buffer=await response.arrayBuffer();
+ if(buffer.byteLength>6*1024*1024)throw Error('La respuesta supera el límite de 6 MiB del explorador público.');
+ const mime=response.headers.get('content-type')||'text/plain;charset=utf-8';
+ const raw=new TextDecoder().decode(buffer);
+ let text=raw,extension='txt';
+ if((p.format||'json')==='json'){
+  try{text=JSON.stringify(JSON.parse(raw),null,2);extension='json';}
+  catch{text=raw;extension='txt';}
+ }
+ const blob=new Blob([text],{type:extension==='json'?'application/json;charset=utf-8':'text/plain;charset=utf-8'});
+ const statusLabel=response.status+' '+(response.statusText||'');
+ const summary='HTTP '+statusLabel+' · '+source+' · '+mime+' · '+(buffer.byteLength/1024).toFixed(1)+' KB';
+ progress(cb,1,'Respuesta recibida.');
+ return {text:text.slice(0,100000),blob,filename:'prisma-api-respuesta.'+extension,summary,source,status:response.status};
+}
+async function discoverGitHubProjects(p,cb){
+ const query=String(p.query||'').trim();
+ if(query.length<2)throw Error('Escribe al menos dos caracteres para buscar proyectos.');
+ const language=p.language&&p.language!=='any'?'+language:'+p.language:'';
+ const sort=['stars','updated','forks'].includes(p.sort)?p.sort:'stars';
+ const limit=Math.max(5,Math.min(20,Number(p.limit)||10));
+ const url='https://api.github.com/search/repositories?q='+encodeURIComponent(query+language)+'&sort='+sort+'&order=desc&per_page='+limit;
+ progress(cb,.2,'Buscando proyectos públicos en GitHub...');
+ let response;
+ try{response=await fetch(url,{headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},credentials:'omit',cache:'no-store'});}
+ catch{throw Error('GitHub no respondió. Comprueba tu conexión e inténtalo de nuevo.');}
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok){
+  if(response.status===403||response.status===429)throw Error('GitHub alcanzó el límite de búsquedas públicas para esta conexión. Espera un momento y vuelve a intentarlo.');
+  throw Error(data.message||'GitHub respondió '+response.status+'.');
+ }
+ const items=data.items||[];
+ const lines=['PROYECTOS OPEN SOURCE EN GITHUB','Búsqueda: '+query+(language?' · '+p.language:''),'Resultados encontrados: '+(data.total_count||items.length),''];
+ items.forEach((repo,index)=>{
+  lines.push((index+1)+'. '+repo.full_name);
+  if(repo.description)lines.push('   '+repo.description.replace(/\s+/g,' '));
+  lines.push('   ★ '+(repo.stargazers_count||0).toLocaleString('es-CO')+' · Forks '+(repo.forks_count||0).toLocaleString('es-CO')+' · '+(repo.language||'Lenguaje no indicado')+' · '+(repo.license?.spdx_id||'Licencia no indicada'));
+  lines.push('   '+repo.html_url,'');
+ });
+ if(!items.length)lines.push('No se encontraron repositorios para esa búsqueda.');
+ const text=lines.join('\n'),blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+ progress(cb,1,'Búsqueda completada.');
+ return {text,blob,filename:'prisma-github-open-source.txt',summary:items.length+' proyectos listados · GitHub API pública · límite no autenticado de GitHub aplicado.'};
+}
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
@@ -555,6 +633,8 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='video-thumbnail'||id==='video-gif'||id==='video-mute'||id==='audio-trim')return mediaAdvanced(id,files,p,cb);
  if(id==='qr-scan')return scanQr(files[0]);
  if(id==='hash-file')return hashFile(files[0]);
+ if(id==='api-explorer')return explorePublicApi(p,cb);
+ if(id==='github-discover')return discoverGitHubProjects(p,cb);
  if(id==='excel-json')return excelToJson(files[0],p,cb);
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
