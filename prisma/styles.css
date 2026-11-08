@@ -465,3 +465,43 @@ body.modal-open{overflow:hidden}
  .core-composer textarea{min-height:58px}
  .core-side{grid-template-columns:1fr 1fr}
 }
+
+/* Prisma Core is the primary workspace */
+.core-nav-item{position:relative}
+.core-nav-item .core-nav-badge{margin-left:auto;padding:3px 6px;border-radius:5px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-size:7px;font-weight:800;letter-spacing:.08em}
+.core-nav-item.active{background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 13%,var(--panel)),color-mix(in srgb,#a9a0ee 9%,var(--panel)));border-color:color-mix(in srgb,var(--accent) 25%,var(--line))}
+.core-section{min-height:calc(100vh - 112px)}
+.core-hero{padding:30px 0 24px}
+.core-hero h2{font-size:clamp(34px,4.6vw,54px);letter-spacing:-2.2px}
+.core-hero>p{font-size:14px;max-width:790px}
+.core-capabilities span{font-size:10px;padding:7px 11px}
+.core-workspace{margin-top:22px;grid-template-columns:minmax(0,1fr) 250px;gap:16px}
+.core-chat-column{min-height:620px;display:flex;flex-direction:column}
+.core-chat-toolbar{padding:15px 18px}
+.core-chat-toolbar strong{font-size:14px}
+.core-chat-toolbar small{font-size:10px}
+.core-messages{flex:1;min-height:390px;max-height:calc(100vh - 460px);padding:26px}
+.core-welcome{max-width:760px;padding:36px 12px}
+.core-welcome-mark{width:56px;height:56px;font-size:27px}
+.core-welcome h2{font-size:28px}
+.core-welcome p{font-size:13px;max-width:590px}
+.core-examples{gap:9px}
+.core-examples button{font-size:10px;padding:10px 12px;border-radius:11px}
+.core-composer{padding:16px 18px 17px}
+.core-composer textarea{font-size:13px;min-height:62px}
+.core-composer .button{min-height:40px}
+.core-composer .mini-button{font-size:10px}
+.core-side-card{padding:16px}
+.core-side-card h3{font-size:12px}
+.core-side-card p{font-size:10px}
+@media(max-width:950px){
+ .core-section{min-height:auto}
+ .core-workspace{grid-template-columns:minmax(0,1fr)}
+ .core-chat-column{min-height:560px}
+ .core-messages{min-height:340px;max-height:58vh;padding:16px}
+ .core-welcome{padding:22px 6px}
+ .core-welcome h2{font-size:23px}
+ .core-examples button{font-size:9px}
+ .core-hero{padding:20px 0}
+ .core-hero h2{font-size:clamp(30px,8vw,42px)}
+}
