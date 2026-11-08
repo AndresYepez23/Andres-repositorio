@@ -453,7 +453,7 @@ function providerConnectionCard(config){
 function renderProviderConnections(){
   const container=$('#provider-connect-grid');if(!container)return;
   const configs=[
-    {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis multimodal',detail:'Motor central de Prisma. Una sola clave maestra protegida permite que todos los visitantes utilicen el servicio, sujetos a las cuotas y límites de tu proyecto.',secretName:'GEMINI_API_KEY',shared:true},
+    {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis de texto',detail:'Motor central de Prisma. Una sola clave maestra protegida permite que todos los visitantes utilicen el servicio, sujetos a las cuotas y límites de tu proyecto.',secretName:'GEMINI_API_KEY',shared:true},
     {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Conectaremos el token central de Prisma para ofrecer modelos open source sin pedir claves individuales a los visitantes.',secretName:'HF_TOKEN',shared:true},
     {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Se habilitará como motor compartido para tareas compatibles, con límites de solicitudes y alternativas cuando alcance su cuota.',secretName:'GROQ_API_KEY',shared:true},
     {id:'pollinations',name:'Pollinations Connect',shared:false}
