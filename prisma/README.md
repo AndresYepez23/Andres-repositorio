@@ -6,10 +6,23 @@ Plataforma web de herramientas digitales con prioridad en procesamiento local, m
 
 - `index.html`: aplicación estática.
 - `styles.css`: identidad visual y diseño adaptable.
-- `src/registry.js`: catálogo y metadatos de herramientas.
+- `src/registry.js`: catálogo de **79 herramientas** en nueve categorías.
 - `src/providers.js`: inventario de proveedores IA.
 - `src/main.js`: navegación, filtros y experiencia de usuario.
 - `src/engines.js`: ejecución de herramientas.
+- `worker.js`: Worker de Cloudflare para servir los recursos estáticos y la ruta de salud.
+
+## Publicación
+
+PRISMA se publica en **Cloudflare Workers Static Assets**. El repositorio de GitHub es la fuente de verdad y `main` es la rama de producción.
+
+Desde la carpeta `prisma`, se puede publicar con Wrangler:
+
+```bash
+npx wrangler deploy
+```
+
+El archivo `wrangler.toml` contiene la configuración de Worker y de recursos estáticos. El endpoint `/api/health` permite comprobar qué versión está desplegada.
 
 ## Ejecutar localmente
 
@@ -18,10 +31,6 @@ No requiere instalación ni build:
 1. Abrir la carpeta `prisma` con un servidor estático local.
 2. Usar un navegador moderno con módulos ES y conexión para cargar las bibliotecas bajo demanda.
 3. Abrir `index.html`.
-
-## Publicación
-
-PRISMA se publica como sitio estático en Wix Headless. El código fuente se mantiene en GitHub. Las herramientas locales no requieren un servidor de aplicación.
 
 ## Inteligencia artificial
 
