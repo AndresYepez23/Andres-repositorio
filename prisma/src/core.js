@@ -221,9 +221,76 @@ function showPlan(plan,steps){
   const run=document.createElement('button');run.type='button';run.className='button button-primary';run.textContent='Autorizar y ejecutar';run.addEventListener('click',executePlan);
   actions.append(cancel,run);panel.append(actions);
 }
+function buildLocalPlan(userText){
+  const q=String(userText||'').toLowerCase();
+  const files=attachments;
+  const has=(...terms)=>terms.some(term=>q.includes(term));
+  const pick=(id,params={})=>{const tool=tools.find(item=>item.id===id&&['ready','beta'].includes(item.status)&&['local','browser'].includes(item.mode));return tool?{tool,params,reason:'Capacidad local seleccionada por la intención y el tipo de archivo'}:null;};
+  let selected=[];
+  if(files.length){
+    const f=files[0],name=f.name.toLowerCase(),image=f.type.startsWith('image/'),pdf=f.type==='application/pdf'||name.endsWith('.pdf'),docx=name.endsWith('.docx'),sheet=/\\.(xlsx|xls|csv)$/i.test(name);
+    if(pdf){
+      if(has('divide','separa cada pagina','separar paginas','partir'))selected=[pick('pdf-split')];
+      else if(has('comprime','optimiza','reduce el peso'))selected=[pick('pdf-compress')];
+      else if(has('rota','gira'))selected=[pick('pdf-rotate',{degrees:90})];
+      else if(has('extrae paginas','extraer paginas','selecciona paginas'))selected=[pick('pdf-extract',{pages:(q.match(/\\d+(?:\\s*-\\s*\\d+)?(?:\\s*,\\s*\\d+(?:\\s*-\\s*\\d+)?)*/)||[])[0]||'1'})];
+      else if(has('imagen','imagenes','png'))selected=[pick('pdf-to-image')];
+      else if(has('word','editable','docx','convierte'))selected=[pick('pdf-to-word')];
+      else selected=[pick('pdf-text')];
+    }else if(image){
+      if(has('fondo','quitar fondo','transparente'))selected=[pick('image-bg')];
+      else if(has('texto','leer','extraer','ocr','transcribir'))selected=[pick('image-ocr',{language:'spa'})];
+      else if(has('comprime','peso','liviana'))selected=[pick('image-compress',{quality:82})];
+      else if(has('redimensiona','tamaño','resize'))selected=[pick('image-resize',{width:1080,height:1080})];
+      else selected=[pick('image-compress',{quality:88})];
+    }else if(docx)selected=[pick('docx-html')];
+    else if(sheet)selected=[pick('excel-json',{sheet:'all',format:'json'})];
+    else if(/\\.(txt|md|csv)$/i.test(name))selected=[pick('clean-text',{text:''})];
+  }else if(has('qr','código qr'))selected=[pick('qr',{text:userText})];
+  else if(has('contraseña','password','clave segura'))selected=[pick('password')];
+  else if(has('json'))selected=[pick('json-format',{text:userText})];
+  else if(has('cuenta palabras','contar palabras','longitud del texto'))selected=[pick('word-count',{text:userText})];
+  else if(has('quita tildes','quitar tildes'))selected=[pick('text-remove-accents',{text:userText})];
+  else if(has('ordena alfabeticamente','ordenar alfabeticamente'))selected=[pick('text-sort',{text:userText})];
+  else if(has('mayusculas','mayúsculas','uppercase'))selected=[pick('text-case',{text:userText,mode:'upper'})];
+  selected=selected.filter(Boolean);
+  if(!selected.length)return {message:'Puedo trabajar sin conectar motores externos cuando la tarea corresponde a una capacidad local. Por ahora no encuentro una operación local suficientemente segura para esta solicitud. Puedes adjuntar un PDF, imagen, documento u hoja de cálculo, o pedirme una conversión o transformación compatible.',needs_clarification:false,question:'',steps:[]};
+  const toolNames=selected.map(item=>item.tool.name).join(' y ');
+  return {message:'Entendí lo que necesitas. Voy a utilizar '+toolNames+' directamente en tu dispositivo, sin solicitar una API key ni enviar el archivo a un proveedor de IA.',needs_clarification:false,question:'',steps:selected.map(item=>({tool_id:item.tool.id,reason:item.reason,params:item.params})),userRequest};
+}
 async function requestPlan(userText){
   const creds=credentials();
-  if(!creds.polliToken&&!creds.hfToken&&!creds.geminiKey&&!creds.groqKey){
+  const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey);
+  if(!hasConnectedModel){
+    status('Buscando una capacidad local para resolver tu solicitud…');setProgress(.12,'Seleccionando herramientas locales…');
+    let attachmentContext='';
+    if(attachments.length){
+      const extracted=[];
+      for(const file of attachments.slice(0,4)){
+        const name=file.name.toLowerCase();
+        try{
+          let content='';
+          if(file.type==='application/pdf'||name.endsWith('.pdf'))content=(await runTool('pdf-text',[file],{},(p,msg)=>status(msg||'Leyendo PDF localmente…')))?.text||'';
+          else if(file.type.startsWith('image/'))content=(await runTool('image-ocr',[file],{language:'spa'},(p,msg)=>status(msg||'Reconociendo texto…')))?.text||'';
+          else if(name.endsWith('.docx')){const result=await runTool('docx-html',[file],{},()=>{});const html=await result?.blob?.text?.();if(html)content=new DOMParser().parseFromString(html,'text/html').body.textContent||'';}
+          else if(/\\.(txt|md|csv)$/i.test(name)||file.type.startsWith('text/'))content=await file.text();
+          else if(/\\.(xlsx|xls)$/i.test(name)){const result=await runTool('excel-json',[file],{sheet:'all',format:'json'},()=>{});content=result?.text||await result?.blob?.text?.()||'';}
+          if(content.trim())extracted.push(file.name+':\\n'+content.slice(0,9000));
+        }catch(error){console.warn('Lectura local del archivo falló:',file.name,error);}
+      }
+      if(extracted.length)attachmentContext='\\n\\nCONTENIDO LEÍDO LOCALMENTE (no enviado a ningún modelo):\\n'+extracted.join('\\n\\n').slice(0,18000);
+    }
+    const localPlan=buildLocalPlan(userText+attachmentContext);
+    let localSteps;
+    try{localSteps=validatePlan(localPlan);}catch(error){addMessage('assistant','No pude preparar una operación local segura: '+error.message);status('No se pudo preparar el trabajo.','warning');return;}
+    if(!localSteps.length){addMessage('assistant',localPlan.message);status('Sin conexión de IA: capacidad local no disponible para esta solicitud.','warning');return;}
+    pendingPlan={plan:{...localPlan,userRequest:userText+attachmentContext},steps:localSteps};
+    addMessage('assistant',localPlan.message);
+    $('#core-plan').classList.add('hidden');
+    await executePlan();
+    return;
+  }
+
     status('Conecta un motor de texto en Laboratorio IA para que Prisma Core pueda planificar.','warning');
     addMessage('assistant','Para planificar y coordinar herramientas necesito un motor de texto. Abre Laboratorio IA, conecta Pollinations, Groq, Hugging Face o Gemini y vuelve aquí. Tus herramientas locales seguirán disponibles desde Explorar.');
     return;
