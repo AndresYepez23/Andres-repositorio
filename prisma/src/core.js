@@ -398,7 +398,7 @@ async function requestPlan(userText){
   else{pendingPlan={plan,steps};$('#core-plan').classList.add('hidden');addMessage('assistant',plan.message||'Ya entendí lo que necesitas. Voy a ejecutar las herramientas locales disponibles y te entregaré el resultado aquí.');await executePlan();}
 }
 async function executePlan(){
-  if(!pendingPlan||busy)return;
+  if(!pendingPlan||executionActive)return;
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
   const executed=[];let currentFiles=[...attachments],lastText='';
