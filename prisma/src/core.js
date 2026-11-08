@@ -57,6 +57,13 @@ function renderMessages(){
 function status(text,kind='info'){
   const el=$('#core-status');if(!el)return;el.textContent=text;el.dataset.kind=kind;
 }
+function setProgress(value,label){
+  const wrap=$('#core-progress');if(!wrap)return;
+  wrap.classList.remove('hidden');
+  const percent=Math.max(0,Math.min(100,Math.round((Number(value)||0)*100)));
+  $('#core-progress-bar').style.width=percent+'%';
+  $('#core-progress-label').textContent=label||'Procesando…';
+}
 function setBusy(value){
   busy=value;
   $('#core-send').disabled=value;
@@ -64,6 +71,8 @@ function setBusy(value){
   $('#core-file-button').disabled=value;
   $('#core-send').textContent=value?'Trabajando…':'Enviar';
   $('#core-composer').setAttribute('aria-busy',String(value));
+  if(value)setProgress(.02,'Preparando…');
+  else $('#core-progress')?.classList.add('hidden');
 }
 function renderAttachments(){
   const list=$('#core-attachments');if(!list)return;
@@ -195,28 +204,28 @@ async function requestPlan(userText){
     addMessage('assistant','Para planificar y coordinar herramientas necesito un motor de texto. Abre Laboratorio IA, conecta Pollinations, Groq, Hugging Face o Gemini y vuelve aquí. Tus herramientas locales seguirán disponibles desde Explorar.');
     return;
   }
-  status('Analizando tu solicitud y seleccionando herramientas…');
+  status('Analizando tu solicitud y seleccionando herramientas…');setProgress(.04,'Entendiendo la solicitud y consultando el catálogo…');
   const plannerPrompt=buildPlannerPrompt(userText);
   let plan,steps;
   try{
     const result=await runTool('ai-assistant',[],{
       prompt:plannerPrompt,provider:'auto',tone:'professional',length:'long',...creds
-    },(p,msg)=>status(msg||'Planificando…'));
+    },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
     plan=parsePlan(result.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
   }catch(firstError){
-    status('Revisando el formato y la compatibilidad del plan…');
+    status('Revisando el formato y la compatibilidad del plan…');setProgress(.17,'Corrigiendo el plan…');
     const repair=await runTool('ai-assistant',[],{
       prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\\n\\nSOLICITUD Y CATÁLOGO ORIGINAL:\\n'+plannerPrompt,
       provider:'auto',tone:'professional',length:'long',...creds
-    },(p,msg)=>status(msg||'Corrigiendo el plan…'));
+    },(p,msg)=>{status(msg||'Corrigiendo el plan…');setProgress(.17+Math.max(0,Math.min(1,Number(p)||0))*.08,msg||'Corrigiendo el plan…');});
     plan=parsePlan(repair.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
   }
   plan.userRequest=userText;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
-  showPlan(plan,steps);status('Plan listo. Revisa las operaciones antes de autorizarlas.','success');
+  showPlan(plan,steps);status('Plan listo. Revisa las operaciones antes de autorizarlas.','success');setProgress(1,'Plan listo; esperando tu autorización');
 }
 async function executePlan(){
   if(!pendingPlan||busy)return;
@@ -226,7 +235,7 @@ async function executePlan(){
   try{
     for(let index=0;index<steps.length;index++){
       const {tool,params:plannedParams,reason}=steps[index];
-      status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');
+      status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');setProgress(index/steps.length,'Paso '+(index+1)+' de '+steps.length+': '+tool.name);
       const params={...plannedParams,...credentials()};
       if(tool.id==='ai-assistant')params.prompt=(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');
       if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines','text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-flatten','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
@@ -235,8 +244,8 @@ async function executePlan(){
         if(!currentFiles.length)throw new Error('El paso '+tool.name+' necesita un archivo y el paso anterior no produjo uno.');
         inputFiles=tool.multiple?currentFiles:[currentFiles[0]];
       }
-      const result=await runTool(tool.id,inputFiles,params,(progress,message)=>status('Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name)));
-      executed.push({name:tool.name,reason,result});
+      const result=await runTool(tool.id,inputFiles,params,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);});
+      executed.push({name:tool.name,reason,result});setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
       if(result?.text)lastText=String(result.text).slice(0,30000);
       if(result?.blob){
         const file=new File([result.blob],result.filename||('prisma-paso-'+(index+1)),{type:result.blob.type||'application/octet-stream'});
