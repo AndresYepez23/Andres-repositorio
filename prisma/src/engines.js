@@ -258,7 +258,7 @@ async function mediaAdvanced(id,files,p,cb){
    video.muted=true;video.preload='metadata';video.src=url;
    await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(Error('No se pudo leer el video.'));});
    const time=Math.max(0,Math.min(Number(p.second)||0,Math.max(0,video.duration-.1)));
-   video.currentTime=time;await new Promise((resolve,reject)=>{video.onseeked=resolve;video.onerror=()=>reject(Error('No se pudo capturar ese instante.'));});
+   const seeked=new Promise((resolve,reject)=>{video.onseeked=resolve;video.onerror=()=>reject(Error('No se pudo capturar ese instante.'));});video.currentTime=time;await seeked;
    const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;canvas.getContext('2d').drawImage(video,0,0);
    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.92));return {...download(blob,'miniatura-video.jpg'),summary:video.videoWidth+' × '+video.videoHeight+' px · Segundo '+time.toFixed(1)};
   }finally{URL.revokeObjectURL(url);video.removeAttribute('src');video.load();}
@@ -309,7 +309,7 @@ function parseCsv(text,delimiter){
 }
 function csvCell(value){const s=String(value??'');return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function calculateExpression(input){
- const tokens=String(input).replace(/,/g,'.').match(/\d+(?:\.\d+)?|[()+\-*/%^]/g)||[];
+ const tokens=String(input).replace(/,/g,'.').match(/\d+(?:\.\d+)?|[()+\-*\/%^]/g)||[];
  const source=String(input).replace(/\s/g,'').replace(/,/g,'.');
  if(tokens.join('')!==source)throw Error('Usa números y operadores +, −, ×, ÷, %, ^ y paréntesis.');
  let i=0;
