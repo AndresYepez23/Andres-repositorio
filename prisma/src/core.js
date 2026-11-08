@@ -40,7 +40,6 @@ function renderMessages(){
     const welcome=document.createElement('div');welcome.className='core-welcome';
     welcome.innerHTML='<div class="core-welcome-mark">✦</div><span class="eyebrow">PRISMA CORE</span><h2>¿Qué quieres conseguir?</h2><p>Cuéntame el resultado que necesitas. Puedo analizar tu solicitud, elegir herramientas y coordinar varios pasos.</p>';
     const examples=document.createElement('div');examples.className='core-examples';
-    ['Optimiza esta imagen para Instagram','Analiza un PDF y extrae sus ideas principales','Crea una página web sencilla para una joyería','Investiga un tema y prepara un resumen'];
     examples.innerHTML=['Optimiza esta imagen para Instagram','Analiza un PDF y extrae sus ideas principales','Crea una página web sencilla para una joyería','Investiga un tema y prepara un resumen'].map((x,i)=>'<button type="button" data-example="'+i+'">'+escapeHtml(x)+'</button>').join('');
     welcome.append(examples);list.append(welcome);
     examples.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{const input=$('#core-input');input.value=button.textContent;input.focus();}));
