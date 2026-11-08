@@ -230,19 +230,36 @@ async function requestPlan(userText){
   }
   status('Analizando tu solicitud y seleccionando herramientas…');setProgress(.04,'Entendiendo la solicitud y consultando el catálogo…');
   let attachmentContext='';
-  const pdfs=attachments.filter(file=>file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'));
-  const wantsAnalysis=/analiz|resum|extrae|lee|conclus|explica|investiga|compara|contenido|ideas principales/i.test(userText);
-  if(pdfs.length&&wantsAnalysis){
-    status('Leyendo localmente el contenido del PDF para entender mejor tu solicitud…');
+  const wantsAnalysis=/analiz|resum|extrae|lee|conclus|explica|investiga|compara|contenido|ideas principales|revisa|interpreta|transcribe|datos de/i.test(userText);
+  if(attachments.length&&wantsAnalysis){
+    status('Preparando el contenido de tus archivos para entender la tarea…');
     const extracted=[];
-    for(const file of pdfs.slice(0,3)){
+    for(const file of attachments.slice(0,4)){
       if(file.size>25*1024*1024)continue;
+      const name=file.name.toLowerCase();
       try{
-        const result=await runTool('pdf-text',[file],{},(p,msg)=>{status(msg||'Leyendo PDF…');});
-        if(result?.text)extracted.push('DOCUMENTO '+file.name+'\\n'+String(result.text).slice(0,12000));
-      }catch(error){console.warn('No se pudo preleer el PDF:',error);}
+        let content='';
+        if(file.type==='application/pdf'||name.endsWith('.pdf')){
+          const result=await runTool('pdf-text',[file],{},(p,msg)=>{status(msg||'Leyendo PDF…');});
+          content=result?.text||'';
+          if(!content.trim())content='No se detectó texto seleccionable; puede ser un PDF escaneado que requiere OCR.';
+        }else if(file.type.startsWith('image/')){
+          const result=await runTool('image-ocr',[file],{language:'spa'},(p,msg)=>{status(msg||'Reconociendo texto de imagen…');});
+          content=result?.text||'';
+        }else if(name.endsWith('.docx')){
+          const result=await runTool('docx-html',[file],{},()=>{});
+          const html=await result?.blob?.text?.();
+          if(html)content=new DOMParser().parseFromString(html,'text/html').body.textContent||'';
+        }else if(/\\.(txt|md|csv)$/i.test(name)||file.type.startsWith('text/')){
+          content=await file.text();
+        }else if(/\\.(xlsx|xls)$/i.test(name)){
+          const result=await runTool('excel-json',[file],{sheet:'all',format:'json'},()=>{});
+          content=await result?.blob?.text?.()||'';
+        }
+        if(content.trim())extracted.push('ARCHIVO '+file.name+'\\n'+content.slice(0,10000));
+      }catch(error){console.warn('No se pudo leer el archivo para contextualizar:',file.name,error);}
     }
-    if(extracted.length)attachmentContext='\\n\\nCONTENIDO EXTRAÍDO LOCALMENTE DE LOS PDF (fragmento para planificar; el archivo original sigue disponible para las herramientas):\\n'+extracted.join('\\n\\n').slice(0,18000);
+    if(extracted.length)attachmentContext='\\n\\nCONTENIDO EXTRAÍDO EN EL DISPOSITIVO (solo el texto necesario se incluye en la solicitud al motor de IA; los archivos originales permanecen disponibles para ejecutar herramientas):\\n'+extracted.join('\\n\\n').slice(0,22000);
   }
   const plannerPrompt=buildPlannerPrompt(userText+attachmentContext);
   let plan,steps;
