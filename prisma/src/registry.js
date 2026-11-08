@@ -142,10 +142,8 @@ export const tools = [
   ,{ id:'js-format', name:'Formatear JavaScript', description:'Embellece código JavaScript para facilitar su revisión.', category:'dev', icon:'file-code', status:'ready', mode:'local', file:false, tag:'Sin dependencias externas' }
   ,{ id:'sql-format', name:'Formatear SQL', description:'Organiza consultas SQL con indentación y palabras clave.', category:'dev', icon:'database', status:'ready', mode:'local', file:false, tag:'Sin dependencias externas' }
   ,{ id:'xml-format', name:'Formatear XML', description:'Indenta y estructura documentos XML.', category:'dev', icon:'file-code', status:'ready', mode:'local', file:false, tag:'Sin dependencias externas' }
-  ,{ id:'json-schema', name:'Validar JSON Schema', description:'Comprueba datos JSON frente a un esquema y reglas declaradas.', category:'data', icon:'list-checks', status:'beta', mode:'local', file:false, tag:'Validador local' }
+  ,{ id:'json-schema', name:'Validar JSON Schema', description:'Comprueba datos JSON frente a un esquema y reglas declaradas.', category:'data', icon:'list-checks', status:'beta', mode:'browser', file:false, tag:'Validador local' }
   ,{ id:'css-gradient', name:'Generador de gradientes CSS', description:'Crea gradientes lineales o radiales listos para pegar en proyectos.', category:'dev', icon:'palette', status:'ready', mode:'local', file:false, tag:'CSS instantáneo' }
-  ,{ id:'color-palette', name:'Paleta de colores', description:'Genera paletas armónicas y valores HEX para proyectos visuales.', category:'image', icon:'swatch-book', status:'ready', mode:'local', file:false, tag:'Generación local' }
-  ,{ id:'csv-stats', name:'Estadísticas de CSV', description:'Calcula filas, columnas, valores vacíos y estadísticas numéricas.', category:'data', icon:'chart-no-axes-combined', status:'ready', mode:'local', file:false, tag:'Análisis local' }
   ,{ id:'json-yaml', name:'Convertir JSON y YAML', description:'Convierte estructuras JSON a YAML y YAML a JSON.', category:'dev', icon:'braces', status:'beta', mode:'browser', file:false, tag:'js-yaml · Dependencia descargable' }
 
 ];
