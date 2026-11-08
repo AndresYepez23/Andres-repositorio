@@ -4,7 +4,7 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 
 ## Catálogo
 
-- **79 herramientas** organizadas en nueve categorías.
+- **90 herramientas** organizadas en nueve categorías.
 - PDF y documentos, imágenes, audio y vídeo, texto, productividad, utilidades y desarrollo.
 - Generación de imágenes y laboratorio IA con proveedores seleccionables.
 - Herramientas que procesan archivos localmente siempre que el navegador lo permite.
@@ -38,6 +38,8 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - **Optimizar una imagen:** eliminación de fondo, redimensionado, marca de agua y compresión.
 - **Preparar documentos:** combinación de PDF, numeración y extracción de texto cuando el documento lo permite.
 - **Crear contenido con IA:** generación de imagen con Pollinations, Hugging Face o Gemini, edición posterior y paquete de publicación.
+- **Descubrir proyectos open source:** búsqueda pública en GitHub por tema, lenguaje, estrellas y actividad.
+- **Explorar APIs públicas:** consulta GET con acceso directo y fallback seguro a cors.dev cuando el navegador bloquea CORS; sin enviar claves ni cookies.
 - **Laboratorio IA unificado:** conexión personal de Pollinations (OAuth/PKCE), Hugging Face, Google Gemini y Groq; claves temporales en `sessionStorage`.
 - **Transparencia de uso:** consulta de tarifas en vivo de Pollinations para mostrar Pollen por imagen, además de avisos de facturación por proveedor.
 - **Selección simplificada:** perfiles de rapidez, equilibrio y detalle, sin obligar al usuario a elegir IDs técnicos de modelos.
@@ -52,6 +54,7 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - Hugging Face es una alternativa BYOK y puede enrutar modelos de distintos proveedores, incluidos Groq, Fal AI y Together según disponibilidad.
 - Google Gemini y Groq se conectan con claves personales validadas; las claves se conservan solo en la sesión actual del navegador.
 - Cloudflare Workers AI se mantiene pendiente de activar en backend protegido, para no exponer una cuota compartida a abuso público.
+- cors.dev se utiliza únicamente como proxy de lectura pública GET/HEAD; nunca enviar credenciales, cookies o información privada.
 - Nunca incrustar claves secretas de proveedor en el frontend.
 
 ## Privacidad y límites
