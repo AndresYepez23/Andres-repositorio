@@ -530,9 +530,31 @@ async function generateImage(p,cb){
  let fullPrompt=(styles[p.style]||'')+prompt;
  if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
  let provider=p.provider||'auto';
- if(provider==='auto')provider=p.polliToken?'pollinations':p.hfToken?'huggingface':p.geminiKey?'gemini':'';
- if(!provider)throw Error('Conecta Pollinations, Hugging Face o Google Gemini desde el Laboratorio IA.');
+ if(provider==='auto')provider=p.centralProviders?.cloudflare?'cloudflare':p.polliToken?'pollinations':p.centralFeatures?.huggingfaceImages?'huggingface':'';
+ if(!provider)throw Error('No hay un motor de imágenes habilitado. Cloudflare Workers AI debe estar activo o autoriza Pollinations.');
  const model=p.model||imageModelFor(provider,p.qualityProfile);
+ if(provider==='cloudflare'||provider==='huggingface'&&p.centralFeatures?.huggingfaceImages){
+  const chosenModel=p.model||(provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers');
+  progress(cb,.15,'Procesando la imagen en el backend protegido de Prisma…');
+  const response=await fetch('/api/ai/image',{
+   method:'POST',headers:{'Content-Type':'application/json','Accept':'image/jpeg,image/png'},
+   body:JSON.stringify({provider,model:chosenModel,prompt:fullPrompt.slice(0,1800),ratio:p.ratio,seed:p.seed||undefined})
+  });
+  if(!response.ok){
+   const data=await response.json().catch(()=>({}));
+   throw Error(data.error||'No fue posible generar la imagen ('+response.status+').');
+  }
+  const blob=await response.blob();
+  if(!blob.type.startsWith('image/'))throw Error('El motor central no devolvió una imagen válida.');
+  progress(cb,1,'Imagen generada.');
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':'png')),
+   previewUrl:URL.createObjectURL(blob),provider,model:chosenModel,
+   summary:'Imagen generada con '+(provider==='cloudflare'?'Cloudflare FLUX':'Hugging Face')+' · resolución determinada por el modelo.'};
+ }
+ if(provider==='huggingface'&&!p.centralFeatures?.huggingfaceImages)
+  throw Error('Las imágenes de Hugging Face están desactivadas para proteger tus créditos. Utiliza Cloudflare FLUX.');
+ if(provider==='gemini'&&!p.geminiKey)
+  throw Error('La generación de imágenes con Gemini aún no está habilitada en el backend central. Usa Cloudflare FLUX.');
  if(provider==='pollinations'){
   const token=String(p.polliToken||'').trim();
   if(!token)throw Error('Conecta tu cuenta de Pollinations desde el Laboratorio IA.');
@@ -592,16 +614,16 @@ async function generateText(p,cb){
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const tier=p.reasoning||'balanced';
  const lengths={short:500,medium:1600,long:tier==='smart'?6000:3200};
- const modelProfiles={pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'openai/gpt-oss-120b:cheapest'},groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-120b',smart:'openai/gpt-oss-120b'},gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}};
+ const modelProfiles={pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'openai/gpt-oss-120b:cheapest'},groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-20b',smart:'openai/gpt-oss-120b'},cloudflare:{fast:'@cf/google/gemma-4-26b-a4b-it',balanced:'@cf/google/gemma-4-26b-a4b-it',smart:'@cf/google/gemma-4-26b-a4b-it'},gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}};
  const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
  const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
  const preferred=p.provider||'auto';
  const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
  const errors=[];
- const centralCandidates=preferred==='auto'?['gemini','huggingface','groq']:[preferred];
+ const centralCandidates=preferred==='auto'?['gemini','cloudflare','groq','huggingface']:[preferred];
  for(const provider of centralCandidates){
   if(!p.centralProviders?.[provider])continue;
-  progress(cb,.18,'Conectando con '+(provider==='gemini'?'Gemini':provider==='huggingface'?'Hugging Face':'Groq')+' mediante Prisma…');
+  progress(cb,.18,'Conectando con '+(provider==='gemini'?'Gemini':provider==='huggingface'?'Hugging Face':provider==='cloudflare'?'Workers AI':'Groq')+' mediante Prisma…');
   try{
    const response=await fetch('/api/ai/chat',{
     method:'POST',
@@ -609,7 +631,7 @@ async function generateText(p,cb){
     cache:'no-store',
     body:JSON.stringify({
      provider,
-     model:p.model||modelProfiles[provider]?.[tier],
+     model:preferred==='auto'?modelProfiles[provider]?.[tier]:(p.model||modelProfiles[provider]?.[tier]),
      messages:[{role:'system',content:system},{role:'user',content:user}],
      temperature:.7,
      maxOutputTokens:lengths[p.length]||1200
@@ -619,10 +641,10 @@ async function generateText(p,cb){
    if(!response.ok)throw Error(data.error||'El motor central respondió '+response.status+'.');
    if(!data.text)throw Error('El motor central no devolvió texto.');
    progress(cb,1,'Respuesta lista.');
-   const names={gemini:'Google Gemini',huggingface:'Hugging Face',groq:'Groq'};
+   const names={gemini:'Google Gemini',huggingface:'Hugging Face',groq:'Groq',cloudflare:'Cloudflare Workers AI'};
    return {text:data.text,provider,model:data.model||p.model||modelProfiles[provider]?.[tier]||'predeterminado',summary:'Respuesta generada con '+names[provider]+' · motor central de Prisma.'};
   }catch(error){
-   errors.push((provider==='gemini'?'Google Gemini':provider==='huggingface'?'Hugging Face':'Groq')+': '+(error?.message||'fallo de conexión'));
+   errors.push((provider==='gemini'?'Google Gemini':provider==='huggingface'?'Hugging Face':provider==='cloudflare'?'Workers AI':'Groq')+': '+(error?.message||'fallo de conexión'));
    if(preferred!=='auto')throw error;
   }
  }
@@ -676,7 +698,24 @@ async function generateSpeech(p,cb){
  return {...download(blob,'prisma-voz.'+(p.format||'mp3')),previewUrl:URL.createObjectURL(blob),audio:true,summary:'Voz: '+(p.voice||'nova')+' · Modelo: '+(p.model||'openai/tts-1')};
 }
 async function transcribeAudio(files,p,cb){
- const token=String(p.polliToken||'').trim();if(!token)throw Error('Conecta tu cuenta de Pollinations antes de transcribir.');
+ let provider=p.provider||'auto';
+ if(provider==='auto')provider=p.centralProviders?.groq?'groq':p.centralFeatures?.huggingfaceAudio?'huggingface':p.polliToken?'pollinations':'';
+ if(provider==='groq'||provider==='huggingface'){
+  if(!files[0])throw Error('Selecciona un archivo de audio.');
+  const form=new FormData();
+  form.append('file',files[0]);
+  form.append('provider',provider);
+  form.append('model',provider==='groq'?'whisper-large-v3-turbo':'openai/whisper-large-v3');
+  progress(cb,.2,'Transcribiendo en el backend protegido de Prisma…');
+  const response=await fetch('/api/ai/transcribe',{method:'POST',body:form});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error||'La transcripción no está disponible ('+response.status+').');
+  progress(cb,1,'Transcripción lista.');
+  return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+provider+' · '+data.model};
+ }
+ if(provider==='huggingface')throw Error('El audio de Hugging Face está desactivado para proteger tus créditos.');
+ const token=String(p.polliToken||'').trim();if(!token)throw Error('Activa Groq en Cloudflare o conecta Pollinations para transcribir.');
+
  if(!files[0])throw Error('Selecciona un archivo de audio.');
  const form=new FormData();form.append('file',files[0]);form.append('model',p.model||'openai/whisper-1');
  if(p.language&&p.language!=='auto')form.append('language',p.language);
