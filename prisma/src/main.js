@@ -305,13 +305,13 @@ function buildFields(t){
       selectField('Formato','ratio',[['square','Cuadrado · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámico · 16:9']],'square')+
       field('Semilla (opcional)','seed','number','','Usa el mismo número para intentar reproducir una composición.','min="0" step="1"')+
       textareaField('Elementos que quieres evitar (opcional)','negativePrompt','','Elementos que prefieres evitar.')+
-      '<div class="tool-hint">Elige un motor conectado o deja que Prisma seleccione uno. Las claves se configuran una sola vez en el Laboratorio IA.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-assistant':return textareaField('¿Qué necesitas crear o resolver?','prompt','','Ejemplo: redacta una descripción profesional para un producto...')+
       selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+
       selectField('Tono','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Directo y breve']],'professional')+
       selectField('Extensión','length',[['short','Breve'],['medium','Media'],['long','Detallada']],'medium')+
       textareaField('Contexto adicional (opcional)','context','','Añade datos que el modelo deba tener en cuenta.')+
-      '<div class="tool-hint">Prisma elegirá el motor conectado que mejor se adapte a la tarea.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-voice':return textareaField('Texto que quieres convertir en voz','prompt','','Escribe el texto que quieres escuchar.')+
       selectField('Modelo de voz','model',[['openai/tts-1','TTS estándar'],['openai/tts-1-hd','TTS alta calidad']],'openai/tts-1')+
       selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina']],'nova')+
@@ -486,6 +486,7 @@ function setupPollinationsSettings(){
 }
 
 const pollinationsModelCache={image:[],text:[],audio:[]};
+const pollinationsPricingCache={image:[],text:[]};
 const fallbackModels={
   image:[['black-forest-labs/flux.1-schnell','FLUX.1 Schnell · rápido'],['tongyi-mai/z-image-turbo','Z-Image Turbo · rápido']],
   text:[['openai/gpt-5.4-nano','GPT-5.4 Nano · rápido'],['deepseek/deepseek-v4-flash-0731','DeepSeek V4 Flash'],['qwen/qwen3-32b','Qwen 3 · general']],
@@ -518,13 +519,61 @@ async function loadPollinationsModels(kind,provider='pollinations'){
     const current=$('#field-model');if(current){current.innerHTML=options.map(([v,l])=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(l)+'</option>').join('');if(options.some(o=>o[0]===selected))current.value=selected;}
   }catch(error){console.info('Catálogo de modelos Pollinations no disponible; se usan opciones de respaldo.',error);}
 }
+async function loadPollinationsPricing(kind='image'){
+  if(pollinationsPricingCache[kind]?.length)return pollinationsPricingCache[kind];
+  try{
+    const response=await fetch('https://gen.pollinations.ai/'+kind+'/models',{cache:'no-store'});
+    if(!response.ok)return [];
+    const raw=await response.json(),list=Array.isArray(raw)?raw:raw.models||raw.data||raw.items||[];
+    pollinationsPricingCache[kind]=list;
+    return list;
+  }catch(error){console.info('No se pudo consultar la tarifa en vivo de Pollinations.',error);return [];}
+}
+function providerNoticeText(provider,quality,task='image'){
+  const connected={
+    pollinations:!!getPollinationsToken(),
+    huggingface:isProviderConnected('huggingface'),
+    gemini:isProviderConnected('gemini'),
+    groq:isProviderConnected('groq')
+  };
+  let selected=provider||'auto';
+  if(selected==='auto'){
+    const order=task==='image'?['pollinations','huggingface','gemini']:['groq','huggingface','gemini','pollinations'];
+    selected=order.find(item=>connected[item])||'';
+  }
+  if(!selected)return 'No hay un motor conectado para esta tarea. Abre el Laboratorio IA y conecta una cuenta.';
+  if(!connected[selected])return 'Este motor todavía no está conectado. Conéctalo desde el Laboratorio IA antes de generar.';
+  const names={pollinations:'Pollinations Connect',huggingface:'Hugging Face',gemini:'Google Gemini',groq:'Groq'};
+  if(selected==='pollinations'&&task==='image'){
+    const models={fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1.1-pro'};
+    const modelId=models[quality||'balanced'];
+    const model=pollinationsPricingCache.image.find(item=>(item.name||item.id)===modelId);
+    const price=model?.pricing?.completionImageTokens;
+    if(price)return names[selected]+': '+(model.title||model.name)+'. Tarifa publicada: '+price+' Pollen por imagen. El texto adicional se cobra según los tokens utilizados. Puedes limitar el presupuesto al autorizar la cuenta.';
+    return names[selected]+': el consumo se descuenta de tu saldo Pollen. El precio exacto se consulta en el catálogo actualizado del proveedor.';
+  }
+  if(selected==='pollinations')return names[selected]+': el texto consume Pollen según los tokens de entrada y salida. Tu autorización limita el presupuesto total.';
+  if(selected==='huggingface')return names[selected]+': el consumo depende del modelo y del proveedor de inferencia seleccionado. Consulta sus tarifas y tu consumo en Hugging Face.';
+  if(selected==='gemini')return names[selected]+': el consumo depende del modelo y de la resolución solicitada. Consulta la facturación de tu proyecto de Google AI Studio.';
+  return names[selected]+': consulta los límites y el consumo de tu plan en Groq antes de generar.';
+}
+function updateProviderNotice(target,task='image'){
+  const notice=$(target);if(!notice)return;
+  const provider=$('#field-provider')?.value||'auto';
+  const quality=$('#field-qualityProfile')?.value||'balanced';
+  notice.textContent=providerNoticeText(provider,quality,task);
+}
 function setupAIAuthorization(tool){
   refreshProviderConnectionStatuses();
-  $('#field-provider')?.addEventListener('change',refreshProviderConnectionStatuses);
+  const provider=$('#field-provider'),quality=$('#field-qualityProfile');
+  const update=()=>updateProviderNotice('#tool-provider-notice',tool.id==='image-gen'?'image':'text');
+  provider?.addEventListener('change',update);quality?.addEventListener('change',update);
   $('#open-ai-settings')?.addEventListener('click',()=>{
     closeTool();showView('ai');
     $('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});
   });
+  if(tool.id==='image-gen')void loadPollinationsPricing('image').then(update);
+  update();
 }
 
 function openTool(t){
@@ -584,7 +633,9 @@ function buildWorkflowFields(workflow){
   if(workflow.id==='ai-creation'){
     return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations · tu saldo autorizado'],['huggingface','Hugging Face · tu cuenta'],['gemini','Google Gemini · tu cuenta']],'auto','Prisma solo utilizará las cuentas que hayas conectado.')+
       selectField('Calidad de generación','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
-      selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+
+      selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+      '<div class="tool-hint workflow-provider-notice" id="workflow-provider-notice"></div><div class="tool-hint workflow-provider-notice" id="workflow-text-notice"></div>'+
+      '<div class="prompt-examples"><span>Ideas para empezar</span><button type="button" class="mini-button prompt-example" data-prompt-example="Fotografía publicitaria premium de un perfume minimalista sobre una superficie de piedra, iluminación de estudio suave y fondo elegante.">Producto premium</button><button type="button" class="mini-button prompt-example" data-prompt-example="Una ciudad futurista bajo la lluvia al anochecer, luces cinematográficas, reflejos detallados y atmósfera épica.">Escena cinematográfica</button><button type="button" class="mini-button prompt-example" data-prompt-example="Ilustración editorial moderna sobre creatividad e inteligencia artificial, composición limpia y colores armónicos.">Ilustración editorial</button><button type="button" class="mini-button prompt-example" data-prompt-example="Miniatura de YouTube con alto contraste, sujeto principal expresivo, composición clara y espacio visual para un título corto.">Miniatura YouTube</button></div>'+
+
       textareaField('Cuéntanos qué quieres crear','prompt','','Describe el sujeto, el ambiente, el propósito y el estilo. Prisma se encarga de preparar el prompt visual.')+
       selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+
       selectField('Composición','ratio',[['square','Cuadrada · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámica · 16:9']],'square')+
@@ -606,10 +657,22 @@ function buildWorkflowFields(workflow){
 
 function setupWorkflowAI(){
   refreshProviderConnectionStatuses();
+  const provider=$('#field-provider'),quality=$('#field-qualityProfile'),textProvider=$('#field-textProvider');
+  const update=()=>{
+    updateProviderNotice('#workflow-provider-notice','image');
+    const textNotice=$('#workflow-text-notice');
+    if(textNotice)textNotice.textContent=providerNoticeText(textProvider?.value||'auto','balanced','text');
+  };
+  provider?.addEventListener('change',update);quality?.addEventListener('change',update);textProvider?.addEventListener('change',update);
+  $$('.prompt-example').forEach(button=>button.addEventListener('click',()=>{
+    const prompt=$('#field-prompt');if(prompt){prompt.value=button.dataset.promptExample||'';prompt.focus();}
+  }));
   $('#open-ai-settings')?.addEventListener('click',()=>{
     closeTool();showView('ai');
     $('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});
   });
+  void loadPollinationsPricing('image').then(update);
+  update();
 }
 function openWorkflow(workflow){
   if(!workflow)return;
