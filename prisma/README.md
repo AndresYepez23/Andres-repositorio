@@ -44,7 +44,7 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - Cada plan está limitado a diez pasos y debe ser autorizado antes de ejecutarse.
 - Los planes externos advierten que los datos pueden salir del navegador y que pueden existir costes del proveedor.
 - El enrutador incorpora metadatos por modalidad sobre motor, privacidad, coste orientativo y estrategia de respaldo. Cuando no se ha verificado una tarifa o licencia específica, no la presenta como garantizada.
-- Las operaciones se ejecutan secuencialmente; los archivos resultantes pueden alimentar el siguiente paso.
+- Las operaciones se ejecutan secuencialmente; los archivos resultantes pueden alimentar el siguiente paso. El usuario puede detener la secuencia al terminar la operación activa y conservar los resultados parciales.
 - La conversación se guarda en el almacenamiento local del navegador. Los archivos adjuntos no se guardan en el historial.
 - Las credenciales personales se leen desde la sesión del navegador y no se incorporan al historial.
 - El agente no puede publicar, enviar, comprar ni borrar recursos externos.
