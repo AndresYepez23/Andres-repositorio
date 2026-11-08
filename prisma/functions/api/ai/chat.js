@@ -1,3 +1,5 @@
+import { allowedModel } from "../../_lib/model-catalog.js";
+import { checkLimits } from "../../_lib/limits.js";
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -57,45 +59,6 @@ function normalizeMessages(input) {
   return { system, contents, openaiMessages };
 }
 
-// Cloudflare Pages supports D1 bindings, unlike Workers-only rate-limit bindings.
-// Each UPSERT is atomic in SQLite. Rate limits fail closed if D1 is unavailable.
-async function enforcePrismaRateLimits(env, request, provider) {
-  const db = env.PRISMA_RATE_DB;
-  if (!db?.prepare) return {status:503, error:"El limitador de Prisma aún no está enlazado con Cloudflare D1."};
-
-  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
-  const key = [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, "0")).join("").slice(0, 32);
-  const minute = Math.floor(Date.now() / 60000);
-  const dayStart = Math.floor(minute / 1440) * 1440;
-  const scopes = [
-    ["ip-minute:" + key, minute, 6],
-    ["ip-day:" + key, dayStart, 15],
-    ["provider-day:" + provider, dayStart, provider === "huggingface" ? 10 : 50],
-    ["total-day", dayStart, 60],
-  ];
-  const sql = `INSERT INTO ai_rate_limits(scope, window_start, request_count)
-VALUES (?, ?, 1)
-ON CONFLICT(scope, window_start) DO UPDATE
-SET request_count = request_count + 1
-WHERE request_count < ?
-RETURNING request_count`;
-  try {
-    for (const [scope, windowStart, max] of scopes) {
-      const row = await db.prepare(sql).bind(scope, windowStart, max).first();
-      if (!row) return {status:429, error:"Has alcanzado el límite gratuito temporal de Prisma. Vuelve a intentarlo más tarde."};
-    }
-    // Keep only the last three days; cleanup is occasional to save writes.
-    if (Math.random() < 0.02) {
-      await db.prepare("DELETE FROM ai_rate_limits WHERE window_start < ?").bind(minute - 4320).run().catch(() => {});
-    }
-  } catch (error) {
-    console.error("Prisma rate limit D1 error", error?.message || error);
-    return {status:503, error:"No se pudo comprobar el límite de solicitudes. Inténtalo de nuevo más tarde."};
-  }
-  return null;
-}
-
 export async function onRequestPost({ request, env }) {
   const requestUrl = new URL(request.url);
   const origin = request.headers.get("Origin");
@@ -116,7 +79,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
@@ -127,20 +90,24 @@ export async function onRequestPost({ request, env }) {
     return json({ error: error.message }, 400);
   }
 
-  const limitError = await enforcePrismaRateLimits(env, request, provider);
-  if (limitError) return json({error:limitError.error}, limitError.status);
+  const requestedModel = String(payload.model || "");
+  if (requestedModel && !allowedModel(provider, "chat", requestedModel)) {
+    return json({error:"Modelo no permitido para el proveedor seleccionado."},400);
+  }
+  const limitError = await checkLimits(env, request, provider);
+  if (limitError) return json({error:limitError.error},limitError.status);
 
   if (provider === "huggingface") {
     if (!env.HF_TOKEN) {
       return json({ error: "Hugging Face todavía no está configurado en los secretos de Cloudflare." }, 503);
     }
 
-    const model = "openai/gpt-oss-20b:cheapest";
+    const model = requestedModel || "openai/gpt-oss-20b:cheapest";
     const body = {
       model,
       messages: normalized.openaiMessages,
       temperature: Math.max(0, Math.min(1.2, Number(payload.temperature ?? 0.7))),
-      max_tokens: clamp(payload.maxOutputTokens, 128, 1200, 900),
+      max_tokens: clamp(payload.maxOutputTokens, 128, 1800, 900),
       stream: false,
     };
 
@@ -182,6 +149,45 @@ export async function onRequestPost({ request, env }) {
       text,
       usage: data.usage || null,
     });
+  }
+
+  if (provider === "groq") {
+    if (!env.GROQ_API_KEY) return json({error:"Groq aún no tiene GROQ_API_KEY configurado en Cloudflare."},503);
+    const model=requestedModel||"openai/gpt-oss-20b";
+    let response;
+    try{
+      response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+        method:"POST",
+        headers:{"Content-Type":"application/json",Authorization:"Bearer "+env.GROQ_API_KEY},
+        body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,2400,1200),stream:false})
+      });
+    }catch{return json({error:"No fue posible conectar con Groq."},502);}
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      return json({error:response.status===429?"Groq alcanzó su cuota gratuita. Prisma puede probar otro motor.":"Groq respondió con un error ("+response.status+").",provider:"groq",status:response.status},response.status===429?429:502);
+    }
+    const text=String(data.choices?.[0]?.message?.content||"").trim();
+    if(!text)return json({error:"Groq no devolvió texto."},502);
+    return json({ok:true,provider:"groq",model,text,usage:data.usage||null});
+  }
+
+  if (provider === "cloudflare") {
+    if(!env.AI?.run)return json({error:"Cloudflare Workers AI no está vinculado al backend."},503);
+    const model=requestedModel||"@cf/google/gemma-4-26b-a4b-it";
+    try {
+      const data=await env.AI.run(model,{
+        messages:normalized.openaiMessages,
+        max_tokens:clamp(payload.maxOutputTokens,128,1700,900),
+        temperature:0.6,
+        stream:false
+      });
+      const text=String(data.response||data.choices?.[0]?.message?.content||"").trim();
+      if(!text)return json({error:"Workers AI no devolvió texto. Prueba otro modelo."},502);
+      return json({ok:true,provider:"cloudflare",model,text,usage:data.usage||null});
+    }catch(error){
+      console.error("Workers AI error",String(error?.message||error).slice(0,140));
+      return json({error:"Cloudflare Workers AI no pudo completar la inferencia. Intenta otro motor."},502);
+    }
   }
 
   if (!env.GEMINI_API_KEY) {
