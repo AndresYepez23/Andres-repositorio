@@ -78,7 +78,7 @@ function readStoredArray(key){
 }
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
-let activeCategory='all',activeView='explore',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
+let activeCategory='all',activeView='core',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
 const popularToolIds=['pdf-merge','image-bg','image-gen','docx-pdf','image-compress','qr'];
 const searchAliases={
   'pdf-merge':'unir pdf juntar pdf combinar pdf fusionar documentos combinar archivos',
@@ -176,6 +176,8 @@ function renderHomeRecents(){
 function render(){
   const ai=activeView==='ai',core=activeView==='core',isHome=activeView==='explore'&&activeCategory==='all'&&!searchTerm;
   $('#home-dashboard').classList.toggle('hidden',!isHome);
+  $('.hero-section').classList.toggle('hidden',core||ai);
+  $('.metric-strip').classList.toggle('hidden',core||ai);
   $('#tools-section').classList.toggle('hidden',ai||core);$('#ai-section').classList.toggle('hidden',!ai);$('#core-section').classList.toggle('hidden',!core);
   $('#breadcrumb-current').textContent=core?'Prisma Core':ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?(categories.find(c=>c.id===activeCategory)?.name||'Explorar'):searchTerm?'Resultados':'Explorar';
   $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
