@@ -268,6 +268,14 @@ async function pdfToText(file,cb){
  }
  return {text:parts.join('\n\n'),summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
 }
+function imageModelFor(provider,quality){
+ const profiles={
+  pollinations:{fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1-dev'},
+  huggingface:{fast:'black-forest-labs/FLUX.1-schnell',balanced:'black-forest-labs/FLUX.1-dev',high:'Qwen/Qwen-Image'},
+  gemini:{fast:'gemini-3.1-flash-lite-image',balanced:'gemini-3.1-flash-image',high:'gemini-3-pro-image'}
+ };
+ return profiles[provider]?.[quality||'balanced']||profiles[provider]?.balanced;
+}
 async function generateImage(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<8)throw Error('Describe la imagen con un poco más de detalle.');
@@ -283,51 +291,110 @@ async function generateImage(p,cb){
  };
  let fullPrompt=(styles[p.style]||'')+prompt;
  if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
- if(p.provider==='pollinations'){
+ let provider=p.provider||'auto';
+ if(provider==='auto')provider=p.polliToken?'pollinations':p.hfToken?'huggingface':p.geminiKey?'gemini':'';
+ if(!provider)throw Error('Conecta Pollinations, Hugging Face o Google Gemini desde el Laboratorio IA.');
+ const model=p.model||imageModelFor(provider,p.qualityProfile);
+ if(provider==='pollinations'){
   const token=String(p.polliToken||'').trim();
-  if(!token)throw Error('Conecta tu cuenta de Pollinations antes de generar. Cada visitante usa su propio presupuesto.');
+  if(!token)throw Error('Conecta tu cuenta de Pollinations desde el Laboratorio IA.');
   progress(cb,.16,'Conectando con Pollinations...');
   const url=new URL('https://gen.pollinations.ai/image/'+encodeURIComponent(fullPrompt));
-  url.searchParams.set('model',p.model||'black-forest-labs/flux.1-schnell');
-  url.searchParams.set('width',String(width));url.searchParams.set('height',String(height));
+  url.searchParams.set('model',model);url.searchParams.set('width',String(width));url.searchParams.set('height',String(height));
   if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))url.searchParams.set('seed',String(Number(p.seed)));
-  progress(cb,.3,'Generando con '+(p.model||'FLUX.1 Schnell')+'...');
+  progress(cb,.3,'Creando tu imagen...');
   const response=await fetch(url,{headers:{Authorization:'Bearer '+token}});
-  if(!response.ok){let detail='';try{detail=await response.text();}catch{}throw Error('Pollinations respondió '+response.status+'. '+detail.slice(0,240));}
+  if(!response.ok){let detail='';try{detail=await response.text();}catch{}throw Error('Pollinations respondió '+response.status+'. '+detail.slice(0,200));}
   const blob=await response.blob();
-  if(!blob.type.startsWith('image/'))throw Error('El proveedor no devolvió una imagen. Revisa el modelo y el saldo autorizado.');
+  if(!blob.type.startsWith('image/'))throw Error('El proveedor no devolvió una imagen. Revisa el saldo autorizado.');
   progress(cb,1,'Imagen generada.');
-  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('png')?'png':'jpg')),previewUrl:URL.createObjectURL(blob),summary:'Modelo: '+p.model+' · '+width+' × '+height+' px · Generación con tu presupuesto personal de Pollinations.'};
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('png')?'png':'jpg')),previewUrl:URL.createObjectURL(blob),provider:'pollinations',model,summary:'Imagen creada con Pollinations · '+width+' × '+height+' px.'};
  }
- const token=String(p.hfToken||'').trim();
- if(!token.startsWith('hf_'))throw Error('Introduce un token de Hugging Face válido (comienza por hf_).');
- progress(cb,.12,'Conectando con Hugging Face Inference...');
- const {InferenceClient}=await import(HF_INFERENCE);
- const client=new InferenceClient(token);
- const parameters={width,height,num_inference_steps:Math.max(4,Math.min(30,Number(p.steps)||4))};
- if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))parameters.seed=Number(p.seed);
- progress(cb,.24,'Generando imagen con '+p.model+'...');
- const image=await client.textToImage({provider:'auto',model:p.model||'black-forest-labs/FLUX.1-schnell',inputs:fullPrompt,parameters});
- const blob=image instanceof Blob?image:new Blob([image],{type:'image/png'});
- progress(cb,1,'Imagen generada.');
- return {...download(blob,'prisma-imagen-'+Date.now()+'.png'),previewUrl:URL.createObjectURL(blob),summary:'Modelo: '+(p.model||'FLUX.1 Schnell')+' · '+width+' × '+height+' px · Se utilizó tu token personal de Hugging Face.'};
+ if(provider==='gemini'){
+  const token=String(p.geminiKey||'').trim();
+  if(!token)throw Error('Conecta Google Gemini desde el Laboratorio IA.');
+  progress(cb,.18,'Conectando con Google Gemini...');
+  const aspectRatio={square:'1:1',landscape:'4:3',portrait:'3:4',wide:'16:9'}[p.ratio]||'1:1';
+  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
+   method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},
+   body:JSON.stringify({contents:[{role:'user',parts:[{text:fullPrompt}]}],generationConfig:{responseModalities:['TEXT','IMAGE'],responseFormat:{image:{aspectRatio,imageSize:p.qualityProfile==='high'?'2K':'1K'}}}})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
+  const parts=data.candidates?.[0]?.content?.parts||[];
+  const imagePart=parts.find(part=>part.inlineData?.data||part.inline_data?.data);
+  if(!imagePart)throw Error('Gemini no devolvió una imagen. Comprueba que el modelo y tu proyecto admitan generación de imágenes.');
+  const inline=imagePart.inlineData||imagePart.inline_data;
+  const binary=atob(inline.data),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  const mime=inline.mimeType||inline.mime_type||'image/png',blob=new Blob([bytes],{type:mime});
+  progress(cb,1,'Imagen generada.');
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(mime.includes('jpeg')?'jpg':'png')),previewUrl:URL.createObjectURL(blob),provider:'gemini',model,summary:'Imagen creada con Google Gemini · '+width+' × '+height+' px.'};
+ }
+ if(provider==='huggingface'){
+  const token=String(p.hfToken||'').trim();
+  if(!token.startsWith('hf_'))throw Error('Conecta Hugging Face desde el Laboratorio IA.');
+  progress(cb,.12,'Conectando con Hugging Face...');
+  const {InferenceClient}=await import(HF_INFERENCE);
+  const client=new InferenceClient(token);
+  const parameters={width,height,num_inference_steps:p.qualityProfile==='high'?28:p.qualityProfile==='fast'?4:12};
+  if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))parameters.seed=Number(p.seed);
+  progress(cb,.24,'Creando tu imagen...');
+  const image=await client.textToImage({provider:'auto',model,inputs:fullPrompt,parameters});
+  const blob=image instanceof Blob?image:new Blob([image],{type:'image/png'});
+  if(!blob.type.startsWith('image/'))throw Error('Hugging Face no devolvió una imagen.');
+  progress(cb,1,'Imagen generada.');
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.png'),previewUrl:URL.createObjectURL(blob),provider:'huggingface',model,summary:'Imagen creada con Hugging Face · '+width+' × '+height+' px.'};
+ }
+ throw Error('El motor de imagen seleccionado todavía no está disponible.');
 }
 async function generateText(p,cb){
- const token=String(p.polliToken||'').trim(),prompt=String(p.prompt||'').trim();
- if(!token)throw Error('Conecta tu cuenta de Pollinations antes de usar el asistente.');
+ const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const lengths={short:500,medium:1200,long:2600};
  const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
  const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
- progress(cb,.2,'Consultando el modelo de texto...');
- const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/gpt-5.4-nano',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
- const text=data.choices?.[0]?.message?.content||data.output_text||'';
- if(!text)throw Error('El modelo no devolvió texto.');
- progress(cb,1,'Respuesta lista.');
- return {text,summary:'Modelo: '+(p.model||'openai/gpt-5.4-nano')+' · Respuesta generada con tu autorización personal.'};
+ const preferred=p.provider||'auto';
+ const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
+ const errors=[];
+ for(const provider of candidates){
+  const token=provider==='pollinations'?String(p.polliToken||'').trim():provider==='huggingface'?String(p.hfToken||'').trim():provider==='gemini'?String(p.geminiKey||'').trim():String(p.groqKey||'').trim();
+  if(!token)continue;
+  progress(cb,.2,'Preparando respuesta...');
+  try{
+   let text='';
+   if(provider==='pollinations'){
+    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/gpt-5.4-nano',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
+    text=data.choices?.[0]?.message?.content||data.output_text||'';
+   }else if(provider==='huggingface'){
+    const {InferenceClient}=await import(HF_INFERENCE),client=new InferenceClient(token);
+    const data=await client.chatCompletion({model:'openai/gpt-oss-120b:cheapest',messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:lengths[p.length]||1200,temperature:.7});
+    text=data.choices?.[0]?.message?.content||'';
+   }else if(provider==='groq'){
+    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-oss-20b',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_completion_tokens:lengths[p.length]||1200,stream:false})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error?.message||'Groq respondió '+response.status+'.');
+    text=data.choices?.[0]?.message?.content||'';
+   }else if(provider==='gemini'){
+    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
+    text=(data.candidates?.[0]?.content?.parts||[]).map(part=>part.text||'').join('').trim();
+   }
+   if(!text)throw Error('El modelo no devolvió texto.');
+   progress(cb,1,'Respuesta lista.');
+   const names={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini'};
+   return {text,provider,summary:'Respuesta generada con '+names[provider]+'.'};
+  }catch(error){
+   errors.push((provider==='huggingface'?'Hugging Face':provider==='gemini'?'Google Gemini':provider==='groq'?'Groq':'Pollinations')+': '+(error?.message||'fallo de conexión'));
+   if(preferred!=='auto')throw error;
+  }
+ }
+ if(errors.length)throw Error('No fue posible generar la respuesta con los motores conectados. '+errors.join(' | '));
+ throw Error('Conecta al menos un motor de texto desde el Laboratorio IA.');
 }
 async function generateSpeech(p,cb){
  const token=String(p.polliToken||'').trim(),input=String(p.prompt||'').trim();
