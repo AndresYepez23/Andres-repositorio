@@ -211,7 +211,7 @@ async function requestPlan(userText){
   let plan,steps;
   try{
     const result=await runTool('ai-assistant',[],{
-      prompt:plannerPrompt,provider:'auto',tone:'professional',length:'long',...creds
+      prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
     },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
     plan=parsePlan(result.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
@@ -219,7 +219,7 @@ async function requestPlan(userText){
     status('Revisando el formato y la compatibilidad del plan…');setProgress(.17,'Corrigiendo el plan…');
     const repair=await runTool('ai-assistant',[],{
       prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\\n\\nSOLICITUD Y CATÁLOGO ORIGINAL:\\n'+plannerPrompt,
-      provider:'auto',tone:'professional',length:'long',...creds
+      provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
     },(p,msg)=>{status(msg||'Corrigiendo el plan…');setProgress(.17+Math.max(0,Math.min(1,Number(p)||0))*.08,msg||'Corrigiendo el plan…');});
     plan=parsePlan(repair.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
