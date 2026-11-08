@@ -46,7 +46,15 @@ function normalizeMessages(input) {
     throw new Error("La solicitud debe comenzar con un mensaje del usuario.");
   }
 
-  return { system, contents };
+  const openaiMessages = [
+    ...system.map((content) => ({ role: "system", content })),
+    ...contents.map((item) => ({
+      role: item.role === "model" ? "assistant" : "user",
+      content: item.parts.map((part) => part.text || "").join("\n"),
+    })),
+  ];
+
+  return { system, contents, openaiMessages };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -66,10 +74,6 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "Has alcanzado el límite temporal de solicitudes. Espera un minuto e inténtalo de nuevo." }, 429);
   }
 
-  if (!env.GEMINI_API_KEY) {
-    return json({ error: "Gemini todavía no está configurado en los secretos de Cloudflare." }, 503);
-  }
-
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
   if (declaredLength > 50000) return json({ error: "La solicitud supera el tamaño permitido." }, 413);
 
@@ -82,7 +86,8 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "El cuerpo de la solicitud no es JSON válido." }, 400);
   }
 
-  if (payload.provider && payload.provider !== "gemini") {
+  const provider = String(payload.provider || "gemini");
+  if (!["gemini", "huggingface"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
@@ -91,6 +96,64 @@ export async function onRequestPost({ request, env }) {
     normalized = normalizeMessages(payload.messages);
   } catch (error) {
     return json({ error: error.message }, 400);
+  }
+
+  if (provider === "huggingface") {
+    if (!env.HF_TOKEN) {
+      return json({ error: "Hugging Face todavía no está configurado en los secretos de Cloudflare." }, 503);
+    }
+
+    const model = "openai/gpt-oss-20b:cheapest";
+    const body = {
+      model,
+      messages: normalized.openaiMessages,
+      temperature: Math.max(0, Math.min(1.2, Number(payload.temperature ?? 0.7))),
+      max_tokens: clamp(payload.maxOutputTokens, 128, 1200, 900),
+      stream: false,
+    };
+
+    let response;
+    try {
+      response = await fetch("https://router.huggingface.co/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + env.HF_TOKEN,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      return json({ error: "No fue posible conectar con Hugging Face. Inténtalo nuevamente." }, 502);
+    }
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const providerMessage = String(data.error?.message || data.error || "").slice(0, 240);
+      let message = "Hugging Face respondió con un error (" + response.status + ").";
+      if (response.status === 401 || response.status === 403) {
+        message = "El token de Hugging Face no tiene permiso para llamar a Inference Providers. Revisa sus permisos.";
+      } else if (response.status === 402) {
+        message = "Hugging Face no tiene créditos disponibles para esta solicitud. El plan gratuito incluye un crédito mensual limitado; no se activará una recarga automática.";
+      } else if (response.status === 429) {
+        message = "Hugging Face o el proveedor seleccionado alcanzó su límite temporal. Prisma podrá intentar otro motor disponible.";
+      }
+      return json({ error: message, provider: "huggingface", status: response.status, detail: providerMessage }, response.status === 402 || response.status === 429 ? response.status : 502);
+    }
+
+    const text = String(data.choices?.[0]?.message?.content || "").trim();
+    if (!text) return json({ error: "Hugging Face no devolvió texto. Comprueba la disponibilidad del modelo." }, 502);
+
+    return json({
+      ok: true,
+      provider: "huggingface",
+      model,
+      text,
+      usage: data.usage || null,
+    });
+  }
+
+  if (!env.GEMINI_API_KEY) {
+    return json({ error: "Gemini todavía no está configurado en los secretos de Cloudflare." }, 503);
   }
 
   const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.8-flash");
