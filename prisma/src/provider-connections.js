@@ -76,3 +76,29 @@ export async function validateProviderCredential(provider, credential) {
   if (provider === 'gemini') accountLabel = (data.models || []).length + ' modelos consultados';
   return { ok: true, provider, accountLabel };
 }
+export async function getCentralProviderStatus() {
+  const empty = {
+    ok: false,
+    mode: "central",
+    providers: { gemini: false, huggingface: false, groq: false },
+    models: {},
+  };
+  try {
+    const response = await fetch("/api/providers/status", {
+      method: "GET",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return empty;
+    const data = await response.json();
+    return {
+      ...empty,
+      ...data,
+      ok: data.ok === true,
+      providers: { ...empty.providers, ...(data.providers || {}) },
+      models: data.models || {},
+    };
+  } catch {
+    return empty;
+  }
+}
