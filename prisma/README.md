@@ -17,6 +17,7 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 - `src/providers.js`: proveedores IA.
 - `src/main.js`: navegación y experiencia.
 - `src/engines.js`: motores de ejecución.
+- `src/workflows.js`: orquestación de flujos de varios pasos (imágenes, PDF y creación con IA).
 - `build.mjs`: prepara el directorio de publicación `dist/`.
 - `_headers`: cabeceras HTTP de seguridad para Cloudflare Pages.
 - `worker.js`: prototipo independiente para futuras rutas dinámicas; no forma parte del sitio estático publicado.
@@ -31,6 +32,13 @@ La producción se publica en **Cloudflare Pages**, conectado al repositorio GitH
 - Directorio publicado: `dist`.
 
 Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. Prisma Space ya no depende de Wix ni Netlify para su alojamiento.
+
+## Flujos inteligentes
+
+- **Optimizar una imagen:** eliminación de fondo, redimensionado, marca de agua y compresión.
+- **Preparar documentos:** combinación de PDF, numeración y extracción de texto cuando el documento lo permite.
+- **Crear contenido con IA:** generación de imagen, edición posterior y paquete de publicación.
+- Los flujos reutilizan los motores existentes y reportan el avance por etapas; las tareas locales permanecen en el navegador.
 
 ## Inteligencia artificial
 

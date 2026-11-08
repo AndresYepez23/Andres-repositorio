@@ -1,6 +1,7 @@
 import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
 import { runTool } from './engines.js';
+import { workflows, runWorkflow } from './workflows.js';
 
 const POLLINATIONS_APP_KEY = '';
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -72,7 +73,7 @@ function readStoredArray(key){
 }
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
-let activeCategory='all',activeView='explore',searchTerm='',layout='grid',currentTool=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
+let activeCategory='all',activeView='explore',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
 const popularToolIds=['pdf-merge','image-bg','image-gen','docx-pdf','image-compress','qr'];
 const searchAliases={
   'pdf-merge':'unir pdf juntar pdf combinar pdf fusionar documentos combinar archivos',
@@ -475,7 +476,7 @@ function setupAIAuthorization(tool){
 
 function openTool(t){
   lastFocusedElement=document.activeElement;lastOpenedToolId=t.id;recordRecentTool(t.id);
-  currentTool=t;selectedFiles=[];running=false;
+  currentTool=t;currentWorkflow=null;selectedFiles=[];running=false;
   $('#modal-title').textContent=t.name;$('#modal-kicker').textContent=categories.find(c=>c.id===t.category)?.name.toUpperCase()||'HERRAMIENTA';
   $('#modal-icon').innerHTML=icon(t.icon);
   let html='<p class="modal-description">'+t.description+'</p>';
@@ -502,6 +503,94 @@ function openTool(t){
   if(['image-gen','ai-assistant','ai-voice','ai-transcribe'].includes(t.id))setupAIAuthorization(t);
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
+  $('#modal-close').focus({preventScroll:true});
+}
+function buildWorkflowFields(workflow){
+  if(workflow.id==='image-pipeline'){
+    return '<div class="workflow-options">'+
+      '<label class="workflow-check"><input type="checkbox" name="removeBg" checked><span><strong>Quitar fondo</strong><small>Usa el motor local de IA cuando está disponible.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="resize" checked><span><strong>Ajustar dimensiones</strong><small>Mantiene la proporción de la imagen original.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="compress" checked><span><strong>Comprimir resultado</strong><small>WebP conserva transparencia y reduce el peso.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Añadir marca de agua</strong><small>Opcional: identifica tu creación.</small></span></label>'+
+    '</div><div class="inline-fields">'+field('Ancho máximo (px)','width','number','1200','','min="128" max="5000"')+
+      field('Alto máximo (px)','height','number','1200','','min="128" max="5000"')+
+      field('Calidad (%)','quality','number','82','Entre 10 y 100.','min="10" max="100"')+
+      selectField('Formato final','format',[['image/webp','WebP · recomendado'],['image/jpeg','JPG']],'image/webp')+
+    '</div>'+field('Texto de marca de agua','watermark','text','Prisma Space')+
+      selectField('Ubicación de marca','watermarkPosition',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+
+      '<div class="tool-hint">Los archivos se procesan en tu navegador. Si activas quitar fondo, la primera ejecución puede descargar el modelo de IA.</div>';
+  }
+  if(workflow.id==='document-pipeline'){
+    return '<div class="workflow-options">'+
+      '<label class="workflow-check"><input type="checkbox" name="merge" checked><span><strong>Combinar varios PDF</strong><small>Si seleccionas más de uno, los une en un único documento.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="numberPages" checked><span><strong>Numerar páginas</strong><small>Agrega numeración consecutiva al PDF final.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="extractText" checked><span><strong>Extraer texto disponible</strong><small>Genera un TXT adicional cuando el PDF permite seleccionar texto.</small></span></label>'+
+    '</div>'+selectField('Ubicación de la numeración','position',[['bottom','Parte inferior'],['top','Parte superior']],'bottom')+
+      '<div class="tool-hint">Los PDF se procesan localmente. Los documentos escaneados necesitan OCR; si no contienen texto seleccionable, se conserva el PDF y se informa.</div>';
+  }
+  if(workflow.id==='ai-creation'){
+    return selectField('Motor de IA','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations Connect'],['huggingface','Hugging Face']],'auto','En automático, Prisma prueba Pollinations y puede recurrir a Hugging Face si también has conectado ese motor.')+
+      textareaField('Cuéntanos qué quieres crear','prompt','','Describe el sujeto, el ambiente, el propósito y el estilo. Prisma se encarga de preparar el prompt visual.')+
+      selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+
+      selectField('Composición','ratio',[['square','Cuadrada · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámica · 16:9']],'square')+
+      textareaField('Elementos que quieres evitar (opcional)','negativePrompt','','Ejemplo: texto ilegible, marcas de agua ajenas, manos deformes.')+
+      '<div class="workflow-options">'+
+      '<label class="workflow-check"><input type="checkbox" name="resize" checked><span><strong>Ajustar imagen final</strong><small>Prepara una dimensión equilibrada para compartir.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="compress" checked><span><strong>Optimizar tamaño</strong><small>Exporta una versión WebP más ligera.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Añadir marca de agua</strong><small>Opcional: añade Prisma Space a la imagen.</small></span></label>'+
+      '</div><div class="inline-fields">'+field('Ancho máximo (px)','width','number','1200','','min="128" max="5000"')+
+      field('Alto máximo (px)','height','number','1200','','min="128" max="5000"')+
+      field('Calidad (%)','quality','number','86','Entre 10 y 100.','min="10" max="100"')+
+      selectField('Formato final','format',[['image/webp','WebP · recomendado'],['image/jpeg','JPG']],'image/webp')+
+      '</div>'+field('Texto de marca de agua','watermark','text','Prisma Space')+
+      selectField('Ubicación de marca','watermarkPosition',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+
+      pollinationsAuthFields()+huggingFaceAuthFields()+
+      '<div class="tool-hint">Cada motor usa su propia autorización. Prisma no guarda tu token personal de Hugging Face; Pollinations utiliza el presupuesto que autorizaste.</div>';
+  }
+  return '';
+}
+
+function setupWorkflowAI(){
+  const provider=$('#field-provider');
+  const update=()=>{
+    const selected=provider?.value||'auto';
+    $('#polli-config')?.classList.toggle('hidden',selected==='huggingface');
+    $('#hf-config')?.classList.toggle('hidden',selected==='pollinations');
+  };
+  provider?.addEventListener('change',update);update();refreshPollinationsStatus();
+  $('#open-ai-settings')?.addEventListener('click',()=>{
+    closeTool();showView('ai');
+    $('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});
+    $('#polli-app-key')?.focus();
+  });
+}
+
+function openWorkflow(workflow){
+  if(!workflow)return;
+  lastFocusedElement=document.activeElement;lastOpenedToolId=null;
+  currentTool=null;currentWorkflow=workflow;selectedFiles=[];running=false;
+  $('#modal-title').textContent=workflow.name;$('#modal-kicker').textContent='FLUJOS INTELIGENTES';$('#modal-icon').innerHTML=icon(workflow.icon);
+  let html='<p class="modal-description">'+escapeHtml(workflow.description)+'</p>';
+  if(workflow.file){
+    html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(workflow.multiple?'multiple':'')+' accept="'+(workflow.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Arrastra tus archivos aquí</strong><p>o haz clic para seleccionarlos desde tu dispositivo</p><small class="file-drop-note">'+(workflow.multiple?'Puedes añadir varios archivos. ':'')+'Se procesan localmente en tu navegador.</small><span class="file-drop-formats">Formatos admitidos: '+escapeHtml(workflow.accept||'cualquier archivo')+'</span></label><div class="file-list" id="file-list"></div>';
+  }
+  html+=buildWorkflowFields(workflow);
+  html+='<div class="progress-wrap hidden" id="progress-wrap"><div class="progress-label"><span id="progress-message">Preparando...</span><span id="progress-value">0%</span></div><div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div></div><div id="tool-output" aria-live="polite"></div>';
+  $('#modal-body').innerHTML=html;$('#tool-modal').classList.remove('hidden');$('#tool-modal').setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
+  $('#modal-run').classList.remove('hidden');$('#modal-run').disabled=false;$('#modal-run').innerHTML=icon('play')+' Ejecutar flujo completo';
+  if(workflow.file){
+    const drop=$('#file-drop'),input=$('#file-input');
+    input.addEventListener('change',()=>{addSelectedFiles([...input.files],workflow);input.value='';});
+    drop.addEventListener('dragover',event=>{event.preventDefault();drop.classList.add('dragover');});
+    drop.addEventListener('dragleave',event=>{if(!drop.contains(event.relatedTarget))drop.classList.remove('dragover');});
+    drop.addEventListener('drop',event=>{event.preventDefault();drop.classList.remove('dragover');addSelectedFiles([...event.dataTransfer.files],workflow);});
+    $('#file-list').addEventListener('click',event=>{
+      const remove=event.target.closest('[data-remove-file]');
+      if(remove){selectedFiles.splice(Number(remove.dataset.removeFile),1);renderFileList();return;}
+      if(event.target.closest('[data-clear-files]')){selectedFiles=[];renderFileList();}
+    });
+  }
+  if(workflow.id==='ai-creation')setupWorkflowAI();
   $('#modal-close').focus({preventScroll:true});
 }
 function updateUnitOptions(){
@@ -547,7 +636,55 @@ function updateProgress(progress,message){
   const pct=Math.max(0,Math.min(100,Math.round((progress||0)*100)));
   $('#progress-bar').style.width=pct+'%';$('#progress-value').textContent=pct+'%';$('#progress-message').textContent=message||'Procesando...';
 }
+async function executeCurrentWorkflow(){
+  if(!currentWorkflow||running)return;
+  if(currentWorkflow.file&&!selectedFiles.length){toast('Selecciona al menos un archivo.','error');return;}
+  const operationId=++activeOperation,workflowAtStart=currentWorkflow,filesAtStart=[...selectedFiles];
+  const progressForWorkflow=(progress,message)=>{if(operationId===activeOperation&&currentWorkflow===workflowAtStart)updateProgress(progress,message);};
+  running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Ejecutando flujo...';$('#tool-output').innerHTML='';updateProgress(.02,'Preparando flujo inteligente...');
+  try{
+    const params=readParams();params.polliToken=getPollinationsToken();
+    const result=await runWorkflow(workflowAtStart.id,filesAtStart,params,progressForWorkflow);
+    if(operationId!==activeOperation||currentWorkflow!==workflowAtStart||$('#tool-modal').classList.contains('hidden'))return;
+    if($('#field-hfToken'))$('#field-hfToken').value='';
+    renderWorkflowOutput(result);updateProgress(1,'Flujo completado');toast('Flujo completado correctamente.','success');
+  }catch(error){
+    if(operationId!==activeOperation||currentWorkflow!==workflowAtStart||$('#tool-modal').classList.contains('hidden'))return;
+    console.error(error);$('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar el flujo.</strong><br>'+escapeHtml(error?.message||'Ocurrió un error inesperado.')+'</div>';
+    toast(error?.message||'No se pudo completar el flujo.','error');
+  }finally{
+    if(operationId!==activeOperation||currentWorkflow!==workflowAtStart)return;
+    if($('#field-hfToken'))$('#field-hfToken').value='';
+    running=false;$('#modal-body').setAttribute('aria-busy','false');$('#modal-run').disabled=false;$('#modal-run').innerHTML=icon('play')+' Ejecutar flujo completo';
+  }
+}
+
+function renderWorkflowOutput(result){
+  const panel=document.createElement('div');panel.className='output-panel workflow-result-panel';
+  const heading=document.createElement('div');heading.className='output-head';
+  const headingText=document.createElement('strong');headingText.textContent='✓ Flujo completado';heading.append(headingText);panel.append(heading);
+  if(result.steps?.length){
+    const list=document.createElement('ol');list.className='workflow-result-steps';
+    result.steps.forEach(step=>{const item=document.createElement('li');item.textContent=step;list.append(item);});panel.append(list);
+  }
+  if(result.summary){const summary=document.createElement('p');summary.className='tool-hint workflow-summary';summary.textContent=result.summary;panel.append(summary);}
+  (result.artifacts||[]).forEach(artifact=>{
+    const row=document.createElement('div');row.className='workflow-artifact';
+    const copy=document.createElement('div');copy.className='workflow-artifact-copy';
+    const name=document.createElement('strong');name.textContent=artifact.name||artifact.filename||'Archivo generado';
+    const filename=document.createElement('small');filename.textContent=artifact.filename||'Archivo listo';copy.append(name,filename);row.append(copy);
+    const actions=document.createElement('div');actions.className='workflow-artifact-actions';
+    if(artifact.text){const copyButton=document.createElement('button');copyButton.type='button';copyButton.className='mini-button';copyButton.textContent='Copiar texto';copyButton.addEventListener('click',async()=>{await navigator.clipboard.writeText(artifact.text);toast('Texto copiado.','success');});actions.append(copyButton);}
+    if(artifact.blob){const downloadButton=document.createElement('button');downloadButton.type='button';downloadButton.className='mini-button';downloadButton.innerHTML=icon('download')+' Descargar';downloadButton.addEventListener('click',()=>downloadBlob(artifact.blob,artifact.filename||'prisma-resultado'));actions.append(downloadButton);}
+    row.append(actions);panel.append(row);
+    if(artifact.previewUrl&&String(artifact.type||artifact.blob?.type||'').startsWith('image/')){const preview=document.createElement('img');preview.className='output-preview workflow-preview';preview.src=artifact.previewUrl;preview.alt=artifact.name||'Vista previa del resultado';panel.append(preview);}
+    if(artifact.text){const preview=document.createElement('pre');preview.className='output-text workflow-text-preview';preview.textContent=artifact.text.slice(0,5000);panel.append(preview);}
+  });
+  $('#tool-output').append(panel);
+}
+
 async function executeCurrentTool(){
+  if(currentWorkflow)return executeCurrentWorkflow();
   if(!currentTool||running)return;
   if(currentTool.file&&!selectedFiles.length){toast('Selecciona al menos un archivo.','error');return;}
   const operationId=++activeOperation,toolAtStart=currentTool,filesAtStart=[...selectedFiles];
@@ -602,7 +739,7 @@ function closeTool(){
   $('#modal-body').innerHTML='';$('#modal-body').setAttribute('aria-busy','false');
   modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');
   document.body.classList.remove('modal-open');
-  currentTool=null;selectedFiles=[];activeOperation++;running=false;
+  currentTool=null;currentWorkflow=null;selectedFiles=[];activeOperation++;running=false;
   if(activeView==='recent')render();
   const target=lastFocusedElement?.isConnected?lastFocusedElement:
     $('#tool-grid [data-tool="'+lastOpenedToolId+'"] .tool-card-launch')||
@@ -667,6 +804,7 @@ function setupHeroInteraction(){
 renderCategories();renderProviders();render();
 setupHeroInteraction();setupProfileMenu();setupHomeDashboard();setupMobileSearch();setupPollinationsSettings();
 void finishPollinationsAuth();
+$('[data-workflow]').forEach(button=>button.addEventListener('click',()=>openWorkflow(workflows.find(workflow=>workflow.id===button.dataset.workflow))));
 $('#open-image-gen')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
 $('#open-image-gen-hero')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
 $('#open-ai-assistant')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='ai-assistant');if(tool)openTool(tool);});

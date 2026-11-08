@@ -210,3 +210,47 @@ body.modal-open{overflow:hidden}
   .modal-body{min-height:0;padding:17px 16px}
   .modal-footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
 }
+
+/* Flujos inteligentes */
+.workflow-hub{margin:19px 0 17px;padding:17px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--accent-dark)))}
+.workflow-hub-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px}
+.workflow-hub-heading h3{font-size:15px;letter-spacing:-.025em;margin:6px 0 4px}
+.workflow-hub-heading p{font-size:9px;line-height:1.55;color:var(--muted);margin:0}
+.workflow-hub-note{display:inline-flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:30px;color:var(--muted);font-size:8px;white-space:nowrap}
+.workflow-hub-note .status-led{width:6px;height:6px}
+.workflow-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.workflow-card{display:flex;align-items:center;gap:10px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--text);text-align:left;transition:border-color .18s,transform .18s,background .18s}
+.workflow-card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 42%,var(--line));background:var(--panel-2)}
+.workflow-card-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:var(--accent-dark);color:var(--accent)}
+.workflow-card-icon svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7}
+.workflow-card-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.workflow-card-copy strong{font-size:9px;line-height:1.35}
+.workflow-card-copy small{font-size:7px;color:var(--muted);line-height:1.4}
+.workflow-card-arrow{margin-left:auto;flex:0 0 auto;color:var(--subtle)}
+.workflow-card-arrow svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7}
+.workflow-check{display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);cursor:pointer}
+.workflow-check input{width:15px;height:15px;flex:0 0 auto;margin:2px 0 0;accent-color:var(--accent)}
+.workflow-check span{display:flex;flex-direction:column;gap:3px}
+.workflow-check strong{font-size:10px;color:var(--text)}
+.workflow-check small{font-size:8px;line-height:1.45;color:var(--muted)}
+.workflow-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0}
+.workflow-result-panel{display:grid;gap:10px}
+.workflow-result-steps{display:flex;flex-wrap:wrap;gap:7px 18px;margin:0;padding:0 0 0 18px;color:var(--muted);font-size:8px;line-height:1.5}
+.workflow-summary{margin:0}
+.workflow-artifact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.workflow-artifact-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.workflow-artifact-copy strong{font-size:9px;overflow-wrap:anywhere}
+.workflow-artifact-copy small{font-size:8px;color:var(--muted);overflow-wrap:anywhere}
+.workflow-artifact-actions{display:flex;gap:6px;flex:0 0 auto}
+.workflow-preview{max-height:300px}
+.workflow-text-preview{max-height:220px}
+@media(max-width:1000px){.workflow-grid{grid-template-columns:1fr}.workflow-card{min-height:58px}}
+@media(max-width:620px){
+ .workflow-hub{padding:13px;margin:15px 0}
+ .workflow-hub-heading{flex-direction:column;gap:8px}
+ .workflow-hub-heading h3{font-size:13px}
+ .workflow-options{grid-template-columns:1fr}
+ .workflow-artifact{align-items:flex-start;flex-direction:column}
+ .workflow-artifact-actions{width:100%}
+ .workflow-artifact-actions .mini-button{flex:1}
+}
