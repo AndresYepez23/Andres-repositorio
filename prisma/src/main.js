@@ -3,7 +3,7 @@ import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
 import { runTool } from './engines.js';
 import { workflows, runWorkflow } from './workflows.js';
-import { getProviderCredential, saveProviderCredential, removeProviderCredential, isProviderConnected, validateProviderCredential } from './provider-connections.js';
+import { getProviderCredential, saveProviderCredential, removeProviderCredential, isProviderConnected, validateProviderCredential, getCentralProviderStatus } from './provider-connections.js';
 
 const POLLINATIONS_APP_KEY = '';
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -442,73 +442,49 @@ function refreshPollinationsStatus(){
   refreshProviderConnectionStatuses();
 }
 function providerConnectionCard(config){
-  const connected=config.id==='pollinations'?!!getPollinationsToken():isProviderConnected(config.id);
-  const details=config.id==='pollinations'
-    ? '<details class="provider-credential-details" id="provider-config-pollinations"><summary>Configuración inicial de Prisma Space</summary><label class="connection-key-label" for="polli-app-key">App Key pública</label><input class="form-control" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false"><small>Identifica esta aplicación; no es tu contraseña ni tu clave de consumo. Registra la URL de retorno que aparece abajo en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>.</small><div class="provider-redirect"><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URL de retorno</button></div><button type="button" class="button button-primary" id="polli-connect">Continuar con Pollinations</button></details>'
-    : '<details class="provider-credential-details" id="provider-config-'+config.id+'"><summary>Conectar con mi cuenta</summary><label class="connection-key-label" for="provider-key-'+config.id+'">'+config.keyLabel+'</label><input class="form-control" id="provider-key-'+config.id+'" type="password" autocomplete="off" spellcheck="false" placeholder="'+config.placeholder+'"><small>'+config.instructions+' <a href="'+config.url+'" target="_blank" rel="noopener noreferrer">'+config.linkLabel+'</a>.</small><button type="button" class="button button-primary" data-verify-provider="'+config.id+'">Verificar y conectar</button><p class="provider-connection-error" data-provider-error="'+config.id+'" role="status"></p></details>';
-  const action=config.id==='pollinations'
-    ? '<button type="button" class="button button-primary" id="polli-connect-start">Conectar mi cuenta</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" id="polli-disconnect">Desconectar</button>'
-    : '<button type="button" class="button button-primary" data-open-provider-config="'+config.id+'">'+(connected?'Cambiar conexión':'Conectar')+'</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" data-disconnect-provider="'+config.id+'">Desconectar</button>';
-  return '<article class="provider-connection-card" data-connection-card="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="'+config.id+'">'+(connected?'Conectado':'Sin conectar')+'</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row">'+action+'</div>'+details+'</article>';
+  if(config.shared){
+    return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.</small></div></article>';
+  }
+  const connected=!!getPollinationsToken();
+  const details='<details class="provider-credential-details" id="provider-config-pollinations"><summary>Configuración inicial de Prisma Space</summary><label class="connection-key-label" for="polli-app-key">App Key pública</label><input class="form-control" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false"><small>Identifica esta aplicación; no es tu contraseña ni tu clave de consumo. Registra la URL de retorno que aparece abajo en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>.</small><div class="provider-redirect"><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URL de retorno</button></div><button type="button" class="button button-primary" id="polli-connect">Continuar con Pollinations</button></details>';
+  const action='<button type="button" class="button button-primary" id="polli-connect-start">'+(connected?'Conectar otra cuenta':'Conectar mi cuenta')+'</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" id="polli-disconnect">Desconectar</button>';
+  return '<article class="provider-connection-card" data-connection-card="pollinations"><div class="provider-connection-top"><div><h4>Pollinations Connect</h4><p>Imágenes, texto y audio</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="pollinations">'+(connected?'Conectado en esta pestaña':'Cuenta personal sin conectar')+'</span></div><p class="provider-connection-detail">Esta conexión OAuth sigue siendo personal y utiliza los permisos y límites de tu cuenta de Pollinations.</p><div class="provider-connect-row">'+action+'</div>'+details+'</article>';
 }
 function renderProviderConnections(){
   const container=$('#provider-connect-grid');if(!container)return;
   const configs=[
-    {id:'pollinations',name:'Pollinations Connect',summary:'Imágenes, texto y audio',detail:'Tú autorizas tu propio saldo, los permisos y el límite de gasto. Prisma no utiliza una bolsa compartida.',keyLabel:'App Key pública',placeholder:'pk_...',instructions:'Registra la URL de retorno exacta de esta aplicación.',url:'https://enter.pollinations.ai/keys',linkLabel:'Crear App Key'},
-    {id:'huggingface',name:'Hugging Face',summary:'Cientos de modelos y proveedores',detail:'Una sola conexión puede dar acceso a modelos servidos por Groq, Fal AI, Together, DeepInfra y otros, según disponibilidad.',keyLabel:'Token de acceso',placeholder:'hf_...',instructions:'Crea un token fino con permiso para llamar a Inference Providers.',url:'https://huggingface.co/settings/tokens',linkLabel:'Crear token'},
-    {id:'gemini',name:'Google Gemini',summary:'Texto e imágenes con IA',detail:'Usa tu propia clave de Google AI Studio. Modelos, precios y límites dependen de tu proyecto.',keyLabel:'Clave de Google AI',placeholder:'Pega tu clave de API',instructions:'Crea una clave para Gemini API y revisa su configuración de facturación.',url:'https://aistudio.google.com/app/apikey',linkLabel:'Obtener clave'},
-    {id:'groq',name:'Groq',summary:'Texto y transcripción de alta velocidad',detail:'Conecta tu cuenta para tareas de texto y audio. Los límites dependen de tu plan y de los modelos activos.',keyLabel:'Clave de Groq',placeholder:'gsk_...',instructions:'Crea una clave desde tu consola de desarrollador.',url:'https://console.groq.com/keys',linkLabel:'Crear clave'}
+    {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis multimodal',detail:'Motor central de Prisma. Una sola clave maestra protegida permite que todos los visitantes utilicen el servicio, sujetos a las cuotas y límites de tu proyecto.',secretName:'GEMINI_API_KEY',shared:true},
+    {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Conectaremos el token central de Prisma para ofrecer modelos open source sin pedir claves individuales a los visitantes.',secretName:'HF_TOKEN',shared:true},
+    {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Se habilitará como motor compartido para tareas compatibles, con límites de solicitudes y alternativas cuando alcance su cuota.',secretName:'GROQ_API_KEY',shared:true},
+    {id:'pollinations',name:'Pollinations Connect',shared:false}
   ];
   container.innerHTML=configs.map(providerConnectionCard).join()+
-    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Cloudflare Workers AI</h4><p>Motor administrado por Prisma</p></div><span class="provider-connection-status">En preparación</span></div><p class="provider-connection-detail">Se activará desde un backend protegido, con límites para evitar que terceros consuman la cuota compartida.</p></article>'+
-    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Motores open source</h4><p>Herramientas locales y modelos abiertos</p></div><span class="provider-connection-status connected">Disponibles</span></div><p class="provider-connection-detail">PDF-Lib, Tesseract.js, FFmpeg y otras bibliotecas ejecutan tareas directamente en tu dispositivo cuando es posible.</p></article>';
+    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Cloudflare Workers AI</h4><p>Motor administrado por Prisma</p></div><span class="provider-connection-status">En preparación</span></div><p class="provider-connection-detail">Evaluaremos sus modelos gratuitos y límites antes de habilitarlo como motor compartido.</p></article>'+
+    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Motores open source locales</h4><p>Procesamiento en el dispositivo</p></div><span class="provider-connection-status connected">Disponibles</span></div><p class="provider-connection-detail">PDF-Lib, Tesseract.js, FFmpeg y otras bibliotecas ejecutan tareas directamente en el dispositivo cuando es posible.</p></article>';
   const input=$('#polli-app-key');if(input){input.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;input.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',input.value.trim()));}
   const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
-  $('#polli-connect-start')?.addEventListener('click',()=>{
-    const key=$('#polli-app-key')?.value||localStorage.getItem('prisma-polli-client-id')||'';
-    if(key.trim().startsWith('pk_'))connectPollinations();
-    else{$('#provider-config-pollinations').open=true;$('#polli-app-key')?.focus();toast('Configura una sola vez la App Key pública de Prisma Space.','info');}
-  });
+  $('#polli-connect-start')?.addEventListener('click',()=>{const key=$('#polli-app-key')?.value||localStorage.getItem('prisma-polli-client-id')||'';if(key.trim().startsWith('pk_'))connectPollinations();else{$('#provider-config-pollinations').open=true;$('#polli-app-key')?.focus();toast('Configura una sola vez la App Key pública de Prisma Space.','info');}});
   $('#polli-connect')?.addEventListener('click',connectPollinations);
-  $('#polli-disconnect')?.addEventListener('click',()=>{
-    sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refreshPollinationsStatus();toast('Se borró la conexión de esta pestaña.','success');
-  });
+  $('#polli-disconnect')?.addEventListener('click',()=>{sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refreshPollinationsStatus();toast('Se borró la conexión de esta pestaña.','success');});
   $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('URL de retorno copiada.','success');});
-  $$('[data-open-provider-config]').forEach(button=>button.addEventListener('click',()=>{
-    const provider=button.dataset.openProviderConfig,details=$('#provider-config-'+provider);
-    if(details){details.open=true;$('#provider-key-'+provider)?.focus();}
-  }));
-  $$('[data-verify-provider]').forEach(button=>button.addEventListener('click',async()=>{
-    const provider=button.dataset.verifyProvider,input=$('#provider-key-'+provider),error=$('[data-provider-error="'+provider+'"]');
-    const credential=input?.value.trim()||'';
-    if(!credential){if(error)error.textContent='Pega primero tu clave.';return;}
-    button.disabled=true;button.textContent='Verificando...';if(error)error.textContent='';
-    try{
-      await validateProviderCredential(provider,credential);
-      saveProviderCredential(provider,credential);input.value='';
-      const details=$('#provider-config-'+provider);if(details)details.open=false;
-      refreshProviderConnectionStatuses();
-      toast(provider==='huggingface'?'Hugging Face conectado.':provider==='gemini'?'Google Gemini conectado.':'Groq conectado.','success');
-    }catch(caught){if(error)error.textContent=caught?.message||'No se pudo validar la conexión.';}
-    finally{button.disabled=false;button.textContent='Verificar y conectar';}
-  }));
-  $$('[data-disconnect-provider]').forEach(button=>button.addEventListener('click',()=>{
-    removeProviderCredential(button.dataset.disconnectProvider);refreshProviderConnectionStatuses();toast('Se borró la conexión de esta pestaña.','success');
-  }));
   refreshProviderConnectionStatuses();
 }
-function refreshProviderConnectionStatuses(){
-  const connected={pollinations:!!getPollinationsToken(),huggingface:isProviderConnected('huggingface'),gemini:isProviderConnected('gemini'),groq:isProviderConnected('groq')};
+async function refreshProviderConnectionStatuses(){
+  const central=await getCentralProviderStatus();
+  const connected={pollinations:!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
-    if(status){status.textContent=isConnected?'Conectado':'Sin conectar';status.classList.toggle('connected',isConnected);}
-    const disconnect=provider==='pollinations'?$('#polli-disconnect'):$('[data-disconnect-provider="'+provider+'"]');
-    disconnect?.classList.toggle('hidden',!isConnected);
-    const openButton=provider==='pollinations'?$('#polli-connect-start'):$('[data-open-provider-config="'+provider+'"]');
-    if(openButton)openButton.textContent=isConnected?'Cambiar conexión':'Conectar';
+    if(status){
+      status.textContent=provider==='pollinations'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':'Pendiente de configurar';
+      status.classList.toggle('connected',isConnected);
+    }
+    if(provider==='pollinations'){
+      $('#polli-disconnect')?.classList.toggle('hidden',!isConnected);
+      const openButton=$('#polli-connect-start');if(openButton)openButton.textContent=isConnected?'Conectar otra cuenta':'Conectar mi cuenta';
+    }
   });
   const count=Object.values(connected).filter(Boolean).length;
-  const summary=$('#connections-summary');if(summary)summary.textContent=count+' motor'+(count===1?'':'es')+' conectado'+(count===1?'':'s');
+  const summary=$('#connections-summary');if(summary)summary.textContent=count+' motor'+(count===1?'':'es')+' disponible'+(count===1?'':'s')+' para Prisma';
 }
 async function connectPollinations(){
   const input=$('#polli-app-key');
@@ -808,11 +784,13 @@ function renderFileList(){
   list.innerHTML='<div class="upload-list-head"><strong>'+selectedFiles.length+' archivo'+(selectedFiles.length===1?'':'s')+'</strong><span>'+formatBytes(total)+' en total</span><button type="button" data-clear-files>Vaciar</button></div>'+selectedFiles.map((f,i)=>'<div class="file-row">'+icon('file-text')+'<span title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</span><small>'+formatBytes(f.size)+'</small><button class="remove-file" type="button" data-remove-file="'+i+'" aria-label="Quitar '+escapeHtml(f.name)+'">'+icon('x')+'</button></div>').join('');
 }
 function formatBytes(bytes){if(!bytes)return '0 B';const u=['B','KB','MB','GB'];const i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];}
-function attachProviderCredentials(params){
+async function attachProviderCredentials(params){
+  const central=await getCentralProviderStatus();
   params.polliToken=getPollinationsToken();
-  params.hfToken=getProviderCredential('huggingface');
-  params.geminiKey=getProviderCredential('gemini');
-  params.groqKey=getProviderCredential('groq');
+  params.hfToken='';
+  params.geminiKey='';
+  params.groqKey='';
+  params.centralProviders=central.providers||{gemini:false,huggingface:false,groq:false};
   return params;
 }
 function readParams(){
@@ -832,7 +810,7 @@ async function executeCurrentWorkflow(){
   const progressForWorkflow=(progress,message)=>{if(operationId===activeOperation&&currentWorkflow===workflowAtStart)updateProgress(progress,message);};
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Ejecutando flujo...';$('#tool-output').innerHTML='';updateProgress(.02,'Preparando flujo inteligente...');
   try{
-    const params=attachProviderCredentials(readParams());
+    const params=await attachProviderCredentials(readParams());
     const result=await runWorkflow(workflowAtStart.id,filesAtStart,params,progressForWorkflow);
     if(operationId!==activeOperation||currentWorkflow!==workflowAtStart||$('#tool-modal').classList.contains('hidden'))return;
     if($('#field-hfToken'))$('#field-hfToken').value='';
@@ -881,7 +859,7 @@ async function executeCurrentTool(){
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
-    const params=attachProviderCredentials(readParams());
+    const params=await attachProviderCredentials(readParams());
     const result=await runTool(toolAtStart.id,filesAtStart,params,progressForOperation);
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     recordRecentTool(toolAtStart.id);
