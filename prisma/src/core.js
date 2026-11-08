@@ -4,7 +4,7 @@ import { getProviderCredential } from './provider-connections.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
-const MAX_STEPS = 5;
+const MAX_STEPS = 10;
 let messages = [];
 let attachments = [];
 let pendingPlan = null;
