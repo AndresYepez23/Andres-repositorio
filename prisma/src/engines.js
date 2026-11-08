@@ -598,6 +598,34 @@ async function generateText(p,cb){
  const preferred=p.provider||'auto';
  const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
  const errors=[];
+ const centralCandidates=preferred==='auto'?['gemini','huggingface','groq']:[preferred];
+ for(const provider of centralCandidates){
+  if(!p.centralProviders?.[provider])continue;
+  progress(cb,.18,'Conectando con '+(provider==='gemini'?'Gemini':provider==='huggingface'?'Hugging Face':'Groq')+' mediante Prisma…');
+  try{
+   const response=await fetch('/api/ai/chat',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    cache:'no-store',
+    body:JSON.stringify({
+     provider,
+     model:p.model||modelProfiles[provider]?.[tier],
+     messages:[{role:'system',content:system},{role:'user',content:user}],
+     temperature:.7,
+     maxOutputTokens:lengths[p.length]||1200
+    })
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||'El motor central respondió '+response.status+'.');
+   if(!data.text)throw Error('El motor central no devolvió texto.');
+   progress(cb,1,'Respuesta lista.');
+   const names={gemini:'Google Gemini',huggingface:'Hugging Face',groq:'Groq'};
+   return {text:data.text,provider,model:data.model||p.model||modelProfiles[provider]?.[tier]||'predeterminado',summary:'Respuesta generada con '+names[provider]+' · motor central de Prisma.'};
+  }catch(error){
+   errors.push((provider==='gemini'?'Google Gemini':provider==='huggingface'?'Hugging Face':'Groq')+': '+(error?.message||'fallo de conexión'));
+   if(preferred!=='auto')throw error;
+  }
+ }
  for(const provider of candidates){
   const token=provider==='pollinations'?String(p.polliToken||'').trim():provider==='huggingface'?String(p.hfToken||'').trim():provider==='gemini'?String(p.geminiKey||'').trim():String(p.groqKey||'').trim();
   if(!token)continue;
