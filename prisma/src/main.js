@@ -72,7 +72,7 @@ function readStoredArray(key){
 }
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
-let activeCategory='all',activeView='explore',searchTerm='',layout='grid',currentTool=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null;
+let activeCategory='all',activeView='explore',searchTerm='',layout='grid',currentTool=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
 const popularToolIds=['pdf-merge','image-bg','image-gen','docx-pdf','image-compress','qr'];
 const searchAliases={
   'pdf-merge':'unir pdf juntar pdf combinar pdf fusionar documentos combinar archivos',
@@ -549,28 +549,30 @@ function updateProgress(progress,message){
 async function executeCurrentTool(){
   if(!currentTool||running)return;
   if(currentTool.file&&!selectedFiles.length){toast('Selecciona al menos un archivo.','error');return;}
+  const operationId=++activeOperation,toolAtStart=currentTool,filesAtStart=[...selectedFiles];
+  const progressForOperation=(progress,message)=>{if(operationId===activeOperation&&currentTool===toolAtStart)updateProgress(progress,message);};
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
-    const params=readParams();
-    params.polliToken=getPollinationsToken();
-    const result=await runTool(currentTool.id,selectedFiles,params,updateProgress);
-    if($('#tool-modal').classList.contains('hidden'))return;
-    recordRecentTool(currentTool.id);
+    const params=readParams();params.polliToken=getPollinationsToken();
+    const result=await runTool(toolAtStart.id,filesAtStart,params,progressForOperation);
+    if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
+    recordRecentTool(toolAtStart.id);
     if($('#field-hfToken'))$('#field-hfToken').value='';
     if(result?.blob){if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=result.previewUrl&&result.previewUrl.startsWith('blob:')?result.previewUrl:URL.createObjectURL(result.blob);if(!result.previewUrl)result.previewUrl=outputUrl;}
-    renderOutput(result);
-    updateProgress(1,'Proceso completado');
-    toast('La operación terminó correctamente.','success');
+    renderOutput(result);updateProgress(1,'Proceso completado');toast('La operación terminó correctamente.','success');
   }catch(error){
+    if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     console.error(error);
-    if(!$('#tool-modal').classList.contains('hidden'))$('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
+    $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
     toast(error?.message||'Ocurrió un error.','error');
   }finally{
+    if(operationId!==activeOperation||currentTool!==toolAtStart)return;
     if($('#field-hfToken'))$('#field-hfToken').value='';
     running=false;$('#modal-body').setAttribute('aria-busy','false');$('#modal-run').disabled=false;$('#modal-run').innerHTML=icon('play')+' Ejecutar herramienta';
   }
 }
+
 function renderOutput(result){
   const panel=document.createElement('div');panel.className='output-panel';
   let html='<div class="output-head"><strong>✓ Resultado listo</strong><div class="output-actions">';
@@ -595,7 +597,7 @@ function closeTool(){
   if($('#field-hfToken'))$('#field-hfToken').value='';
   if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}
   $('#modal-body').innerHTML='';$('#modal-body').setAttribute('aria-busy','false');
-  $('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;
+  $('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];activeOperation++;running=false;
   if(activeView==='recent')render();
   const target=lastFocusedElement?.isConnected?lastFocusedElement:$('#tool-grid [data-tool="'+lastOpenedToolId+'"]');
   lastFocusedElement=null;target?.focus?.();
