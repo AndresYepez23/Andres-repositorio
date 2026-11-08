@@ -6,7 +6,7 @@ export default {
       return Response.json({
         ok: true,
         app: "PRISMA",
-        catalog: "110-tools",
+        catalog: "116-tools",
         version: "feature-intelligent-workflows",
       }, {
         headers: {
