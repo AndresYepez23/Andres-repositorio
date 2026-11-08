@@ -112,8 +112,11 @@ function validatePlan(plan){
     const tool=ready.get(String(step.tool_id||''));
     if(!tool)throw new Error('El plan solicitó una herramienta no disponible: '+String(step.tool_id||'desconocida'));
     if(tool.file&&!attachments.length)throw new Error('Para usar '+tool.name+' necesitas adjuntar un archivo compatible.');
-    if(tool.file&&attachments.length&&!tool.multiple&&attachments.length>1&&index===0) {
-      // Single-file tools receive only the first selected file.
+    if(tool.file&&attachments.length){
+      const accepted=String(tool.accept||'*/*').split(',').map(value=>value.trim().toLowerCase());
+      const candidates=tool.multiple?attachments:[attachments[0]];
+      const compatible=candidates.filter(file=>accepted.includes('*/*')||accepted.some(rule=>rule.startsWith('.')?file.name.toLowerCase().endsWith(rule):rule.endsWith('/*')?file.type.toLowerCase().startsWith(rule.slice(0,-1)):file.type.toLowerCase()===rule));
+      if(!compatible.length)throw new Error('El archivo adjunto no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'formato compatible')+'.');
     }
     return {tool,reason:String(step.reason||'Paso '+(index+1)),params:step.params&&typeof step.params==='object'?step.params:{}};
   });
@@ -175,7 +178,7 @@ async function executePlan(){
       const {tool,params:plannedParams,reason}=steps[index];
       status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');
       const params={...plannedParams,...credentials()};
-      if(tool.id==='ai-assistant'&&!params.prompt)params.prompt=lastText||plan.message;
+      if(tool.id==='ai-assistant')params.prompt=(params.prompt||plan.message||'Resuelve la tarea')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');
       if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','json-minify','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
       let inputFiles=[];
       if(tool.file){
