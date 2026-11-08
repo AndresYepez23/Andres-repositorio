@@ -390,3 +390,78 @@ body.modal-open{overflow:hidden}
 .core-progress-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8fd8d0,#a99be8);transition:width .22s ease}
 .core-progress small{min-width:145px;text-align:right;font-size:8px;color:var(--muted)}
 @media(max-width:620px){.core-progress{gap:7px;padding:8px 10px}.core-progress small{min-width:100px;font-size:7px}}
+
+
+/* Product-first assistant home: useful workspace, not a decorative AI landing page */
+.core-section{max-width:1120px;margin:0 auto;padding:24px 0 48px}
+.core-hero-compact{padding:8px 0 18px;border:0}
+.core-hero-compact .eyebrow{font-size:9px}
+.core-hero-compact h2{font:750 clamp(26px,3.4vw,36px)/1.12 Manrope,sans-serif;letter-spacing:-1.2px;margin:8px 0 6px}
+.core-hero-compact h2 em{color:var(--text);background:none}
+.core-hero-compact>p{font-size:12px;line-height:1.55;max-width:700px}
+.core-hero-compact .core-capabilities{margin-top:11px}
+.core-hero-compact .core-capabilities span{font-size:8px;padding:5px 9px}
+.core-workspace{grid-template-columns:minmax(0,1fr) 230px;gap:14px;margin-top:12px}
+.core-chat-column{border-radius:14px;box-shadow:none}
+.core-chat-toolbar{padding:12px 15px;background:var(--panel)}
+.core-chat-toolbar strong{font-size:13px}
+.core-chat-toolbar small{font-size:9px}
+.core-messages{min-height:340px;max-height:58vh;padding:22px 24px;background:var(--bg)}
+.core-welcome{padding:28px 10px}
+.core-welcome-mark{display:none}
+.core-welcome .eyebrow{font-size:9px;letter-spacing:.12em}
+.core-welcome h2{font:650 23px Manrope,sans-serif;letter-spacing:-.65px;margin:9px 0}
+.core-welcome p{font-size:11px;max-width:460px}
+.core-examples{gap:8px}
+.core-examples button{background:var(--panel);font-size:9px;border-radius:20px;padding:8px 12px}
+.core-message{max-width:90%;border-radius:14px;padding:12px 15px;box-shadow:none}
+.core-message.user{background:var(--panel-2)}
+.core-message.assistant{background:var(--panel);border-color:var(--line)}
+.core-message-label{font-size:8px;letter-spacing:.08em}
+.core-message-body{font-size:12px;line-height:1.7}
+.core-connect-banner{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.core-connect-mark{width:32px;height:32px;flex:0 0 32px;border-radius:9px;display:grid;place-items:center;background:var(--panel-3);color:var(--accent)}
+.core-connect-banner>div{flex:1;min-width:0}
+.core-connect-banner strong{font-size:10px}
+.core-connect-banner p{font-size:9px;color:var(--muted);line-height:1.45;margin:3px 0 0}
+.core-connect-banner .button{min-height:32px;padding:0 11px;font-size:9px;white-space:nowrap}
+.core-plan{margin:0 15px 14px;background:var(--panel-2);border-color:var(--line)}
+.core-plan-warning{font-size:9px;line-height:1.5}
+.core-results{padding:0 15px 15px}
+.core-result-card{background:var(--panel);padding:13px}
+.core-result-card>strong{font-size:11px}
+.core-result-card>p{font-size:10px}
+.core-result-card pre{font-size:10px;max-height:320px}
+.core-result-preview{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:9px;margin:10px 0;background:var(--panel-2)}
+.core-composer{padding:13px 15px;background:var(--panel)}
+.core-composer textarea{font-size:12px;min-height:62px;padding:7px 4px}
+.core-composer-footer{padding-top:7px;border-top:1px solid var(--line)}
+.core-composer .button{border-radius:9px}
+.core-side{gap:9px}
+.core-side-card{padding:13px;border-radius:11px;box-shadow:none}
+.core-side-card h3{font-size:10px}
+.core-side-card p{font-size:9px}
+.core-side-footnote{font-size:8px}
+.core-status{background:var(--panel);font-size:9px}
+.core-progress{background:var(--panel)}
+@media(max-width:950px){
+ .core-section{max-width:760px}
+ .core-workspace{grid-template-columns:1fr}
+ .core-side{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .core-side-footnote{grid-column:1/-1}
+}
+@media(max-width:620px){
+ .core-section{padding:12px 0 28px}
+ .core-hero-compact{padding:5px 0 13px}
+ .core-hero-compact h2{font-size:27px}
+ .core-hero-compact>p{font-size:10px}
+ .core-workspace{margin-top:7px;gap:9px}
+ .core-messages{min-height:300px;max-height:54vh;padding:13px}
+ .core-message{max-width:96%;padding:10px 12px}
+ .core-connect-banner{align-items:flex-start;flex-wrap:wrap;padding:10px}
+ .core-connect-banner>div{width:calc(100% - 46px);flex:1}
+ .core-connect-banner .button{margin-left:44px}
+ .core-composer{padding:10px}
+ .core-composer textarea{min-height:58px}
+ .core-side{grid-template-columns:1fr 1fr}
+}
