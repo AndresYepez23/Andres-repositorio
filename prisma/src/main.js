@@ -456,7 +456,7 @@ function setupHeroInteraction(){
     const glow=$('.prism-glow',art);
     glow.style.setProperty('--glow-x','0px');
     glow.style.setProperty('--glow-y','0px');
-    $('.art-tag',art).forEach(tag=>{tag.style.transform='';});
+    $$('.art-tag',art).forEach(tag=>{tag.style.transform='';});
   };
   art.addEventListener('pointermove',event=>{
     if(event.pointerType&&event.pointerType!=='mouse')return;
@@ -470,7 +470,7 @@ function setupHeroInteraction(){
       const glow=$('.prism-glow',art);
       glow.style.setProperty('--glow-x',`${(x*18).toFixed(1)}px`);
       glow.style.setProperty('--glow-y',`${(y*12).toFixed(1)}px`);
-      $('.art-tag',art).forEach((tag,index)=>{
+      $$('.art-tag',art).forEach((tag,index)=>{
         const strength=[-.22,.28,-.16][index]??.2;
         tag.style.transform=`translate3d(${(x*14*strength).toFixed(1)}px,${(y*10*strength).toFixed(1)}px,0)`;
       });
