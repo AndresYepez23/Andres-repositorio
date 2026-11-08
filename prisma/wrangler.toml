@@ -6,3 +6,6 @@ pages_build_output_dir = "./dist"
 binding = "PRISMA_RATE_DB"
 database_name = "prisma-ai-limits"
 database_id = "e02104b5-0861-475a-a60f-7658439d4fe0"
+
+[ai]
+binding = "AI"
