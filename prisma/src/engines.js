@@ -233,7 +233,7 @@ async function imageAdvanced(id,files,p,cb){
  if(id==='image-watermark'){
   ctx.drawImage(img,0,0);const text=String(p.watermark||'PRISMA').trim();if(!text)throw Error('Escribe el texto de la marca de agua.');
   const size=Math.max(12,Math.min(180,Number(p.size)||36)),margin=Math.max(16,Math.round(Math.min(img.width,img.height)*.035));
-  ctx.font='700 '+size+'px Manrope, Arial, sans-serif';ctx.fillStyle=p.color||'#ffffff';ctx.globalAlpha=Math.max(.08,Math.min(.9,Number(p.opacity)||.45));
+  ctx.font='700 '+size+'px Manrope, Arial, sans-serif';ctx.fillStyle=p.color||'#ffffff';ctx.globalAlpha=Math.max(.08,Math.min(.9,(Number(p.opacity)||45)/100));
   ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=5;
   const w=ctx.measureText(text).width,position=p.position||'bottom-right';
   const x=position.includes('left')?margin:position.includes('center')?(canvas.width-w)/2:canvas.width-w-margin;
