@@ -82,11 +82,48 @@ function parsePlan(raw){
   if(start<0||end<=start)throw new Error('El modelo no devolvió un plan estructurado. Inténtalo de nuevo con una solicitud más concreta.');
   return JSON.parse(text.slice(start,end+1));
 }
+function toolPolicy(tool){
+  if(tool.mode==='local')return {
+    engine:'JavaScript local en el navegador',
+    privacy:'El contenido permanece en este dispositivo',
+    cost:'Sin coste de API; utiliza recursos del dispositivo',
+    fallback:'No necesita proveedor externo',
+    external:false
+  };
+  if(tool.mode==='browser')return {
+    engine:tool.tag||'Biblioteca open source en el navegador',
+    privacy:'El archivo se procesa localmente; puede descargar dependencias',
+    cost:'Sin coste de API conocido; depende del equipo y la descarga inicial',
+    fallback:'Si falla el navegador o la dependencia, detener y ofrecer alternativa',
+    external:false
+  };
+  if(tool.mode==='byok')return {
+    engine:tool.tag||'Proveedor conectado por el usuario',
+    privacy:'El contenido necesario se transmite al proveedor elegido',
+    cost:'Depende de la cuenta, modelo, cuota y tarifa del proveedor',
+    fallback:'Cambiar de proveedor solo cuando la operación admita otro motor',
+    external:true
+  };
+  if(tool.mode==='online')return {
+    engine:tool.tag||'API externa',
+    privacy:'La consulta se envía al servicio externo',
+    cost:'Cuotas y condiciones del servicio pueden cambiar',
+    fallback:'Reintentar o seleccionar una alternativa compatible',
+    external:true
+  };
+  return {
+    engine:'Motor no verificado',
+    privacy:'No ejecutar sin revisar el flujo de datos',
+    cost:'Desconocido',
+    fallback:'No disponible',
+    external:true
+  };
+}
 function availableCatalog(){
   return tools.filter(tool=>tool.status==='ready').map(tool=>({
     id:tool.id,name:tool.name,description:tool.description,category:tool.category,
     mode:tool.mode,file:!!tool.file,multiple:!!tool.multiple,accept:tool.accept||'',
-    tag:tool.tag||''
+    tag:tool.tag||'',policy:toolPolicy(tool)
   }));
 }
 function buildPlannerPrompt(userText){
@@ -118,7 +155,7 @@ function validatePlan(plan){
       const compatible=candidates.filter(file=>accepted.includes('*/*')||accepted.some(rule=>rule.startsWith('.')?file.name.toLowerCase().endsWith(rule):rule.endsWith('/*')?file.type.toLowerCase().startsWith(rule.slice(0,-1)):file.type.toLowerCase()===rule));
       if(!compatible.length)throw new Error('El archivo adjunto no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'formato compatible')+'.');
     }
-    return {tool,reason:String(step.reason||'Paso '+(index+1)),params:step.params&&typeof step.params==='object'?step.params:{}};
+    return {tool,policy:toolPolicy(tool),reason:String(step.reason||'Paso '+(index+1)),params:step.params&&typeof step.params==='object'?step.params:{}};
   });
   return steps;
 }
@@ -140,7 +177,7 @@ function showPlan(plan,steps){
     const number=document.createElement('span');number.className='core-plan-number';number.textContent=String(index+1);
     const copy=document.createElement('span');copy.className='core-plan-copy';
     const name=document.createElement('strong');name.textContent=tool.name;
-    const detail=document.createElement('small');detail.textContent=reason+' · '+(tool.mode==='local'?'Procesamiento local':tool.mode==='browser'?'En tu navegador':tool.mode==='byok'?'Proveedor externo con tu clave':'Servicio externo');
+    const detail=document.createElement('small');detail.textContent=reason+' · '+(tool.mode==='local'?'Local':tool.mode==='browser'?'Navegador':tool.mode==='byok'?'Proveedor conectado':'Servicio externo')+' · '+toolPolicy(tool).cost;
     copy.append(name,detail);item.append(number,copy);list.append(item);
   });
   panel.append(list);
