@@ -17,6 +17,7 @@ export const categories = [
 
 export const tools = [
   { id:'pdf-merge', name:'Unir PDF', description:'Combina varios documentos en un solo archivo.', category:'pdf', icon:'files', status:'ready', mode:'local', file:true, multiple:true, accept:'.pdf,application/pdf', tag:'Sin subir archivos' },
+  { id:'pdf-compress', name:'Optimizar PDF', description:'Reduce el peso estructural del PDF sin rasterizar sus páginas ni necesitar una API.', category:'pdf', icon:'file-archive', status:'beta', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Gratis · Local · Sin API' },
   { id:'pdf-extract', name:'Extraer páginas', description:'Selecciona páginas y crea un PDF independiente.', category:'pdf', icon:'file-output', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Control preciso' },
   { id:'pdf-rotate', name:'Rotar PDF', description:'Corrige la orientación de las páginas de un documento.', category:'pdf', icon:'rotate-cw', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'En tu dispositivo' },
   { id:'pdf-watermark', name:'Marca de agua', description:'Añade una marca de agua de texto a tus páginas.', category:'pdf', icon:'stamp', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Personalizable' },
@@ -29,7 +30,6 @@ export const tools = [
   { id:'image-bg', name:'Eliminar fondo', description:'Obtén un PNG transparente mediante IA en tu navegador.', category:'image', icon:'scan', status:'beta', mode:'browser', file:true, accept:'image/png,image/jpeg,image/webp,.heic,.heif', tag:'IA local · BiRefNet' },
   { id:'image-ocr', name:'Extraer texto (OCR)', description:'Reconoce texto en fotografías y documentos escaneados.', category:'image', icon:'scan-text', status:'beta', mode:'browser', file:true, accept:'image/*', tag:'Motor Tesseract' },
   { id:'pdf-to-image', name:'PDF a imágenes', description:'Exporta las páginas de un PDF como imágenes PNG en un ZIP.', category:'pdf', icon:'image-down', status:'beta', mode:'browser', file:true, accept:'.pdf,application/pdf', tag:'PNG · ZIP' },
-  { id:'pdf-compress', name:'Comprimir PDF', description:'Optimiza el peso de documentos conservando su legibilidad.', category:'pdf', icon:'file-archive', status:'soon', mode:'planned', file:true, accept:'.pdf,application/pdf', tag:'En preparación' },
   { id:'pdf-protect', name:'Proteger PDF', description:'Añade contraseña y restricciones a tus documentos.', category:'pdf', icon:'shield', status:'soon', mode:'planned', file:true, accept:'.pdf,application/pdf', tag:'En preparación' },
   { id:'video-audio', name:'Extraer audio', description:'Separa la pista de audio de un video y guárdala como WAV.', category:'media', icon:'audio-lines', status:'beta', mode:'browser', file:true, accept:'video/*,.mp4,.mov,.mkv,.webm', tag:'FFmpeg WebAssembly' },
   { id:'video-trim', name:'Recortar video', description:'Extrae un fragmento de video indicando inicio y duración.', category:'media', icon:'scissors', status:'beta', mode:'browser', file:true, accept:'video/*,.mp4,.mov,.mkv,.webm', tag:'FFmpeg WebAssembly' },
