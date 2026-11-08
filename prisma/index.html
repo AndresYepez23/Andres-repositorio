@@ -30,6 +30,7 @@
         <button class="nav-item active" data-view="explore"><span class="nav-icon" data-icon="grid"></span><span>Explorar</span><kbd>⌘ 1</kbd></button>
         <button class="nav-item" data-view="favorites"><span class="nav-icon" data-icon="star"></span><span>Favoritos</span><span class="nav-count" id="favorite-count">0</span></button>
         <button class="nav-item" data-view="recent"><span class="nav-icon" data-icon="history"></span><span>Recientes</span><span class="nav-count" id="recent-count">0</span></button>
+        <button class="nav-item" data-view="core"><span class="nav-icon" data-icon="brain-circuit"></span><span>Prisma Core</span><span class="nav-dot"></span></button>
         <button class="nav-item" data-view="ai"><span class="nav-icon" data-icon="sparkles"></span><span>Laboratorio IA</span><span class="nav-dot"></span></button>
       </nav>
       <div class="side-label side-label-spaced">CATEGORÍAS</div>
@@ -86,7 +87,7 @@
         </div>
 
         <div class="metric-strip">
-          <div class="metric"><strong id="metric-tools">25</strong><span>herramientas en el catálogo</span></div>
+          <div class="metric"><strong id="metric-tools">110</strong><span>herramientas en el catálogo</span></div>
           <div class="metric-divider"></div>
           <div class="metric"><strong id="metric-local">18</strong><span>operaciones locales o en navegador</span></div>
           <div class="metric-divider"></div>
@@ -135,6 +136,38 @@
           <div class="empty-state hidden" id="empty-state"><span data-icon="search-x"></span><h3 id="empty-title">No encontramos herramientas</h3><p id="empty-description">Prueba con otro término o cambia la categoría.</p><button class="button button-quiet" id="clear-search">Limpiar búsqueda</button></div>
         </section>
 
+        <section class="core-section hidden" id="core-section">
+          <div class="core-hero">
+            <div class="eyebrow"><span class="eyebrow-line"></span> PRISMA SPACE · INTELIGENCIA CENTRAL</div>
+            <h2>Cuéntame qué necesitas.<br><em>Yo coordino las herramientas.</em></h2>
+            <p>Un solo chat para planificar tareas, combinar motores y ejecutar operaciones del catálogo. Revisa cada plan antes de autorizarlo.</p>
+            <div class="core-capabilities"><span>110 herramientas registradas</span><span>Planificación multimotor</span><span>Control antes de ejecutar</span></div>
+          </div>
+          <div class="core-workspace">
+            <div class="core-chat-column">
+              <div class="core-chat-toolbar"><div><strong>Tu espacio de trabajo</strong><small>Conversación guardada en este navegador</small></div><button type="button" class="mini-button" id="core-clear">Nueva conversación</button></div>
+              <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+              <div class="core-plan hidden" id="core-plan"></div>
+              <div class="core-results" id="core-results"></div>
+              <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div>
+              <div class="core-composer" id="core-composer">
+                <div class="core-attachments" id="core-attachments"></div>
+                <textarea id="core-input" rows="2" placeholder="Describe el resultado que quieres conseguir…" aria-label="Mensaje para Prisma Core"></textarea>
+                <div class="core-composer-footer">
+                  <div class="core-composer-tools"><button type="button" class="mini-button" id="core-file-button"><span data-icon="paperclip"></span> Adjuntar archivos</button><input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.docx,.xlsx,.csv,.txt,.md,audio/*,video/*,.zip"></div>
+                  <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
+                </div>
+                <small>Hasta 8 archivos · 100 MB en total. Los archivos se procesan según las capacidades de cada herramienta. No se envían al modelo para análisis visual automático.</small>
+              </div>
+            </div>
+            <aside class="core-side">
+              <div class="core-side-card"><span class="core-side-icon" data-icon="brain-circuit"></span><h3>Un cerebro, muchos motores</h3><p>Prisma analiza tu solicitud y elige herramientas disponibles del catálogo. El modelo de texto planifica; los motores especializados ejecutan.</p></div>
+              <div class="core-side-card"><span class="core-side-icon" data-icon="shield-check"></span><h3>Tú mantienes el control</h3><p>Ninguna secuencia se ejecuta sin tu autorización. Los servicios externos se identifican antes de continuar.</p></div>
+              <div class="core-side-card"><span class="core-side-icon" data-icon="plug"></span><h3>Conecta un motor de texto</h3><p>Prisma Core utiliza tus conexiones personales de Pollinations, Groq, Hugging Face o Gemini.</p><button type="button" class="text-action" id="core-open-settings">Gestionar conexiones →</button></div>
+              <div class="core-side-footnote">Memoria local de conversación. Las claves de proveedores permanecen en la sesión del navegador. No hay todavía memoria sincronizada entre dispositivos ni backend compartido.</div>
+            </aside>
+          </div>
+        </section>
         <section class="ai-section hidden" id="ai-section">
           <div class="eyebrow">PRISMA SPACE · IA MULTIMODELO</div>
           <h2>Un laboratorio. Varios motores.</h2>
