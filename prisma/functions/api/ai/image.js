@@ -1,0 +1,54 @@
+import { allowedModel } from "../../_lib/model-catalog.js";
+import { checkLimits } from "../../_lib/limits.js";
+
+function errorResponse(error,status=400){
+ return Response.json({error},{status,headers:{"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+}
+export async function onRequestPost({request,env}){
+ const url=new URL(request.url);
+ if(request.headers.get("Origin")!==url.origin)return errorResponse("Origen no autorizado.",403);
+ if(Number(request.headers.get("Content-Length")||0)>8192)return errorResponse("La solicitud es demasiado grande.",413);
+ let payload;
+ try{
+  const input=await request.text();
+  if(input.length>8192)return errorResponse("La solicitud es demasiado grande.",413);
+  payload=JSON.parse(input);
+ }catch{return errorResponse("Solicitud inválida.",400);}
+ const prompt=String(payload.prompt||"").trim();
+ const provider=String(payload.provider||"cloudflare");
+ if(prompt.length<8||prompt.length>1800)return errorResponse("Describe la imagen en 8 a 1800 caracteres.",400);
+ if(!["cloudflare","huggingface"].includes(provider))return errorResponse("Motor de imagen no permitido.",400);
+ const model=String(payload.model|| (provider==="cloudflare"?"@cf/black-forest-labs/flux-1-schnell":"stabilityai/stable-diffusion-3-medium-diffusers"));
+ if(!allowedModel(provider,"image",model))return errorResponse("Modelo de imagen no disponible en Prisma.",400);
+ if(provider==="cloudflare"&&!env.AI?.run)return errorResponse("Workers AI no está conectado en Cloudflare.",503);
+ if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!env.HF_TOKEN))
+  return errorResponse("Las imágenes de Hugging Face requieren activar explícitamente HF_MEDIA_ENABLED=1; no consumiremos tus créditos sin autorización.",503);
+ const quota=await checkLimits(env,request,provider+"-image");
+ if(quota)return errorResponse(quota.error,quota.status);
+ if(provider==="cloudflare"){
+  try{
+   const response=await env.AI.run(model,{prompt:prompt.slice(0,1800),steps:4,...(Number.isInteger(Number(payload.seed))&&Number(payload.seed)>0?{seed:Number(payload.seed)}:{})});
+   if(!response?.image)return errorResponse("Workers AI no devolvió ninguna imagen.",502);
+   const raw=atob(response.image);
+   const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+   return new Response(bytes,{headers:{"Content-Type":"image/jpeg","Cache-Control":"no-store","X-Prisma-Model":model,"X-Content-Type-Options":"nosniff"}});
+  }catch(error){
+   console.error("Prisma image Workers AI",String(error?.message||error).slice(0,120));
+   return errorResponse("No fue posible generar la imagen en Workers AI. Puede haberse agotado la cuota gratuita diaria.",502);
+  }
+ }
+ // Explicitly gated Hugging Face media provider.
+ try{
+  const response=await fetch("https://router.huggingface.co/hf-inference/models/"+model,{
+   method:"POST",
+   headers:{Authorization:"Bearer "+env.HF_TOKEN,"Content-Type":"application/json",Accept:"image/png,image/jpeg"},
+   body:JSON.stringify({inputs:prompt,parameters:{num_inference_steps:16}})
+  });
+  if(!response.ok)return errorResponse(response.status===402?"Se agotaron los créditos de Hugging Face.":"Hugging Face no pudo generar la imagen ("+response.status+").",response.status===402?402:502);
+  const mime=response.headers.get("Content-Type")||"";
+  if(!mime.startsWith("image/"))return errorResponse("Hugging Face no devolvió una imagen válida.",502);
+  const bytes=await response.arrayBuffer();
+  if(bytes.byteLength>10*1024*1024)return errorResponse("La imagen excede el tamaño permitido.",502);
+  return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+ }catch{return errorResponse("No fue posible conectar con Hugging Face para crear la imagen.",502);}
+}
