@@ -564,7 +564,9 @@ async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
- const lengths={short:500,medium:1200,long:2600};
+ const tier=p.reasoning||'balanced';
+ const lengths={short:500,medium:1600,long:tier==='smart'?6000:3200};
+ const modelProfiles={pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'openai/gpt-oss-120b:cheapest'},groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-120b',smart:'openai/gpt-oss-120b'},gemini:{fast:'gemini-3.8-flash',balanced:'gemini-3.8-flash',smart:'gemini-3.8-flash'}};
  const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
  const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
  const preferred=p.provider||'auto';
@@ -577,21 +579,21 @@ async function generateText(p,cb){
   try{
    let text='';
    if(provider==='pollinations'){
-    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/gpt-5.4-nano',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
+    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||modelProfiles.pollinations[tier],messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
     text=data.choices?.[0]?.message?.content||data.output_text||'';
    }else if(provider==='huggingface'){
     const {InferenceClient}=await import(HF_INFERENCE),client=new InferenceClient(token);
-    const data=await client.chatCompletion({model:'openai/gpt-oss-120b:cheapest',messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:lengths[p.length]||1200,temperature:.7});
+    const data=await client.chatCompletion({model:p.model||modelProfiles.huggingface[tier],messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:lengths[p.length]||1200,temperature:.7});
     text=data.choices?.[0]?.message?.content||'';
    }else if(provider==='groq'){
-    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-oss-20b',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_completion_tokens:lengths[p.length]||1200,stream:false})});
+    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||modelProfiles.groq[tier],messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_completion_tokens:lengths[p.length]||1200,stream:false})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(data.error?.message||'Groq respondió '+response.status+'.');
     text=data.choices?.[0]?.message?.content||'';
    }else if(provider==='gemini'){
-    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
+    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(p.model||modelProfiles.gemini[tier])+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
     text=(data.candidates?.[0]?.content?.parts||[]).map(part=>part.text||'').join('').trim();
@@ -599,7 +601,7 @@ async function generateText(p,cb){
    if(!text)throw Error('El modelo no devolvió texto.');
    progress(cb,1,'Respuesta lista.');
    const names={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini'};
-   return {text,provider,summary:'Respuesta generada con '+names[provider]+'.'};
+   return {text,provider,model:modelProfiles[provider]?.[tier]||p.model||'predeterminado',summary:'Respuesta generada con '+names[provider]+' · Perfil '+tier+'.'};
   }catch(error){
    errors.push((provider==='huggingface'?'Hugging Face':provider==='gemini'?'Google Gemini':provider==='groq'?'Groq':'Pollinations')+': '+(error?.message||'fallo de conexión'));
    if(preferred!=='auto')throw error;
