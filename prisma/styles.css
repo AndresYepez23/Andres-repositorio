@@ -292,3 +292,9 @@ body.modal-open{overflow:hidden}
  .provider-connection-card{padding:12px}
  .provider-connection-card .provider-connect-row .button{flex:1}
 }
+
+.workflow-provider-notice{margin:9px 0 12px;font-size:9px}
+.prompt-examples{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 15px}
+.prompt-examples>span{font-size:8px;color:var(--muted);font-weight:700;margin-right:3px}
+.prompt-examples .mini-button{font-size:8px}
+.prompt-examples .mini-button:hover{border-color:var(--accent);color:var(--accent)}
