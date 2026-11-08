@@ -4,10 +4,11 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 
 ## Catálogo
 
-- **104 herramientas registradas** organizadas en 13 categorías: 67 listas, 34 beta y 3 en preparación. Estos estados describen el registro del catálogo; no equivalen a 104 pruebas funcionales independientes.
-- Categorías: PDF y documentos (14), imágenes (18), audio y vídeo (13), texto y datos (18), utilidades (14), IA y creación (4), desarrollo (7), hojas de cálculo (1), diseño y desarrollo web (5), datos y análisis (3), privacidad y archivos (4), creación de contenido (1), estudio e investigación (2).
+- **110 herramientas registradas** organizadas en 13 categorías: 73 listas, 34 beta y 3 en preparación. Estos estados describen el registro del catálogo; no equivalen a 104 pruebas funcionales independientes.
+- Categorías: PDF y documentos (14), imágenes (18), audio y vídeo (13), texto y datos (23), utilidades (14), IA y creación (4), desarrollo (7), hojas de cálculo (1), diseño y desarrollo web (6), datos y análisis (3), privacidad y archivos (4), creación de contenido (1), estudio e investigación (2).
 - Generación de imágenes y laboratorio IA con proveedores seleccionables.
 - Herramientas que procesan archivos localmente siempre que el navegador lo permite.
+- Se añadieron seis utilidades locales sin API ni clave: quitar tildes, invertir texto, extraer correos, extraer enlaces, minificar JSON y extraer texto de HTML.
 
 ## Estructura
 
