@@ -1,6 +1,6 @@
 import { tools } from './registry.js';
 import { runTool } from './engines.js';
-import { getProviderCredential, getCentralProviderStatus } from './provider-connections.js';
+import { getCentralProviderStatus } from './provider-connections.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -21,9 +21,10 @@ function readPollinationsToken(){
 function credentials(){
   return {
     polliToken:readPollinationsToken(),
-    hfToken:getProviderCredential('huggingface'),
-    geminiKey:getProviderCredential('gemini'),
-    groqKey:getProviderCredential('groq'),
+    // Shared engines run only through Cloudflare Pages Functions.
+    hfToken:'',
+    geminiKey:'',
+    groqKey:'',
     centralProviders
   };
 }
