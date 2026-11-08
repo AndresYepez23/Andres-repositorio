@@ -332,11 +332,9 @@ async function runText(id,p){
  case 'date-diff':{const a=new Date(p.start+'T00:00:00Z'),b=new Date(p.end+'T00:00:00Z');if(isNaN(a)||isNaN(b))throw Error('Selecciona dos fechas válidas.');const days=Math.round((b-a)/86400000);return {text:Math.abs(days)+' días',summary:days===0?'Las fechas coinciden.':days>0?'La fecha final está '+days+' días después.':'La fecha final está '+Math.abs(days)+' días antes.'};}
  case 'timezone':{const d=new Date(p.datetime);if(isNaN(d))throw Error('Selecciona una fecha y hora válidas.');return {text:new Intl.DateTimeFormat('es-CO',{dateStyle:'full',timeStyle:'long',timeZone:p.zone||'America/Bogota'}).format(d),summary:'Zona horaria: '+(p.zone||'America/Bogota')};}
  case 'contrast':{const ratio=contrastRatio(p.foreground||'#111827',p.background||'#ffffff');return {text:ratio.toFixed(2)+':1',summary:'WCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+' · WCAG AAA: '+(ratio>=7?'Cumple':'No cumple')};}
-  const lines=text.replace(/\r/g,'').split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean),cards=[];
-  for(const line of lines){let index=line.indexOf('|'),width=1;if(index<0){index=line.indexOf('::');width=2;}if(index<0){index=line.indexOf('\t');width=1;}if(index<0)continue;const front=line.slice(0,index).trim(),back=line.slice(index+width).trim();if(front&&back)cards.push([front,back]);}
-  if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
-  const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join(String.fromCharCode(10));
-  return {...download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'prisma-tarjetas-anki.csv'),text:csv,summary:cards.length+' tarjetas listas para importar en Anki.'};
+ case 'text-sort':{const lines=text.replace(/\r/g,'').split('\n');const sensitivity=p.caseSensitive?'variant':'base';lines.sort((a,b)=>a.localeCompare(b,'es',{sensitivity,numeric:true}));return {text:lines.join('\n'),summary:lines.length+' líneas ordenadas alfabéticamente.'};}
+ case 'word-frequency':{const words=text.toLocaleLowerCase('es').match(/[\p{L}\p{N}']+/gu)||[];const counts=new Map();for(const word of words)counts.set(word,(counts.get(word)||0)+1);const rows=[...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'es')).slice(0,30);return {text:rows.map(([word,count],index)=>(index+1)+'. '+word+' — '+count).join('\n'),summary:words.length+' palabras analizadas · '+counts.size+' palabras únicas.'};}
+ case 'html-format':return formatSourceCode(p,'html');
  case 'css-format':return formatSourceCode(p,'css');
  case 'js-format':return formatSourceCode(p,'js');
  case 'sql-format':return formatSourceCode(p,'sql');
