@@ -153,6 +153,10 @@ function buildPlannerPrompt(userText){
     'SOLICITUD DEL USUARIO:\n'+userText
   ].join('\n\n');
 }
+function compatibleFiles(tool,files){
+  const accepted=String(tool.accept||'*/*').split(',').map(value=>value.trim().toLowerCase());
+  return files.filter(file=>accepted.includes('*/*')||accepted.some(rule=>rule.startsWith('.')?file.name.toLowerCase().endsWith(rule):rule.endsWith('/*')?file.type.toLowerCase().startsWith(rule.slice(0,-1)):file.type.toLowerCase()===rule));
+}
 function validatePlan(plan){
   if(!plan||typeof plan!=='object'||!Array.isArray(plan.steps))throw new Error('El plan no tiene el formato esperado.');
   if(plan.steps.length>MAX_STEPS)throw new Error('El plan supera el máximo seguro de '+MAX_STEPS+' operaciones.');
@@ -161,12 +165,7 @@ function validatePlan(plan){
     const tool=ready.get(String(step.tool_id||''));
     if(!tool)throw new Error('El plan solicitó una herramienta no disponible: '+String(step.tool_id||'desconocida'));
     if(tool.file&&!attachments.length)throw new Error('Para usar '+tool.name+' necesitas adjuntar un archivo compatible.');
-    if(tool.file&&attachments.length){
-      const accepted=String(tool.accept||'*/*').split(',').map(value=>value.trim().toLowerCase());
-      const candidates=tool.multiple?attachments:[attachments[0]];
-      const compatible=candidates.filter(file=>accepted.includes('*/*')||accepted.some(rule=>rule.startsWith('.')?file.name.toLowerCase().endsWith(rule):rule.endsWith('/*')?file.type.toLowerCase().startsWith(rule.slice(0,-1)):file.type.toLowerCase()===rule));
-      if(!compatible.length)throw new Error('El archivo adjunto no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'formato compatible')+'.');
-    }
+    if(tool.file&&!compatibleFiles(tool,attachments).length)throw new Error('El archivo adjunto no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'formato compatible')+'.');
     return {tool,policy:toolPolicy(tool),reason:String(step.reason||'Paso '+(index+1)),params:step.params&&typeof step.params==='object'?step.params:{}};
   });
   return steps;
@@ -246,7 +245,9 @@ async function executePlan(){
       let inputFiles=[];
       if(tool.file){
         if(!currentFiles.length)throw new Error('El paso '+tool.name+' necesita un archivo y el paso anterior no produjo uno.');
-        inputFiles=tool.multiple?currentFiles:[currentFiles[0]];
+        inputFiles=compatibleFiles(tool,currentFiles);
+        if(!inputFiles.length)throw new Error('El archivo del paso anterior no es compatible con '+tool.name+'.');
+        if(!tool.multiple)inputFiles=[inputFiles[0]];
       }
       const result=await runTool(tool.id,inputFiles,params,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);});
       executed.push({name:tool.name,reason,result});setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
