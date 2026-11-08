@@ -1,3 +1,11 @@
 name = "prismaspace"
 compatibility_date = "2026-11-08"
 pages_build_output_dir = "./dist"
+
+[[ratelimits]]
+name = "PRISMA_AI_LIMITER"
+namespace_id = "2026110801"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 60
