@@ -806,7 +806,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='json-xlsx')return jsonToExcel(p);
  if(id==='image-social-kit')return socialImageKit(files[0],p,cb);
  if(id==='qr-vcard'){
-  const escapeV=v=>String(v||'').replace(/\\\\/g,'\\\\\\\\').replace(/;/g,'\\\\;').replace(/,/g,'\\\\,').replace(/\\r?\\n/g,'\\\\n');
+  const escapeV=v=>String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
   const vcard=['BEGIN:VCARD','VERSION:3.0','FN:'+escapeV(p.name),'TEL;TYPE=CELL:'+escapeV(p.phone),'EMAIL:'+escapeV(p.email),'ORG:'+escapeV(p.organization),'END:VCARD'].join('\\n');
   const result=await runQr({text:vcard},cb);result.filename='prisma-contacto-qr.png';result.summary='Código QR vCard generado. Escanéalo con la cámara para guardar el contacto.';return result;
  }
