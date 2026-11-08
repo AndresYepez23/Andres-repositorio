@@ -242,7 +242,7 @@ function buildLocalPlan(userText){
       else if(has('texto','leer','extraer','ocr','transcribir'))selected=[pick('image-ocr',{language:'spa'})];
       else if(has('comprime','peso','liviana'))selected=[pick('image-compress',{quality:82})];
       else if(has('redimensiona','tamaño','resize'))selected=[pick('image-resize',{width:1080,height:1080})];
-      else selected=[pick('image-compress',{quality:88})];
+      else if(has('comprime','peso','liviana'))selected=[pick('image-compress',{quality:88})];
     }else if(docx)selected=[pick('docx-html')];
     else if(sheet)selected=[pick('excel-json',{sheet:'all',format:'json'})];
     else if(/\\.(txt|md|csv)$/i.test(name))selected=[pick('clean-text',{text:''})];
@@ -280,7 +280,7 @@ async function requestPlan(userText){
       }
       if(extracted.length)attachmentContext='\\n\\nCONTENIDO LEÍDO LOCALMENTE (no enviado a ningún modelo):\\n'+extracted.join('\\n\\n').slice(0,18000);
     }
-    const localPlan=buildLocalPlan(userText+attachmentContext);
+    const localPlan=buildLocalPlan(userText);
     let localSteps;
     try{localSteps=validatePlan(localPlan);}catch(error){addMessage('assistant','No pude preparar una operación local segura: '+error.message);status('No se pudo preparar el trabajo.','warning');return;}
     if(!localSteps.length){addMessage('assistant',localPlan.message);status('Sin conexión de IA: capacidad local no disponible para esta solicitud.','warning');return;}
