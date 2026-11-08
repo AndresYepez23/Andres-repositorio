@@ -113,6 +113,8 @@ async function imageTool(id,files,p,cb){
  }
  if(id==='image-pixelate'){const block=Math.max(4,Math.min(80,Number(p.block)||16)),small=document.createElement('canvas');small.width=Math.max(1,Math.round(img.width/block));small.height=Math.max(1,Math.round(img.height/block));const sctx=small.getContext('2d');sctx.imageSmoothingEnabled=true;sctx.drawImage(img,0,0,small.width,small.height);canvas.width=img.width;canvas.height=img.height;ctx.imageSmoothingEnabled=false;ctx.drawImage(small,0,0,small.width,small.height,0,0,img.width,img.height);}
  if(id==='image-crop'){const w=Math.max(1,Math.round(img.width*Number(p.widthPct||80)/100)),h=Math.max(1,Math.round(img.height*Number(p.heightPct||80)/100));canvas.width=w;canvas.height=h;ctx.drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,w,h);}
+ else if(id==='image-pixelate'){/* pixelated canvas prepared above */}
+ else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  let type=p.format||'image/png',quality=Math.max(.1,Math.min(1,Number(p.quality||82)/100));
  if(id==='image-compress')type=p.format||'image/webp';
@@ -225,7 +227,7 @@ function textDiff(a,b){
  for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
  const out=[];let i=0,j=0,added=0,removed=0;
  while(i<A.length||j<B.length){if(i<A.length&&j<B.length&&A[i]===B[j]){out.push('  '+A[i]);i++;j++;}else if(j<B.length&&(i===A.length||dp[i][j+1]>=dp[i+1][j])){out.push('+ '+B[j++]);added++;}else{out.push('- '+A[i++]);removed++;}}
- return {text:out.join('\\n'),summary:added+' línea(s) añadida(s) · '+removed+' línea(s) eliminada(s)'};
+  return {text:out.join('\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
 }
 
 async function formatSourceCode(p,kind){
@@ -331,7 +333,7 @@ async function runText(id,p){
  case 'date-diff':{const a=new Date(p.start+'T00:00:00Z'),b=new Date(p.end+'T00:00:00Z');if(isNaN(a)||isNaN(b))throw Error('Selecciona dos fechas válidas.');const days=Math.round((b-a)/86400000);return {text:Math.abs(days)+' días',summary:days===0?'Las fechas coinciden.':days>0?'La fecha final está '+days+' días después.':'La fecha final está '+Math.abs(days)+' días antes.'};}
  case 'timezone':{const d=new Date(p.datetime);if(isNaN(d))throw Error('Selecciona una fecha y hora válidas.');return {text:new Intl.DateTimeFormat('es-CO',{dateStyle:'full',timeStyle:'long',timeZone:p.zone||'America/Bogota'}).format(d),summary:'Zona horaria: '+(p.zone||'America/Bogota')};}
  case 'contrast':{const ratio=contrastRatio(p.foreground||'#111827',p.background||'#ffffff');return {text:ratio.toFixed(2)+':1',summary:'WCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+' · WCAG AAA: '+(ratio>=7?'Cumple':'No cumple')};}
- case 'text-sort':{const lines=text.split(/\r?\n/);lines.sort((a,b)=>a.localeCompare(b,'es',{sensitivity:p.caseSensitive?'variant':'base'}));return {text:lines.join('\n'),summary:lines.length+' líneas ordenadas.'};}
+  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),cards=[];
  case 'word-frequency':{const words=text.toLocaleLowerCase('es').match(/[\p{L}\p{N}']+/gu)||[],counts=new Map();words.forEach(w=>counts.set(w,(counts.get(w)||0)+1));const rows=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,30);return {text:rows.map(([w,n])=>w+' — '+n).join('\n'),summary:words.length+' palabras analizadas · '+counts.size+' palabras únicas.'};}
  case 'html-format':return formatSourceCode(p,'html');
  case 'css-format':return formatSourceCode(p,'css');
@@ -346,12 +348,12 @@ async function runText(id,p){
   const mod=await import('https://esm.sh/ajv@8.17.1'),Ajv=mod.default||mod.Ajv,ajv=new Ajv({allErrors:true,strict:false});
   let validate;try{validate=ajv.compile(schema)}catch(e){throw Error('El esquema no es válido: '+e.message)}
   const valid=validate(data),errors=(validate.errors||[]).map(x=>(x.instancePath||'/')+' '+x.message);
-  return {text:valid?'JSON VÁLIDO\\n\\nEl documento cumple el esquema indicado.':('JSON NO VÁLIDO\\n\\n'+errors.join('\\n')),summary:valid?'Todos los campos cumplen el esquema.':errors.length+' error(es) de validación.'};
+  return {text:valid?'JSON VÁLIDO\n\nEl documento cumple el esquema indicado.':('JSON NO VÁLIDO\n\n'+errors.join('\n')),summary:valid?'Todos los campos cumplen el esquema.':errors.length+' error(es) de validación.'};
  }
  case 'csv-stats':{
   const rows=parseCsv(text,p.delimiter||',');if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila.');
   const headers=rows[0],body=rows.slice(1),out=['FILAS: '+body.length,'COLUMNAS: '+headers.length,'','RESUMEN POR COLUMNA'];
-  headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('\\n'+(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
+  headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('\n'+(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
   return {text:out.join('\\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
  }
  case 'citation-generator':{
@@ -361,13 +363,13 @@ async function runText(id,p){
   const vancouver=author+'. '+title+'. '+source+(source?'; ':'')+year+'.'+(doi?' doi:'+doi:url?' Disponible en: '+url:'');
   const mla=author+'. “'+title+'.” '+source+(source?', ':'')+year+'.'+(url?' '+url:'');
   const selected=p.style==='vancouver'?vancouver:p.style==='mla'?mla:apa;
-  return {text:selected+'\\n\\nAPA 7\\n'+apa+'\\n\\nVancouver\\n'+vancouver+'\\n\\nMLA 9\\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
+  return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
  }
  case 'flashcards-export':{
   const lines=text.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean),cards=[];
-  for(const line of lines){const parts=line.split(/\\s*(?:\\||\\t|::)\\s*/);if(parts.length<2)continue;const front=parts.shift().trim(),back=parts.join(' — ').trim();if(front&&back)cards.push([front,back]);}
+  for(const line of lines){const parts=line.split(/\s*(?:\||\t|::)\s*/);if(parts.length<2)continue;const front=parts.shift().trim(),back=parts.join(' — ').trim();if(front&&back)cards.push([front,back]);}
   if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
-  const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join('\\n');
+  const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join('\n');
   return {...download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'prisma-tarjetas-anki.csv'),text:csv,summary:cards.length+' tarjetas listas para importar en Anki.'};
  }
  case 'color-palette':{const base=Math.floor(Math.random()*360),angles=p.harmony==='complementary'?[0,180,0,180,0]:p.harmony==='triadic'?[0,120,240,0,120]:[0,30,60,180,210];const colors=angles.map((a,i)=>'hsl('+((base+a)%360)+' 62% '+([55,62,48,68,52][i])+'%)');return {text:colors.join('\n'),summary:'Paleta generada al azar. Copia los valores HSL.'};}
@@ -807,7 +809,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='image-social-kit')return socialImageKit(files[0],p,cb);
  if(id==='qr-vcard'){
   const escapeV=v=>String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
-  const vcard=['BEGIN:VCARD','VERSION:3.0','FN:'+escapeV(p.name),'TEL;TYPE=CELL:'+escapeV(p.phone),'EMAIL:'+escapeV(p.email),'ORG:'+escapeV(p.organization),'END:VCARD'].join('\\n');
+  const vcard=['BEGIN:VCARD','VERSION:3.0','FN:'+escapeV(p.name),'TEL;TYPE=CELL:'+escapeV(p.phone),'EMAIL:'+escapeV(p.email),'ORG:'+escapeV(p.organization),'END:VCARD'].join('\n');
   const result=await runQr({text:vcard},cb);result.filename='prisma-contacto-qr.png';result.summary='Código QR vCard generado. Escanéalo con la cámara para guardar el contacto.';return result;
  }
  if(id==='api-explorer')return explorePublicApi(p,cb);
