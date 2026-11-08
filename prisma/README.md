@@ -18,7 +18,8 @@ PRISMA es una suite web de herramientas digitales, con prioridad en el procesami
 - `src/main.js`: navegación y experiencia.
 - `src/engines.js`: motores de ejecución.
 - `build.mjs`: prepara el directorio de publicación `dist/`.
-- `worker.js` y `wrangler.toml`: base opcional para futuras funciones de Cloudflare Workers.
+- `_headers`: cabeceras HTTP de seguridad para Cloudflare Pages.
+- `worker.js`: prototipo independiente para futuras rutas dinámicas; no forma parte del sitio estático publicado.
 
 ## Producción
 
@@ -29,7 +30,7 @@ La producción se publica en **Cloudflare Pages**, conectado al repositorio GitH
 - Comando de compilación: `node build.mjs`.
 - Directorio publicado: `dist`.
 
-Cada actualización integrada en `main` puede generar un despliegue de producción en Cloudflare Pages. PRISMA ya no depende de Wix ni Netlify para su alojamiento.
+Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. PRISMA ya no depende de Wix ni Netlify para su alojamiento.
 
 ## Inteligencia artificial
 
