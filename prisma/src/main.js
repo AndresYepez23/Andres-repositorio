@@ -2,6 +2,7 @@ import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
 import { runTool } from './engines.js';
 import { workflows, runWorkflow } from './workflows.js';
+import { getProviderCredential, saveProviderCredential, removeProviderCredential, isProviderConnected, validateProviderCredential } from './provider-connections.js';
 
 const POLLINATIONS_APP_KEY = '';
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -297,20 +298,20 @@ function buildFields(t){
     case 'image-resize':return '<div class="inline-fields">'+field('Ancho (px)','width','number','1200','Ancho final.','min="1" max="12000"')+field('Alto (px)','height','number','800','Alto final.','min="1" max="12000"')+'</div><label class="check-line"><input type="checkbox" name="keep" checked> Mantener proporción original</label>';
     case 'image-convert':return selectField('Formato de salida','format',[['image/png','PNG'],['image/jpeg','JPG'],['image/webp','WebP']],'image/webp');
     case 'image-crop':return '<div class="inline-fields">'+field('Ancho del recorte (%)','widthPct','number','80','Porcentaje del ancho.','min="10" max="100"')+field('Alto del recorte (%)','heightPct','number','80','Porcentaje del alto.','min="10" max="100"')+'</div><div class="tool-hint">Se realiza un recorte centrado. Para edición libre con selección visual añadiremos un editor dedicado.</div>';
-    case 'image-gen':return selectField('Proveedor de generación','provider',[['pollinations','Pollinations Connect · recomendado'],['huggingface','Hugging Face · token personal']],'pollinations')+
-      selectField('Modelo de IA','model',[['black-forest-labs/flux.1-schnell','FLUX.1 Schnell · rápido'],['tongyi-mai/z-image-turbo','Z-Image Turbo · rápido']],'black-forest-labs/flux.1-schnell')+
+    case 'image-gen':return selectField('Motor de imagen','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations · tu saldo'],['huggingface','Hugging Face'],['gemini','Google Gemini']],'auto')+
+      selectField('Calidad','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
       textareaField('Describe la imagen que quieres crear','prompt','','Describe sujeto, ambiente, composición, iluminación y estilo.')+
       selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+
       selectField('Formato','ratio',[['square','Cuadrado · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámico · 16:9']],'square')+
       field('Semilla (opcional)','seed','number','','Usa el mismo número para intentar reproducir una composición.','min="0" step="1"')+
-      textareaField('Prompt negativo (opcional)','negativePrompt','','Elementos que prefieres evitar.')+
-      pollinationsAuthFields()+huggingFaceAuthFields();
+      textareaField('Elementos que quieres evitar (opcional)','negativePrompt','','Elementos que prefieres evitar.')+
+      '<div class="tool-hint">Elige un motor conectado o deja que Prisma seleccione uno. Las claves se configuran una sola vez en el Laboratorio IA.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-assistant':return textareaField('¿Qué necesitas crear o resolver?','prompt','','Ejemplo: redacta una descripción profesional para un producto...')+
-      selectField('Modelo de texto','model',[['openai/gpt-5.4-nano','GPT-5.4 Nano · rápido'],['deepseek/deepseek-v4-flash-0731','DeepSeek V4 Flash'],['qwen/qwen3-32b','Qwen 3 · general']],'openai/gpt-5.4-nano')+
+      selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+
       selectField('Tono','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Directo y breve']],'professional')+
       selectField('Extensión','length',[['short','Breve'],['medium','Media'],['long','Detallada']],'medium')+
       textareaField('Contexto adicional (opcional)','context','','Añade datos que el modelo deba tener en cuenta.')+
-      pollinationsAuthFields();
+      '<div class="tool-hint">Prisma elegirá el motor conectado que mejor se adapte a la tarea.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-voice':return textareaField('Texto que quieres convertir en voz','prompt','','Escribe el texto que quieres escuchar.')+
       selectField('Modelo de voz','model',[['openai/tts-1','TTS estándar'],['openai/tts-1-hd','TTS alta calidad']],'openai/tts-1')+
       selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina']],'nova')+
@@ -372,23 +373,92 @@ function getPollinationsToken(){
   return token;
 }
 function refreshPollinationsStatus(){
-  const connected=!!getPollinationsToken(),label=connected?'Conectado · autorización activa en esta pestaña':'No conectado';
+  const connected=!!getPollinationsToken(),label=connected?'Conectado en esta pestaña':'No conectado';
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
-  const modalStatus=$('#polli-modal-status');if(modalStatus)modalStatus.textContent=connected?'Pollinations conectado':'Pollinations: no conectado';
+  refreshProviderConnectionStatuses();
+}
+function providerConnectionCard(config){
+  const connected=config.id==='pollinations'?!!getPollinationsToken():isProviderConnected(config.id);
+  const details=config.id==='pollinations'
+    ? '<details class="provider-credential-details" id="provider-config-pollinations"><summary>Configuración inicial de Prisma Space</summary><label class="connection-key-label" for="polli-app-key">App Key pública</label><input class="form-control" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false"><small>Identifica esta aplicación; no es tu contraseña ni tu clave de consumo. Registra la URL de retorno que aparece abajo en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>.</small><div class="provider-redirect"><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URL de retorno</button></div><button type="button" class="button button-primary" id="polli-connect">Continuar con Pollinations</button></details>'
+    : '<details class="provider-credential-details" id="provider-config-'+config.id+'"><summary>Conectar con mi cuenta</summary><label class="connection-key-label" for="provider-key-'+config.id+'">'+config.keyLabel+'</label><input class="form-control" id="provider-key-'+config.id+'" type="password" autocomplete="off" spellcheck="false" placeholder="'+config.placeholder+'"><small>'+config.instructions+' <a href="'+config.url+'" target="_blank" rel="noopener noreferrer">'+config.linkLabel+'</a>.</small><button type="button" class="button button-primary" data-verify-provider="'+config.id+'">Verificar y conectar</button><p class="provider-connection-error" data-provider-error="'+config.id+'" role="status"></p></details>';
+  const action=config.id==='pollinations'
+    ? '<button type="button" class="button button-primary" id="polli-connect-start">Conectar mi cuenta</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" id="polli-disconnect">Desconectar</button>'
+    : '<button type="button" class="button button-primary" data-open-provider-config="'+config.id+'">'+(connected?'Cambiar conexión':'Conectar')+'</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" data-disconnect-provider="'+config.id+'">Desconectar</button>';
+  return '<article class="provider-connection-card" data-connection-card="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="'+config.id+'">'+(connected?'Conectado':'Sin conectar')+'</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row">'+action+'</div>'+details+'</article>';
+}
+function renderProviderConnections(){
+  const container=$('#provider-connect-grid');if(!container)return;
+  const configs=[
+    {id:'pollinations',name:'Pollinations Connect',summary:'Imágenes, texto y audio',detail:'Tú autorizas tu propio saldo, los permisos y el límite de gasto. Prisma no utiliza una bolsa compartida.',keyLabel:'App Key pública',placeholder:'pk_...',instructions:'Registra la URL de retorno exacta de esta aplicación.',url:'https://enter.pollinations.ai/keys',linkLabel:'Crear App Key'},
+    {id:'huggingface',name:'Hugging Face',summary:'Cientos de modelos y proveedores',detail:'Una sola conexión puede dar acceso a modelos servidos por Groq, Fal AI, Together, DeepInfra y otros, según disponibilidad.',keyLabel:'Token de acceso',placeholder:'hf_...',instructions:'Crea un token fino con permiso para llamar a Inference Providers.',url:'https://huggingface.co/settings/tokens',linkLabel:'Crear token'},
+    {id:'gemini',name:'Google Gemini',summary:'Texto e imágenes con IA',detail:'Usa tu propia clave de Google AI Studio. Modelos, precios y límites dependen de tu proyecto.',keyLabel:'Clave de Google AI',placeholder:'Pega tu clave de API',instructions:'Crea una clave para Gemini API y revisa su configuración de facturación.',url:'https://aistudio.google.com/app/apikey',linkLabel:'Obtener clave'},
+    {id:'groq',name:'Groq',summary:'Texto y transcripción de alta velocidad',detail:'Conecta tu cuenta para tareas de texto y audio. Los límites dependen de tu plan y de los modelos activos.',keyLabel:'Clave de Groq',placeholder:'gsk_...',instructions:'Crea una clave desde tu consola de desarrollador.',url:'https://console.groq.com/keys',linkLabel:'Crear clave'}
+  ];
+  container.innerHTML=configs.map(providerConnectionCard).join()+
+    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Cloudflare Workers AI</h4><p>Motor administrado por Prisma</p></div><span class="provider-connection-status">En preparación</span></div><p class="provider-connection-detail">Se activará desde un backend protegido, con límites para evitar que terceros consuman la cuota compartida.</p></article>'+
+    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Motores open source</h4><p>Herramientas locales y modelos abiertos</p></div><span class="provider-connection-status connected">Disponibles</span></div><p class="provider-connection-detail">PDF-Lib, Tesseract.js, FFmpeg y otras bibliotecas ejecutan tareas directamente en tu dispositivo cuando es posible.</p></article>';
+  const input=$('#polli-app-key');if(input){input.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;input.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',input.value.trim()));}
+  const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
+  $('#polli-connect-start')?.addEventListener('click',()=>{
+    const key=$('#polli-app-key')?.value||localStorage.getItem('prisma-polli-client-id')||'';
+    if(key.trim().startsWith('pk_'))connectPollinations();
+    else{$('#provider-config-pollinations').open=true;$('#polli-app-key')?.focus();toast('Configura una sola vez la App Key pública de Prisma Space.','info');}
+  });
+  $('#polli-connect')?.addEventListener('click',connectPollinations);
+  $('#polli-disconnect')?.addEventListener('click',()=>{
+    sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refreshPollinationsStatus();toast('Se borró la conexión de esta pestaña.','success');
+  });
+  $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('URL de retorno copiada.','success');});
+  $$('[data-open-provider-config]').forEach(button=>button.addEventListener('click',()=>{
+    const provider=button.dataset.openProviderConfig,details=$('#provider-config-'+provider);
+    if(details){details.open=true;$('#provider-key-'+provider)?.focus();}
+  }));
+  $$('[data-verify-provider]').forEach(button=>button.addEventListener('click',async()=>{
+    const provider=button.dataset.verifyProvider,input=$('#provider-key-'+provider),error=$('[data-provider-error="'+provider+'"]');
+    const credential=input?.value.trim()||'';
+    if(!credential){if(error)error.textContent='Pega primero tu clave.';return;}
+    button.disabled=true;button.textContent='Verificando...';if(error)error.textContent='';
+    try{
+      await validateProviderCredential(provider,credential);
+      saveProviderCredential(provider,credential);input.value='';
+      const details=$('#provider-config-'+provider);if(details)details.open=false;
+      refreshProviderConnectionStatuses();
+      toast(provider==='huggingface'?'Hugging Face conectado.':provider==='gemini'?'Google Gemini conectado.':'Groq conectado.','success');
+    }catch(caught){if(error)error.textContent=caught?.message||'No se pudo validar la conexión.';}
+    finally{button.disabled=false;button.textContent='Verificar y conectar';}
+  }));
+  $$('[data-disconnect-provider]').forEach(button=>button.addEventListener('click',()=>{
+    removeProviderCredential(button.dataset.disconnectProvider);refreshProviderConnectionStatuses();toast('Se borró la conexión de esta pestaña.','success');
+  }));
+  refreshProviderConnectionStatuses();
+}
+function refreshProviderConnectionStatuses(){
+  const connected={pollinations:!!getPollinationsToken(),huggingface:isProviderConnected('huggingface'),gemini:isProviderConnected('gemini'),groq:isProviderConnected('groq')};
+  Object.entries(connected).forEach(([provider,isConnected])=>{
+    const status=$('[data-connection-status="'+provider+'"]');
+    if(status){status.textContent=isConnected?'Conectado':'Sin conectar';status.classList.toggle('connected',isConnected);}
+    const disconnect=provider==='pollinations'?$('#polli-disconnect'):$('[data-disconnect-provider="'+provider+'"]');
+    disconnect?.classList.toggle('hidden',!isConnected);
+    const openButton=provider==='pollinations'?$('#polli-connect-start'):$('[data-open-provider-config="'+provider+'"]');
+    if(openButton)openButton.textContent=isConnected?'Cambiar conexión':'Conectar';
+  });
+  const count=Object.values(connected).filter(Boolean).length;
+  const summary=$('#connections-summary');if(summary)summary.textContent=count+' motor'+(count===1?'':'es')+' conectado'+(count===1?'':'s');
 }
 async function connectPollinations(){
   const input=$('#polli-app-key');
   const appKey=(input?.value||localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY).trim();
   if(!appKey.startsWith('pk_')){
-    showView('ai');$('#polli-app-key')?.focus();
-    toast('Añade primero la App Key pública de Prisma Space. Puedes crearla en Pollinations Connect.','error');return;
+    const details=$('#provider-config-pollinations');if(details)details.open=true;
+    input?.focus();toast('Añade la App Key pública de Prisma Space.','error');return;
   }
   localStorage.setItem('prisma-polli-client-id',appKey);
   const verifier=randomBase64Url(48),state=randomBase64Url(24);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
   const challenge=base64Url(digest),redirectUri=location.origin+location.pathname;
   sessionStorage.setItem('prisma-polli-verifier',verifier);sessionStorage.setItem('prisma-polli-state',state);
-  const params=new URLSearchParams({response_type:'code',client_id:appKey,redirect_uri:redirectUri,state,code_challenge:challenge,code_challenge_method:'S256',models:'image,text,audio',budget:'5',expiry:'7'});
+  const params=new URLSearchParams({response_type:'code',client_id:appKey,redirect_uri:redirectUri,state,code_challenge:challenge,code_challenge_method:'S256',models:'image,text,audio'});
   location.href='https://enter.pollinations.ai/authorize?'+params.toString();
 }
 async function finishPollinationsAuth(){
@@ -411,17 +481,9 @@ async function finishPollinationsAuth(){
   }
 }
 function setupPollinationsSettings(){
-  const input=$('#polli-app-key');
-  if(input){input.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;input.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',input.value.trim()));}
-  const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
-  $('#polli-connect')?.addEventListener('click',connectPollinations);
-  $('#polli-disconnect')?.addEventListener('click',()=>{
-    sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refreshPollinationsStatus();toast('Conexión desconectada en esta pestaña.','success');
-  });
-  $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('Redirect URI copiada.','success');});
+  renderProviderConnections();
   refreshPollinationsStatus();
 }
-
 
 const pollinationsModelCache={image:[],text:[],audio:[]};
 const fallbackModels={
@@ -457,22 +519,13 @@ async function loadPollinationsModels(kind,provider='pollinations'){
   }catch(error){console.info('Catálogo de modelos Pollinations no disponible; se usan opciones de respaldo.',error);}
 }
 function setupAIAuthorization(tool){
-  refreshPollinationsStatus();
-  const provider=$('#field-provider');
-  const update=()=>{
-    const selected=provider?.value||'pollinations';
-    $('#polli-config')?.classList.toggle('hidden',selected!=='pollinations');
-    $('#hf-config')?.classList.toggle('hidden',selected!=='huggingface');
-    if(tool.id==='image-gen')loadPollinationsModels('image',selected);
-  };
-  provider?.addEventListener('change',update);update();
+  refreshProviderConnectionStatuses();
+  $('#field-provider')?.addEventListener('change',refreshProviderConnectionStatuses);
   $('#open-ai-settings')?.addEventListener('click',()=>{
-    closeTool();showView('ai');$('#ai-connection-card').scrollIntoView({behavior:'smooth',block:'center'});$('#polli-app-key').focus();
+    closeTool();showView('ai');
+    $('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});
   });
-  if(tool.id==='ai-assistant')loadPollinationsModels('text');
-  if(tool.id==='ai-voice')loadPollinationsModels('audio');
 }
-
 
 function openTool(t){
   lastFocusedElement=document.activeElement;lastOpenedToolId=t.id;recordRecentTool(t.id);
@@ -529,7 +582,9 @@ function buildWorkflowFields(workflow){
       '<div class="tool-hint">Los PDF se procesan localmente. Los documentos escaneados necesitan OCR; si no contienen texto seleccionable, se conserva el PDF y se informa.</div>';
   }
   if(workflow.id==='ai-creation'){
-    return selectField('Motor de IA','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations Connect'],['huggingface','Hugging Face']],'auto','En automático, Prisma prueba Pollinations y puede recurrir a Hugging Face si también has conectado ese motor.')+
+    return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations · tu saldo autorizado'],['huggingface','Hugging Face · tu cuenta'],['gemini','Google Gemini · tu cuenta']],'auto','Prisma solo utilizará las cuentas que hayas conectado.')+
+      selectField('Calidad de generación','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
+      selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+
       textareaField('Cuéntanos qué quieres crear','prompt','','Describe el sujeto, el ambiente, el propósito y el estilo. Prisma se encarga de preparar el prompt visual.')+
       selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+
       selectField('Composición','ratio',[['square','Cuadrada · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámica · 16:9']],'square')+
@@ -544,27 +599,18 @@ function buildWorkflowFields(workflow){
       selectField('Formato final','format',[['image/webp','WebP · recomendado'],['image/jpeg','JPG']],'image/webp')+
       '</div>'+field('Texto de marca de agua','watermark','text','Prisma Space')+
       selectField('Ubicación de marca','watermarkPosition',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+
-      pollinationsAuthFields()+huggingFaceAuthFields()+
-      '<div class="tool-hint">Cada motor usa su propia autorización. Prisma no guarda tu token personal de Hugging Face; Pollinations utiliza el presupuesto que autorizaste.</div>';
+      '<label class="workflow-check"><input type="checkbox" name="allowFallback"><span><strong>Permitir cambio automático si falla el motor</strong><small>Prisma podrá probar otra cuenta conectada. Cada proveedor aplica sus propias condiciones de uso.</small></span></label><div class="tool-hint">Gestiona tus conexiones desde el Laboratorio IA. No tienes que pegar claves en cada creación.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   return '';
 }
 
 function setupWorkflowAI(){
-  const provider=$('#field-provider');
-  const update=()=>{
-    const selected=provider?.value||'auto';
-    $('#polli-config')?.classList.toggle('hidden',selected==='huggingface');
-    $('#hf-config')?.classList.toggle('hidden',selected==='pollinations');
-  };
-  provider?.addEventListener('change',update);update();refreshPollinationsStatus();
+  refreshProviderConnectionStatuses();
   $('#open-ai-settings')?.addEventListener('click',()=>{
     closeTool();showView('ai');
     $('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});
-    $('#polli-app-key')?.focus();
   });
 }
-
 function openWorkflow(workflow){
   if(!workflow)return;
   lastFocusedElement=document.activeElement;lastOpenedToolId=null;
@@ -626,6 +672,13 @@ function renderFileList(){
   list.innerHTML='<div class="upload-list-head"><strong>'+selectedFiles.length+' archivo'+(selectedFiles.length===1?'':'s')+'</strong><span>'+formatBytes(total)+' en total</span><button type="button" data-clear-files>Vaciar</button></div>'+selectedFiles.map((f,i)=>'<div class="file-row">'+icon('file-text')+'<span title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</span><small>'+formatBytes(f.size)+'</small><button class="remove-file" type="button" data-remove-file="'+i+'" aria-label="Quitar '+escapeHtml(f.name)+'">'+icon('x')+'</button></div>').join('');
 }
 function formatBytes(bytes){if(!bytes)return '0 B';const u=['B','KB','MB','GB'];const i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];}
+function attachProviderCredentials(params){
+  params.polliToken=getPollinationsToken();
+  params.hfToken=getProviderCredential('huggingface');
+  params.geminiKey=getProviderCredential('gemini');
+  params.groqKey=getProviderCredential('groq');
+  return params;
+}
 function readParams(){
   const params={};
   $$('#modal-body [name]').forEach(el=>{if(el.type==='checkbox')params[el.name]=el.checked;else params[el.name]=el.value;});
@@ -643,7 +696,7 @@ async function executeCurrentWorkflow(){
   const progressForWorkflow=(progress,message)=>{if(operationId===activeOperation&&currentWorkflow===workflowAtStart)updateProgress(progress,message);};
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Ejecutando flujo...';$('#tool-output').innerHTML='';updateProgress(.02,'Preparando flujo inteligente...');
   try{
-    const params=readParams();params.polliToken=getPollinationsToken();
+    const params=attachProviderCredentials(readParams());
     const result=await runWorkflow(workflowAtStart.id,filesAtStart,params,progressForWorkflow);
     if(operationId!==activeOperation||currentWorkflow!==workflowAtStart||$('#tool-modal').classList.contains('hidden'))return;
     if($('#field-hfToken'))$('#field-hfToken').value='';
@@ -692,7 +745,7 @@ async function executeCurrentTool(){
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
-    const params=readParams();params.polliToken=getPollinationsToken();
+    const params=attachProviderCredentials(readParams());
     const result=await runTool(toolAtStart.id,filesAtStart,params,progressForOperation);
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     recordRecentTool(toolAtStart.id);
