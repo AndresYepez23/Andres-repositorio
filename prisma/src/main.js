@@ -118,6 +118,10 @@ function selectField(label,name,options,value,hint=''){
 function buildFields(t){
   switch(t.id){
     case 'pdf-extract':return field('Páginas que deseas conservar','pages','text','1-3','Ejemplos: 1, 3, 5-8. La numeración comienza en 1.');
+    case 'pdf-remove-pages':return field('Páginas que deseas eliminar','pages','text','2, 4-5','Ejemplos: 2, 4-5. Las páginas restantes se conservarán.');
+    case 'pdf-page-numbers':return selectField('Ubicación de la numeración','position',[['bottom','Inferior'],['top','Superior']],'bottom');
+    case 'pdf-to-image':return field('Páginas (opcional)','pages','text','','Vacío = todas las páginas. Ejemplo: 1-3, 5.')+selectField('Resolución','scale',[['1','Estándar'],['1.5','Alta (recomendada)'],['2','Muy alta']],'1.5');
+    case 'pdf-text':return '<div class="tool-hint">Extrae texto de PDFs digitales. Si el documento es un escaneo o una fotografía, utiliza OCR en la categoría Imágenes.</div>';
     case 'pdf-rotate':return selectField('Rotación','degrees',[['90','90° a la derecha'],['180','180°'],['270','90° a la izquierda']],'90');
     case 'pdf-watermark':return field('Texto de la marca de agua','watermark','text','PRISMA','Se aplicará en diagonal y con transparencia.');
     case 'image-pdf':return selectField('Tamaño de página','pageSize',[['a4','A4'],['letter','Carta'],['fit','Ajustar a la imagen']],'a4');
@@ -125,20 +129,44 @@ function buildFields(t){
     case 'image-resize':return '<div class="inline-fields">'+field('Ancho (px)','width','number','1200','Ancho final.','min="1" max="12000"')+field('Alto (px)','height','number','800','Alto final.','min="1" max="12000"')+'</div><label class="check-line"><input type="checkbox" name="keep" checked> Mantener proporción original</label>';
     case 'image-convert':return selectField('Formato de salida','format',[['image/png','PNG'],['image/jpeg','JPG'],['image/webp','WebP']],'image/webp');
     case 'image-crop':return '<div class="inline-fields">'+field('Ancho del recorte (%)','widthPct','number','80','Porcentaje del ancho.','min="10" max="100"')+field('Alto del recorte (%)','heightPct','number','80','Porcentaje del alto.','min="10" max="100"')+'</div><div class="tool-hint">Se realiza un recorte centrado. Para edición libre con selección visual añadiremos un editor dedicado.</div>';
+    case 'image-gen':return textareaField('Describe la imagen que quieres crear','prompt','','Describe sujeto, ambiente, composición, iluminación y estilo.')+selectField('Modelo de IA','model',[['black-forest-labs/FLUX.1-schnell','FLUX.1 Schnell · Rápido'],['Qwen/Qwen-Image','Qwen Image · Detalle'],['black-forest-labs/FLUX.1-Krea-dev','FLUX.1 Krea · Creativo']],'black-forest-labs/FLUX.1-schnell')+selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+selectField('Formato','ratio',[['square','Cuadrado · 1:1'],['landscape','Horizontal · 4:3'],['portrait','Vertical · 3:4'],['wide','Panorámico · 16:9']],'square')+field('Pasos de inferencia','steps','number','4','Más pasos pueden tardar más. Modelo Schnell recomendado: 4.','min="4" max="30"')+textareaField('Prompt negativo (opcional)','negativePrompt','','Elementos que prefieres evitar.')+field('Token personal de Hugging Face','hfToken','password','','Necesita permiso Inference Providers. <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Crear token</a>. No se guarda en PRISMA.','autocomplete="off" spellcheck="false"');
+    case 'image-watermark':return field('Texto de la marca','watermark','text','PRISMA','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
+    case 'image-flip':return selectField('Dirección','direction',[['horizontal','Horizontal'],['vertical','Vertical']],'horizontal');
+    case 'image-collage':return selectField('Fondo del mosaico','background',[['#ffffff','Blanco'],['#101218','Oscuro'],['#9adbd2','Turquesa claro']],'#ffffff');
     case 'image-ocr':return selectField('Idioma del documento','language',[['spa','Español'],['eng','Inglés'],['spa+eng','Español e inglés']],'spa','La primera ejecución descarga los datos de idioma.');
     case 'video-trim':return '<div class="inline-fields">'+field('Inicio (segundos)','start','number','0','Desde qué segundo iniciar.','min="0" step="0.1"')+field('Duración (segundos)','duration','number','10','Duración del fragmento.','min="0.1" step="0.1"')+'</div>';
+    case 'video-thumbnail':return field('Segundo del video','second','number','1','Elige el instante que quieres capturar.','min="0" step="0.1"');
+    case 'video-gif':case 'audio-trim':return '<div class="inline-fields">'+field('Inicio (segundos)','start','number','0','Punto de inicio.','min="0" step="0.1"')+field('Duración (segundos)','duration','number',t.id==='video-gif'?'5':'10','GIF: máximo 12 segundos.','min="0.1" max="12" step="0.1"')+'</div><div class="tool-hint">El motor multimedia se descarga al ejecutar la primera vez. Los archivos se procesan en tu navegador.</div>';
+    case 'qr-scan':return '<div class="tool-hint">Sube una imagen que contenga un código QR. PRISMA intentará leerlo en tu navegador.</div>';
+    case 'barcode':return field('Contenido','value','text','123456789012','Para EAN-13 utiliza exactamente 12 o 13 dígitos.')+selectField('Formato','format',[['CODE128','Code 128'],['EAN13','EAN-13'],['CODE39','Code 39']],'CODE128');
     case 'json-format':return textareaField('Contenido JSON','text','{\n  "prisma": "listo"\n}','Valida y organiza el contenido con la indentación seleccionada.')+selectField('Indentación','indent',[['2','2 espacios'],['4','4 espacios'],['tab','Tabulación']],'2');
     case 'base64':return textareaField('Texto','text','','Admite caracteres especiales y tildes.')+selectField('Operación','mode',[['encode','Codificar a Base64'],['decode','Decodificar Base64']],'encode');
     case 'word-count':return textareaField('Texto para analizar','text','','El análisis se realiza localmente.');
     case 'password':return '<div class="inline-fields">'+field('Longitud','length','number','20','Entre 8 y 128 caracteres.','min="8" max="128"')+selectField('Complejidad','complexity',[['strong','Alta'],['medium','Media'],['easy','Fácil de escribir']],'strong')+'</div><label class="check-line"><input type="checkbox" name="symbols" checked> Incluir símbolos</label>';
     case 'qr':return textareaField('Texto o enlace','text','https://','El código QR se genera en tu navegador.');
     case 'currency':return '<div class="inline-fields">'+field('Cantidad','amount','number','1','','min="0" step="any"')+selectField('Moneda de origen','from',[['USD','USD · Dólar'],['COP','COP · Peso colombiano'],['EUR','EUR · Euro'],['MXN','MXN · Peso mexicano'],['BRL','BRL · Real'],['GBP','GBP · Libra']],'USD')+'</div>'+selectField('Moneda de destino','to',[['COP','COP · Peso colombiano'],['USD','USD · Dólar'],['EUR','EUR · Euro'],['MXN','MXN · Peso mexicano'],['BRL','BRL · Real'],['GBP','GBP · Libra']],'COP','Consulta tasas de referencia. No es una cotización financiera en tiempo real.');
-    case 'units':return selectField('Tipo de conversión','kind',[['length','Longitud'],['mass','Masa'],['temperature','Temperatura']],'length')+field('Valor','value','number','1','','step="any"')+selectField('De','from',[['m','Metros'],['km','Kilómetros'],['cm','Centímetros'],['mi','Millas'],['ft','Pies']],'m')+selectField('A','to',[['km','Kilómetros'],['m','Metros'],['cm','Centímetros'],['mi','Millas'],['ft','Pies']],'km');
+    case 'units':return selectField('Tipo de conversión','kind',[['length','Longitud'],['mass','Masa'],['area','Área'],['volume','Volumen'],['speed','Velocidad'],['data','Datos digitales'],['temperature','Temperatura']],'length')+field('Valor','value','number','1','','step="any"')+selectField('De','from',[['m','Metros'],['km','Kilómetros'],['cm','Centímetros'],['mm','Milímetros'],['mi','Millas'],['ft','Pies'],['in','Pulgadas'],['yd','Yardas']],'m')+selectField('A','to',[['km','Kilómetros'],['m','Metros'],['cm','Centímetros'],['mm','Milímetros'],['mi','Millas'],['ft','Pies'],['in','Pulgadas'],['yd','Yardas']],'km');
     case 'timestamp':return selectField('Conversión','mode',[['unix-to-date','Unix a fecha'],['date-to-unix','Fecha a Unix']],'unix-to-date')+field('Valor','value','text','1762550400','Acepta segundos, milisegundos o una fecha ISO.');
     case 'url-code':return textareaField('Texto o URL','text','','')+selectField('Operación','mode',[['encode','Codificar'],['decode','Decodificar']],'encode');
     case 'text-case':return textareaField('Texto','text','')+selectField('Transformación','mode',[['upper','MAYÚSCULAS'],['lower','minúsculas'],['title','Tipo título'],['sentence','Tipo oración']],'upper');
     case 'markdown':return textareaField('Markdown','text','# PRISMA\n\nEscribe **Markdown** aquí.','La vista previa básica se genera en tu navegador.');
     case 'color-palette':return selectField('Armonía','harmony',[['analogous','Análogos'],['complementary','Complementarios'],['triadic','Triádicos']],'analogous');
+    case 'csv-json':return textareaField('Contenido CSV','text','nombre,ciudad\nAna,Chinú\nLuis,Cartagena','La primera fila se utiliza como encabezado.')+selectField('Separador','delimiter',[[',','Coma'],[';','Punto y coma'],['\\t','Tabulación']],',');
+    case 'json-csv':return textareaField('Lista JSON','text','[{"nombre":"Ana","ciudad":"Chinú"},{"nombre":"Luis","ciudad":"Cartagena"}]','El JSON debe ser una lista de objetos.');
+    case 'slug':return textareaField('Título o texto','text','Mi primera página en PRISMA','Se eliminan tildes, símbolos y espacios repetidos.');
+    case 'dedupe-lines':return textareaField('Lista de líneas','text','','Se conservará la primera aparición de cada línea.')+'<label class="check-line"><input type="checkbox" name="caseSensitive"> Distinguir mayúsculas y minúsculas</label>';
+    case 'clean-text':return textareaField('Texto para limpiar','text','','Se normalizan espacios y saltos de línea.');
+    case 'html-entities':return textareaField('Contenido','text','<h1>Hola PRISMA</h1>','Escapa HTML o recupera el texto original.')+selectField('Operación','mode',[['encode','Codificar / escapar'],['decode','Decodificar']],'encode');
+    case 'uuid':return field('Cantidad','count','number','5','Genera hasta 50 UUID v4.','min="1" max="50"');
+    case 'lorem':return '<div class="inline-fields">'+field('Palabras','words','number','120','','min="10" max="1500"')+field('Párrafos','paragraphs','number','3','','min="1" max="12"')+'</div>';
+    case 'random':return '<div class="inline-fields">'+field('Mínimo','min','number','1')+field('Máximo','max','number','100')+'</div>'+field('Cantidad','count','number','10','','min="1" max="100"');
+    case 'calculator':return field('Expresión matemática','expression','text','(125 * 1.19) + 5000','Admite +, -, *, /, %, ^ y paréntesis.');
+    case 'percentage':return selectField('Operación','mode',[['of','Calcular porcentaje de una cantidad'],['change','Variación porcentual entre dos valores']],'of')+'<div class="inline-fields">'+field('Cantidad / valor inicial','a','number','250','','step="any"')+field('Porcentaje / valor final','b','number','19','','step="any"')+'</div>';
+    case 'date-diff':return '<div class="inline-fields">'+field('Fecha inicial','start','date','2026-01-01')+field('Fecha final','end','date',new Date().toISOString().slice(0,10))+'</div>';
+    case 'timezone':return field('Fecha y hora','datetime','datetime-local',new Date().toISOString().slice(0,16))+selectField('Zona de destino','zone',[['America/Bogota','Bogotá'],['America/Mexico_City','Ciudad de México'],['America/New_York','Nueva York'],['America/Los_Angeles','Los Ángeles'],['Europe/Madrid','Madrid'],['Europe/London','Londres'],['Asia/Tokyo','Tokio'],['Australia/Sydney','Sídney']],'America/Bogota');
+    case 'contrast':return '<div class="inline-fields">'+field('Color del texto','foreground','text','#111827')+field('Color del fondo','background','text','#ffffff')+'</div><div class="tool-hint">Introduce colores HEX de 3 o 6 dígitos. Se calcula la relación de contraste WCAG.</div>';
+    case 'text-sort':return textareaField('Líneas para ordenar','text','','Cada línea se ordenará alfabéticamente.')+'<label class="check-line"><input type="checkbox" name="caseSensitive"> Orden sensible a mayúsculas</label>';
+    case 'word-frequency':return textareaField('Texto para analizar','text','','Se mostrarán hasta 30 palabras por frecuencia.');
     default:return '';
   }
 }
@@ -148,7 +176,8 @@ function openTool(t){
   $('#modal-icon').innerHTML=icon(t.icon);
   let html='<p class="modal-description">'+t.description+'</p>';
   if(t.file){
-    html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(t.multiple?'multiple':'')+' accept="'+(t.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Selecciona o arrastra tus archivos aquí</strong><p>'+(t.multiple?'Puedes añadir varios archivos. ':'')+'No se subirán a un servidor.</p></label><div class="file-list" id="file-list"></div>';
+    const privacy=t.mode==='byok'?'El contenido se envía al proveedor de IA con tu token personal.':'El archivo se procesa en tu navegador; no se sube a PRISMA.';
+    html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(t.multiple?'multiple':'')+' accept="'+(t.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Arrastra y suelta tus archivos aquí</strong><p>o haz clic para seleccionar desde tu dispositivo</p><small class="file-drop-note">'+(t.multiple?'Puedes añadir varios archivos. ':'')+privacy+'</small><span class="file-drop-formats">Formatos admitidos: '+escapeHtml(t.accept||'cualquier archivo')+'</span></label><div class="file-list" id="file-list"></div>';
   }
   html+=buildFields(t);
   html+='<div class="progress-wrap hidden" id="progress-wrap"><div class="progress-label"><span id="progress-message">Preparando...</span><span id="progress-value">0%</span></div><div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div></div><div id="tool-output"></div>';
@@ -159,27 +188,46 @@ function openTool(t){
   $('#modal-run').innerHTML=icon('play')+' Ejecutar herramienta';
   if(t.file){
     const drop=$('#file-drop'),input=$('#file-input');
-    input.addEventListener('change',()=>{selectedFiles=[...input.files];renderFileList();});
+    input.addEventListener('change',()=>{addSelectedFiles([...input.files],t);input.value='';});
     drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('dragover');});
-    drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));
-    drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');const incoming=[...e.dataTransfer.files];selectedFiles=t.multiple?incoming:incoming.slice(0,1);renderFileList();});
-    drop.addEventListener('click',e=>{if(e.target.tagName!=='INPUT')input.click();});
+    drop.addEventListener('dragleave',e=>{if(!drop.contains(e.relatedTarget))drop.classList.remove('dragover');});
+    drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');addSelectedFiles([...e.dataTransfer.files],t);});
+    $('#file-list').addEventListener('click',e=>{const remove=e.target.closest('[data-remove-file]');if(remove){selectedFiles.splice(Number(remove.dataset.removeFile),1);renderFileList();return;}if(e.target.closest('[data-clear-files]')){selectedFiles=[];renderFileList();}});
   }
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
 }
 function updateUnitOptions(){
   const kind=$('#field-kind').value;
-  const sets={length:[['m','Metros'],['km','Kilómetros'],['cm','Centímetros'],['mm','Milímetros'],['mi','Millas'],['ft','Pies']],mass:[['kg','Kilogramos'],['g','Gramos'],['mg','Miligramos'],['lb','Libras'],['oz','Onzas']],temperature:[['C','Celsius'],['F','Fahrenheit'],['K','Kelvin']]};
+  const sets={length:[['m','Metros'],['km','Kilómetros'],['cm','Centímetros'],['mm','Milímetros'],['mi','Millas'],['ft','Pies'],['in','Pulgadas'],['yd','Yardas']],mass:[['kg','Kilogramos'],['g','Gramos'],['mg','Miligramos'],['lb','Libras'],['oz','Onzas'],['t','Toneladas']],area:[['m2','m²'],['km2','km²'],['cm2','cm²'],['ha','Hectáreas'],['acre','Acres'],['ft2','Pies²']],volume:[['l','Litros'],['ml','Mililitros'],['m3','m³'],['gal','Galones US'],['cup','Tazas US']],speed:[['ms','m/s'],['kmh','km/h'],['mph','mph'],['kn','Nudos']],data:[['B','Bytes'],['KB','Kilobytes'],['MB','Megabytes'],['GB','Gigabytes'],['TB','Terabytes']],temperature:[['C','Celsius'],['F','Fahrenheit'],['K','Kelvin']]};
   const opts=sets[kind];['from','to'].forEach((name,i)=>{$('#field-'+name).innerHTML=opts.map(o=>'<option value="'+o[0]+'">'+o[1]+'</option>').join('');$('#field-'+name).value=kind==='length'?(i?'km':'m'):kind==='mass'?(i?'g':'kg'):(i?'F':'C');});
 }
 function updateTimestampField(){
   const mode=$('#field-mode').value;
   $('#field-value').value=mode==='unix-to-date'?'1762550400':new Date().toISOString().slice(0,16);
 }
+function addSelectedFiles(incoming,tool){
+  const allowed=incoming.filter(file=>acceptsFile(file,tool.accept||'*/*'));
+  if(allowed.length!==incoming.length)toast('Algunos archivos no tienen un formato admitido.','error');
+  const next=tool.multiple?[...selectedFiles,...allowed]:allowed.slice(0,1);
+  const max=tool.multiple?(tool.maxFiles||20):1;
+  const limited=next.slice(0,max);
+  const total=limited.reduce((sum,file)=>sum+file.size,0);
+  if(total>200*1024*1024){toast('El conjunto supera el límite de 200 MB para procesamiento en navegador.','error');return;}
+  if(next.length>max)toast('Esta herramienta admite hasta '+max+' archivos.','info');
+  selectedFiles=limited;renderFileList();
+}
+function acceptsFile(file,accept){
+  const rules=String(accept||'*/*').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+  if(!rules.length||rules.includes('*/*'))return true;
+  const name=file.name.toLowerCase(),type=(file.type||'').toLowerCase();
+  return rules.some(rule=>rule.startsWith('.')?name.endsWith(rule):rule.endsWith('/*')?type.startsWith(rule.slice(0,-1)):type===rule);
+}
 function renderFileList(){
   const list=$('#file-list');if(!list)return;
-  list.innerHTML=selectedFiles.map(f=>'<div class="file-row">'+icon('file-text')+'<span>'+escapeHtml(f.name)+'</span><small>'+formatBytes(f.size)+'</small></div>').join('');
+  if(!selectedFiles.length){list.innerHTML='';return;}
+  const total=selectedFiles.reduce((sum,file)=>sum+file.size,0);
+  list.innerHTML='<div class="upload-list-head"><strong>'+selectedFiles.length+' archivo'+(selectedFiles.length===1?'':'s')+'</strong><span>'+formatBytes(total)+' en total</span><button type="button" data-clear-files>Vaciar</button></div>'+selectedFiles.map((f,i)=>'<div class="file-row">'+icon('file-text')+'<span title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</span><small>'+formatBytes(f.size)+'</small><button class="remove-file" type="button" data-remove-file="'+i+'" aria-label="Quitar '+escapeHtml(f.name)+'">'+icon('x')+'</button></div>').join('');
 }
 function formatBytes(bytes){if(!bytes)return '0 B';const u=['B','KB','MB','GB'];const i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];}
 function readParams(){
@@ -198,8 +246,10 @@ async function executeCurrentTool(){
   running=true;$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
-    const result=await runTool(currentTool.id,selectedFiles,readParams(),updateProgress);
-    if(result?.blob){if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=URL.createObjectURL(result.blob);}
+    const params=readParams();
+    const result=await runTool(currentTool.id,selectedFiles,params,updateProgress);
+    if($('#field-hfToken'))$('#field-hfToken').value='';
+    if(result?.blob){if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=result.previewUrl&&result.previewUrl.startsWith('blob:')?result.previewUrl:URL.createObjectURL(result.blob);if(!result.previewUrl)result.previewUrl=outputUrl;}
     renderOutput(result);
     updateProgress(1,'Proceso completado');
     toast('La operación terminó correctamente.','success');
@@ -208,6 +258,7 @@ async function executeCurrentTool(){
     $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
     toast(error?.message||'Ocurrió un error.','error');
   }finally{
+    if($('#field-hfToken'))$('#field-hfToken').value='';
     running=false;$('#modal-run').disabled=false;$('#modal-run').innerHTML=icon('play')+' Ejecutar herramienta';
   }
 }
@@ -220,15 +271,18 @@ function renderOutput(result){
   if(result.previewUrl)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
   if(result.text)html+='<pre class="output-text" id="output-text">'+escapeHtml(result.text)+'</pre>';
   if(result.html)html+='<pre class="output-text">'+escapeHtml(result.html)+'</pre>';
+  if(result.colors?.length)html+='<div class="color-palette-results">'+result.colors.map(color=>'<button class="color-swatch" type="button" data-color="'+escapeHtml(color)+'" title="Copiar '+escapeHtml(color)+'"><span style="background:'+escapeHtml(color)+'"></span><code>'+escapeHtml(color)+'</code></button>').join('')+'</div>';
   if(result.summary)html+='<p class="tool-hint" style="margin:10px 0 0">'+escapeHtml(result.summary)+'</p>';
   panel.innerHTML=html;$('#tool-output').append(panel);
   if(result.blob)$('#download-output').addEventListener('click',()=>downloadBlob(result.blob,result.filename||'prisma-result'));
   if(result.text)$('#copy-output').addEventListener('click',async()=>{await navigator.clipboard.writeText(result.text);toast('Texto copiado.');});
+  $('.color-swatch',panel).forEach(b=>b.addEventListener('click',async()=>{await navigator.clipboard.writeText(b.dataset.color);toast(b.dataset.color+' copiado.');}));
 }
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
-function closeTool(){if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}$('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;}
+function closeTool(){if($('#field-hfToken'))$('#field-hfToken').value='';if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}$('#modal-body').innerHTML='';$('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;}
 function showView(view){activeView=view;activeCategory='all';searchTerm='';$('#global-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
 renderCategories();renderProviders();render();
+$('#open-image-gen')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 $$('[data-view-jump]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewJump)));
 $('#global-search').addEventListener('input',e=>{searchTerm=e.target.value;activeView='explore';activeCategory='all';render();});
