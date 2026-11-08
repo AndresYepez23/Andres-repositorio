@@ -246,16 +246,16 @@ async function formatSourceCode(p,kind){
 function formatXmlText(source){
  const parsed=new DOMParser().parseFromString(source,'application/xml');
  if(parsed.querySelector('parsererror'))throw Error('El XML contiene errores de sintaxis. Revisa etiquetas y atributos.');
- const serialized=new XMLSerializer().serializeToString(parsed).replace(/>\\s*</g,'><');
- const tokens=serialized.replace(/></g,'>\\n<').split('\\n');let depth=0;
+ const serialized=new XMLSerializer().serializeToString(parsed).replace(/>\s*</g,'><');
+ const tokens=serialized.replace(/></g,'>\n<').split('\n');let depth=0;
  const lines=[];
  for(const token of tokens){
   const line=token.trim();if(!line)continue;
-  if(/^<\\//.test(line))depth=Math.max(0,depth-1);
+  if(/^<\//.test(line))depth=Math.max(0,depth-1);
   lines.push('  '.repeat(depth)+line);
-  if(/^<[^!?/][^>]*[^/]?>$/.test(line)&&!/<\\/[^>]+>$/.test(line)&&!/^<[^>]+\\/>$/.test(line))depth++;
+  if(/^<[^!?/][^>]*[^/]?>$/.test(line)&&!/<\/[^>]+>$/.test(line)&&!/^<[^>]+\/>$/.test(line))depth++;
  }
- return lines.join('\\n');
+ return lines.join('\n');
 }
 async function inspectFile(file){
  if(!file)throw Error('Selecciona un archivo.');
