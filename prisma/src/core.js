@@ -1,6 +1,6 @@
 import { tools } from './registry.js';
 import { runTool } from './engines.js';
-import { getProviderCredential } from './provider-connections.js';
+import { getProviderCredential, getCentralProviderStatus } from './provider-connections.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -11,6 +11,7 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
+let centralProviders = { gemini: false, huggingface: false, groq: false };
 
 function readPollinationsToken(){
   const expiry=Number(sessionStorage.getItem('prisma-polli-expiry')||0);
@@ -22,7 +23,8 @@ function credentials(){
     polliToken:readPollinationsToken(),
     hfToken:getProviderCredential('huggingface'),
     geminiKey:getProviderCredential('gemini'),
-    groqKey:getProviderCredential('groq')
+    groqKey:getProviderCredential('groq'),
+    centralProviders
   };
 }
 function escapeHtml(value){
@@ -306,8 +308,10 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
   finally{try{session?.destroy?.();}catch{}}
 }
 async function requestPlan(userText){
+  const centralStatus=await getCentralProviderStatus();
+  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false};
   const creds=credentials();
-  const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey);
+  const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
   if(!hasConnectedModel){
     status('Buscando una capacidad local para resolver tu solicitud…');setProgress(.12,'Seleccionando herramientas locales…');
     let attachmentContext='';
@@ -495,7 +499,12 @@ export function initPrismaCore(){
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
-  $('#core-connect-banner').classList.toggle('hidden',!!(credentials().polliToken||credentials().hfToken||credentials().geminiKey||credentials().groqKey));
+  getCentralProviderStatus().then(result=>{
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false};
+    const creds=credentials();
+    const ready=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
+    $('#core-connect-banner')?.classList.toggle('hidden',ready);
+  });
   status('Listo. Escribe una tarea o adjunta un archivo.','info');
   $('#core-cancel').disabled=false;
 }
