@@ -77,44 +77,71 @@ function localContentPack(prompt,style){
   return ['TÍTULO',short.charAt(0).toLocaleUpperCase('es')+short.slice(1),'','DESCRIPCIÓN','Una idea convertida en una pieza visual. '+clean+'. Creada con Prisma Space'+(style?' · Estilo '+style:'')+'.','','HASHTAGS',[...new Set(hashtags)].join(' '),'','TEXTO ALTERNATIVO','Imagen de '+clean+'.'].join('\n');
 }
 
-async function generateContentPack(provider,tokens,prompt,style,callback){
+async function generateContentPack(tokens,prompt,style,params,callback){
   const instruction='Prepara contenido para publicar una imagen creada a partir de esta idea: "'+prompt+'". Devuelve exactamente cuatro secciones en español: TÍTULO (breve y atractivo), DESCRIPCIÓN (2 frases naturales), HASHTAGS (entre 4 y 7, relevantes y sin repetir) y TEXTO ALTERNATIVO (accesible, descriptivo y sin exageraciones). Estilo visual: '+style+'. No inventes marcas, cifras ni características que no aparezcan en la idea.';
-  try{
-    if(provider==='pollinations'&&tokens.pollinations){
-      const result=await runTool('ai-assistant',[],{prompt:instruction,model:'openai/gpt-5.4-nano',tone:'creative',length:'medium',polliToken:tokens.pollinations},(progress,message)=>report(callback,.82,.17,progress,message||'Preparando contenido'));
-      if(result?.text?.trim())return {text:result.text.trim(),source:'Pollinations'};
+  const preferred=params.textProvider||'auto';
+  const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
+  const labels={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini'};
+  const errors=[];
+  for(const provider of candidates){
+    const available=provider==='pollinations'?!!tokens.pollinations:provider==='huggingface'?!!tokens.huggingface:provider==='gemini'?!!tokens.gemini:!!tokens.groq;
+    if(!available)continue;
+    try{
+      const result=await runStep('ai-assistant',[],{
+        prompt:instruction,provider,tone:'creative',length:'medium',
+        polliToken:tokens.pollinations,hfToken:tokens.huggingface,
+        geminiKey:tokens.gemini,groqKey:tokens.groq
+      },callback,.82,.17,'Preparando título, descripción y hashtags');
+      if(result?.text?.trim())return {text:result.text.trim(),source:labels[provider]};
+      throw new Error('El motor no devolvió contenido.');
+    }catch(error){
+      errors.push(labels[provider]+': '+(error?.message||'error de generación'));
+      if(preferred!=='auto')throw error;
     }
-    if(provider==='huggingface'&&tokens.huggingface){
-      const {InferenceClient}=await import('https://esm.sh/@huggingface/inference');
-      const client=new InferenceClient(tokens.huggingface);
-      const result=await client.chatCompletion({model:'Qwen/Qwen2.5-7B-Instruct',messages:[{role:'system',content:'Eres un especialista en contenido digital. Escribe en español, con precisión y sin inventar datos.'},{role:'user',content:instruction}],max_tokens:650,temperature:.7});
-      const text=result?.choices?.[0]?.message?.content?.trim();
-      if(text)return {text,source:'Hugging Face'};
-    }
-  }catch(error){return {text:localContentPack(prompt,style),source:'Plantilla local',warning:error?.message||'El proveedor de texto no respondió.'};}
-  return {text:localContentPack(prompt,style),source:'Plantilla local'};
+  }
+  return {text:localContentPack(prompt,style),source:'Plantilla local',warning:errors.length?errors.join(' | '):'No hay un motor de texto conectado.'};
 }
 
 async function aiCreation(files,params,callback){
   const prompt=String(params.prompt||'').trim();
   if(prompt.length<8)throw new Error('Describe tu idea con al menos ocho caracteres.');
-  const pollinationsToken=String(params.polliToken||'').trim(),huggingfaceToken=String(params.hfToken||'').trim();
-  let providersToTry=[];
-  if(params.provider==='pollinations')providersToTry=['pollinations'];
-  else if(params.provider==='huggingface')providersToTry=['huggingface'];
-  else{if(pollinationsToken)providersToTry.push('pollinations');if(huggingfaceToken)providersToTry.push('huggingface');}
-  if(!providersToTry.length)throw new Error('Conecta Pollinations desde el Laboratorio IA o introduce tu token personal de Hugging Face. Puedes elegir el motor automático para que Prisma seleccione el disponible.');
-  const tokens={pollinations:pollinationsToken,huggingface:huggingfaceToken},errors=[];
+  const tokens={
+    pollinations:String(params.polliToken||'').trim(),
+    huggingface:String(params.hfToken||'').trim(),
+    gemini:String(params.geminiKey||'').trim(),
+    groq:String(params.groqKey||'').trim()
+  };
+  const preferred=params.provider||'auto';
+  const candidates=preferred==='auto'?['pollinations','huggingface','gemini']:[preferred];
+  const available={
+    pollinations:!!tokens.pollinations,
+    huggingface:!!tokens.huggingface,
+    gemini:!!tokens.gemini
+  };
+  const providersToTry=candidates.filter(provider=>available[provider]);
+  if(!providersToTry.length){
+    if(preferred!=='auto')throw new Error('Conecta '+(preferred==='gemini'?'Google Gemini':preferred==='huggingface'?'Hugging Face':'Pollinations')+' desde el Laboratorio IA.');
+    throw new Error('Conecta al menos un motor de imágenes: Pollinations, Hugging Face o Google Gemini.');
+  }
+
+  const errors=[];
   let generated=null,providerUsed='';
   for(let index=0;index<providersToTry.length;index++){
     const provider=providersToTry[index];
-    if(provider==='pollinations'&&!pollinationsToken)continue;
-    if(provider==='huggingface'&&!huggingfaceToken)continue;
     try{
-      callback?.(.08+index*.06,provider==='pollinations'?'Conectando con Pollinations...':'Conectando con Hugging Face...');
-      generated=await runStep('image-gen',[],{provider,model:provider==='pollinations'?'black-forest-labs/flux.1-schnell':'black-forest-labs/FLUX.1-schnell',prompt,style:params.style||'photo',ratio:params.ratio||'square',negativePrompt:params.negativePrompt||'',seed:params.seed||'',polliToken:pollinationsToken,hfToken:huggingfaceToken},callback,.12,.56,'Generando imagen');
-      providerUsed=provider;break;
-    }catch(error){errors.push((provider==='pollinations'?'Pollinations: ':'Hugging Face: ')+(error?.message||'error de generación'));if(params.provider!=='auto')throw error;}
+      callback?.(.08+index*.06,'Conectando con '+(provider==='pollinations'?'Pollinations':provider==='huggingface'?'Hugging Face':'Google Gemini')+'...');
+      generated=await runStep('image-gen',[],{
+        provider,qualityProfile:params.qualityProfile||'balanced',
+        prompt,style:params.style||'photo',ratio:params.ratio||'square',
+        negativePrompt:params.negativePrompt||'',seed:params.seed||'',
+        polliToken:tokens.pollinations,hfToken:tokens.huggingface,geminiKey:tokens.gemini
+      },callback,.12,.56,'Generando imagen');
+      providerUsed=provider;
+      break;
+    }catch(error){
+      errors.push((provider==='pollinations'?'Pollinations':provider==='huggingface'?'Hugging Face':'Google Gemini')+': '+(error?.message||'error de generación'));
+      if(!params.allowFallback||preferred!=='auto')throw error;
+    }
   }
   if(!generated?.blob)throw new Error('No fue posible generar la imagen. '+errors.join(' | '));
 
@@ -129,15 +156,16 @@ async function aiCreation(files,params,callback){
     if(finalImage?.previewUrl?.startsWith('blob:'))URL.revokeObjectURL(finalImage.previewUrl);
     finalImage=result;currentFile=asFile(result,'prisma-imagen-editada.webp');
   }
-  const content=await generateContentPack(providerUsed,tokens,prompt,params.style||'photo',callback);
+  const content=await generateContentPack(tokens,prompt,params.style||'photo',params,callback);
   const contentBlob=new Blob([content.text],{type:'text/plain;charset=utf-8'});
   callback?.(1,'Imagen y contenido preparados.');
+  const providerNames={pollinations:'Pollinations Connect',huggingface:'Hugging Face',gemini:'Google Gemini'};
   return {
     artifacts:[
       {name:'Imagen lista para publicar',filename:finalImage.filename||'prisma-imagen-final.webp',blob:finalImage.blob,previewUrl:finalImage.previewUrl,type:finalImage.blob.type},
       {name:'Paquete de contenido',filename:'prisma-contenido-para-publicar.txt',blob:contentBlob,text:content.text,type:'text/plain'}
     ],
-    summary:'Imagen generada con '+(providerUsed==='pollinations'?'Pollinations Connect':'Hugging Face')+'. Se preparó un paquete de título, descripción, hashtags y texto alternativo.'+(content.warning?' La copia se completó con una plantilla local porque el motor de texto no respondió.':'')+(errors.length?' Se cambió de proveedor después de un intento fallido.':''),
+    summary:'Imagen generada con '+providerNames[providerUsed]+'. Texto preparado con '+content.source+'.'+(content.warning?' No respondió un motor de texto; se utilizó una plantilla local.':'')+(errors.length?' Se cambió a otro motor conectado después de un fallo.':''),
     steps:['Idea interpretada','Imagen generada',...editTasks.map(task=>task.label),'Contenido preparado'],
     warnings:[...errors,...(content.warning?[content.warning]:[])]
   };
