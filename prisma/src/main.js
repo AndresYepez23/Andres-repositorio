@@ -691,7 +691,7 @@ document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
   if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar').classList.contains('open'))closeSidebar();}
   if(event.key==='Tab'&&!$('#tool-modal').classList.contains('hidden')){
-    const focusable=$('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href]',$('#tool-modal')).filter(element=>!element.classList.contains('hidden')&&element.getAttribute('aria-hidden')!=='true'&&element.offsetParent!==null);
+    const focusable=Array.from($('#tool-modal').querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href]')).filter(element=>!element.classList.contains('hidden')&&element.getAttribute('aria-hidden')!=='true'&&element.offsetParent!==null);
     if(!focusable.length)return;
     const first=focusable[0],last=focusable[focusable.length-1];
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
