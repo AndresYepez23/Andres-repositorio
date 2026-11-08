@@ -576,6 +576,11 @@ async function explorePublicApi(p,cb){
  const buffer=await response.arrayBuffer();
  if(buffer.byteLength>6*1024*1024)throw Error('La respuesta supera el límite de 6 MiB del explorador público.');
  const mime=response.headers.get('content-type')||'text/plain;charset=utf-8';
+ if(mime.startsWith('image/')){
+  const imageBlob=new Blob([buffer],{type:mime});
+  progress(cb,1,'Imagen recibida.');
+  return {blob:imageBlob,previewUrl:URL.createObjectURL(imageBlob),filename:'prisma-api-imagen.'+(mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg'),summary:'HTTP '+response.status+' · '+source+' · '+mime+' · '+(buffer.byteLength/1024).toFixed(1)+' KB'};
+ }
  const raw=new TextDecoder().decode(buffer);
  let text=raw,extension='txt';
  if((p.format||'json')==='json'){
@@ -591,7 +596,7 @@ async function explorePublicApi(p,cb){
 async function discoverGitHubProjects(p,cb){
  const query=String(p.query||'').trim();
  if(query.length<2)throw Error('Escribe al menos dos caracteres para buscar proyectos.');
- const language=p.language&&p.language!=='any'?'+language:'+p.language:'';
+ const language=p.language&&p.language!=='any'?' language:'+p.language:'';
  const sort=['stars','updated','forks'].includes(p.sort)?p.sort:'stars';
  const limit=Math.max(5,Math.min(20,Number(p.limit)||10));
  const url='https://api.github.com/search/repositories?q='+encodeURIComponent(query+language)+'&sort='+sort+'&order=desc&per_page='+limit;
