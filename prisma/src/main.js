@@ -1,3 +1,4 @@
+import { initPrismaCore } from './core.js';
 import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
 import { runTool } from './engines.js';
@@ -170,10 +171,10 @@ function renderHomeRecents(){
   renderMiniTools('home-recent',recentTools.slice(0,4).map(item=>item.id),'Aquí aparecerán las herramientas que abras. Tu historial se guarda solo en este navegador.');
 }
 function render(){
-  const ai=activeView==='ai',isHome=activeView==='explore'&&activeCategory==='all'&&!searchTerm;
+  const ai=activeView==='ai',core=activeView==='core',isHome=activeView==='explore'&&activeCategory==='all'&&!searchTerm;
   $('#home-dashboard').classList.toggle('hidden',!isHome);
-  $('#tools-section').classList.toggle('hidden',ai);$('#ai-section').classList.toggle('hidden',!ai);
-  $('#breadcrumb-current').textContent=ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?(categories.find(c=>c.id===activeCategory)?.name||'Explorar'):searchTerm?'Resultados':'Explorar';
+  $('#tools-section').classList.toggle('hidden',ai||core);$('#ai-section').classList.toggle('hidden',!ai);$('#core-section').classList.toggle('hidden',!core);
+  $('#breadcrumb-current').textContent=core?'Prisma Core':ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?(categories.find(c=>c.id===activeCategory)?.name||'Explorar'):searchTerm?'Resultados':'Explorar';
   $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
@@ -926,7 +927,7 @@ function closeSidebar(){
   $('#mobile-menu').setAttribute('aria-expanded','false');
 }
 function scrollToCurrentView(){
-  const target=activeView==='ai'?$('#ai-section'):
+  const target=activeView==='core'?$('#core-section'):activeView==='ai'?$('#ai-section'):
     activeView==='explore'&&activeCategory==='all'&&!searchTerm?$('#home-dashboard'):$('#tools-section');
   if(!target)return;
   const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -975,6 +976,7 @@ function setupHeroInteraction(){
 }
 
 renderCategories();renderProviders();render();
+initPrismaCore();
 setupHeroInteraction();setupProfileMenu();setupHomeDashboard();setupMobileSearch();setupPollinationsSettings();
 void finishPollinationsAuth();
 $$('[data-workflow]').forEach(button=>button.addEventListener('click',()=>openWorkflow(workflows.find(workflow=>workflow.id===button.dataset.workflow))));
