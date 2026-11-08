@@ -238,7 +238,10 @@ async function formatSourceCode(p,kind){
  }
  const prettier=await import('https://esm.sh/prettier@3.3.3/standalone');
  const pluginPath=kind==='html'?'html':kind==='css'?'postcss':'babel';
- const formatted=await prettier.format(source,{parser,plugins:[plugin],tabWidth:Number(p.indent)||2,useTabs:p.indent==='tab',singleQuote:p.quote==='single',semi:p.semicolon!=='false'});
+ const plugin=await import('https://esm.sh/prettier@3.3.3/plugins/'+pluginPath);
+ const estree=kind==='js'?await import('https://esm.sh/prettier@3.3.3/plugins/estree'):null;
+ const parser=kind==='html'?'html':kind==='css'?'css':'babel';
+ const formatted=await prettier.format(source,{parser,plugins:estree?[plugin,estree]:[plugin],tabWidth:Number(p.indent)||2,useTabs:p.indent==='tab',singleQuote:p.quote==='single',semi:p.semicolon!=='false'});
  return {text:formatted,summary:'Código formateado en el navegador con Prettier.'};
 }
 function formatXmlText(source){
