@@ -3,7 +3,8 @@ import { runTool } from './engines.js';
 export const workflows = [
   { id:'image-pipeline', name:'Optimizar una imagen', description:'Quita el fondo, ajusta el tamaño y comprime el resultado sin saltar entre herramientas.', icon:'image', tag:'Procesamiento local', file:true, multiple:false, accept:'image/*' },
   { id:'document-pipeline', name:'Preparar documentos PDF', description:'Combina archivos, numera páginas y extrae el texto disponible en un solo proceso.', icon:'files', tag:'PDF · Local', file:true, multiple:true, maxFiles:12, accept:'.pdf,application/pdf' },
-  { id:'ai-creation', name:'Crear contenido con IA', description:'Convierte una idea en una imagen editada y un paquete de contenido listo para publicar.', icon:'sparkles', tag:'Motores intercambiables', file:false, multiple:false, accept:'*/*' }
+  { id:'ai-creation', name:'Crear contenido con IA', description:'Convierte una idea en una imagen editada y un paquete de contenido listo para publicar.', icon:'sparkles', tag:'Motores intercambiables', file:false, multiple:false, accept:'*/*' },
+  { id:'ai-task', name:'Resolver una tarea con IA', description:'Redacta, resume, explica, traduce o convierte una idea en un resultado útil. Prisma elige el motor conectado.', icon:'brain-circuit', tag:'Enrutamiento automático', file:false, multiple:false, accept:'*/*' }
 ];
 
 const asFile = (result, fallbackName) => {
@@ -171,10 +172,43 @@ async function aiCreation(files,params,callback){
   };
 }
 
+async function aiTask(params,callback){
+  const prompt=String(params.prompt||'').trim();
+  if(prompt.length<5)throw new Error('Cuéntanos qué necesitas resolver.');
+  const tokens={
+    polliToken:String(params.polliToken||'').trim(),
+    hfToken:String(params.hfToken||'').trim(),
+    geminiKey:String(params.geminiKey||'').trim(),
+    groqKey:String(params.groqKey||'').trim()
+  };
+  const taskLabels={write:'Redactar',summarize:'Resumir',explain:'Explicar',translate:'Traducir',ideas:'Generar ideas',improve:'Mejorar un texto'};
+  const instruction='Actúa como un asistente experto y resuelve esta tarea. Tipo de tarea: '+(taskLabels[params.task]||'Resolver')+'.\n\nSolicitud del usuario:\n'+prompt+'\n\nContexto adicional:\n'+String(params.context||'No proporcionado')+'\n\nResponde en español claro, con estructura útil y sin inventar datos. Si falta información, indícalo. No describas pasos internos ni inventes fuentes.';
+  const result=await runStep('ai-assistant',[],{
+    prompt:instruction,
+    provider:params.provider||'auto',
+    tone:params.tone||'professional',
+    length:params.length||'medium',
+    polliToken:tokens.polliToken,
+    hfToken:tokens.hfToken,
+    geminiKey:tokens.geminiKey,
+    groqKey:tokens.groqKey
+  },callback,.05,.9,'Resolviendo tu solicitud con el mejor motor disponible');
+  const answer=String(result?.text||'').trim();
+  if(!answer)throw new Error('El motor conectado no devolvió una respuesta. Prueba con otro proveedor.');
+  const blob=new Blob([answer],{type:'text/plain;charset=utf-8'});
+  callback?.(1,'Tu resultado está listo.');
+  return {
+    artifacts:[{name:'Resultado de tu tarea',filename:'prisma-resultado-ia.txt',blob,text:answer,type:'text/plain'}],
+    summary:'Tarea completada con el motor de IA disponible. Puedes copiar la respuesta o descargarla.',
+    steps:['Solicitud interpretada','Motor de IA seleccionado','Respuesta preparada']
+  };
+}
+
 export async function runWorkflow(id,files=[],params={},callback){
   callback?.(.02,'Preparando flujo inteligente...');
   if(id==='image-pipeline')return imagePipeline(files,params,callback);
   if(id==='document-pipeline')return documentPipeline(files,params,callback);
   if(id==='ai-creation')return aiCreation(files,params,callback);
+  if(id==='ai-task')return aiTask(params,callback);
   throw new Error('No reconocemos ese flujo de trabajo.');
 }
