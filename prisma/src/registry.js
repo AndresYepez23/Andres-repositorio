@@ -7,7 +7,12 @@ export const categories = [
   { id: 'text', name: 'Texto y datos', icon: 'code' },
   { id: 'utility', name: 'Utilidades', icon: 'sliders' },
   { id: 'dev', name: 'Desarrollo web', icon: 'code' },
-  { id: 'office', name: 'Hojas de cálculo', icon: 'file-text' }
+  { id: 'office', name: 'Hojas de cálculo', icon: 'file-text' },
+  { id: 'web', name: 'Diseño y desarrollo web', icon: 'code' },
+  { id: 'data', name: 'Datos y análisis', icon: 'database' },
+  { id: 'privacy', name: 'Privacidad y archivos', icon: 'shield-check' },
+  { id: 'study', name: 'Estudio e investigación', icon: 'graduation-cap' },
+  { id: 'creator', name: 'Creación de contenido', icon: 'clapperboard' }
 ];
 
 export const tools = [
@@ -91,6 +96,29 @@ export const tools = [
   { id:'text-diff', name:'Comparar textos', description:'Compara dos textos y resalta las líneas añadidas y eliminadas.', category:'text', icon:'files', status:'ready', mode:'local', file:false, tag:'Diferencias' },
   { id:'ai-assistant', name:'Asistente de texto IA', description:'Redacta, resume, explica y transforma textos con modelos intercambiables.', category:'ai', icon:'sparkles', status:'beta', mode:'byok', file:false, tag:'Pollinations Connect' },
   { id:'ai-voice', name:'Texto a voz IA', description:'Convierte texto en audio descargable con voces generadas por IA.', category:'ai', icon:'mic', status:'beta', mode:'byok', file:false, tag:'Pollinations Connect' },
+  { id:'html-format', name:'Formatear HTML', description:'Ordena e indenta HTML para facilitar su lectura y edición.', category:'web', icon:'code', status:'beta', mode:'browser', file:false, tag:'Prettier · Navegador' },
+  { id:'css-format', name:'Formatear CSS', description:'Organiza reglas, selectores y propiedades CSS.', category:'web', icon:'braces', status:'beta', mode:'browser', file:false, tag:'Prettier · Navegador' },
+  { id:'js-format', name:'Formatear JavaScript', description:'Embellece código JavaScript y TypeScript para revisarlo mejor.', category:'web', icon:'file-code', status:'beta', mode:'browser', file:false, tag:'Prettier · Navegador' },
+  { id:'sql-format', name:'Formatear SQL', description:'Organiza consultas SQL con indentación y palabras clave legibles.', category:'web', icon:'database', status:'beta', mode:'browser', file:false, tag:'SQL Formatter' },
+  { id:'xml-format', name:'Formatear XML', description:'Valida la estructura XML y aplica una indentación legible.', category:'web', icon:'code-xml', status:'ready', mode:'local', file:false, tag:'DOMParser · Local' },
+  { id:'json-schema', name:'Validar JSON con esquema', description:'Comprueba que un JSON cumpla una estructura y reglas definidas.', category:'data', icon:'list-checks', status:'beta', mode:'browser', file:false, tag:'Ajv · JSON Schema' },
+  { id:'csv-stats', name:'Estadísticas de CSV', description:'Calcula filas, columnas, valores vacíos y estadísticas numéricas.', category:'data', icon:'chart-no-axes-combined', status:'ready', mode:'local', file:false, tag:'Análisis local' },
+  { id:'json-xlsx', name:'JSON a Excel', description:'Convierte una lista JSON en un libro XLSX descargable.', category:'data', icon:'file-spreadsheet', status:'beta', mode:'browser', file:false, tag:'SheetJS' },
+  { id:'file-inspector', name:'Inspeccionar archivo', description:'Identifica formato, tamaño, tipo MIME y firma binaria de un archivo.', category:'privacy', icon:'file-search', status:'ready', mode:'local', file:true, accept:'*/*', tag:'Análisis local · Sin subir' },
+  { id:'image-strip-metadata', name:'Eliminar metadatos de imagen', description:'Reexporta una imagen para retirar metadatos EXIF y ubicación incrustada.', category:'privacy', icon:'shield-check', status:'ready', mode:'local', file:true, accept:'image/jpeg,image/png,image/webp', tag:'Privacidad · Local' },
+  { id:'pdf-metadata', name:'Consultar metadatos PDF', description:'Revisa autor, título, fechas y otros datos internos de un PDF.', category:'privacy', icon:'file-search', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Lectura local' },
+  { id:'pdf-metadata-clean', name:'Limpiar metadatos PDF', description:'Elimina los campos habituales de autoría y metadatos del documento.', category:'privacy', icon:'shield-check', status:'beta', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Privacidad · PDF-Lib' },
+  { id:'image-pixelate', name:'Pixelar imagen', description:'Crea un efecto pixelado ajustable para avatares, fondos y mosaicos.', category:'image', icon:'grid-3x3', status:'ready', mode:'local', file:true, accept:'image/*', tag:'Canvas · Local' },
+  { id:'image-sepia', name:'Efecto sepia', description:'Aplica un acabado cálido de estilo fotográfico clásico.', category:'image', icon:'sun', status:'ready', mode:'local', file:true, accept:'image/*', tag:'Canvas · Local' },
+  { id:'image-social-kit', name:'Kit de tamaños para redes', description:'Adapta una imagen a formatos habituales de Instagram, historias y miniaturas.', category:'creator', icon:'images', status:'beta', mode:'browser', file:true, accept:'image/*', tag:'Varios formatos · ZIP' },
+  { id:'citation-generator', name:'Generador de referencias', description:'Prepara referencias bibliográficas en APA 7, Vancouver y MLA.', category:'study', icon:'book-open-check', status:'ready', mode:'local', file:false, tag:'Estudio e investigación' },
+  { id:'flashcards-export', name:'Crear tarjetas de estudio', description:'Convierte términos y definiciones en tarjetas compatibles con Anki.', category:'study', icon:'layers', status:'ready', mode:'local', file:false, tag:'CSV · Anki' },
+  { id:'qr-vcard', name:'QR de contacto', description:'Genera un código QR con datos de contacto para guardar en el teléfono.', category:'utility', icon:'contact', status:'beta', mode:'browser', file:false, tag:'vCard · QR' },
+  { id:'video-speed', name:'Cambiar velocidad de video', description:'Acelera o ralentiza un video y ajusta su pista de audio.', category:'media', icon:'gauge', status:'beta', mode:'browser', file:true, accept:'video/*,.mp4,.mov,.webm,.mkv', tag:'FFmpeg WebAssembly' },
+  { id:'video-resize', name:'Cambiar resolución de video', description:'Adapta un video a resoluciones verticales, horizontales o cuadradas.', category:'media', icon:'monitor-up', status:'beta', mode:'browser', file:true, accept:'video/*,.mp4,.mov,.webm,.mkv', tag:'FFmpeg WebAssembly' },
+  { id:'video-rotate', name:'Girar video', description:'Corrige la orientación de un video 90° o 180°.', category:'media', icon:'rotate-cw', status:'beta', mode:'browser', file:true, accept:'video/*,.mp4,.mov,.webm,.mkv', tag:'FFmpeg WebAssembly' },
+  { id:'audio-convert', name:'Convertir formato de audio', description:'Convierte audio a MP3, WAV u OGG en el navegador.', category:'media', icon:'audio-lines', status:'beta', mode:'browser', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac,.flac', tag:'FFmpeg WebAssembly' },
+  { id:'audio-normalize', name:'Normalizar volumen de audio', description:'Equilibra el volumen para conseguir una escucha más uniforme.', category:'media', icon:'volume-2', status:'beta', mode:'browser', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac,.flac', tag:'FFmpeg WebAssembly' },
   { id:'ai-transcribe', name:'Transcribir audio con IA', description:'Convierte grabaciones en texto con modelos de transcripción.', category:'ai', icon:'audio-lines', status:'beta', mode:'byok', file:true, accept:'audio/*,.mp3,.wav,.m4a,.ogg,.aac,.mp4,.webm', tag:'Pollinations Connect' }
 
 ];
