@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101218">
+  <meta name="description" content="PRISMA reúne herramientas digitales, procesamiento local e inteligencia artificial en un solo espacio de trabajo.">
+  <title>PRISMA — Tu espacio de herramientas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" href="./assets/prisma-mark.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="PRISMA inicio">
+        <span class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 36 31H4L20 3Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m20 3 0 28M4 31l16-10 16 10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m20 21 8-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <span class="brand-copy"><strong>PRISMA</strong><small>LABORATORIO DIGITAL</small></span>
+      </a>
+      <div class="side-label">ESPACIO DE TRABAJO</div>
+      <nav class="primary-nav" aria-label="Navegación principal">
+        <button class="nav-item active" data-view="explore"><span class="nav-icon" data-icon="grid"></span><span>Explorar</span><kbd>⌘ 1</kbd></button>
+        <button class="nav-item" data-view="favorites"><span class="nav-icon" data-icon="star"></span><span>Favoritos</span><span class="nav-count" id="favorite-count">0</span></button>
+        <button class="nav-item" data-view="ai"><span class="nav-icon" data-icon="sparkles"></span><span>Laboratorio IA</span><span class="nav-dot"></span></button>
+      </nav>
+      <div class="side-label side-label-spaced">CATEGORÍAS</div>
+      <nav class="category-nav" id="category-nav" aria-label="Categorías"></nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-card">
+          <span class="privacy-icon" data-icon="shield-check"></span>
+          <div><strong>Privacidad primero</strong><p>Tus archivos se procesan en tu dispositivo siempre que es posible.</p></div>
+        </div>
+        <div class="sidebar-foot"><span class="status-led"></span> PRISMA 1.0 · BETA <span class="foot-spacer"></span><button id="about-button" class="icon-button subtle" aria-label="Acerca de PRISMA" title="Acerca de PRISMA" data-icon="info"></button></div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="mobile-menu" aria-label="Abrir menú" data-icon="menu"></button>
+        <div class="breadcrumb"><span>PRISMA</span><span class="crumb-sep">/</span><strong id="breadcrumb-current">Explorar</strong></div>
+        <div class="topbar-actions">
+          <label class="global-search"><span data-icon="search"></span><input id="global-search" type="search" placeholder="Buscar una herramienta..." autocomplete="off"><kbd>⌘ K</kbd></label>
+          <button class="icon-button" id="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema" data-icon="sun"></button>
+          <div class="profile-chip" aria-label="Perfil local"><span>P</span></div>
+        </div>
+      </header>
+
+      <section class="page-content" id="page-content">
+        <div class="hero-section">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="eyebrow-line"></span> UN SOLO ESPACIO. MUCHAS POSIBILIDADES.</div>
+            <h1>Todo lo que necesitas.<br><em>En un mismo lugar.</em></h1>
+            <p class="hero-description">Herramientas inteligentes para crear, transformar y resolver. Sin instalaciones innecesarias y con privacidad como principio.</p>
+            <div class="hero-actions">
+              <button class="button button-primary" id="explore-tools"><span data-icon="arrow-down"></span> Explorar herramientas</button>
+              <button class="button button-quiet" data-view-jump="ai"><span data-icon="sparkles"></span> Conocer el laboratorio IA</button>
+              <button class="button button-quiet" id="open-image-gen-hero"><span data-icon="image"></span> Crear imagen con IA</button>
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+            <div class="prism-glow"></div>
+            <svg class="hero-prism" viewBox="0 0 260 260">
+              <defs><linearGradient id="prismFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a9e4df" stop-opacity=".85"/><stop offset=".48" stop-color="#7d8ce8" stop-opacity=".48"/><stop offset="1" stop-color="#c1a5ed" stop-opacity=".72"/></linearGradient><linearGradient id="prismStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0fffb"/><stop offset="1" stop-color="#9b8ce6"/></linearGradient></defs>
+              <path d="M130 22 226 190H34L130 22Z" fill="url(#prismFill)" fill-opacity=".17" stroke="url(#prismStroke)" stroke-width="2"/>
+              <path d="M130 22v168M34 190l96-61 96 61M130 129l45-27" fill="none" stroke="#c6d9f8" stroke-opacity=".72" stroke-width="1.5"/>
+              <path d="m130 22 96 168h-96V22Z" fill="url(#prismFill)" fill-opacity=".12"/>
+              <path d="M130 129 220 190" stroke="#d7c5f4" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="130" cy="129" r="4" fill="#e7fffc"/>
+            </svg>
+            <span class="art-tag tag-local"><i></i> PROCESAMIENTO LOCAL</span>
+            <span class="art-tag tag-ai"><i></i> IA MULTIMODELO</span>
+            <span class="art-tag tag-files"><i></i> ARCHIVOS BAJO CONTROL</span>
+          </div>
+        </div>
+
+        <div class="metric-strip">
+          <div class="metric"><strong id="metric-tools">25</strong><span>herramientas en el catálogo</span></div>
+          <div class="metric-divider"></div>
+          <div class="metric"><strong id="metric-local">18</strong><span>operaciones locales o en navegador</span></div>
+          <div class="metric-divider"></div>
+          <div class="metric"><strong>0</strong><span>archivos enviados por defecto</span></div>
+          <div class="metric-note"><span class="status-led"></span> Plataforma en evolución</div>
+        </div>
+
+        <section class="tools-section" id="tools-section">
+          <div class="section-heading">
+            <div><div class="eyebrow">CATÁLOGO</div><h2 id="section-title">Explora las herramientas</h2><p id="section-description">Elige una herramienta y empieza a trabajar al instante.</p></div>
+            <div class="view-switch"><button class="view-button active" data-layout="grid" aria-label="Vista de cuadrícula" data-icon="grid"></button><button class="view-button" data-layout="list" aria-label="Vista de lista" data-icon="list"></button></div>
+          </div>
+          <div class="filter-row"><div class="filter-chips" id="filter-chips"></div><span class="result-count" id="result-count"></span></div>
+          <div class="tool-grid" id="tool-grid"></div>
+          <div class="empty-state hidden" id="empty-state"><span data-icon="search-x"></span><h3>No encontramos herramientas</h3><p>Prueba con otro término o cambia la categoría.</p><button class="button button-quiet" id="clear-search">Limpiar búsqueda</button></div>
+        </section>
+
+        <section class="ai-section hidden" id="ai-section">
+          <div class="eyebrow">PRISMA INTELLIGENCE</div>
+          <h2>Un laboratorio. Varios motores.</h2>
+          <p class="ai-intro">Crea imágenes, redacta con modelos de lenguaje y convierte texto en audio. PRISMA incorpora motores intercambiables y autorización individual para que cada visitante controle su propio consumo.</p>
+          <div class="ai-principles"><div><span data-icon="layers"></span><strong>Modelos intercambiables</strong><p>Una misma experiencia con diferentes proveedores.</p></div><div><span data-icon="gauge"></span><strong>Uso responsable</strong><p>Cuotas, límites y alternativas visibles.</p></div><div><span data-icon="lock"></span><strong>Claves protegidas</strong><p>Las credenciales se gestionarán en servidor, nunca dentro del código público.</p></div></div>
+          <div class="ai-feature-card"><div class="ai-feature-copy"><span class="ai-feature-label">CREACIÓN VISUAL · DISPONIBLE</span><h3>De una idea a una imagen.</h3><p>Describe lo que imaginas, elige un motor y crea una imagen descargable. Pollinations Connect permite que cada usuario autorice su propio presupuesto; también conservamos Hugging Face como opción BYOK.</p><div class="hero-actions"><button class="button button-primary" id="open-image-gen"><span data-icon="sparkles"></span> Generar imagen</button><button class="button button-quiet" id="open-ai-assistant"><span data-icon="message-circle"></span> Asistente de texto</button></div></div><div class="ai-feature-art"><span class="ai-orb ai-orb-one"></span><span class="ai-orb ai-orb-two"></span><span class="ai-art-spark">✦</span></div></div><div class="provider-heading"><div><h3>Proveedores compatibles</h3><p>Motores multimodales, procesamiento local y proveedores en evaluación.</p></div><span class="status-pill status-planned">BYOP + BYOK</span></div>
+          <div class="provider-grid" id="provider-grid"></div>
+          <div class="notice-panel"><span data-icon="info"></span><p><strong>Conexión responsable:</strong> Pollinations Connect utiliza OAuth con PKCE: cada visitante autoriza su propio saldo y puede limitar el presupuesto y la vigencia. Hugging Face sigue disponible como opción personal, pero sus cuentas Free no reciben créditos mensuales de Inference Providers.</p></div>
+        </section>
+
+        <footer class="main-footer"><span>PRISMA <span class="footer-dot">·</span> Herramientas con intención.</span><span>Diseñado para trabajar mejor. <a href="#" id="privacy-link">Privacidad y uso</a></span></footer>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="tool-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <section class="tool-modal">
+      <header class="modal-header"><div class="modal-title-wrap"><span class="modal-icon" id="modal-icon"></span><div><div class="modal-kicker" id="modal-kicker">HERRAMIENTA</div><h2 id="modal-title">Herramienta</h2></div></div><button class="icon-button" id="modal-close" aria-label="Cerrar" data-icon="x"></button></header>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer"><span class="modal-privacy"><span data-icon="shield-check"></span> Procesamiento local cuando está disponible</span><button class="button button-quiet" id="modal-cancel">Cerrar</button><button class="button button-primary" id="modal-run"><span data-icon="play"></span> Ejecutar herramienta</button></div>
+    </section>
+  </div>
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
