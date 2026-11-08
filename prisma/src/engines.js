@@ -437,6 +437,39 @@ async function pdfToImages(file,p,cb){
  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
  return {...download(blob,'prisma-paginas-png.zip'),summary:ids.length+' páginas exportadas como PNG.'};
 }
+async function pdfToWord(file,cb){
+ const pdfjs=await getPdfJs();
+ const pdf=await pdfjs.getDocument({data:new Uint8Array(await bytes(file))}).promise;
+ const {Document,Packer,Paragraph,TextRun,PageBreak}=await import('https://esm.sh/docx@9.5.1');
+ const children=[];
+ let extracted=0;
+ for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
+  const page=await pdf.getPage(pageNo),content=await page.getTextContent();
+  const items=content.items.filter(item=>typeof item.str==='string'&&item.str.trim());
+  const lines=[];
+  for(const item of items){
+   const y=Number(item.transform?.[5]||0),x=Number(item.transform?.[4]||0);
+   let line=lines.find(entry=>Math.abs(entry.y-y)<2.5);
+   if(!line){line={y,items:[]};lines.push(line);}
+   line.items.push({x,text:item.str});
+  }
+  lines.sort((a,b)=>b.y-a.y);
+  for(const line of lines){
+   line.items.sort((a,b)=>a.x-b.x);
+   const text=line.items.map(item=>item.text).join(' ').replace(/\\s+/g,' ').trim();
+   if(text){children.push(new Paragraph({children:[new TextRun({text})],spacing:{after:100}}));extracted++;}
+  }
+  if(pageNo<pdf.numPages)children.push(new Paragraph({children:[new PageBreak()]}));
+  progress(cb,pageNo/pdf.numPages*.82,'Extrayendo texto de página '+pageNo+' de '+pdf.numPages+'...');
+ }
+ if(!extracted)throw Error('Este PDF no contiene texto seleccionable. Parece un escaneo; hace falta OCR para convertirlo a Word.');
+ const doc=new Document({sections:[{properties:{},children}]});
+ progress(cb,.9,'Creando documento Word editable...');
+ const blob=await Packer.toBlob(doc);
+ progress(cb,1,'Documento Word preparado.');
+ return {...download(blob,fileName(file)+'.docx'),summary:pdf.numPages+' páginas procesadas · '+extracted+' líneas de texto recuperadas. La conversión conserva el texto y los saltos de página, pero puede requerir ajustes de maquetación en Word.'};
+}
+
 async function pdfToText(file,cb){
  const pdfjs=await getPdfJs(),pdf=await pdfjs.getDocument({data:new Uint8Array(await bytes(file))}).promise;
  const parts=[];
@@ -804,6 +837,7 @@ async function discoverGitHubProjects(p,cb){
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
+ if(id==='pdf-to-word')return pdfToWord(files[0],cb);
  if(id==='pdf-text')return pdfToText(files[0],cb);
  if(id.startsWith('pdf-'))return pdfTool(id,files,p,cb);
  if(['image-pdf'].includes(id)){
