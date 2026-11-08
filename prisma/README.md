@@ -19,7 +19,9 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 - `src/main.js`: navegación y experiencia.
 - `src/engines.js`: motores de ejecución.
 - `src/workflows.js`: orquestación de cuatro flujos de varios pasos (imágenes, PDF, creación con IA y tareas de texto).
-- La capa de agente general de Prisma Core, con planificación dinámica y llamadas a herramientas por el modelo, todavía está pendiente; los flujos actuales son secuencias predefinidas.
+- `src/core.js`: agente conversacional en el navegador, catálogo dinámico de herramientas disponibles, planificación JSON, aprobación explícita, ejecución secuencial, validación de archivos y conservación de resultados parciales.
+- Prisma Core ya dispone de una primera capa de agente en cliente: un modelo conectado planifica operaciones a partir del catálogo disponible y el ejecutor invoca las herramientas locales o los proveedores personales después de la aprobación del usuario.
+- La siguiente etapa pendiente es trasladar capacidades seleccionadas a un backend Cloudflare Worker protegido, con cuotas, autenticación, observabilidad y límites por usuario. La memoria actual es local al navegador; no hay sincronización entre dispositivos.
 - `build.mjs`: prepara el directorio de publicación `dist/`.
 - `_headers`: cabeceras HTTP de seguridad para Cloudflare Pages.
 - `worker.js`: prototipo independiente para futuras rutas dinámicas; no forma parte del sitio estático publicado.
@@ -34,6 +36,17 @@ La producción se publica en **Cloudflare Pages**, conectado al repositorio GitH
 - Directorio publicado: `dist`.
 
 Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. Prisma Space ya no depende de Wix ni Netlify para su alojamiento.
+
+## Prisma Core
+
+- Una conversación central para describir objetivos en lenguaje natural.
+- El planificador recibe únicamente las herramientas con estado `ready`; no puede invocar herramientas beta o en preparación.
+- Cada plan está limitado a cinco pasos y debe ser autorizado antes de ejecutarse.
+- Los planes externos advierten que los datos pueden salir del navegador y que pueden existir costes del proveedor.
+- Las operaciones se ejecutan secuencialmente; los archivos resultantes pueden alimentar el siguiente paso.
+- La conversación se guarda en el almacenamiento local del navegador. Los archivos adjuntos no se guardan en el historial.
+- Las credenciales personales se leen desde la sesión del navegador y no se incorporan al historial.
+- El agente no puede publicar, enviar, comprar ni borrar recursos externos.
 
 ## Flujos inteligentes
 
