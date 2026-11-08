@@ -256,7 +256,7 @@ function buildLocalPlan(userText){
   selected=selected.filter(Boolean);
   if(!selected.length)return {message:'Puedo trabajar sin conectar motores externos cuando la tarea corresponde a una capacidad local. Por ahora no encuentro una operación local suficientemente segura para esta solicitud. Puedes adjuntar un PDF, imagen, documento u hoja de cálculo, o pedirme una conversión o transformación compatible.',needs_clarification:false,question:'',steps:[]};
   const toolNames=selected.map(item=>item.tool.name).join(' y ');
-  return {message:'Entendí lo que necesitas. Voy a utilizar '+toolNames+' directamente en tu dispositivo, sin solicitar una API key ni enviar el archivo a un proveedor de IA.',needs_clarification:false,question:'',steps:selected.map(item=>({tool_id:item.tool.id,reason:item.reason,params:item.params})),userRequest};
+  return {message:'Entendí lo que necesitas. Voy a utilizar '+toolNames+' directamente en tu dispositivo, sin solicitar una API key ni enviar el archivo a un proveedor de IA.',needs_clarification:false,question:'',steps:selected.map(item=>({tool_id:item.tool.id,reason:item.reason,params:item.params})),userRequest:String(userText||'')};
 }
 async function requestPlan(userText){
   const creds=credentials();
@@ -291,10 +291,6 @@ async function requestPlan(userText){
     return;
   }
 
-    status('Conecta un motor de texto en Laboratorio IA para que Prisma Core pueda planificar.','warning');
-    addMessage('assistant','Para planificar y coordinar herramientas necesito un motor de texto. Abre Laboratorio IA, conecta Pollinations, Groq, Hugging Face o Gemini y vuelve aquí. Tus herramientas locales seguirán disponibles desde Explorar.');
-    return;
-  }
   status('Analizando tu solicitud y seleccionando herramientas…');setProgress(.04,'Entendiendo la solicitud y consultando el catálogo…');
   let attachmentContext='';
   const wantsAnalysis=/analiz|resum|extrae|lee|conclus|explica|investiga|compara|contenido|ideas principales|revisa|interpreta|transcribe|datos de/i.test(userText);
