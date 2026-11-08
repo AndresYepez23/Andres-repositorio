@@ -6,8 +6,8 @@ export default {
       return Response.json({
         ok: true,
         app: "PRISMA",
-        catalog: "79-tools",
-        version: "main",
+        catalog: "110-tools",
+        version: "feature-intelligent-workflows",
       }, {
         headers: {
           "Cache-Control": "no-store",
