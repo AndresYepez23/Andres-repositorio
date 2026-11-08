@@ -120,15 +120,15 @@ function selectField(label,name,options,value,hint=''){
 function pollinationsAuthFields(){
   const saved=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;
   return '<div class="provider-config" id="polli-config">'+
-    field('App Key pública de PRISMA','polliAppKey','text',saved,'Registra una App Key en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">Pollinations Connect</a>. No es una clave secreta.','autocomplete="off" spellcheck="false"')+
+    field('App Key pública de Prisma Space','polliAppKey','text',saved,'Registra una App Key en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">Pollinations Connect</a>. No es una clave secreta.','autocomplete="off" spellcheck="false"')+
     '<div class="provider-connect-row"><button type="button" class="button button-primary" id="polli-connect">'+icon('sparkles')+' Conectar mi cuenta</button><button type="button" class="button button-quiet" id="polli-disconnect">Desconectar</button><span class="provider-connection-status" id="polli-status">Aún no conectado</span></div>'+
     '<div class="provider-redirect"><span>Registra esta Redirect URI en tu App Key:</span><code id="polli-redirect">'+escapeHtml(location.origin+location.pathname)+'</code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URI</button></div>'+
-    '<div class="tool-hint">Cada persona autoriza su propio saldo y puede fijar un presupuesto máximo y una vigencia. PRISMA no comparte una cuota de generación entre visitantes. El consumo puede tener coste en Pollen.</div>'+
+    '<div class="tool-hint">Cada persona autoriza su propio saldo y puede fijar un presupuesto máximo y una vigencia. Prisma Space no comparte una cuota de generación entre visitantes. El consumo puede tener coste en Pollen.</div>'+
   '</div>';
 }
 function huggingFaceAuthFields(){
   return '<div class="provider-config hidden" id="hf-config">'+
-    field('Token personal de Hugging Face','hfToken','password','','Necesita permiso Inference Providers. <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Crear token</a>. No se guarda en PRISMA.','autocomplete="off" spellcheck="false"')+
+    field('Token personal de Hugging Face','hfToken','password','','Necesita permiso Inference Providers. <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Crear token</a>. No se guarda en Prisma Space.','autocomplete="off" spellcheck="false"')+
     '<div class="tool-hint">Importante: las cuentas Free no incluyen créditos mensuales de Inference Providers. Hugging Face PRO incluye USD 2 mensuales; el consumo adicional puede ser de pago.</div>'+
   '</div>';
 }
@@ -136,16 +136,16 @@ function huggingFaceAuthFields(){
 function buildFields(t){
   switch(t.id){
     case 'pdf-split':return '<div class="tool-hint">Cada página se guardará como un PDF independiente dentro de un archivo ZIP.</div>';
-    case 'docx-pdf':return '<div class="tool-hint">PRISMA convertirá el documento a una vista HTML de impresión. Desde la ventana que se abre, selecciona <strong>Guardar como PDF</strong> en el diálogo de impresión del navegador. El diseño puede variar respecto a Microsoft Word.</div>';
+    case 'docx-pdf':return '<div class="tool-hint">Prisma Space convertirá el documento a una vista HTML de impresión. Desde la ventana que se abre, selecciona <strong>Guardar como PDF</strong> en el diálogo de impresión del navegador. El diseño puede variar respecto a Microsoft Word.</div>';
     case 'image-blur':return field('Intensidad del desenfoque (px)','blur','number','5','','min="1" max="30"');
     case 'image-adjust':return '<div class="inline-fields">'+field('Brillo (%)','brightness','number','110','','min="10" max="200"')+field('Contraste (%)','contrast','number','110','','min="10" max="200"')+'</div>';
     case 'image-rounded':return field('Radio de esquina (px)','radius','number','48','','min="0" max="500"')+field('Tamaño máximo (px)','maxSize','number','1600','Limita el tamaño del PNG exportado.','min="128" max="5000"');
     case 'image-metadata':return '<div class="tool-hint">Lee dimensiones y metadatos EXIF que estén presentes. Algunas plataformas eliminan estos datos al compartir imágenes.</div>';
     case 'audio-waveform':return selectField('Color de la onda','color',[['#9adbd2','Turquesa'],['#a9a0ee','Lavanda'],['#ffffff','Blanco'],['#f0b77a','Ámbar']],'#9adbd2');
-    case 'hash-file':return '<div class="tool-hint">Calcula SHA-256 directamente en tu navegador. El archivo no se sube a PRISMA.</div>';
-    case 'jwt-decode':return textareaField('Token JWT','token','','Pega el token completo. PRISMA solo decodifica su contenido: no valida firma, emisor ni vencimiento.');
-    case 'regex-test':return field('Expresión regular','pattern','text','\\bPRISMA\\b','No incluyas las barras /.../.','maxlength="200"')+field('Flags','flags','text','gi','Flags permitidos: g, i, m, s, u.','maxlength="5"')+textareaField('Texto de prueba','text','PRISMA reúne herramientas. Prisma es un espacio digital.');
-    case 'json-yaml':return textareaField('Contenido','text','nombre: PRISMA\\nversion: 1','Pega JSON o YAML.')+selectField('Conversión','mode',[['json-to-yaml','JSON a YAML'],['yaml-to-json','YAML a JSON']],'json-to-yaml');
+    case 'hash-file':return '<div class="tool-hint">Calcula SHA-256 directamente en tu navegador. El archivo no se sube a Prisma Space.</div>';
+    case 'jwt-decode':return textareaField('Token JWT','token','','Pega el token completo. Prisma Space solo decodifica su contenido: no valida firma, emisor ni vencimiento.');
+    case 'regex-test':return field('Expresión regular','pattern','text','\\bPrisma Space\\b','No incluyas las barras /.../.','maxlength="200"')+field('Flags','flags','text','gi','Flags permitidos: g, i, m, s, u.','maxlength="5"')+textareaField('Texto de prueba','text','Prisma Space reúne herramientas. Prisma es un espacio digital.');
+    case 'json-yaml':return textareaField('Contenido','text','nombre: Prisma Space\\nversion: 1','Pega JSON o YAML.')+selectField('Conversión','mode',[['json-to-yaml','JSON a YAML'],['yaml-to-json','YAML a JSON']],'json-to-yaml');
     case 'excel-json':return selectField('Hoja','sheet',[['0','Primera hoja'],['all','Todas las hojas']],'0')+selectField('Formato de salida','format',[['json','JSON'],['csv','CSV']],'json');
     case 'css-gradient':return '<div class="inline-fields">'+field('Color inicial','color1','color','#9adbd2')+field('Color final','color2','color','#a9a0ee')+'</div>'+field('Ángulo (grados)','angle','number','135','','min="0" max="360"')+selectField('Tipo','type',[['linear','Lineal'],['radial','Radial']],'linear');
     case 'text-diff':return textareaField('Texto original','textA','','Pega aquí la primera versión.')+textareaField('Texto modificado','textB','','Pega aquí la segunda versión.');
@@ -155,7 +155,7 @@ function buildFields(t){
     case 'pdf-to-image':return field('Páginas (opcional)','pages','text','','Vacío = todas las páginas. Ejemplo: 1-3, 5.')+selectField('Resolución','scale',[['1','Estándar'],['1.5','Alta (recomendada)'],['2','Muy alta']],'1.5');
     case 'pdf-text':return '<div class="tool-hint">Extrae texto de PDFs digitales. Si el documento es un escaneo o una fotografía, utiliza OCR en la categoría Imágenes.</div>';
     case 'pdf-rotate':return selectField('Rotación','degrees',[['90','90° a la derecha'],['180','180°'],['270','90° a la izquierda']],'90');
-    case 'pdf-watermark':return field('Texto de la marca de agua','watermark','text','PRISMA','Se aplicará en diagonal y con transparencia.');
+    case 'pdf-watermark':return field('Texto de la marca de agua','watermark','text','Prisma Space','Se aplicará en diagonal y con transparencia.');
     case 'image-pdf':return selectField('Tamaño de página','pageSize',[['a4','A4'],['letter','Carta'],['fit','Ajustar a la imagen']],'a4');
     case 'image-compress':return '<div class="inline-fields">'+field('Calidad','quality','number','78','Entre 10 y 100.','min="10" max="100"')+selectField('Formato de salida','format',[['image/webp','WebP (recomendado)'],['image/jpeg','JPG']],'image/webp')+'</div>';
     case 'image-resize':return '<div class="inline-fields">'+field('Ancho (px)','width','number','1200','Ancho final.','min="1" max="12000"')+field('Alto (px)','height','number','800','Alto final.','min="1" max="12000"')+'</div><label class="check-line"><input type="checkbox" name="keep" checked> Mantener proporción original</label>';
@@ -183,14 +183,14 @@ function buildFields(t){
     case 'ai-transcribe':return selectField('Modelo de transcripción','model',[['openai/whisper-1','Whisper · automático']],'openai/whisper-1')+
       selectField('Idioma','language',[['es','Español'],['en','Inglés'],['auto','Detectar automáticamente']],'es')+
       pollinationsAuthFields();
-    case 'image-watermark':return field('Texto de la marca','watermark','text','PRISMA','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
+    case 'image-watermark':return field('Texto de la marca','watermark','text','Prisma Space','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
     case 'image-flip':return selectField('Dirección','direction',[['horizontal','Horizontal'],['vertical','Vertical']],'horizontal');
     case 'image-collage':return selectField('Fondo del mosaico','background',[['#ffffff','Blanco'],['#101218','Oscuro'],['#9adbd2','Turquesa claro']],'#ffffff');
     case 'image-ocr':return selectField('Idioma del documento','language',[['spa','Español'],['eng','Inglés'],['spa+eng','Español e inglés']],'spa','La primera ejecución descarga los datos de idioma.');
     case 'video-trim':return '<div class="inline-fields">'+field('Inicio (segundos)','start','number','0','Desde qué segundo iniciar.','min="0" step="0.1"')+field('Duración (segundos)','duration','number','10','Duración del fragmento.','min="0.1" step="0.1"')+'</div>';
     case 'video-thumbnail':return field('Segundo del video','second','number','1','Elige el instante que quieres capturar.','min="0" step="0.1"');
     case 'video-gif':case 'audio-trim':return '<div class="inline-fields">'+field('Inicio (segundos)','start','number','0','Punto de inicio.','min="0" step="0.1"')+field('Duración (segundos)','duration','number',t.id==='video-gif'?'5':'10','GIF: máximo 12 segundos.','min="0.1" max="12" step="0.1"')+'</div><div class="tool-hint">El motor multimedia se descarga al ejecutar la primera vez. Los archivos se procesan en tu navegador.</div>';
-    case 'qr-scan':return '<div class="tool-hint">Sube una imagen que contenga un código QR. PRISMA intentará leerlo en tu navegador.</div>';
+    case 'qr-scan':return '<div class="tool-hint">Sube una imagen que contenga un código QR. Prisma Space intentará leerlo en tu navegador.</div>';
     case 'barcode':return field('Contenido','value','text','123456789012','Para EAN-13 utiliza exactamente 12 o 13 dígitos.')+selectField('Formato','format',[['CODE128','Code 128'],['EAN13','EAN-13'],['CODE39','Code 39']],'CODE128');
     case 'json-format':return textareaField('Contenido JSON','text','{\n  "prisma": "listo"\n}','Valida y organiza el contenido con la indentación seleccionada.')+selectField('Indentación','indent',[['2','2 espacios'],['4','4 espacios'],['tab','Tabulación']],'2');
     case 'base64':return textareaField('Texto','text','','Admite caracteres especiales y tildes.')+selectField('Operación','mode',[['encode','Codificar a Base64'],['decode','Decodificar Base64']],'encode');
@@ -202,14 +202,14 @@ function buildFields(t){
     case 'timestamp':return selectField('Conversión','mode',[['unix-to-date','Unix a fecha'],['date-to-unix','Fecha a Unix']],'unix-to-date')+field('Valor','value','text','1762550400','Acepta segundos, milisegundos o una fecha ISO.');
     case 'url-code':return textareaField('Texto o URL','text','','')+selectField('Operación','mode',[['encode','Codificar'],['decode','Decodificar']],'encode');
     case 'text-case':return textareaField('Texto','text','')+selectField('Transformación','mode',[['upper','MAYÚSCULAS'],['lower','minúsculas'],['title','Tipo título'],['sentence','Tipo oración']],'upper');
-    case 'markdown':return textareaField('Markdown','text','# PRISMA\n\nEscribe **Markdown** aquí.','La vista previa básica se genera en tu navegador.');
+    case 'markdown':return textareaField('Markdown','text','# Prisma Space\n\nEscribe **Markdown** aquí.','La vista previa básica se genera en tu navegador.');
     case 'color-palette':return selectField('Armonía','harmony',[['analogous','Análogos'],['complementary','Complementarios'],['triadic','Triádicos']],'analogous');
     case 'csv-json':return textareaField('Contenido CSV','text','nombre,ciudad\nAna,Chinú\nLuis,Cartagena','La primera fila se utiliza como encabezado.')+selectField('Separador','delimiter',[[',','Coma'],[';','Punto y coma'],['\\t','Tabulación']],',');
     case 'json-csv':return textareaField('Lista JSON','text','[{"nombre":"Ana","ciudad":"Chinú"},{"nombre":"Luis","ciudad":"Cartagena"}]','El JSON debe ser una lista de objetos.');
-    case 'slug':return textareaField('Título o texto','text','Mi primera página en PRISMA','Se eliminan tildes, símbolos y espacios repetidos.');
+    case 'slug':return textareaField('Título o texto','text','Mi primera página en Prisma Space','Se eliminan tildes, símbolos y espacios repetidos.');
     case 'dedupe-lines':return textareaField('Lista de líneas','text','','Se conservará la primera aparición de cada línea.')+'<label class="check-line"><input type="checkbox" name="caseSensitive"> Distinguir mayúsculas y minúsculas</label>';
     case 'clean-text':return textareaField('Texto para limpiar','text','','Se normalizan espacios y saltos de línea.');
-    case 'html-entities':return textareaField('Contenido','text','<h1>Hola PRISMA</h1>','Escapa HTML o recupera el texto original.')+selectField('Operación','mode',[['encode','Codificar / escapar'],['decode','Decodificar']],'encode');
+    case 'html-entities':return textareaField('Contenido','text','<h1>Hola Prisma Space</h1>','Escapa HTML o recupera el texto original.')+selectField('Operación','mode',[['encode','Codificar / escapar'],['decode','Decodificar']],'encode');
     case 'uuid':return field('Cantidad','count','number','5','Genera hasta 50 UUID v4.','min="1" max="50"');
     case 'lorem':return '<div class="inline-fields">'+field('Palabras','words','number','120','','min="10" max="1500"')+field('Párrafos','paragraphs','number','3','','min="1" max="12"')+'</div>';
     case 'random':return '<div class="inline-fields">'+field('Mínimo','min','number','1')+field('Máximo','max','number','100')+'</div>'+field('Cantidad','count','number','10','','min="1" max="100"');
@@ -238,7 +238,7 @@ function getPollinationsToken(){
 async function connectPollinations(){
   const input=$('#field-polliAppKey');
   const appKey=(input?.value||localStorage.getItem('prisma-polli-client-id')||'').trim();
-  if(!appKey.startsWith('pk_')){toast('Introduce primero la App Key pública pk_ de PRISMA.','error');return;}
+  if(!appKey.startsWith('pk_')){toast('Introduce primero la App Key pública pk_ de Prisma Space.','error');return;}
   localStorage.setItem('prisma-polli-client-id',appKey);
   const verifier=randomBase64Url(48),state=randomBase64Url(24);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
@@ -334,7 +334,7 @@ function openTool(t){
   $('#modal-icon').innerHTML=icon(t.icon);
   let html='<p class="modal-description">'+t.description+'</p>';
   if(t.file){
-    const privacy=t.mode==='byok'?'El contenido se envía al proveedor de IA con tu token personal.':'El archivo se procesa en tu navegador; no se sube a PRISMA.';
+    const privacy=t.mode==='byok'?'El contenido se envía al proveedor de IA con tu token personal.':'El archivo se procesa en tu navegador; no se sube a Prisma Space.';
     html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(t.multiple?'multiple':'')+' accept="'+(t.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Arrastra y suelta tus archivos aquí</strong><p>o haz clic para seleccionar desde tu dispositivo</p><small class="file-drop-note">'+(t.multiple?'Puedes añadir varios archivos. ':'')+privacy+'</small><span class="file-drop-formats">Formatos admitidos: '+escapeHtml(t.accept||'cualquier archivo')+'</span></label><div class="file-list" id="file-list"></div>';
   }
   html+=buildFields(t);
@@ -444,7 +444,46 @@ function renderOutput(result){
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 function closeTool(){if($('#field-hfToken'))$('#field-hfToken').value='';if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}$('#modal-body').innerHTML='';$('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;}
 function showView(view){activeView=view;activeCategory='all';searchTerm='';$('#global-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
+
+function setupHeroInteraction(){
+  const art=$('.hero-art');
+  const core=art&&$('.prism-core',art);
+  if(!art||!core||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  let frame=0;
+  const reset=()=>{
+    art.classList.remove('is-hovered');
+    core.style.transform='';
+    const glow=$('.prism-glow',art);
+    glow.style.setProperty('--glow-x','0px');
+    glow.style.setProperty('--glow-y','0px');
+    $('.art-tag',art).forEach(tag=>{tag.style.transform='';});
+  };
+  art.addEventListener('pointermove',event=>{
+    if(event.pointerType&&event.pointerType!=='mouse')return;
+    const rect=art.getBoundingClientRect();
+    const x=(event.clientX-rect.left)/rect.width-.5;
+    const y=(event.clientY-rect.top)/rect.height-.5;
+    if(frame)cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{
+      art.classList.add('is-hovered');
+      core.style.transform=`translate3d(${(x*12).toFixed(1)}px,${(y*9).toFixed(1)}px,0) rotateX(${(-y*5).toFixed(2)}deg) rotateY(${(x*7).toFixed(2)}deg)`;
+      const glow=$('.prism-glow',art);
+      glow.style.setProperty('--glow-x',`${(x*18).toFixed(1)}px`);
+      glow.style.setProperty('--glow-y',`${(y*12).toFixed(1)}px`);
+      $('.art-tag',art).forEach((tag,index)=>{
+        const strength=[-.22,.28,-.16][index]??.2;
+        tag.style.transform=`translate3d(${(x*14*strength).toFixed(1)}px,${(y*10*strength).toFixed(1)}px,0)`;
+      });
+    });
+  });
+  art.addEventListener('pointerleave',()=>{
+    if(frame)cancelAnimationFrame(frame);
+    reset();
+  });
+}
+
 renderCategories();renderProviders();render();
+setupHeroInteraction();
 void finishPollinationsAuth();
 $('#open-image-gen')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
 $('#open-image-gen-hero')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
@@ -460,7 +499,7 @@ $('#modal-close').addEventListener('click',closeTool);$('#modal-cancel').addEven
 $('#tool-modal').addEventListener('click',e=>{if(e.target===$('#tool-modal'))closeTool();});
 $('#modal-run').addEventListener('click',executeCurrentTool);
 $('#mobile-menu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
-$('#about-button').addEventListener('click',()=>toast('PRISMA 1.0 · Herramientas locales y motores IA intercambiables.','info'));
+$('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
 $('#privacy-link').addEventListener('click',e=>{e.preventDefault();toast('Tus archivos se procesan localmente salvo que una herramienta indique expresamente lo contrario.','info');});
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));render();}));
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#global-search').focus();}if(e.key==='Escape')closeTool();});

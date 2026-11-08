@@ -67,3 +67,27 @@
 .diff-output{font:10px/1.7 ui-monospace,monospace;white-space:pre-wrap;max-height:280px;overflow:auto;margin-top:12px}
 .diff-added{color:var(--good)}.diff-removed{color:#e58e8e}
 @media(max-width:620px){.file-drop{min-height:180px;padding:23px 14px}.provider-config{padding:11px}.provider-redirect code{max-width:100%}}
+
+
+/* Prisma Space — hero prism motion and pointer depth */
+.brand-copy strong{font-size:16px;letter-spacing:.07em}
+.hero-art{isolation:isolate;perspective:900px;touch-action:pan-y}
+.orbit{will-change:transform}
+.orbit-one{animation:prisma-orbit-one 34s linear infinite}
+.orbit-two{animation:prisma-orbit-two 43s linear infinite}
+.prism-glow{opacity:.72;transform:translate(var(--glow-x,0px),var(--glow-y,0px));animation:prisma-glow 8.5s ease-in-out infinite;will-change:opacity,transform;transition:transform .45s ease,opacity .45s ease}
+.prism-core{position:relative;z-index:2;display:grid;place-items:center;transform-style:preserve-3d;will-change:transform;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.hero-prism{animation:prisma-breathe 8s ease-in-out infinite;transform-origin:50% 50%}
+.art-tag{z-index:3;font-size:9px;padding:9px 11px;border-radius:8px;transition:transform .4s cubic-bezier(.2,.7,.2,1),border-color .35s ease,background .35s ease,box-shadow .35s ease;will-change:transform}
+.hero-art.is-hovered .prism-glow{opacity:.95}
+.hero-art.is-hovered .art-tag{border-color:color-mix(in srgb,var(--accent) 28%,var(--line-strong));box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.hero-art.is-hovered .hero-prism{filter:drop-shadow(0 20px 42px rgba(129,155,229,.25))}
+.hero-art.is-hovered .orbit-one{animation-duration:21s}
+.hero-art.is-hovered .orbit-two{animation-duration:28s}
+@keyframes prisma-orbit-one{from{transform:rotate(-24deg)}to{transform:rotate(336deg)}}
+@keyframes prisma-orbit-two{from{transform:rotate(58deg)}to{transform:rotate(418deg)}}
+@keyframes prisma-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.012)}}
+@keyframes prisma-glow{0%,100%{opacity:.55}50%{opacity:.9}}
+@media(max-width:850px){.brand-copy strong{font-size:15px;letter-spacing:.05em}}
+@media(max-width:620px){.art-tag{font-size:7px;padding:7px 8px;letter-spacing:.08em}}
+@media(prefers-reduced-motion:reduce){.orbit-one,.orbit-two,.prism-glow,.hero-prism{animation:none!important}.prism-core,.art-tag{transition:none!important}}

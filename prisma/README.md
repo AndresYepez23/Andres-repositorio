@@ -1,6 +1,6 @@
-# PRISMA
+# Prisma Space
 
-PRISMA es una suite web de herramientas digitales, con prioridad en el procesamiento local, motores IA intercambiables y transparencia sobre límites, costes y licencias.
+Prisma Space es una suite web de herramientas digitales, con prioridad en el procesamiento local, motores IA intercambiables y transparencia sobre límites, costes y licencias.
 
 ## Catálogo
 
@@ -30,7 +30,7 @@ La producción se publica en **Cloudflare Pages**, conectado al repositorio GitH
 - Comando de compilación: `node build.mjs`.
 - Directorio publicado: `dist`.
 
-Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. PRISMA ya no depende de Wix ni Netlify para su alojamiento.
+Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. Prisma Space ya no depende de Wix ni Netlify para su alojamiento.
 
 ## Inteligencia artificial
 
