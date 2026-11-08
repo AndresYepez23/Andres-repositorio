@@ -192,7 +192,7 @@ async function generateImage(p,cb){
   photo:'Photorealistic photography, natural detailed lighting, high dynamic range, professional composition. ',
   illustration:'Premium editorial illustration, refined shapes, beautiful color harmony, polished art direction. ',
   cinematic:'Cinematic composition, dramatic lighting, atmospheric depth, film still quality. ',
-  3d:'High-end 3D render, physically based materials, studio lighting, refined details. ',
+  '3d':'High-end 3D render, physically based materials, studio lighting, refined details. ',
   anime:'Detailed anime illustration, expressive visual storytelling, clean line art, polished colors. ',
   product:'Premium commercial product photography, clean studio setup, realistic materials, luxury advertising art direction. '
  };
