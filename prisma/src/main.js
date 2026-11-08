@@ -183,7 +183,8 @@ function render(){
   $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
-  $$('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
+  $('#category-label').classList.toggle('hidden',activeView!=='explore');$('#category-nav').classList.toggle('hidden',activeView!=='explore');
+  $('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
   $('#favorite-count').textContent=favorites.size;$('#recent-count').textContent=recentTools.length;
   $('#filter-chips').classList.toggle('hidden',activeView!=='explore');
   $('#clear-recent').classList.toggle('hidden',activeView!=='recent'||!recentTools.length);
