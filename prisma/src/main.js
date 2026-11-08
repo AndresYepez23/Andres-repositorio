@@ -65,8 +65,66 @@ const iconPaths = {
 };
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(iconPaths[name]||iconPaths.grid)+'</svg>';}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-const favorites = new Set(JSON.parse(localStorage.getItem('prisma-favorites')||'[]'));
-let activeCategory='all', activeView='explore', searchTerm='', layout='grid', currentTool=null, selectedFiles=[], running=false, outputUrl=null;
+function readStoredArray(key){
+  try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return [];}
+}
+const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
+let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
+let activeCategory='all',activeView='explore',searchTerm='',layout='grid',currentTool=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null;
+const popularToolIds=['pdf-merge','image-bg','image-gen','docx-pdf','image-compress','qr'];
+const searchAliases={
+  'pdf-merge':'unir pdf juntar pdf combinar pdf fusionar documentos combinar archivos',
+  'pdf-split':'separar pdf dividir pdf partir pdf separar paginas',
+  'pdf-extract':'extraer paginas seleccionar paginas conservar paginas',
+  'pdf-remove-pages':'eliminar paginas borrar paginas quitar paginas pdf',
+  'pdf-to-image':'pdf a imagen convertir pdf en imagen pdf a png',
+  'pdf-text':'extraer texto de pdf pdf a texto leer pdf',
+  'pdf-compress':'comprimir pdf reducir peso documento',
+  'pdf-protect':'proteger pdf poner contraseña pdf',
+  'docx-pdf':'word a pdf doc a pdf docx a pdf convertir word documento a pdf',
+  'docx-html':'word a html docx a html convertir word a html',
+  'image-bg':'quitar fondo eliminar fondo fondo transparente borrar fondo quitar fondo a foto',
+  'image-compress':'comprimir foto reducir peso imagen achicar imagen reducir tamaño foto',
+  'image-convert':'convertir imagen cambiar formato png jpg webp',
+  'image-ocr':'ocr reconocer texto extraer texto de imagen leer texto en foto',
+  'image-pdf':'imagenes a pdf fotos a pdf jpg a pdf convertir foto a pdf',
+  'image-gen':'crear imagen generar imagen imagen con ia generador de imagen texto a imagen',
+  'video-audio':'extraer audio de video video a audio',
+  'video-trim':'recortar video cortar video',
+  'video-transcribe':'transcribir video',
+  'audio-trim':'recortar audio cortar audio',
+  'ai-assistant':'asistente de texto redactar resumir explicar texto ia',
+  'ai-voice':'texto a voz leer texto voz sintetizar voz',
+  'ai-transcribe':'transcribir audio voz a texto audio a texto pasar audio a texto',
+  'qr':'crear qr generar qr codigo qr',
+  'qr-scan':'leer qr escanear qr decodificar qr',
+  'currency':'cambiar moneda tasa de cambio pesos colombianos',
+  'units':'convertir unidades medidas',
+  'password':'generar contraseña generar clave clave segura',
+  'word-count':'contar palabras contar caracteres',
+  'excel-json':'excel a json hoja de calculo a json xlsx a json',
+  'csv-json':'csv a json convertir csv',
+  'json-csv':'json a csv convertir json',
+  'hash-file':'hash sha256 huella digital archivo'
+};
+const queryToolAliases={
+  'quitar fondo':['image-bg'],'eliminar fondo':['image-bg'],'fondo transparente':['image-bg'],
+  'word a pdf':['docx-pdf'],'doc a pdf':['docx-pdf'],'docx a pdf':['docx-pdf'],'convertir word a pdf':['docx-pdf'],
+  'unir pdf':['pdf-merge'],'juntar pdf':['pdf-merge'],'combinar pdf':['pdf-merge'],
+  'separar pdf':['pdf-split'],'dividir pdf':['pdf-split'],'partir pdf':['pdf-split'],
+  'pdf a imagen':['pdf-to-image'],'convertir pdf a imagen':['pdf-to-image'],
+  'foto a pdf':['image-pdf'],'fotos a pdf':['image-pdf'],'imagenes a pdf':['image-pdf'],
+  'comprimir imagen':['image-compress'],'reducir peso foto':['image-compress'],
+  'crear imagen':['image-gen'],'generar imagen':['image-gen'],'imagen ia':['image-gen'],
+  'texto a voz':['ai-voice'],'voz a texto':['ai-transcribe'],'audio a texto':['ai-transcribe'],'transcribir audio':['ai-transcribe'],
+  'recortar video':['video-trim'],'extraer audio':['video-audio'],
+  'crear qr':['qr'],'generar qr':['qr'],'leer qr':['qr-scan'],'escanear qr':['qr-scan'],
+  'contar palabras':['word-count'],'generar contraseña':['password'],
+  'excel a json':['excel-json'],'json a csv':['json-csv'],'csv a json':['csv-json']
+};
+function normalizeSearch(value){
+  return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
 
 function renderCategories(){
   const nav=$('#category-nav');
@@ -78,35 +136,115 @@ function renderProviders(){
 }
 function visibleTools(){
   let list=tools;
-  if(activeView==='favorites') list=list.filter(t=>favorites.has(t.id));
-  if(activeView==='explore'&&activeCategory!=='all') list=list.filter(t=>t.category===activeCategory);
-  if(searchTerm) list=list.filter(t=>(t.name+' '+t.description+' '+t.category+' '+t.tag).toLowerCase().includes(searchTerm.toLowerCase()));
+  if(activeView==='favorites')list=list.filter(tool=>favorites.has(tool.id));
+  if(activeView==='recent')list=recentTools.map(item=>tools.find(tool=>tool.id===item.id)).filter(Boolean);
+  if(activeView==='explore'&&activeCategory!=='all')list=list.filter(tool=>tool.category===activeCategory);
+  if(searchTerm){
+    const query=normalizeSearch(searchTerm),terms=query.split(/\s+/).filter(Boolean),aliasIds=new Set();
+    Object.entries(queryToolAliases).forEach(([phrase,ids])=>{if(query.includes(phrase))ids.forEach(id=>aliasIds.add(id));});
+    list=list.filter(tool=>{
+      const category=categories.find(item=>item.id===tool.category)?.name||'';
+      const corpus=normalizeSearch([tool.id,tool.name,tool.description,tool.category,category,tool.tag,searchAliases[tool.id]||''].join(' '));
+      return corpus.includes(query)||terms.every(term=>corpus.includes(term))||aliasIds.has(tool.id);
+    });
+  }
   return list;
 }
+function renderMiniTools(containerId,ids,emptyMessage){
+  const container=$('#'+containerId);if(!container)return;
+  const list=ids.map(id=>tools.find(tool=>tool.id===id)).filter(Boolean);
+  if(!list.length){container.innerHTML='<div class="mini-empty">'+escapeHtml(emptyMessage)+'</div>';return;}
+  container.innerHTML=list.map(tool=>'<button type="button" class="mini-tool-card" data-open-tool="'+tool.id+'"><span class="mini-tool-icon">'+icon(tool.icon)+'</span><span class="mini-tool-copy"><strong>'+escapeHtml(tool.name)+'</strong><small>'+escapeHtml(tool.tag||categories.find(c=>c.id===tool.category)?.name||'Herramienta')+'</small></span><span class="mini-tool-arrow">'+icon('arrow-right')+'</span></button>').join('');
+  $$('[data-open-tool]',container).forEach(button=>button.addEventListener('click',()=>{
+    const tool=tools.find(item=>item.id===button.dataset.openTool);
+    if(!tool)return;
+    if(tool.status==='soon'){toast('Esta herramienta todavía está en preparación.','info');return;}
+    openTool(tool);
+  }));
+}
+function renderHomeRecents(){
+  renderMiniTools('home-recent',recentTools.slice(0,4).map(item=>item.id),'Aquí aparecerán las herramientas que abras. Tu historial se guarda solo en este navegador.');
+}
 function render(){
-  const ai=activeView==='ai';
-  $('#tools-section').classList.toggle('hidden',ai);
-  $('#ai-section').classList.toggle('hidden',!ai);
-  $('#breadcrumb-current').textContent=ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':'Explorar';
-  $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
-  $('#section-description').textContent=activeView==='favorites'?'Accede rápidamente a las herramientas que guardaste.':'Elige una herramienta y empieza a trabajar al instante.';
-  $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===activeView));
-  $$('#category-nav [data-category]').forEach(b=>b.classList.toggle('active',activeView==='explore'&&b.dataset.category===activeCategory));
-  $('#favorite-count').textContent=favorites.size;
+  const ai=activeView==='ai',isHome=activeView==='explore'&&activeCategory==='all'&&!searchTerm;
+  $('#home-dashboard').classList.toggle('hidden',!isHome);
+  $('#tools-section').classList.toggle('hidden',ai);$('#ai-section').classList.toggle('hidden',!ai);
+  $('#breadcrumb-current').textContent=ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?(categories.find(c=>c.id===activeCategory)?.name||'Explorar'):searchTerm?'Resultados':'Explorar';
+  $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
+  $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
+  $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+  $$('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
+  $('#favorite-count').textContent=favorites.size;$('#recent-count').textContent=recentTools.length;
+  $('#filter-chips').classList.toggle('hidden',activeView!=='explore');
+  $('#clear-recent').classList.toggle('hidden',activeView!=='recent'||!recentTools.length);
+  $('#clear-search').classList.toggle('hidden',!searchTerm);
   const list=visibleTools();
   $('#tool-grid').classList.toggle('list-view',layout==='list');
-  $('#tool-grid').innerHTML=list.map(t=>'<article class="tool-card '+(t.status==='soon'?'is-disabled':'')+'" data-tool="'+t.id+'" '+(t.status==='soon'?'aria-disabled="true"':'')+'><div class="tool-card-top"><span class="tool-icon">'+icon(t.icon)+'</span><button class="tool-favorite '+(favorites.has(t.id)?'active':'')+'" data-favorite="'+t.id+'" aria-label="Guardar favorito" title="Guardar en favoritos">'+icon('star')+'</button></div><h3>'+t.name+'</h3><p>'+t.description+'</p><div class="tool-card-bottom"><span class="tool-tag">'+t.tag+'</span><span class="tool-status '+t.status+'">'+statusLabels[t.status]+'</span></div><span class="tool-open">Abrir herramienta →</span></article>').join('');
-  $('#empty-state').classList.toggle('hidden',list.length>0);
-  $('#tool-grid').classList.toggle('hidden',list.length===0);
+  $('#tool-grid').innerHTML=list.map(tool=>'<article class="tool-card '+(tool.status==='soon'?'is-disabled':'')+'" data-tool="'+tool.id+'" role="button" tabindex="'+(tool.status==='soon'?'-1':'0')+'" '+(tool.status==='soon'?'aria-disabled="true"':'')+' aria-label="'+escapeHtml(tool.name+'. '+tool.description+'. '+statusLabels[tool.status]+'. Abrir herramienta.')+'"><div class="tool-card-top"><span class="tool-icon">'+icon(tool.icon)+'</span><button type="button" class="tool-favorite '+(favorites.has(tool.id)?'active':'')+'" data-favorite="'+tool.id+'" aria-label="'+(favorites.has(tool.id)?'Quitar de favoritos':'Guardar en favoritos')+'" aria-pressed="'+favorites.has(tool.id)+'" title="'+(favorites.has(tool.id)?'Quitar de favoritos':'Guardar en favoritos')+'">'+icon('star')+'</button></div><h3>'+escapeHtml(tool.name)+'</h3><p>'+escapeHtml(tool.description)+'</p><div class="tool-card-bottom"><span class="tool-tag">'+escapeHtml(tool.tag||'')+'</span><span class="tool-status '+tool.status+'">'+statusLabels[tool.status]+'</span></div><span class="tool-open">Abrir herramienta →</span></article>').join('');
+  $('#empty-state').classList.toggle('hidden',list.length>0);$('#tool-grid').classList.toggle('hidden',list.length===0);
+  $('#empty-title').textContent=activeView==='favorites'?'Todavía no tienes favoritos':activeView==='recent'?'Todavía no hay herramientas recientes':'No encontramos herramientas';
+  $('#empty-description').textContent=activeView==='favorites'?'Guarda una herramienta con la estrella para tenerla siempre a mano.':activeView==='recent'?'Cuando abras una herramienta, aparecerá aquí para que puedas retomarla.':'Prueba con otras palabras o busca por lo que quieres conseguir.';
   $('#result-count').textContent=list.length+' herramientas';
-  $('#filter-chips').innerHTML=categories.map(c=>'<button class="filter-chip '+(activeCategory===c.id?'active':'')+'" data-filter="'+c.id+'">'+c.name+'</button>').join('');
-  $('#metric-tools').textContent=tools.length;
-  $('#metric-local').textContent=tools.filter(t=>t.mode==='local'||t.mode==='browser').length;
-  $$('#tool-grid [data-tool]').forEach(card=>card.addEventListener('click',e=>{if(e.target.closest('[data-favorite]'))return;const t=tools.find(x=>x.id===card.dataset.tool);if(t.status==='soon'){toast('Esta herramienta está en preparación.','info');return;}openTool(t);}));
-  $$('#tool-grid [data-favorite]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite);}));
-  $$('#filter-chips [data-filter]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.filter;render();}));
+  $('#filter-chips').innerHTML=categories.map(category=>'<button type="button" class="filter-chip '+(activeCategory===category.id?'active':'')+'" data-filter="'+category.id+'" aria-pressed="'+(activeCategory===category.id)+'">'+category.name+'</button>').join('');
+  $('#metric-tools').textContent=tools.length;$('#metric-local').textContent=tools.filter(tool=>tool.mode==='local'||tool.mode==='browser').length;
+  renderMiniTools('home-popular',popularToolIds,'Estamos preparando recomendaciones.');renderHomeRecents();
+  $$('#tool-grid [data-tool]').forEach(card=>{
+    const open=event=>{
+      if(event.target.closest('[data-favorite]'))return;
+      const tool=tools.find(item=>item.id===card.dataset.tool);if(!tool)return;
+      if(tool.status==='soon'){toast('Esta herramienta todavía está en preparación.','info');return;}
+      openTool(tool);
+    };
+    card.addEventListener('click',open);
+    card.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.target.closest('button')){event.preventDefault();open(event);}});
+  });
+  $$('#tool-grid [data-favorite]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();toggleFavorite(button.dataset.favorite);}));
+  $$('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;render();}));
 }
-function toggleFavorite(id){if(favorites.has(id))favorites.delete(id);else favorites.add(id);localStorage.setItem('prisma-favorites',JSON.stringify([...favorites]));render();}
+
+function toggleFavorite(id){
+  if(favorites.has(id))favorites.delete(id);else favorites.add(id);
+  localStorage.setItem('prisma-favorites',JSON.stringify([...favorites]));render();
+}
+function recordRecentTool(id){
+  recentTools=[{id:id,at:Date.now()},...recentTools.filter(item=>item.id!==id)].slice(0,12);
+  localStorage.setItem('prisma-recent',JSON.stringify(recentTools));
+  $('#recent-count').textContent=recentTools.length;renderHomeRecents();
+}
+function closeProfileMenu(){
+  const menu=$('#profile-menu'),toggle=$('#profile-toggle');if(!menu||!toggle)return;
+  menu.classList.add('hidden');toggle.setAttribute('aria-expanded','false');
+}
+function setupProfileMenu(){
+  const toggle=$('#profile-toggle'),menu=$('#profile-menu');
+  toggle.addEventListener('click',event=>{event.stopPropagation();const open=menu.classList.toggle('hidden')===false;toggle.setAttribute('aria-expanded',String(open));});
+  menu.addEventListener('click',event=>event.stopPropagation());document.addEventListener('click',closeProfileMenu);
+  $('#clear-local-data').addEventListener('click',()=>{
+    if(!window.confirm('Se borrarán favoritos, historial, tema y la App Key guardada en este navegador. ¿Continuar?'))return;
+    favorites.clear();recentTools=[];
+    ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id'].forEach(key=>localStorage.removeItem(key));
+    ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
+    document.documentElement.dataset.theme='dark';$('#theme-toggle').innerHTML=icon('sun');
+    const keyInput=$('#polli-app-key');if(keyInput)keyInput.value='';
+    refreshPollinationsStatus();closeProfileMenu();render();toast('Se borraron los datos locales de este navegador.','success');
+  });
+}
+function setupHomeDashboard(){
+  $('[data-home-category]').forEach(button=>button.addEventListener('click',()=>{
+    activeView='explore';activeCategory=button.dataset.homeCategory;searchTerm='';$('#global-search').value='';render();
+    $('#tools-section').scrollIntoView({behavior:'smooth',block:'start'});
+  }));
+  $('#clear-recent').addEventListener('click',()=>{recentTools=[];localStorage.removeItem('prisma-recent');render();toast('Historial reciente borrado.','success');});
+}
+function setupMobileSearch(){
+  const search=$('.global-search'),input=$('#global-search');
+  search.addEventListener('click',event=>{
+    if(window.matchMedia('(max-width: 620px)').matches&&!search.classList.contains('is-open')&&event.target.closest('span')){
+      event.preventDefault();search.classList.add('is-open');input.focus();
+    }
+  });
+  input.addEventListener('blur',()=>{if(!input.value.trim())search.classList.remove('is-open');});
+}
 function toast(message,type='success'){const el=document.createElement('div');el.className='toast '+type;el.textContent=message;$('#toast-region').append(el);setTimeout(()=>el.remove(),3400);}
 function field(label,name,type='text',value='',hint='',extra=''){
   return '<div class="form-field"><label for="field-'+name+'">'+label+'</label><input class="form-control" id="field-'+name+'" name="'+name+'" type="'+type+'" value="'+escapeHtml(value)+'" '+extra+'>'+ (hint?'<small>'+hint+'</small>':'')+'</div>';
@@ -118,14 +256,9 @@ function selectField(label,name,options,value,hint=''){
   return '<div class="form-field"><label for="field-'+name+'">'+label+'</label><select class="form-control" id="field-'+name+'" name="'+name+'">'+options.map(o=>'<option value="'+o[0]+'" '+(o[0]===value?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+(hint?'<small>'+hint+'</small>':'')+'</div>';
 }
 function pollinationsAuthFields(){
-  const saved=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;
-  return '<div class="provider-config" id="polli-config">'+
-    field('App Key pública de Prisma Space','polliAppKey','text',saved,'Registra una App Key en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">Pollinations Connect</a>. No es una clave secreta.','autocomplete="off" spellcheck="false"')+
-    '<div class="provider-connect-row"><button type="button" class="button button-primary" id="polli-connect">'+icon('sparkles')+' Conectar mi cuenta</button><button type="button" class="button button-quiet" id="polli-disconnect">Desconectar</button><span class="provider-connection-status" id="polli-status">Aún no conectado</span></div>'+
-    '<div class="provider-redirect"><span>Registra esta Redirect URI en tu App Key:</span><code id="polli-redirect">'+escapeHtml(location.origin+location.pathname)+'</code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URI</button></div>'+
-    '<div class="tool-hint">Cada persona autoriza su propio saldo y puede fijar un presupuesto máximo y una vigencia. Prisma Space no comparte una cuota de generación entre visitantes. El consumo puede tener coste en Pollen.</div>'+
-  '</div>';
+  return '<div class="provider-config" id="polli-config"><div class="provider-modal-status"><span id="polli-modal-status">Pollinations: no conectado</span><button type="button" class="mini-button" id="open-ai-settings">Configurar conexión</button></div><small>Conecta tu cuenta una sola vez desde el Laboratorio IA. La autorización y el presupuesto son personales.</small></div>';
 }
+
 function huggingFaceAuthFields(){
   return '<div class="provider-config hidden" id="hf-config">'+
     field('Token personal de Hugging Face','hfToken','password','','Necesita permiso Inference Providers. <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Crear token</a>. No se guarda en Prisma Space.','autocomplete="off" spellcheck="false"')+
@@ -235,28 +368,33 @@ function getPollinationsToken(){
   if(expiry&&Date.now()>expiry){sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');return '';}
   return token;
 }
+function refreshPollinationsStatus(){
+  const connected=!!getPollinationsToken(),label=connected?'Conectado · autorización activa en esta pestaña':'No conectado';
+  const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
+  const modalStatus=$('#polli-modal-status');if(modalStatus)modalStatus.textContent=connected?'Pollinations conectado':'Pollinations: no conectado';
+}
 async function connectPollinations(){
-  const input=$('#field-polliAppKey');
-  const appKey=(input?.value||localStorage.getItem('prisma-polli-client-id')||'').trim();
-  if(!appKey.startsWith('pk_')){toast('Introduce primero la App Key pública pk_ de Prisma Space.','error');return;}
+  const input=$('#polli-app-key');
+  const appKey=(input?.value||localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY).trim();
+  if(!appKey.startsWith('pk_')){
+    showView('ai');$('#polli-app-key')?.focus();
+    toast('Añade primero la App Key pública de Prisma Space. Puedes crearla en Pollinations Connect.','error');return;
+  }
   localStorage.setItem('prisma-polli-client-id',appKey);
   const verifier=randomBase64Url(48),state=randomBase64Url(24);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
   const challenge=base64Url(digest),redirectUri=location.origin+location.pathname;
-  sessionStorage.setItem('prisma-polli-verifier',verifier);
-  sessionStorage.setItem('prisma-polli-state',state);
+  sessionStorage.setItem('prisma-polli-verifier',verifier);sessionStorage.setItem('prisma-polli-state',state);
   const params=new URLSearchParams({response_type:'code',client_id:appKey,redirect_uri:redirectUri,state,code_challenge:challenge,code_challenge_method:'S256',models:'image,text,audio',budget:'5',expiry:'7'});
   location.href='https://enter.pollinations.ai/authorize?'+params.toString();
 }
 async function finishPollinationsAuth(){
   const url=new URL(location.href),code=url.searchParams.get('code');
-  if(!code)return;
+  if(!code){refreshPollinationsStatus();return;}
   try{
     const state=url.searchParams.get('state'),expected=sessionStorage.getItem('prisma-polli-state');
     if(!expected||state!==expected)throw Error('No se pudo validar la autorización. Intenta conectar de nuevo.');
-    const verifier=sessionStorage.getItem('prisma-polli-verifier')||'';
-    const clientId=localStorage.getItem('prisma-polli-client-id')||'';
-    const redirectUri=location.origin+location.pathname;
+    const verifier=sessionStorage.getItem('prisma-polli-verifier')||'',clientId=localStorage.getItem('prisma-polli-client-id')||'',redirectUri=location.origin+location.pathname;
     const response=await fetch('https://enter.pollinations.ai/api/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,client_id:clientId,redirect_uri:redirectUri,code_verifier:verifier})});
     const data=await response.json();
     if(!response.ok||!data.access_token)throw Error(data.error_description||data.error||'Pollinations no pudo completar la conexión.');
@@ -266,9 +404,22 @@ async function finishPollinationsAuth(){
   }catch(error){toast(error.message||'No se pudo completar la conexión.','error');}
   finally{
     sessionStorage.removeItem('prisma-polli-verifier');sessionStorage.removeItem('prisma-polli-state');
-    history.replaceState({},'',location.pathname);
+    history.replaceState({},'',location.pathname);refreshPollinationsStatus();
   }
 }
+function setupPollinationsSettings(){
+  const input=$('#polli-app-key');
+  if(input){input.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;input.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',input.value.trim()));}
+  const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
+  $('#polli-connect')?.addEventListener('click',connectPollinations);
+  $('#polli-disconnect')?.addEventListener('click',()=>{
+    sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refreshPollinationsStatus();toast('Conexión desconectada en esta pestaña.','success');
+  });
+  $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('Redirect URI copiada.','success');});
+  refreshPollinationsStatus();
+}
+
+
 const pollinationsModelCache={image:[],text:[],audio:[]};
 const fallbackModels={
   image:[['black-forest-labs/flux.1-schnell','FLUX.1 Schnell · rápido'],['tongyi-mai/z-image-turbo','Z-Image Turbo · rápido']],
@@ -303,18 +454,7 @@ async function loadPollinationsModels(kind,provider='pollinations'){
   }catch(error){console.info('Catálogo de modelos Pollinations no disponible; se usan opciones de respaldo.',error);}
 }
 function setupAIAuthorization(tool){
-  const appKey=$('#field-polliAppKey');
-  if(appKey){
-    appKey.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;
-    appKey.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',appKey.value.trim()));
-  }
-  const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
-  const status=$('#polli-status');
-  const refresh=()=>{if(!status)return;const connected=!!getPollinationsToken();status.textContent=connected?'Conectado · autorización en esta pestaña':'No conectado';status.classList.toggle('connected',connected);};
-  refresh();
-  $('#polli-connect')?.addEventListener('click',connectPollinations);
-  $('#polli-disconnect')?.addEventListener('click',()=>{sessionStorage.removeItem('prisma-polli-token');sessionStorage.removeItem('prisma-polli-expiry');refresh();toast('Conexión desconectada en esta pestaña.');});
-  $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('Redirect URI copiada.');});
+  refreshPollinationsStatus();
   const provider=$('#field-provider');
   const update=()=>{
     const selected=provider?.value||'pollinations';
@@ -322,13 +462,17 @@ function setupAIAuthorization(tool){
     $('#hf-config')?.classList.toggle('hidden',selected!=='huggingface');
     if(tool.id==='image-gen')loadPollinationsModels('image',selected);
   };
-  provider?.addEventListener('change',update);
-  update();
+  provider?.addEventListener('change',update);update();
+  $('#open-ai-settings')?.addEventListener('click',()=>{
+    closeTool();showView('ai');$('#ai-connection-card').scrollIntoView({behavior:'smooth',block:'center'});$('#polli-app-key').focus();
+  });
   if(tool.id==='ai-assistant')loadPollinationsModels('text');
   if(tool.id==='ai-voice')loadPollinationsModels('audio');
 }
 
+
 function openTool(t){
+  lastFocusedElement=document.activeElement;lastOpenedToolId=t.id;recordRecentTool(t.id);
   currentTool=t;selectedFiles=[];running=false;
   $('#modal-title').textContent=t.name;$('#modal-kicker').textContent=categories.find(c=>c.id===t.category)?.name.toUpperCase()||'HERRAMIENTA';
   $('#modal-icon').innerHTML=icon(t.icon);
@@ -338,7 +482,7 @@ function openTool(t){
     html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(t.multiple?'multiple':'')+' accept="'+(t.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Arrastra y suelta tus archivos aquí</strong><p>o haz clic para seleccionar desde tu dispositivo</p><small class="file-drop-note">'+(t.multiple?'Puedes añadir varios archivos. ':'')+privacy+'</small><span class="file-drop-formats">Formatos admitidos: '+escapeHtml(t.accept||'cualquier archivo')+'</span></label><div class="file-list" id="file-list"></div>';
   }
   html+=buildFields(t);
-  html+='<div class="progress-wrap hidden" id="progress-wrap"><div class="progress-label"><span id="progress-message">Preparando...</span><span id="progress-value">0%</span></div><div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div></div><div id="tool-output"></div>';
+  html+='<div class="progress-wrap hidden" id="progress-wrap"><div class="progress-label"><span id="progress-message">Preparando...</span><span id="progress-value">0%</span></div><div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div></div><div id="tool-output" aria-live="polite"></div>';
   $('#modal-body').innerHTML=html;
   $('#tool-modal').classList.remove('hidden');
   $('#modal-run').classList.toggle('hidden',t.status==='soon');
@@ -355,6 +499,7 @@ function openTool(t){
   if(['image-gen','ai-assistant','ai-voice','ai-transcribe'].includes(t.id))setupAIAuthorization(t);
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
+  $('#modal-close').focus({preventScroll:true});
 }
 function updateUnitOptions(){
   const kind=$('#field-kind').value;
@@ -402,12 +547,14 @@ function updateProgress(progress,message){
 async function executeCurrentTool(){
   if(!currentTool||running)return;
   if(currentTool.file&&!selectedFiles.length){toast('Selecciona al menos un archivo.','error');return;}
-  running=true;$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
+  running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
     const params=readParams();
     params.polliToken=getPollinationsToken();
     const result=await runTool(currentTool.id,selectedFiles,params,updateProgress);
+    if($('#tool-modal').classList.contains('hidden'))return;
+    recordRecentTool(currentTool.id);
     if($('#field-hfToken'))$('#field-hfToken').value='';
     if(result?.blob){if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=result.previewUrl&&result.previewUrl.startsWith('blob:')?result.previewUrl:URL.createObjectURL(result.blob);if(!result.previewUrl)result.previewUrl=outputUrl;}
     renderOutput(result);
@@ -415,11 +562,11 @@ async function executeCurrentTool(){
     toast('La operación terminó correctamente.','success');
   }catch(error){
     console.error(error);
-    $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
+    if(!$('#tool-modal').classList.contains('hidden'))$('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
     toast(error?.message||'Ocurrió un error.','error');
   }finally{
     if($('#field-hfToken'))$('#field-hfToken').value='';
-    running=false;$('#modal-run').disabled=false;$('#modal-run').innerHTML=icon('play')+' Ejecutar herramienta';
+    running=false;$('#modal-body').setAttribute('aria-busy','false');$('#modal-run').disabled=false;$('#modal-run').innerHTML=icon('play')+' Ejecutar herramienta';
   }
 }
 function renderOutput(result){
@@ -442,7 +589,16 @@ function renderOutput(result){
   $('.color-swatch',panel).forEach(b=>b.addEventListener('click',async()=>{await navigator.clipboard.writeText(b.dataset.color);toast(b.dataset.color+' copiado.');}));
 }
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
-function closeTool(){if($('#field-hfToken'))$('#field-hfToken').value='';if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}$('#modal-body').innerHTML='';$('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;}
+function closeTool(){
+  if($('#field-hfToken'))$('#field-hfToken').value='';
+  if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}
+  $('#modal-body').innerHTML='';$('#modal-body').setAttribute('aria-busy','false');
+  $('#tool-modal').classList.add('hidden');currentTool=null;selectedFiles=[];running=false;
+  if(activeView==='recent')render();
+  const target=lastFocusedElement?.isConnected?lastFocusedElement:$('#tool-grid [data-tool="'+lastOpenedToolId+'"]');
+  lastFocusedElement=null;target?.focus?.();
+}
+
 function showView(view){activeView=view;activeCategory='all';searchTerm='';$('#global-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
 
 function setupHeroInteraction(){
@@ -483,7 +639,7 @@ function setupHeroInteraction(){
 }
 
 renderCategories();renderProviders();render();
-setupHeroInteraction();
+setupHeroInteraction();setupProfileMenu();setupHomeDashboard();setupMobileSearch();setupPollinationsSettings();
 void finishPollinationsAuth();
 $('#open-image-gen')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
 $('#open-image-gen-hero')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
@@ -498,8 +654,18 @@ $('#clear-search').addEventListener('click',()=>{$('#global-search').value='';se
 $('#modal-close').addEventListener('click',closeTool);$('#modal-cancel').addEventListener('click',closeTool);
 $('#tool-modal').addEventListener('click',e=>{if(e.target===$('#tool-modal'))closeTool();});
 $('#modal-run').addEventListener('click',executeCurrentTool);
-$('#mobile-menu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+$('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#mobile-menu').setAttribute('aria-expanded',String(open));});
 $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
-$('#privacy-link').addEventListener('click',e=>{e.preventDefault();toast('Tus archivos se procesan localmente salvo que una herramienta indique expresamente lo contrario.','info');});
+
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));render();}));
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#global-search').focus();}if(e.key==='Escape')closeTool();});
+document.addEventListener('keydown',event=>{
+  if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
+  if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();}
+  if(event.key==='Tab'&&!$('#tool-modal').classList.contains('hidden')){
+    const focusable=$('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href]',$('#tool-modal')).filter(element=>!element.classList.contains('hidden')&&element.offsetParent!==null);
+    if(!focusable.length)return;
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+});

@@ -29,6 +29,7 @@
       <nav class="primary-nav" aria-label="Navegación principal">
         <button class="nav-item active" data-view="explore"><span class="nav-icon" data-icon="grid"></span><span>Explorar</span><kbd>⌘ 1</kbd></button>
         <button class="nav-item" data-view="favorites"><span class="nav-icon" data-icon="star"></span><span>Favoritos</span><span class="nav-count" id="favorite-count">0</span></button>
+        <button class="nav-item" data-view="recent"><span class="nav-icon" data-icon="history"></span><span>Recientes</span><span class="nav-count" id="recent-count">0</span></button>
         <button class="nav-item" data-view="ai"><span class="nav-icon" data-icon="sparkles"></span><span>Laboratorio IA</span><span class="nav-dot"></span></button>
       </nav>
       <div class="side-label side-label-spaced">CATEGORÍAS</div>
@@ -44,12 +45,12 @@
 
     <main class="main-area">
       <header class="topbar">
-        <button class="icon-button mobile-menu" id="mobile-menu" aria-label="Abrir menú" data-icon="menu"></button>
+        <button class="icon-button mobile-menu" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false" data-icon="menu"></button>
         <div class="breadcrumb"><span>PRISMA SPACE</span><span class="crumb-sep">/</span><strong id="breadcrumb-current">Explorar</strong></div>
         <div class="topbar-actions">
-          <label class="global-search"><span data-icon="search"></span><input id="global-search" type="search" placeholder="Buscar una herramienta..." autocomplete="off"><kbd>⌘ K</kbd></label>
+          <label class="global-search"><span data-icon="search" aria-hidden="true"></span><input id="global-search" type="search" aria-label="Buscar herramientas" placeholder="Buscar una herramienta..." autocomplete="off"><kbd>Ctrl K</kbd></label>
           <button class="icon-button" id="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema" data-icon="sun"></button>
-          <div class="profile-chip" aria-label="Perfil local"><span>P</span></div>
+          <div class="profile-wrap"><button type="button" class="profile-chip" id="profile-toggle" aria-label="Abrir espacio personal" aria-haspopup="true" aria-expanded="false"><span>G</span></button><div class="profile-menu hidden" id="profile-menu" role="menu" aria-label="Espacio personal"><div class="profile-menu-heading"><strong>Tu espacio</strong><span>Modo invitado</span></div><p>Favoritos, tema e historial se guardan solo en este navegador. No necesitas crear una cuenta.</p><a href="./privacy.html#privacidad" role="menuitem">Privacidad y uso</a><button type="button" id="clear-local-data" role="menuitem">Borrar mis datos locales</button></div></div>
         </div>
       </header>
 
@@ -89,31 +90,59 @@
           <div class="metric-divider"></div>
           <div class="metric"><strong id="metric-local">18</strong><span>operaciones locales o en navegador</span></div>
           <div class="metric-divider"></div>
-          <div class="metric"><strong>0</strong><span>archivos enviados por defecto</span></div>
+          <div class="metric"><strong>LOCAL</strong><span>procesamiento en tu dispositivo cuando está disponible</span></div>
           <div class="metric-note"><span class="status-led"></span> Plataforma en evolución</div>
         </div>
+
+        <section class="home-dashboard" id="home-dashboard">
+          <div class="home-dashboard-heading">
+            <div><div class="eyebrow">EMPIEZA POR TU OBJETIVO</div><h2>¿Qué quieres resolver hoy?</h2><p>Elige una tarea y encuentra la herramienta adecuada.</p></div>
+            <span class="home-local-pill"><span class="status-led"></span> Sin registro para empezar</span>
+          </div>
+          <div class="home-goals" id="home-goals">
+            <button type="button" class="goal-card" data-home-category="pdf"><span class="goal-icon" data-icon="file-text"></span><strong>Convertir documentos</strong><small>PDF, Word e imágenes</small></button>
+            <button type="button" class="goal-card" data-home-category="image"><span class="goal-icon" data-icon="image"></span><strong>Editar imágenes</strong><small>Fondo, tamaño y formato</small></button>
+            <button type="button" class="goal-card" data-home-category="ai"><span class="goal-icon" data-icon="sparkles"></span><strong>Crear con IA</strong><small>Imágenes, texto y audio</small></button>
+            <button type="button" class="goal-card" data-home-category="media"><span class="goal-icon" data-icon="film"></span><strong>Audio y vídeo</strong><small>Recortar y transformar</small></button>
+            <button type="button" class="goal-card" data-home-category="text"><span class="goal-icon" data-icon="code"></span><strong>Trabajar con texto</strong><small>Datos, código y escritura</small></button>
+            <button type="button" class="goal-card" data-home-category="utility"><span class="goal-icon" data-icon="sliders"></span><strong>Resolver algo rápido</strong><small>QR, cálculos y utilidades</small></button>
+          </div>
+          <div class="home-panels">
+            <section class="home-panel"><div class="home-panel-heading"><div><h3>Abiertas recientemente</h3><p>Retoma donde lo dejaste.</p></div><button type="button" class="text-action" data-view-jump="recent">Ver historial →</button></div><div class="mini-tool-grid" id="home-recent"></div></section>
+            <section class="home-panel"><div class="home-panel-heading"><div><h3>Recomendadas para empezar</h3><p>Una selección de tareas habituales.</p></div></div><div class="mini-tool-grid" id="home-popular"></div></section>
+          </div>
+        </section>
 
         <section class="tools-section" id="tools-section">
           <div class="section-heading">
             <div><div class="eyebrow">CATÁLOGO</div><h2 id="section-title">Explora las herramientas</h2><p id="section-description">Elige una herramienta y empieza a trabajar al instante.</p></div>
-            <div class="view-switch"><button class="view-button active" data-layout="grid" aria-label="Vista de cuadrícula" data-icon="grid"></button><button class="view-button" data-layout="list" aria-label="Vista de lista" data-icon="list"></button></div>
+            <div class="heading-actions"><button type="button" class="button button-quiet hidden" id="clear-recent">Borrar historial</button><div class="view-switch"><button class="view-button active" data-layout="grid" aria-label="Vista de cuadrícula" data-icon="grid"></button><button class="view-button" data-layout="list" aria-label="Vista de lista" data-icon="list"></button></div></div>
           </div>
           <div class="filter-row"><div class="filter-chips" id="filter-chips"></div><span class="result-count" id="result-count"></span></div>
           <div class="tool-grid" id="tool-grid"></div>
-          <div class="empty-state hidden" id="empty-state"><span data-icon="search-x"></span><h3>No encontramos herramientas</h3><p>Prueba con otro término o cambia la categoría.</p><button class="button button-quiet" id="clear-search">Limpiar búsqueda</button></div>
+          <div class="empty-state hidden" id="empty-state"><span data-icon="search-x"></span><h3 id="empty-title">No encontramos herramientas</h3><p id="empty-description">Prueba con otro término o cambia la categoría.</p><button class="button button-quiet" id="clear-search">Limpiar búsqueda</button></div>
         </section>
 
         <section class="ai-section hidden" id="ai-section">
           <div class="eyebrow">PRISMA SPACE · IA MULTIMODELO</div>
           <h2>Un laboratorio. Varios motores.</h2>
           <p class="ai-intro">Crea imágenes, redacta con modelos de lenguaje y convierte texto en audio. Prisma Space incorpora motores intercambiables y autorización individual para que cada visitante controle su propio consumo.</p>
-          <div class="ai-principles"><div><span data-icon="layers"></span><strong>Modelos intercambiables</strong><p>Una misma experiencia con diferentes proveedores.</p></div><div><span data-icon="gauge"></span><strong>Uso responsable</strong><p>Cuotas, límites y alternativas visibles.</p></div><div><span data-icon="lock"></span><strong>Claves protegidas</strong><p>Las credenciales se gestionarán en servidor, nunca dentro del código público.</p></div></div>
+          <div class="ai-principles"><div><span data-icon="layers"></span><strong>Modelos intercambiables</strong><p>Una misma experiencia con diferentes proveedores.</p></div><div><span data-icon="gauge"></span><strong>Uso responsable</strong><p>Cuotas, límites y alternativas visibles.</p></div><div><span data-icon="lock"></span><strong>Autorización individual</strong><p>Conecta tus propios proveedores y conserva el control de tus credenciales.</p></div></div>
+          <section class="ai-connection-card" id="ai-connection-card">
+            <div class="ai-connection-heading"><div><div class="eyebrow">AUTORIZACIÓN PERSONAL</div><h3>Conecta tu cuenta de IA</h3><p>Hazlo una sola vez en este navegador. Cada persona utiliza su propia autorización y presupuesto.</p></div><span class="provider-connection-status" id="polli-status">No conectado</span></div>
+            <label class="connection-key-label" for="polli-app-key">App Key pública de Prisma Space</label>
+            <input class="form-control connection-key-input" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false" aria-describedby="polli-key-help">
+            <small id="polli-key-help">Crea una App Key en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>. Es un identificador público, no una contraseña.</small>
+            <div class="provider-connect-row"><button type="button" class="button button-primary" id="polli-connect"><span data-icon="sparkles"></span> Conectar mi cuenta</button><button type="button" class="button button-quiet" id="polli-disconnect">Desconectar</button></div>
+            <div class="provider-redirect"><span>Registra esta Redirect URI una sola vez:</span><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URI</button></div>
+            <p class="connection-footnote">La autorización solicita acceso a imagen, texto y audio, con un presupuesto máximo inicial de 5 Pollen y vigencia de 7 días. El token se conserva en la sesión actual del navegador, no en una cuenta de Prisma Space.</p>
+          </section>
           <div class="ai-feature-card"><div class="ai-feature-copy"><span class="ai-feature-label">CREACIÓN VISUAL · DISPONIBLE</span><h3>De una idea a una imagen.</h3><p>Describe lo que imaginas, elige un motor y crea una imagen descargable. Pollinations Connect permite que cada usuario autorice su propio presupuesto; también conservamos Hugging Face como opción BYOK.</p><div class="hero-actions"><button class="button button-primary" id="open-image-gen"><span data-icon="sparkles"></span> Generar imagen</button><button class="button button-quiet" id="open-ai-assistant"><span data-icon="message-circle"></span> Asistente de texto</button></div></div><div class="ai-feature-art"><span class="ai-orb ai-orb-one"></span><span class="ai-orb ai-orb-two"></span><span class="ai-art-spark">✦</span></div></div><div class="provider-heading"><div><h3>Proveedores compatibles</h3><p>Motores multimodales, procesamiento local y proveedores en evaluación.</p></div><span class="status-pill status-planned">BYOP + BYOK</span></div>
           <div class="provider-grid" id="provider-grid"></div>
           <div class="notice-panel"><span data-icon="info"></span><p><strong>Conexión responsable:</strong> Pollinations Connect utiliza OAuth con PKCE: cada visitante autoriza su propio saldo y puede limitar el presupuesto y la vigencia. Hugging Face sigue disponible como opción personal, pero sus cuentas Free no reciben créditos mensuales de Inference Providers.</p></div>
         </section>
 
-        <footer class="main-footer"><span>Prisma Space <span class="footer-dot">·</span> Herramientas con intención.</span><span>Diseñado para trabajar mejor. <a href="#" id="privacy-link">Privacidad y uso</a></span></footer>
+        <footer class="main-footer"><span>Prisma Space <span class="footer-dot">·</span> Herramientas con intención.</span><span>Diseñado para trabajar mejor. <a href="./privacy.html#privacidad" id="privacy-link">Privacidad y uso</a></span></footer>
       </section>
     </main>
   </div>
@@ -121,7 +150,7 @@
   <div class="modal-backdrop hidden" id="tool-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <section class="tool-modal">
       <header class="modal-header"><div class="modal-title-wrap"><span class="modal-icon" id="modal-icon"></span><div><div class="modal-kicker" id="modal-kicker">HERRAMIENTA</div><h2 id="modal-title">Herramienta</h2></div></div><button class="icon-button" id="modal-close" aria-label="Cerrar" data-icon="x"></button></header>
-      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-body" id="modal-body" aria-live="polite" aria-busy="false"></div>
       <div class="modal-footer"><span class="modal-privacy"><span data-icon="shield-check"></span> Procesamiento local cuando está disponible</span><button class="button button-quiet" id="modal-cancel">Cerrar</button><button class="button button-primary" id="modal-run"><span data-icon="play"></span> Ejecutar herramienta</button></div>
     </section>
   </div>
