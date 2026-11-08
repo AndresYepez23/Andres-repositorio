@@ -57,21 +57,50 @@ function normalizeMessages(input) {
   return { system, contents, openaiMessages };
 }
 
+// Cloudflare Pages supports D1 bindings, unlike Workers-only rate-limit bindings.
+// Each UPSERT is atomic in SQLite. Rate limits fail closed if D1 is unavailable.
+async function enforcePrismaRateLimits(env, request, provider) {
+  const db = env.PRISMA_RATE_DB;
+  if (!db?.prepare) return {status:503, error:"El limitador de Prisma aún no está enlazado con Cloudflare D1."};
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+  const key = [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2, "0")).join("").slice(0, 32);
+  const minute = Math.floor(Date.now() / 60000);
+  const dayStart = Math.floor(minute / 1440) * 1440;
+  const scopes = [
+    ["ip-minute:" + key, minute, 6],
+    ["ip-day:" + key, dayStart, 15],
+    ["provider-day:" + provider, dayStart, provider === "huggingface" ? 10 : 50],
+    ["total-day", dayStart, 60],
+  ];
+  const sql = `INSERT INTO ai_rate_limits(scope, window_start, request_count)
+VALUES (?, ?, 1)
+ON CONFLICT(scope, window_start) DO UPDATE
+SET request_count = request_count + 1
+WHERE request_count < ?
+RETURNING request_count`;
+  try {
+    for (const [scope, windowStart, max] of scopes) {
+      const row = await db.prepare(sql).bind(scope, windowStart, max).first();
+      if (!row) return {status:429, error:"Has alcanzado el límite gratuito temporal de Prisma. Vuelve a intentarlo más tarde."};
+    }
+    // Keep only the last three days; cleanup is occasional to save writes.
+    if (Math.random() < 0.02) {
+      await db.prepare("DELETE FROM ai_rate_limits WHERE window_start < ?").bind(minute - 4320).run().catch(() => {});
+    }
+  } catch (error) {
+    console.error("Prisma rate limit D1 error", error?.message || error);
+    return {status:503, error:"No se pudo comprobar el límite de solicitudes. Inténtalo de nuevo más tarde."};
+  }
+  return null;
+}
+
 export async function onRequestPost({ request, env }) {
   const requestUrl = new URL(request.url);
   const origin = request.headers.get("Origin");
   if (origin !== requestUrl.origin) {
     return json({ error: "Solicitud no autorizada para este origen." }, 403);
-  }
-
-  if (!env.PRISMA_AI_LIMITER?.limit) {
-    return json({ error: "La protección de uso de Prisma todavía no está configurada." }, 503);
-  }
-
-  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-  const limit = await env.PRISMA_AI_LIMITER.limit({ key: ip + ":ai-chat" });
-  if (!limit.success) {
-    return json({ error: "Has alcanzado el límite temporal de solicitudes. Espera un minuto e inténtalo de nuevo." }, 429);
   }
 
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
@@ -97,6 +126,9 @@ export async function onRequestPost({ request, env }) {
   } catch (error) {
     return json({ error: error.message }, 400);
   }
+
+  const limitError = await enforcePrismaRateLimits(env, request, provider);
+  if (limitError) return json({error:limitError.error}, limitError.status);
 
   if (provider === "huggingface") {
     if (!env.HF_TOKEN) {
@@ -162,8 +194,8 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "El modelo solicitado no está habilitado para el uso compartido de Prisma." }, 400);
   }
 
+  // Gemini 3.8 Flash rejects legacy sampling fields such as temperature.
   const generationConfig = {
-    temperature: Math.max(0, Math.min(1.2, Number(payload.temperature ?? 0.7))),
     maxOutputTokens: clamp(payload.maxOutputTokens, 128, 4096, 2048),
   };
   const body = {
