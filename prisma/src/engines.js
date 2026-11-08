@@ -40,6 +40,11 @@ async function pdfTool(id,files,p,cb){
   try{src.catalog.delete(PDFName.of('Metadata'));}catch{}
   return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-metadatos.pdf');
  }
+ if(id==='pdf-compress'){
+  const saved=await src.save({useObjectStreams:true,objectsPerTick:50});
+  const original=Number(files[0].size)||0,optimized=saved.byteLength,reduction=original?((original-optimized)/original*100):0;
+  return {...download(makeBlob(saved,'application/pdf'),fileName(files[0])+'-optimizado.pdf'),summary:optimized<original?'PDF optimizado localmente: '+(original/1024/1024).toFixed(2)+' MB → '+(optimized/1024/1024).toFixed(2)+' MB ('+reduction.toFixed(1)+'% menos).':'PDF reescrito con estructura optimizada. No se redujo el tamaño; los archivos dominados por imágenes requieren compresión específica de imágenes para reducir más el peso.'};
+ }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
   const pages=src.getPageIndices();
