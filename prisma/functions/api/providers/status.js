@@ -15,6 +15,7 @@ export async function onRequestGet({ env }) {
     },
     models: {
       gemini: env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
+      huggingface: "openai/gpt-oss-20b:cheapest",
     },
   }), { status: 200, headers });
 }
