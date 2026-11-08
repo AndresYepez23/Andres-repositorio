@@ -162,21 +162,65 @@ function availableCatalog(){
     tag:tool.tag||'',paramsHint:toolParamsHint(tool.id),policy:toolPolicy(tool)
   }));
 }
+function compactPlanningCatalog(userText){
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const query=normalize(userText).slice(0,2400);
+  const words=new Set((query.match(/[a-z0-9]{3,}/g)||[]).filter(word=>!['para','con','que','como','este','esta','quiero','hacer','necesito','puedes','tengo','archivo','crear','prisma'].includes(word)));
+  const categoryHints={
+    pdf:/pdf|documen|word|docx|pagina|paginas|pagina por pagina|archivo/i,
+    image:/imagen|foto|miniatura|instagram|fondo|retrato|disen|ilustr|png|jpg|jpeg/i,
+    media:/video|clip|audio|voz|subtitul|musica|sonido|mp3|mp4|transcrib/i,
+    text:/texto|escrit|redact|resumen|palabra|traduc|correg|frase/i,
+    data:/dato|csv|json|excel|estadistic|tabla|analiz|grafica/i,
+    office:/excel|xlsx|hoja de calculo|tabla|oficina/i,
+    ai:/inteligencia|modelo|razona|investiga|analiz|explica|escrib/i,
+    web:/pagina web|sitio web|landing|html|css|website|web/i,
+    dev:/codigo|program|javascript|python|desarroll|html|css|sql|api/i,
+    creator:/youtube|miniatura|publicacion|social|creativ|disen/i,
+    study:/academ|articul|estudio|investig|cientific|universidad/i,
+    utility:/convert|gener|codigo qr|utilidad|comprim/i,
+    privacy:/privad|cifra|segurid|contrasen/i
+  };
+  const categories=new Set(Object.entries(categoryHints).filter(([,regex])=>regex.test(query)).map(([category])=>category));
+  const fileType=attachments.length?attachments[0].type.toLowerCase():'';
+  const fileName=attachments.length?attachments[0].name.toLowerCase():'';
+  if(fileType.includes('pdf')||fileName.endsWith('.pdf'))categories.add('pdf');
+  if(fileType.startsWith('image/'))categories.add('image');
+  if(fileType.startsWith('audio/')||fileType.startsWith('video/'))categories.add('media');
+  if(/\.(xlsx|xls|csv)$/.test(fileName)){categories.add('data');categories.add('office');}
+  if(/\.(docx|doc)$/.test(fileName)){categories.add('pdf');categories.add('text');}
+  const ranked=availableCatalog().map(tool=>{
+    const name=normalize(tool.name+' '+tool.id),description=normalize(tool.description);
+    let score=categories.has(tool.category)?10:0;
+    for(const word of words){if(name.includes(word))score+=10;else if(description.includes(word))score+=2;}
+    if(tool.file&&attachments.length)score+=2;
+    if(tool.id==='ai-assistant')score+=6;
+    return {...tool,score};
+  });
+  ranked.sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'es'));
+  const shortlist=ranked.slice(0,28);
+  // The catalog is only a shortlist: preserve the full local registry for plan validation.
+  return shortlist.map(tool=>({
+    id:tool.id,name:tool.name,category:tool.category,mode:tool.mode,
+    description:tool.description.slice(0,100),file:tool.file,
+    ...(tool.file?{accept:tool.accept.slice(0,65)}:{}),
+    hint:tool.paramsHint.slice(0,140)
+  }));
+}
 function buildPlannerPrompt(userText){
-  const catalog=availableCatalog();
+  const catalog=compactPlanningCatalog(userText);
   return [
-    'Eres PRISMA CORE, el agente central de un ecosistema de herramientas. No eres un buscador de herramientas: entiendes el resultado final que la persona quiere y orquestas las operaciones necesarias para entregarlo.',
-    'Devuelve SOLO JSON válido, sin Markdown ni texto fuera del objeto. Esquema: {"message":"explicación breve en español","needs_clarification":false,"question":"","steps":[{"tool_id":"id exacto","reason":"por qué se usa","params":{}}]}.',
-    'Reglas: máximo '+MAX_STEPS+' pasos; 0 pasos si necesitas una aclaración; nunca inventes IDs ni capacidades; usa solo herramientas ready o beta incluidas en el catálogo; ordena pasos por dependencia; usa parámetros exactos según las instrucciones de cada herramienta; para herramientas de texto usa params.text y para IA params.prompt. No digas al usuario que abra una herramienta manual si puedes ejecutar la operación aquí.',
-    'Piensa en el resultado final y no en una única operación. Ejemplos: analizar PDF = extraer texto + sintetizar hallazgos; preparar imagen para redes = quitar fondo, ajustar y comprimir según lo pedido; crear documento desde información = analizar contenido + redactar o generar archivo si existe una herramienta compatible. No agregues pasos innecesarios ni repitas conversiones. Si una operación no existe, dilo con honestidad y ofrece la alternativa más cercana.',
-    'Si el usuario adjuntó archivos, considera que estarán disponibles para los pasos compatibles. No pidas que vuelva a describir el archivo.',
-    'No selecciones herramientas de envío, publicación, compra, borrado externo ni acciones irreversibles. No hay autorización para esas acciones.',
-    'CONTEXTO RECIENTE DE LA CONVERSACIÓN:\n'+messages.slice(-8).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+item.content).join('\n').slice(-7000),
-    'CATÁLOGO DISPONIBLE:\n'+JSON.stringify(catalog),
-    'ARCHIVOS ADJUNTOS:\n'+(attachments.length?attachments.map(f=>({name:f.name,type:f.type,size:f.size})): 'Ninguno'),
-    'SOLICITUD DEL USUARIO:\n'+userText
+    'Eres PRISMA CORE, asistente central que ejecuta tareas con las herramientas de Prisma.',
+    'Responde SOLO JSON valido, sin Markdown. Formato: {"message":"breve explicación","needs_clarification":false,"question":"","steps":[{"tool_id":"id exacto","reason":"motivo","params":{}}]}.',
+    'Máximo '+MAX_STEPS+' pasos. Selecciona solo IDs del catálogo; el orden respeta dependencias. Usa params.text para texto, params.prompt para tareas con IA. No simules operaciones ejecutadas. No publiques, compres, elimines recursos externos ni autorices consumos.',
+    'Puedes generar un plan con 0 pasos si la solicitud es solo una pregunta o no puede ejecutarse con las herramientas mostradas. Explícalo en message sin inventar capacidades.',
+    'HISTORIAL RECIENTE:\n'+messages.slice(-5).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,600)).join('\n').slice(-2400),
+    'HERRAMIENTAS RELEVANTES:\n'+JSON.stringify(catalog),
+    'ARCHIVOS:\n'+JSON.stringify(attachments.slice(0,5).map(f=>({name:f.name,type:f.type,size:f.size}))),
+    'PETICION:\n'+String(userText).slice(0,10500)
   ].join('\n\n');
 }
+
 function compatibleFiles(tool,files){
   const accepted=String(tool.accept||'*/*').split(',').map(value=>value.trim().toLowerCase());
   return files.filter(file=>accepted.includes('*/*')||accepted.some(rule=>rule.startsWith('.')?file.name.toLowerCase().endsWith(rule):rule.endsWith('/*')?file.type.toLowerCase().startsWith(rule.slice(0,-1)):file.type.toLowerCase()===rule));
@@ -307,11 +351,33 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
   }catch(error){console.info('El modelo nativo del navegador no está disponible en esta sesión:',error?.message||error);return null;}
   finally{try{session?.destroy?.();}catch{}}
 }
+function isConversationWithoutTools(text){
+  if(attachments.length)return false;
+  const normalized=String(text||'').trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(normalized.length>120)return false;
+  return /^(hola+|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|que tal|como estas|quien eres|que eres|gracias|muchas gracias|que puedes hacer|que sabes hacer|me escuchas|estas ahi|buenos dias|buenas noches)[!?.\s]*$/i.test(normalized);
+}
+async function answerConversation(text,creds){
+  status('Prisma está respondiendo…');
+  const context=messages.slice(-5,-1).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,400)).join('\n');
+  const response=await runTool('ai-assistant',[],{
+    prompt:'Responde a este mensaje como Prisma Core, en español, con naturalidad y brevedad. No prepares planes, no devuelvas JSON, no afirmes haber realizado acciones. Puedes explicar que ayudas con PDF, imágenes y herramientas si te preguntan por tus capacidades.\n'+(context?'Contexto reciente:\n'+context+'\n':'')+'Usuario: '+text,
+    provider:'auto',reasoning:'fast',tone:'friendly',length:'short',...creds
+  },(p,msg)=>status(msg||'Redactando respuesta…'));
+  addMessage('assistant',response.text||'¡Hola! Soy Prisma Core. ¿En qué puedo ayudarte?');
+  status('Listo.','success');
+}
 async function requestPlan(userText){
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false};
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
+  if(isConversationWithoutTools(userText)){
+    if(hasConnectedModel)await answerConversation(userText,creds);
+    else{addMessage('assistant','¡Hola! Soy Prisma Core. Puedo ayudarte a trabajar con documentos, imágenes y herramientas locales. ¿Qué necesitas hacer?');status('Listo.','success');}
+    return;
+  }
+
   if(!hasConnectedModel){
     status('Buscando una capacidad local para resolver tu solicitud…');setProgress(.12,'Seleccionando herramientas locales…');
     let attachmentContext='';
@@ -377,7 +443,7 @@ async function requestPlan(userText){
     }
     if(extracted.length)attachmentContext='\\n\\nCONTENIDO EXTRAÍDO EN EL DISPOSITIVO (solo el texto necesario se incluye en la solicitud al motor de IA; los archivos originales permanecen disponibles para ejecutar herramientas):\\n'+extracted.join('\\n\\n').slice(0,22000);
   }
-  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext);
+  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500));
   let plan,steps;
   try{
     const result=await runTool('ai-assistant',[],{
