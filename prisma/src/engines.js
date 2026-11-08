@@ -270,7 +270,7 @@ async function pdfToText(file,cb){
 }
 function imageModelFor(provider,quality){
  const profiles={
-  pollinations:{fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1-dev'},
+  pollinations:{fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1.1-pro'},
   huggingface:{fast:'black-forest-labs/FLUX.1-schnell',balanced:'black-forest-labs/FLUX.1-dev',high:'Qwen/Qwen-Image'},
   gemini:{fast:'gemini-3.1-flash-lite-image',balanced:'gemini-nano-banana-2.1',high:'gemini-3-pro-image'}
  };
