@@ -238,8 +238,6 @@ async function formatSourceCode(p,kind){
  }
  const prettier=await import('https://esm.sh/prettier@3.3.3/standalone');
  const pluginPath=kind==='html'?'html':kind==='css'?'postcss':'babel';
- const plugin=await import('https://esm.sh/prettier@3.3.3/plugins/'+pluginPath);
- const parser=kind==='html'?'html':kind==='css'?'css':'babel';
  const formatted=await prettier.format(source,{parser,plugins:[plugin],tabWidth:Number(p.indent)||2,useTabs:p.indent==='tab',singleQuote:p.quote==='single',semi:p.semicolon!=='false'});
  return {text:formatted,summary:'Código formateado en el navegador con Prettier.'};
 }
@@ -357,10 +355,12 @@ async function runText(id,p){
  case 'citation-generator':{
   const author=String(p.author||'').trim(),year=String(p.year||'').trim(),title=String(p.title||'').trim(),source=String(p.source||'').trim(),url=String(p.url||'').trim(),doi=String(p.doi||'').trim();
   if(!author||!title||!year)throw Error('Autor, título y año son campos necesarios.');
-  const apa=author+'. ('+year+'). '+title+'.'+(source?' '+source+'.':'')+(doi?' https://doi.org/'+doi.replace(/^https?:\/\/doi\.org\//,''):url?' '+url:'');
-  const vancouver=author+'. '+title+'. '+source+(source?'; ':'')+year+'.'+(doi?' doi:'+doi:url?' Disponible en: '+url:'');
-  const mla=author+'. “'+title+'.” '+source+(source?', ':'')+year+'.'+(url?' '+url:'');
+  const authorMark=author.endsWith('.')?author:author+'.';
+  const apa=authorMark+' ('+year+'). '+title+'.'+(source?' '+source+'.':'')+(doi?' https://doi.org/'+doi.replace(/^https?:\/\/doi\.org\//,''):url?' '+url:'');
+  const vancouver=authorMark+' '+title+'. '+source+(source?'; ':'')+year+'.'+(doi?' doi:'+doi:url?' Disponible en: '+url:'');
+  const mla=authorMark+' “'+title+'.” '+source+(source?', ':'')+year+'.'+(url?' '+url:'');
   const selected=p.style==='vancouver'?vancouver:p.style==='mla'?mla:apa;
+  return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
   return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
  }
  case 'flashcards-export':{
