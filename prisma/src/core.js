@@ -131,11 +131,33 @@ function toolPolicy(tool){
     external:true
   };
 }
+function toolParamsHint(id){
+  const hints={
+    'pdf-split':'No requiere parámetros: divide todas las páginas y entrega un ZIP.',
+    'pdf-to-word':'No requiere parámetros. Genera params.docx desde un PDF digital; requiere texto seleccionable.',
+    'pdf-compress':'No requiere parámetros.',
+    'pdf-merge':'No requiere parámetros; acepta varios PDF.',
+    'pdf-extract':'Usa params.pages como texto, por ejemplo "1-3, 5".',
+    'pdf-remove-pages':'Usa params.pages con las páginas que se eliminarán, por ejemplo "2, 4-5".',
+    'pdf-rotate':'Usa params.degrees: 90, 180 o 270.',
+    'pdf-page-numbers':'Usa params.position: "top" o "bottom".',
+    'pdf-watermark':'Usa params.watermark con el texto.',
+    'pdf-text':'No requiere parámetros; devuelve texto extraído.',
+    'pdf-to-image':'Usa params.pages opcional y params.scale: 1, 1.5 o 2.',
+    'ai-assistant':'Usa params.prompt con la instrucción completa, params.context opcional, params.tone y params.length.',
+    'image-gen':'Usa params.prompt con una descripción visual completa y params.ratio/style si aplica.',
+    'image-bg':'No requiere parámetros; elimina el fondo de una imagen.',
+    'image-ocr':'No requiere parámetros; extrae texto de imágenes.',
+    'excel-json':'Usa params.sheet y params.format: "json" o "csv".',
+    'docx-pdf':'No requiere parámetros; prepara la vista de impresión.'
+  };
+  return hints[id]||'Usa únicamente parámetros que estén descritos por la herramienta; si no requiere opciones, deja params como {}.';
+}
 function availableCatalog(){
   return tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>({
     id:tool.id,name:tool.name,description:tool.description,category:tool.category,
     mode:tool.mode,file:!!tool.file,multiple:!!tool.multiple,accept:tool.accept||'',
-    tag:tool.tag||'',policy:toolPolicy(tool)
+    tag:tool.tag||'',paramsHint:toolParamsHint(tool.id),policy:toolPolicy(tool)
   }));
 }
 function buildPlannerPrompt(userText){
@@ -239,7 +261,7 @@ async function requestPlan(userText){
     plan=parsePlan(repair.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
   }
-  plan.userRequest=userText;
+  plan.userRequest=userText+attachmentContext;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
   const requiresApproval=steps.some(({tool})=>!['local','browser'].includes(tool.mode));
@@ -257,7 +279,7 @@ async function executePlan(){
       const {tool,params:plannedParams,reason}=steps[index];
       status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');setProgress(index/steps.length,'Paso '+(index+1)+' de '+steps.length+': '+tool.name);
       const params={...plannedParams,...credentials()};
-      if(tool.id==='ai-assistant')params.prompt=(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');
+      if(tool.id==='ai-assistant'){const base=String(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea');const original=String(plan.userRequest||'');params.prompt=base+(original&&!base.includes(original)?'\\n\\nSOLICITUD Y CONTEXTO DEL USUARIO:\\n'+original.slice(0,18000):'')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');}
       if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines','text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-flatten','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
       let inputFiles=[];
       if(tool.file){
