@@ -30,6 +30,17 @@ async function pdfTool(id,files,p,cb){
   return download(makeBlob(await out.save(),'application/pdf'),'prisma-documento-unido.pdf');
  }
  const src=await PDFDocument.load(await bytes(files[0]));const out=await PDFDocument.create();const total=src.getPageCount();
+ if(id==='pdf-metadata'){
+  const info={titulo:src.getTitle()||'No indicado',autor:src.getAuthor()||'No indicado',asunto:src.getSubject()||'No indicado',palabrasClave:src.getKeywords()||'No indicadas',creador:src.getCreator()||'No indicado',productor:src.getProducer()||'No indicado',fechaCreacion:src.getCreationDate()?.toISOString()||'No indicada',fechaModificacion:src.getModificationDate()?.toISOString()||'No indicada',paginas:total};
+  return {text:JSON.stringify(info,null,2),summary:'Metadatos leídos localmente. No se modificó el PDF.'};
+ }
+ if(id==='pdf-metadata-clean'){
+  const {PDFName}=await load(PDF_LIB);
+  src.setTitle('');src.setAuthor('');src.setSubject('');src.setKeywords([]);src.setCreator('');src.setProducer('');
+  src.setCreationDate(new Date(0));src.setModificationDate(new Date(0));
+  try{src.catalog.delete(PDFName.of('Metadata'));}catch{}
+  return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-metadatos.pdf');
+ }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
   const pages=src.getPageIndices();
@@ -60,6 +71,14 @@ async function imageTool(id,files,p,cb){
   const blob=await removeBackground(f,{quality:'quality',onProgress:e=>progress(cb,.25+(e.progress||0)*.65,e.message||'Eliminando fondo...')});
   return {...download(blob,fileName(f)+'-sin-fondo.png'),previewUrl:URL.createObjectURL(blob)};
  }
+ if(id==='image-strip-metadata'){
+  const bitmap=await createImageBitmap(f),canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+  canvas.getContext('2d').drawImage(bitmap,0,0);bitmap.close?.();
+  const type=['image/jpeg','image/png','image/webp'].includes(f.type)?f.type:'image/png';
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,type,.94));
+  if(!blob)throw Error('No se pudo reexportar la imagen.');
+  return {...download(blob,fileName(f)+'-sin-metadatos.'+(type==='image/jpeg'?'jpg':type.split('/')[1])),previewUrl:URL.createObjectURL(blob),summary:'Imagen reexportada localmente. Los metadatos EXIF habituales y la ubicación incrustada se descartan.'};
+ }
  if(id==='image-metadata'){
   const exifr=await import('https://esm.sh/exifr@7.1.3');
   const meta=await exifr.parse(f).catch(()=>null);
@@ -73,7 +92,7 @@ async function imageTool(id,files,p,cb){
  const img=new Image(),url=URL.createObjectURL(f);
  try{await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(Error('No se pudo abrir la imagen.'));img.src=url;});
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
- if(['image-grayscale','image-blur','image-adjust','image-rounded'].includes(id)){
+ if(['image-grayscale','image-blur','image-adjust','image-rounded','image-sepia'].includes(id)){
   const max=Math.max(128,Math.min(5000,Number(p.maxSize)||1600));
   const scale=id==='image-rounded'?Math.min(1,max/Math.max(img.width,img.height)):1;
   const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
@@ -86,11 +105,13 @@ async function imageTool(id,files,p,cb){
    if(id==='image-grayscale')ctx.filter='grayscale(1)';
    if(id==='image-blur')ctx.filter='blur('+Math.max(1,Math.min(30,Number(p.blur)||5))+'px)';
    if(id==='image-adjust')ctx.filter='brightness('+Math.max(10,Math.min(200,Number(p.brightness)||100))+'%) contrast('+Math.max(10,Math.min(200,Number(p.contrast)||100))+'%)';
+   if(id==='image-sepia')ctx.filter='sepia(1)';
    ctx.drawImage(img,pad,pad,w,h);ctx.filter='none';
   }
   const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
   return {...download(blob,fileName(f)+'-'+id+'.png'),previewUrl:URL.createObjectURL(blob),summary:w+' × '+h+' px'};
  }
+ if(id==='image-pixelate'){const block=Math.max(4,Math.min(80,Number(p.block)||16)),small=document.createElement('canvas');small.width=Math.max(1,Math.round(img.width/block));small.height=Math.max(1,Math.round(img.height/block));const sctx=small.getContext('2d');sctx.imageSmoothingEnabled=true;sctx.drawImage(img,0,0,small.width,small.height);canvas.width=img.width;canvas.height=img.height;ctx.imageSmoothingEnabled=false;ctx.drawImage(small,0,0,small.width,small.height,0,0,img.width,img.height);}
  if(id==='image-crop'){const w=Math.max(1,Math.round(img.width*Number(p.widthPct||80)/100)),h=Math.max(1,Math.round(img.height*Number(p.heightPct||80)/100));canvas.width=w;canvas.height=h;ctx.drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,w,h);}
  else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  let type=p.format||'image/png',quality=Math.max(.1,Math.min(1,Number(p.quality||82)/100));
@@ -102,12 +123,46 @@ async function imageTool(id,files,p,cb){
 async function runVideo(id,files,p,cb){
  const {FFmpeg}=await load(FF),{fetchFile,toBlobURL}=await load(UTIL);const ff=new FFmpeg();
  const base='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+ progress(cb,.12,'Cargando motor multimedia...');
  await ff.load({coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')});
- const input='input.'+((files[0].name.split('.').pop()||'mp4').replace(/[^a-z0-9]/gi,''));
- const output=id==='video-audio'?'audio.wav':'clip.mp4';
- await ff.writeFile(input,await fetchFile(files[0]));
- const args=id==='video-audio'?['-i',input,'-vn','-acodec','pcm_s16le','-ar','44100','-ac','2',output]:['-ss',String(p.start||0),'-i',input,'-t',String(p.duration||10),'-c','copy',output];
- await ff.exec(args);progress(cb,.9,'Preparando archivo final...');const data=await ff.readFile(output);return download(makeBlob(data,id==='video-audio'?'audio/wav':'video/mp4'),fileName(files[0])+(id==='video-audio'?'-audio.wav':'-recorte.mp4'));
+ const ext=(files[0].name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4';
+ const input='input.'+ext;await ff.writeFile(input,await fetchFile(files[0]));
+ let output='prisma-video.mp4',args=['-i',input];
+ if(id==='video-speed'){
+  const speed=Math.max(.5,Math.min(2,Number(p.speed)||1.5));
+  output='video-velocidad-'+speed+'x.mp4';
+  args=['-i',input,'-filter:v','setpts='+(1/speed).toFixed(5)+'*PTS','-filter:a','atempo='+speed,'-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
+ }else if(id==='video-resize'){
+  const sizes={vertical:[1080,1920],portrait:[1080,1350],square:[1080,1080],landscape:[1920,1080],hd:[1280,720]};
+  const [w,h]=sizes[p.resolution]||sizes.vertical;
+  output='video-'+w+'x'+h+'.mp4';
+  args=['-i',input,'-vf','scale='+w+':'+h+':force_original_aspect_ratio=decrease,pad='+w+':'+h+':(ow-iw)/2:(oh-ih)/2','-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
+ }else if(id==='video-rotate'){
+  const filter=p.direction==='ccw'?'transpose=2':p.direction==='180'?'hflip,vflip':'transpose=1';
+  output='video-rotado.mp4';
+  args=['-i',input,'-vf',filter,'-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
+ }else if(id==='audio-convert'){
+  const format=['mp3','wav','ogg'].includes(p.format)?p.format:'mp3';
+  output='audio-convertido.'+format;
+  const codec=format==='mp3'?['-c:a','libmp3lame','-q:a','2']:format==='ogg'?['-c:a','libvorbis','-q:a','5']:['-c:a','pcm_s16le'];
+  args=['-i',input,'-vn',...codec,output];
+ }else if(id==='audio-normalize'){
+  output='audio-normalizado.m4a';
+  args=['-i',input,'-vn','-af','loudnorm=I=-16:TP=-1.5:LRA=11','-c:a','aac','-b:a','192k',output];
+ }else if(id==='video-audio'){
+  output='audio.wav';args=['-i',input,'-vn','-acodec','pcm_s16le','-ar','44100','-ac','2',output];
+ }else{
+  output='video-recortado.mp4';args=['-ss',String(p.start||0),'-i',input,'-t',String(p.duration||10),'-c','copy',output];
+ }
+ progress(cb,.38,'Procesando archivo...');
+ await ff.exec(args);
+ progress(cb,.9,'Preparando el resultado...');
+ const data=await ff.readFile(output);
+ const audio=id.startsWith('audio-')||id==='video-audio';
+ const mime=output.endsWith('.mp3')?'audio/mpeg':output.endsWith('.wav')?'audio/wav':output.endsWith('.ogg')?'audio/ogg':output.endsWith('.m4a')?'audio/mp4':'video/mp4';
+ const blob=makeBlob(data,mime);
+ progress(cb,1,'Archivo listo.');
+ return {...download(blob,fileName(files[0])+'-'+output),summary:'Procesamiento local en el navegador · '+formatBytesEngine(blob.size)};
 }
 function convertUnits(p){
  const v=Number(p.value);if(!Number.isFinite(v))throw Error('Introduce un valor válido.');
@@ -173,6 +228,78 @@ function textDiff(a,b){
  return {text:out.join('\\n'),summary:added+' línea(s) añadida(s) · '+removed+' línea(s) eliminada(s)'};
 }
 
+async function formatSourceCode(p,kind){
+ const source=String(p.text||'');if(!source.trim())throw Error('Pega el código que quieres formatear.');
+ if(source.length>250000)throw Error('El límite para formatear es 250 KB.');
+ if(kind==='sql'){
+  const mod=await import('https://esm.sh/sql-formatter@15.4.6');
+  const format=mod.format||mod.default?.format;if(!format)throw Error('No se pudo cargar el formateador SQL.');
+  return {text:format(source,{language:p.dialect||'sql',tabWidth:Number(p.indent)||2,keywordCase:'upper'}),summary:'SQL organizado localmente en el navegador.'};
+ }
+ const prettier=await import('https://esm.sh/prettier@3.3.3/standalone');
+ const pluginPath=kind==='html'?'html':kind==='css'?'postcss':'babel';
+ const plugin=await import('https://esm.sh/prettier@3.3.3/plugins/'+pluginPath);
+ const parser=kind==='html'?'html':kind==='css'?'css':'babel';
+ const formatted=await prettier.format(source,{parser,plugins:[plugin],tabWidth:Number(p.indent)||2,useTabs:p.indent==='tab',singleQuote:p.quote==='single',semi:p.semicolon!=='false'});
+ return {text:formatted,summary:'Código formateado en el navegador con Prettier.'};
+}
+function formatXmlText(source){
+ const parsed=new DOMParser().parseFromString(source,'application/xml');
+ if(parsed.querySelector('parsererror'))throw Error('El XML contiene errores de sintaxis. Revisa etiquetas y atributos.');
+ const serialized=new XMLSerializer().serializeToString(parsed).replace(/>\\s*</g,'><');
+ const tokens=serialized.replace(/></g,'>\\n<').split('\\n');let depth=0;
+ const lines=[];
+ for(const token of tokens){
+  const line=token.trim();if(!line)continue;
+  if(/^<\\//.test(line))depth=Math.max(0,depth-1);
+  lines.push('  '.repeat(depth)+line);
+  if(/^<[^!?/][^>]*[^/]?>$/.test(line)&&!/<\\/[^>]+>$/.test(line)&&!/^<[^>]+\\/>$/.test(line))depth++;
+ }
+ return lines.join('\\n');
+}
+async function inspectFile(file){
+ if(!file)throw Error('Selecciona un archivo.');
+ const head=new Uint8Array(await file.slice(0,32).arrayBuffer());
+ const hex=[...head].map(x=>x.toString(16).padStart(2,'0')).join(' ').toUpperCase();
+ const ascii=[...head].map(x=>x>=32&&x<=126?String.fromCharCode(x):'.').join('');
+ let signature='No reconocida por firma';
+ const starts=(...b)=>b.every((v,i)=>head[i]===v);
+ if(starts(0x25,0x50,0x44,0x46))signature='PDF';
+ else if(starts(0x89,0x50,0x4e,0x47))signature='PNG';
+ else if(starts(0xff,0xd8,0xff))signature='JPEG';
+ else if(starts(0x47,0x49,0x46,0x38))signature='GIF';
+ else if(starts(0x50,0x4b,0x03,0x04))signature='ZIP / DOCX / XLSX / PPTX';
+ else if(ascii.slice(0,4)==='RIFF'&&ascii.slice(8,12)==='WEBP')signature='WebP';
+ else if(ascii.slice(4,8)==='ftyp')signature='MP4 / ISO Base Media';
+ else if(ascii.slice(0,3)==='ID3'||starts(0xff,0xfb))signature='MP3';
+ else if(ascii.slice(0,4)==='OggS')signature='OGG';
+ else if(ascii.slice(0,4)==='fLaC')signature='FLAC';
+ return {text:['Nombre: '+file.name,'Tamaño: '+formatBytesEngine(file.size),'Tipo MIME declarado: '+(file.type||'No indicado'),'Última modificación: '+(file.lastModified?new Date(file.lastModified).toLocaleString('es-CO'):'No indicada'),'Extensión: '+(file.name.includes('.')?file.name.split('.').pop().toUpperCase():'Sin extensión'),'Firma detectada: '+signature,'Primeros bytes (hex): '+hex,'Vista ASCII: '+ascii].join('\\n'),summary:'Inspección local. No se ha subido el archivo.'};
+}
+async function jsonToExcel(p){
+ const source=String(p.text||'').trim();if(!source)throw Error('Pega una lista JSON.');
+ let rows;try{rows=JSON.parse(source)}catch(e){throw Error('JSON inválido: '+e.message)}
+ if(!Array.isArray(rows)||!rows.length||rows.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw Error('El JSON debe ser una lista no vacía de objetos.');
+ if(rows.length>50000)throw Error('El límite es de 50.000 registros.');
+ const mod=await import('https://esm.sh/xlsx@0.18.5'),XLSX=mod.default||mod;
+ const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);
+ XLSX.utils.book_append_sheet(wb,ws,'Datos');
+ const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+ return {...download(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'prisma-datos.xlsx'),summary:rows.length+' registros exportados a Excel.'};
+}
+async function socialImageKit(file,p,cb){
+ const image=await createImageBitmap(file),JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
+ const formats=[['instagram-cuadrado',1080,1080],['instagram-retrato',1080,1350],['stories-reels',1080,1920],['youtube-miniatura',1280,720]];
+ for(let i=0;i<formats.length;i++){
+  const [name,w,h]=formats[i],canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d'),scale=Math.max(w/image.width,h/image.height),sw=w/scale,sh=h/scale,sx=(image.width-sw)/2,sy=(image.height-sh)/2;
+  ctx.drawImage(image,sx,sy,sw,sh,0,0,w,h);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
+  zip.file(name+'.jpg',await blob.arrayBuffer());progress(cb,(i+1)/formats.length*.8,'Preparando formato '+(i+1)+' de '+formats.length+'...');
+ }
+ image.close?.();const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+ return {...download(blob,'prisma-kit-redes-sociales.zip'),summary:'Incluye 4 formatos JPG listos para redes. Se utiliza recorte centrado para llenar cada proporción.'};
+}
 async function runText(id,p){
  const text=String(p.text||'');
  switch(id){
@@ -206,6 +333,43 @@ async function runText(id,p){
  case 'contrast':{const ratio=contrastRatio(p.foreground||'#111827',p.background||'#ffffff');return {text:ratio.toFixed(2)+':1',summary:'WCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+' · WCAG AAA: '+(ratio>=7?'Cumple':'No cumple')};}
  case 'text-sort':{const lines=text.split(/\r?\n/);lines.sort((a,b)=>a.localeCompare(b,'es',{sensitivity:p.caseSensitive?'variant':'base'}));return {text:lines.join('\n'),summary:lines.length+' líneas ordenadas.'};}
  case 'word-frequency':{const words=text.toLocaleLowerCase('es').match(/[\p{L}\p{N}']+/gu)||[],counts=new Map();words.forEach(w=>counts.set(w,(counts.get(w)||0)+1));const rows=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,30);return {text:rows.map(([w,n])=>w+' — '+n).join('\n'),summary:words.length+' palabras analizadas · '+counts.size+' palabras únicas.'};}
+ case 'html-format':return formatSourceCode(p,'html');
+ case 'css-format':return formatSourceCode(p,'css');
+ case 'js-format':return formatSourceCode(p,'js');
+ case 'sql-format':return formatSourceCode(p,'sql');
+ case 'xml-format':return {text:formatXmlText(text),summary:'XML validado y formateado localmente.'};
+ case 'json-schema':{
+  const dataText=String(p.data||'').trim(),schemaText=String(p.schema||'').trim();
+  if(!dataText||!schemaText)throw Error('Introduce el JSON y el esquema JSON.');
+  if(dataText.length>1000000||schemaText.length>200000)throw Error('El tamaño máximo es 1 MB para los datos y 200 KB para el esquema.');
+  let data,schema;try{data=JSON.parse(dataText);schema=JSON.parse(schemaText)}catch(e){throw Error('JSON o esquema inválido: '+e.message)}
+  const mod=await import('https://esm.sh/ajv@8.17.1'),Ajv=mod.default||mod.Ajv,ajv=new Ajv({allErrors:true,strict:false});
+  let validate;try{validate=ajv.compile(schema)}catch(e){throw Error('El esquema no es válido: '+e.message)}
+  const valid=validate(data),errors=(validate.errors||[]).map(x=>(x.instancePath||'/')+' '+x.message);
+  return {text:valid?'JSON VÁLIDO\\n\\nEl documento cumple el esquema indicado.':('JSON NO VÁLIDO\\n\\n'+errors.join('\\n')),summary:valid?'Todos los campos cumplen el esquema.':errors.length+' error(es) de validación.'};
+ }
+ case 'csv-stats':{
+  const rows=parseCsv(text,p.delimiter||',');if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila.');
+  const headers=rows[0],body=rows.slice(1),out=['FILAS: '+body.length,'COLUMNAS: '+headers.length,'','RESUMEN POR COLUMNA'];
+  headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('\\n'+(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
+  return {text:out.join('\\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
+ }
+ case 'citation-generator':{
+  const author=String(p.author||'').trim(),year=String(p.year||'').trim(),title=String(p.title||'').trim(),source=String(p.source||'').trim(),url=String(p.url||'').trim(),doi=String(p.doi||'').trim();
+  if(!author||!title||!year)throw Error('Autor, título y año son campos necesarios.');
+  const apa=author+'. ('+year+'). '+title+'.'+(source?' '+source+'.':'')+(doi?' https://doi.org/'+doi.replace(/^https?:\\/\\/doi.org\\//,''):url?' '+url:'');
+  const vancouver=author+'. '+title+'. '+source+(source?'; ':'')+year+'.'+(doi?' doi:'+doi:url?' Disponible en: '+url:'');
+  const mla=author+'. “'+title+'.” '+source+(source?', ':'')+year+'.'+(url?' '+url:'');
+  const selected=p.style==='vancouver'?vancouver:p.style==='mla'?mla:apa;
+  return {text:selected+'\\n\\nAPA 7\\n'+apa+'\\n\\nVancouver\\n'+vancouver+'\\n\\nMLA 9\\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
+ }
+ case 'flashcards-export':{
+  const lines=text.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean),cards=[];
+  for(const line of lines){const parts=line.split(/\\s*(?:\\||\\t|::)\\s*/);if(parts.length<2)continue;const front=parts.shift().trim(),back=parts.join(' — ').trim();if(front&&back)cards.push([front,back]);}
+  if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
+  const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join('\\n');
+  return {...download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'prisma-tarjetas-anki.csv'),text:csv,summary:cards.length+' tarjetas listas para importar en Anki.'};
+ }
  case 'color-palette':{const base=Math.floor(Math.random()*360),angles=p.harmony==='complementary'?[0,180,0,180,0]:p.harmony==='triadic'?[0,120,240,0,120]:[0,30,60,180,210];const colors=angles.map((a,i)=>'hsl('+((base+a)%360)+' 62% '+([55,62,48,68,52][i])+'%)');return {text:colors.join('\n'),summary:'Paleta generada al azar. Copia los valores HSL.'};}
  }
  throw Error('Herramienta de texto no disponible.');
@@ -638,10 +802,19 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='video-thumbnail'||id==='video-gif'||id==='video-mute'||id==='audio-trim')return mediaAdvanced(id,files,p,cb);
  if(id==='qr-scan')return scanQr(files[0]);
  if(id==='hash-file')return hashFile(files[0]);
+ if(id==='file-inspector')return inspectFile(files[0]);
+ if(id==='json-xlsx')return jsonToExcel(p);
+ if(id==='image-social-kit')return socialImageKit(files[0],p,cb);
+ if(id==='qr-vcard'){
+  const escapeV=v=>String(v||'').replace(/\\\\/g,'\\\\\\\\').replace(/;/g,'\\\\;').replace(/,/g,'\\\\,').replace(/\\r?\\n/g,'\\\\n');
+  const vcard=['BEGIN:VCARD','VERSION:3.0','FN:'+escapeV(p.name),'TEL;TYPE=CELL:'+escapeV(p.phone),'EMAIL:'+escapeV(p.email),'ORG:'+escapeV(p.organization),'END:VCARD'].join('\\n');
+  const result=await runQr({text:vcard},cb);result.filename='prisma-contacto-qr.png';result.summary='Código QR vCard generado. Escanéalo con la cámara para guardar el contacto.';return result;
+ }
  if(id==='api-explorer')return explorePublicApi(p,cb);
  if(id==='github-discover')return discoverGitHubProjects(p,cb);
  if(id==='excel-json')return excelToJson(files[0],p,cb);
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
+ if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
  if(id==='ai-voice')return generateSpeech(p,cb);
  if(id==='ai-transcribe')return transcribeAudio(files,p,cb);
