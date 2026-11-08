@@ -329,7 +329,8 @@ function buildFields(t){
     case 'image-resize':return '<div class="inline-fields">'+field('Ancho (px)','width','number','1200','Ancho final.','min="1" max="12000"')+field('Alto (px)','height','number','800','Alto final.','min="1" max="12000"')+'</div><label class="check-line"><input type="checkbox" name="keep" checked> Mantener proporción original</label>';
     case 'image-convert':return selectField('Formato de salida','format',[['image/png','PNG'],['image/jpeg','JPG'],['image/webp','WebP']],'image/webp');
     case 'image-crop':return '<div class="inline-fields">'+field('Ancho del recorte (%)','widthPct','number','80','Porcentaje del ancho.','min="10" max="100"')+field('Alto del recorte (%)','heightPct','number','80','Porcentaje del alto.','min="10" max="100"')+'</div><div class="tool-hint">Se realiza un recorte centrado. Para edición libre con selección visual añadiremos un editor dedicado.</div>';
-    case 'image-gen':return selectField('Motor de imagen','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations · tu saldo'],['huggingface','Hugging Face'],['gemini','Google Gemini']],'auto')+
+    case 'image-gen':return selectField('Motor de imagen','provider',[['auto','Automático · recomendado'],['cloudflare','Cloudflare FLUX · gratis con límite'],['pollinations','Pollinations · cuenta personal'],['huggingface','Hugging Face · créditos limitados']],'auto')+
+      selectField('Modelo de imagen','model',[['','Automático · modelo recomendado']],'')+
       selectField('Calidad','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
       textareaField('Describe la imagen que quieres crear','prompt','','Describe sujeto, ambiente, composición, iluminación y estilo.')+
       selectField('Estilo visual','style',[['photo','Fotografía realista'],['cinematic','Cinematográfico'],['illustration','Ilustración editorial'],['3d','Render 3D'],['anime','Anime'],['product','Fotografía de producto']],'photo')+
@@ -338,7 +339,8 @@ function buildFields(t){
       textareaField('Elementos que quieres evitar (opcional)','negativePrompt','','Elementos que prefieres evitar.')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-assistant':return textareaField('¿Qué necesitas crear o resolver?','prompt','','Ejemplo: redacta una descripción profesional para un producto...')+
-      selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+
+      selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['groq','Groq'],['huggingface','Hugging Face'],['pollinations','Pollinations · personal']],'auto')+
+      selectField('Modelo específico','model',[['','Automático · según complejidad']],'')+
       selectField('Capacidad del modelo','reasoning',[['fast','Rápido · menor latencia'],['balanced','Equilibrado · recomendado'],['smart','Avanzado · mejor razonamiento']],'balanced')+
       selectField('Tono','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Directo y breve']],'professional')+
       selectField('Extensión','length',[['short','Breve'],['medium','Media'],['long','Detallada']],'medium')+
@@ -349,7 +351,8 @@ function buildFields(t){
       selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina']],'nova')+
       selectField('Formato de audio','format',[['mp3','MP3'],['wav','WAV'],['opus','Opus']],'mp3')+
       pollinationsAuthFields();
-    case 'ai-transcribe':return selectField('Modelo de transcripción','model',[['openai/whisper-1','Whisper · automático']],'openai/whisper-1')+
+    case 'ai-transcribe':return selectField('Motor de transcripción','provider',[['auto','Automático · recomendado'],['groq','Groq Whisper Turbo · central'],['huggingface','Hugging Face · créditos limitados'],['pollinations','Pollinations · cuenta personal']],'auto')+
+      selectField('Modelo de transcripción','model',[['','Automático · según motor']],'')+
       selectField('Idioma','language',[['es','Español'],['en','Inglés'],['auto','Detectar automáticamente']],'es')+
       pollinationsAuthFields();
     case 'image-watermark':return field('Texto de la marca','watermark','text','Prisma Space','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
@@ -544,8 +547,13 @@ const fallbackModels={
   audio:[['openai/tts-1','TTS estándar'],['openai/tts-1-hd','TTS alta calidad'],['openai/whisper-1','Whisper · transcripción']]
 };
 function modelOptions(kind,provider){
-  if(kind==='image'&&provider==='huggingface')return [['black-forest-labs/FLUX.1-schnell','FLUX.1 Schnell · rápido'],['Qwen/Qwen-Image','Qwen Image · detalle'],['black-forest-labs/FLUX.1-Krea-dev','FLUX.1 Krea · creativo']];
-  return pollinationsModelCache[kind].length?pollinationsModelCache[kind]:fallbackModels[kind];
+  if(provider==='auto')return [['','Automático · modelo recomendado']];
+  const group=kind==='image'?'image':kind==='audio'?'audio':'chat';
+  if(provider!=='pollinations'){
+    const models=centralConnectionState.modelCatalog?.[group]?.[provider]||[];
+    return models.length?models.map(item=>[item.id,item.name+' · '+item.specialty]):[['','Predeterminado del motor']];
+  }
+  return pollinationsModelCache[kind]?.length?pollinationsModelCache[kind]:fallbackModels[kind]||[['','Predeterminado']];
 }
 async function loadPollinationsModels(kind,provider='pollinations'){
   const select=$('#field-model');if(!select)return;
@@ -567,7 +575,7 @@ async function loadPollinationsModels(kind,provider='pollinations'){
     }).filter(Boolean);
     if(!options.length)return;
     pollinationsModelCache[kind]=options;
-    const current=$('#field-model');if(current){current.innerHTML=options.map(([v,l])=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(l)+'</option>').join('');if(options.some(o=>o[0]===selected))current.value=selected;}
+    const current=$('#field-model');if(current&&$('#field-provider')?.value==='pollinations'){current.innerHTML=options.map(([v,l])=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(l)+'</option>').join('');if(options.some(o=>o[0]===selected))current.value=selected;}
   }catch(error){console.info('Catálogo de modelos Pollinations no disponible; se usan opciones de respaldo.',error);}
 }
 async function loadPollinationsPricing(kind='image'){
@@ -581,32 +589,22 @@ async function loadPollinationsPricing(kind='image'){
   }catch(error){console.info('No se pudo consultar la tarifa en vivo de Pollinations.',error);return [];}
 }
 function providerNoticeText(provider,quality,task='image'){
-  const connected={
-    pollinations:!!getPollinationsToken(),
-    huggingface:isProviderConnected('huggingface'),
-    gemini:isProviderConnected('gemini'),
-    groq:isProviderConnected('groq')
-  };
-  let selected=provider||'auto';
-  if(selected==='auto'){
-    const order=task==='image'?['pollinations','huggingface','gemini']:['groq','huggingface','gemini','pollinations'];
-    selected=order.find(item=>connected[item])||'';
-  }
-  if(!selected)return 'No hay un motor conectado para esta tarea. Abre el Laboratorio IA y conecta una cuenta.';
-  if(!connected[selected])return 'Este motor todavía no está conectado. Conéctalo desde el Laboratorio IA antes de generar.';
-  const names={pollinations:'Pollinations Connect',huggingface:'Hugging Face',gemini:'Google Gemini',groq:'Groq'};
-  if(selected==='pollinations'&&task==='image'){
-    const models={fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1.1-pro'};
-    const modelId=models[quality||'balanced'];
-    const model=pollinationsPricingCache.image.find(item=>(item.name||item.id)===modelId);
-    const price=model?.pricing?.completionImageTokens;
-    if(price)return names[selected]+': '+(model.title||model.name)+'. Tarifa publicada: '+price+' Pollen por imagen. El texto adicional se cobra según los tokens utilizados. Puedes limitar el presupuesto al autorizar la cuenta.';
-    return names[selected]+': el consumo se descuenta de tu saldo Pollen. El precio exacto se consulta en el catálogo actualizado del proveedor.';
-  }
-  if(selected==='pollinations')return names[selected]+': el texto consume Pollen según los tokens de entrada y salida. Tu autorización limita el presupuesto total.';
-  if(selected==='huggingface')return names[selected]+': el consumo depende del modelo y del proveedor de inferencia seleccionado. Consulta sus tarifas y tu consumo en Hugging Face.';
-  if(selected==='gemini')return names[selected]+': el consumo depende del modelo y de la resolución solicitada. Consulta la facturación de tu proyecto de Google AI Studio.';
-  return names[selected]+': consulta los límites y el consumo de tu plan en Groq antes de generar.';
+ const connected={pollinations:!!getPollinationsToken(),...centralConnectionState.providers};
+ const features=centralConnectionState.features||{};
+ let selected=provider||'auto';
+ if(selected==='auto'){
+   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','pollinations','huggingface']:['gemini','cloudflare','groq','huggingface','pollinations'];
+   selected=order.find(item=>connected[item]&&(task!=='image'||item!=='huggingface'||features.huggingfaceImages)&&(task!=='audio'||item!=='huggingface'||features.huggingfaceAudio))||'';
+ }
+ if(!selected)return 'No hay un motor activo para esta tarea. Revisa las conexiones del Laboratorio IA.';
+ if(!connected[selected])return 'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
+ if(selected==='huggingface'&&task==='image'&&!features.huggingfaceImages)return 'Hugging Face permite generar imágenes, pero está desactivado para no agotar tus créditos gratuitos. Usa Cloudflare FLUX.';
+ if(selected==='huggingface'&&task==='audio'&&!features.huggingfaceAudio)return 'El audio de Hugging Face está desactivado para proteger el crédito mensual.';
+ if(selected==='cloudflare')return 'Cloudflare Workers AI: motor compartido, limitado por las cuotas gratuitas diarias y el control de solicitudes de Prisma.';
+ if(selected==='huggingface')return 'Hugging Face: seis modelos de texto habilitados. El nivel gratuito incluye solo US$0,10 de créditos mensuales; selecciona modelos con cuidado.';
+ if(selected==='groq')return 'Groq: usa la clave central de Cloudflare. Las solicitudes están sujetas al plan gratuito y límites de Prisma.';
+ if(selected==='pollinations')return 'Pollinations: esta conexión es personal. Cada usuario autoriza su cuenta y su propio presupuesto.';
+ return 'Gemini: motor central de Prisma para chat y razonamiento. La generación de imágenes de Gemini todavía no está habilitada.';
 }
 function updateProviderNotice(target,task='image'){
   const notice=$(target);if(!notice)return;
@@ -615,16 +613,22 @@ function updateProviderNotice(target,task='image'){
   notice.textContent=providerNoticeText(provider,quality,task);
 }
 function setupAIAuthorization(tool){
-  refreshProviderConnectionStatuses();
-  const provider=$('#field-provider'),quality=$('#field-qualityProfile');
-  const update=()=>updateProviderNotice('#tool-provider-notice',tool.id==='image-gen'?'image':'text');
-  provider?.addEventListener('change',update);quality?.addEventListener('change',update);
-  $('#open-ai-settings')?.addEventListener('click',()=>{
-    closeTool();showView('ai');
-    $('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});
-  });
-  if(tool.id==='image-gen')void loadPollinationsPricing('image').then(update);
-  update();
+ const task=tool.id==='image-gen'?'image':tool.id==='ai-transcribe'?'audio':'text';
+ const provider=$('#field-provider');
+ const quality=$('#field-qualityProfile');
+ const update=()=>{
+   updateProviderNotice('#tool-provider-notice',task);
+   if(provider&&$('#field-model'))void loadPollinationsModels(task,provider.value);
+ };
+ provider?.addEventListener('change',update);
+ quality?.addEventListener('change',update);
+ $('#open-ai-settings')?.addEventListener('click',()=>{closeTool();showView('ai');$('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});});
+ void getCentralProviderStatus().then(data=>{
+   Object.assign(centralConnectionState,{providers:data.providers,features:data.features,modelCatalog:data.modelCatalog});
+   update();
+ }).catch(()=>update());
+ if(tool.id==='image-gen')void loadPollinationsPricing('image').then(update);
+ update();
 }
 
 function openTool(t){
