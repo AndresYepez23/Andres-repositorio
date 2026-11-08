@@ -1,53 +1,47 @@
 # PRISMA
 
-Plataforma web de herramientas digitales con prioridad en procesamiento local, motores intercambiables y transparencia sobre cuotas y licencias.
+PRISMA es una suite web de herramientas digitales, con prioridad en el procesamiento local, motores IA intercambiables y transparencia sobre límites, costes y licencias.
+
+## Catálogo
+
+- **79 herramientas** organizadas en nueve categorías.
+- PDF y documentos, imágenes, audio y vídeo, texto, productividad, utilidades y desarrollo.
+- Generación de imágenes y laboratorio IA con proveedores seleccionables.
+- Herramientas que procesan archivos localmente siempre que el navegador lo permite.
 
 ## Estructura
 
-- `index.html`: aplicación estática.
+- `index.html`: aplicación.
 - `styles.css`: identidad visual y diseño adaptable.
-- `src/registry.js`: catálogo de **79 herramientas** en nueve categorías.
-- `src/providers.js`: inventario de proveedores IA.
-- `src/main.js`: navegación, filtros y experiencia de usuario.
-- `src/engines.js`: ejecución de herramientas.
-- `worker.js`: Worker de Cloudflare para servir los recursos estáticos y la ruta de salud.
+- `src/registry.js`: catálogo de herramientas.
+- `src/providers.js`: proveedores IA.
+- `src/main.js`: navegación y experiencia.
+- `src/engines.js`: motores de ejecución.
+- `build.mjs`: prepara el directorio de publicación `dist/`.
+- `worker.js` y `wrangler.toml`: base opcional para futuras funciones de Cloudflare Workers.
 
-## Publicación
+## Producción
 
-PRISMA se publica en **Cloudflare Workers Static Assets**. El repositorio de GitHub es la fuente de verdad y `main` es la rama de producción.
+La producción se publica en **Cloudflare Pages**, conectado al repositorio GitHub `AndresYepez23/PRISMA`.
 
-Desde la carpeta `prisma`, se puede publicar con Wrangler:
+- Rama de producción: `main`.
+- Directorio raíz de Pages: `prisma`.
+- Comando de compilación: `node build.mjs`.
+- Directorio publicado: `dist`.
 
-```bash
-npx wrangler deploy
-```
-
-El archivo `wrangler.toml` contiene la configuración de Worker y de recursos estáticos. El endpoint `/api/health` permite comprobar qué versión está desplegada.
-
-## Ejecutar localmente
-
-No requiere instalación ni build:
-
-1. Abrir la carpeta `prisma` con un servidor estático local.
-2. Usar un navegador moderno con módulos ES y conexión para cargar las bibliotecas bajo demanda.
-3. Abrir `index.html`.
+Cada actualización integrada en `main` puede generar un despliegue de producción en Cloudflare Pages. PRISMA ya no depende de Wix ni Netlify para su alojamiento.
 
 ## Inteligencia artificial
 
-- Pollinations Connect usa OAuth 2.0 Authorization Code + PKCE. Cada visitante autoriza su propio presupuesto; el token temporal permanece en `sessionStorage` y no se guarda en `localStorage`.
-- La App Key pública de Pollinations se configura desde la interfaz. El administrador debe registrar como Redirect URI exacta la URL pública del sitio.
-- Hugging Face es una alternativa BYOK. Las cuentas Free no incluyen créditos mensuales para Inference Providers; PRO incluye USD 2 mensuales, sujeto a las condiciones vigentes.
+- Pollinations Connect usa OAuth 2.0 Authorization Code + PKCE. Cada visitante autoriza su propio presupuesto.
+- La App Key pública de Pollinations se configura desde la interfaz. La Redirect URI debe coincidir exactamente con el dominio público de producción.
+- Hugging Face es una alternativa BYOK. Los límites gratuitos dependen del proveedor y del modelo.
 - Nunca incrustar claves secretas de proveedor en el frontend.
 
-## Privacidad
+## Privacidad y límites
 
 - PDF, imagen, texto y documentos se procesan en el navegador cuando el módulo lo permite.
-- El eliminador de fondo descarga modelos de IA al dispositivo; la imagen de entrada no se envía al servidor de inferencia.
-- OCR y FFmpeg descargan sus bibliotecas/modelos bajo demanda.
-- La consulta de divisas utiliza Frankfurter y envía únicamente la moneda base y la moneda destino.
+- OCR y FFmpeg descargan bibliotecas/modelos bajo demanda.
+- Las funciones beta y los módulos marcados como próximamente no deben presentarse como funciones garantizadas.
 - No hay analítica, cuenta de usuario ni almacenamiento de archivos en servidor en esta primera versión.
 - No introducir claves API privadas en el frontend.
-
-## Estado técnico
-
-Las funciones marcadas como beta utilizan modelos o WebAssembly pesados y deben probarse en distintos navegadores y dispositivos antes de considerarse estables. Los módulos marcados como próximamente no están habilitados.
