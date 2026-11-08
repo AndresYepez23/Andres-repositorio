@@ -457,10 +457,11 @@ async function requestPlan(userText){
   }
   const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500));
   let plan,steps;
+  // Provider/network errors must not trigger a second costly inference request.
+  const result=await runTool('ai-assistant',[],{
+    prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
+  },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
   try{
-    const result=await runTool('ai-assistant',[],{
-      prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
-    },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
     plan=parsePlan(result.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
   }catch(firstError){
