@@ -30,6 +30,7 @@
         <button class="nav-item active" data-view="explore"><span class="nav-icon" data-icon="grid"></span><span>Explorar</span><kbd>⌘ 1</kbd></button>
         <button class="nav-item" data-view="favorites"><span class="nav-icon" data-icon="star"></span><span>Favoritos</span><span class="nav-count" id="favorite-count">0</span></button>
         <button class="nav-item" data-view="recent"><span class="nav-icon" data-icon="history"></span><span>Recientes</span><span class="nav-count" id="recent-count">0</span></button>
+        <button class="nav-item" data-view="core"><span class="nav-icon" data-icon="brain-circuit"></span><span>Prisma Core</span><span class="nav-dot"></span></button>
         <button class="nav-item" data-view="ai"><span class="nav-icon" data-icon="sparkles"></span><span>Laboratorio IA</span><span class="nav-dot"></span></button>
       </nav>
       <div class="side-label side-label-spaced">CATEGORÍAS</div>
@@ -55,6 +56,39 @@
       </header>
 
       <section class="page-content" id="page-content">
+        <section class="core-section hidden" id="core-section">
+          <div class="core-hero">
+            <div class="eyebrow"><span class="eyebrow-line"></span> PRISMA SPACE · INTELIGENCIA CENTRAL</div>
+            <h2>Cuéntame qué necesitas.<br><em>Yo coordino las herramientas.</em></h2>
+            <p>Un solo chat para planificar tareas, combinar motores y ejecutar operaciones del catálogo. Revisa cada plan antes de autorizarlo.</p>
+            <div class="core-capabilities"><span>116 herramientas registradas</span><span>79 listas para el agente</span><span>Planificación de hasta 10 pasos</span><span>Control antes de ejecutar</span></div>
+          </div>
+          <div class="core-workspace">
+            <div class="core-chat-column">
+              <div class="core-chat-toolbar"><div><strong>Prisma</strong><small>Tu asistente de trabajo</small></div><button type="button" class="mini-button" id="core-clear">Nueva conversación</button></div>
+              <div class="core-connect-banner" id="core-connect-banner"><span class="core-connect-mark" data-icon="plug"></span><div><strong>Activa tu asistente</strong><p>Conecta un motor de IA gratuito o usa una clave propia para que Prisma pueda entender tus instrucciones y coordinar herramientas.</p></div><button type="button" class="button button-quiet" id="core-connect-now">Conectar motor</button></div>
+              <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+              <div class="core-plan hidden" id="core-plan"></div>
+              <div class="core-results" id="core-results"></div>
+              <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
+              <div class="core-composer" id="core-composer">
+                <div class="core-attachments" id="core-attachments"></div>
+                <textarea id="core-input" rows="2" placeholder="Ej.: quita el fondo de esta imagen y déjala lista para Instagram…" aria-label="Mensaje para Prisma Core"></textarea>
+                <div class="core-composer-footer">
+                  <div class="core-composer-tools"><button type="button" class="mini-button" id="core-file-button"><span data-icon="paperclip"></span> Adjuntar archivos</button><input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.docx,.xlsx,.csv,.txt,.md,audio/*,video/*,.zip"></div>
+                  <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
+                </div>
+                <small>Hasta 8 archivos · 100 MB en total. El texto de tus mensajes se envía al motor conectado para planificar; los archivos no se adjuntan automáticamente al modelo y se procesan según la herramienta que autorices.</small>
+              </div>
+            </div>
+            <aside class="core-side">
+              <div class="core-side-card"><span class="core-side-icon" data-icon="layers"></span><h3>Una sola conversación</h3><p>Describe el resultado. Prisma selecciona las herramientas, organiza los pasos y reúne las entregas en este chat.</p></div>
+              <div class="core-side-card"><span class="core-side-icon" data-icon="shield-check"></span><h3>Privacidad y control</h3><p>Las operaciones locales se ejecutan en tu dispositivo. Los servicios externos se identifican y requieren autorización.</p></div>
+              <div class="core-side-card"><span class="core-side-icon" data-icon="plug"></span><h3>Conecta un motor de texto</h3><p>Prisma Core utiliza tus conexiones personales de Pollinations, Groq, Hugging Face o Gemini.</p><button type="button" class="text-action" id="core-open-settings">Gestionar conexiones →</button></div>
+              <div class="core-side-footnote">La conversación se guarda en este navegador. Tus claves permanecen en la sesión. La memoria aún no se sincroniza entre dispositivos.</div>
+            </aside>
+          </div>
+        </section>
         <div class="hero-section">
           <div class="hero-copy">
             <div class="eyebrow"><span class="eyebrow-line"></span> TU ESPACIO PARA CREAR Y RESOLVER.</div>
@@ -86,7 +120,7 @@
         </div>
 
         <div class="metric-strip">
-          <div class="metric"><strong id="metric-tools">25</strong><span>herramientas en el catálogo</span></div>
+          <div class="metric"><strong id="metric-tools">116</strong><span>herramientas en el catálogo</span></div>
           <div class="metric-divider"></div>
           <div class="metric"><strong id="metric-local">18</strong><span>operaciones locales o en navegador</span></div>
           <div class="metric-divider"></div>
@@ -98,6 +132,18 @@
           <div class="home-dashboard-heading">
             <div><div class="eyebrow">EMPIEZA POR TU OBJETIVO</div><h2>¿Qué quieres resolver hoy?</h2><p>Elige una tarea y encuentra la herramienta adecuada.</p></div>
             <span class="home-local-pill"><span class="status-led"></span> Sin registro para empezar</span>
+          </div>
+          <div class="workflow-hub" aria-labelledby="workflow-hub-title">
+            <div class="workflow-hub-heading">
+              <div><div class="eyebrow">FLUJOS INTELIGENTES</div><h3 id="workflow-hub-title">De la tarea al resultado, en un solo recorrido.</h3><p>Prisma coordina los pasos y las herramientas por ti. Tú solo eliges qué necesitas.</p></div>
+              <span class="workflow-hub-note"><span class="status-led"></span> 4 flujos disponibles</span>
+            </div>
+            <div class="workflow-grid">
+              <button type="button" class="workflow-card" data-workflow="image-pipeline"><span class="workflow-card-icon" data-icon="image"></span><span class="workflow-card-copy"><strong>Optimizar una imagen</strong><small>Fondo · tamaño · compresión</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+              <button type="button" class="workflow-card" data-workflow="document-pipeline"><span class="workflow-card-icon" data-icon="files"></span><span class="workflow-card-copy"><strong>Preparar documentos</strong><small>Combinar · numerar · extraer texto</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+              <button type="button" class="workflow-card" data-workflow="ai-task"><span class="workflow-card-icon" data-icon="brain-circuit"></span><span class="workflow-card-copy"><strong>Resolver una tarea con IA</strong><small>Redactar · resumir · explicar · traducir</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+              <button type="button" class="workflow-card" data-workflow="ai-creation"><span class="workflow-card-icon" data-icon="sparkles"></span><span class="workflow-card-copy"><strong>Crear contenido con IA</strong><small>Idea · imagen · edición · publicación</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+            </div>
           </div>
           <div class="home-goals" id="home-goals">
             <button type="button" class="goal-card" data-home-category="pdf"><span class="goal-icon" data-icon="file-text"></span><strong>Convertir documentos</strong><small>PDF, Word e imágenes</small></button>
@@ -126,20 +172,19 @@
         <section class="ai-section hidden" id="ai-section">
           <div class="eyebrow">PRISMA SPACE · IA MULTIMODELO</div>
           <h2>Un laboratorio. Varios motores.</h2>
-          <p class="ai-intro">Crea imágenes, redacta con modelos de lenguaje y convierte texto en audio. Prisma Space incorpora motores intercambiables y autorización individual para que cada visitante controle su propio consumo.</p>
+          <p class="ai-intro">Crea imágenes y contenido con varios motores. Conecta tus cuentas una sola vez y deja que Prisma organice los pasos, muestre las condiciones de uso y seleccione el proveedor que prefieras.</p>
           <div class="ai-principles"><div><span data-icon="layers"></span><strong>Modelos intercambiables</strong><p>Una misma experiencia con diferentes proveedores.</p></div><div><span data-icon="gauge"></span><strong>Uso responsable</strong><p>Cuotas, límites y alternativas visibles.</p></div><div><span data-icon="lock"></span><strong>Autorización individual</strong><p>Conecta tus propios proveedores y conserva el control de tus credenciales.</p></div></div>
-          <section class="ai-connection-card" id="ai-connection-card">
-            <div class="ai-connection-heading"><div><div class="eyebrow">AUTORIZACIÓN PERSONAL</div><h3>Conecta tu cuenta de IA</h3><p>Hazlo una sola vez en este navegador. Cada persona utiliza su propia autorización y presupuesto.</p></div><span class="provider-connection-status" id="polli-status">No conectado</span></div>
-            <label class="connection-key-label" for="polli-app-key">App Key pública de Prisma Space</label>
-            <input class="form-control connection-key-input" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false" aria-describedby="polli-key-help">
-            <small id="polli-key-help">Crea una App Key en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>. Es un identificador público, no una contraseña.</small>
-            <div class="provider-connect-row"><button type="button" class="button button-primary" id="polli-connect"><span data-icon="sparkles"></span> Conectar mi cuenta</button><button type="button" class="button button-quiet" id="polli-disconnect">Desconectar</button></div>
-            <div class="provider-redirect"><span>Registra esta Redirect URI una sola vez:</span><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URI</button></div>
-            <p class="connection-footnote">La autorización solicita acceso a imagen, texto y audio, con un presupuesto máximo inicial de 5 Pollen y vigencia de 7 días. El token se conserva en la sesión actual del navegador, no en una cuenta de Prisma Space.</p>
+          <section class="ai-connection-card ai-connection-hub" id="ai-connection-card">
+            <div class="ai-connection-heading">
+              <div><div class="eyebrow">TUS CONEXIONES</div><h3>Conecta una vez. Prisma se encarga del resto.</h3><p>Elige los motores que quieras usar. Tus claves personales permanecen en esta pestaña y no se envían a Prisma Space.</p></div>
+              <span class="provider-connection-status" id="connections-summary">0 motores conectados</span>
+            </div>
+            <div class="provider-connect-grid" id="provider-connect-grid" aria-live="polite"></div>
+            <p class="connection-footnote">Puedes desconectar cualquier motor cuando quieras. Esto elimina la clave guardada en esta pestaña, pero no revoca la clave en la cuenta del proveedor. Revisa siempre los límites y precios de cada servicio.</p>
           </section>
-          <div class="ai-feature-card"><div class="ai-feature-copy"><span class="ai-feature-label">CREACIÓN VISUAL · DISPONIBLE</span><h3>De una idea a una imagen.</h3><p>Describe lo que imaginas, elige un motor y crea una imagen descargable. Pollinations Connect permite que cada usuario autorice su propio presupuesto; también conservamos Hugging Face como opción BYOK.</p><div class="hero-actions"><button class="button button-primary" id="open-image-gen"><span data-icon="sparkles"></span> Generar imagen</button><button class="button button-quiet" id="open-ai-assistant"><span data-icon="message-circle"></span> Asistente de texto</button></div></div><div class="ai-feature-art"><span class="ai-orb ai-orb-one"></span><span class="ai-orb ai-orb-two"></span><span class="ai-art-spark">✦</span></div></div><div class="provider-heading"><div><h3>Proveedores compatibles</h3><p>Motores multimodales, procesamiento local y proveedores en evaluación.</p></div><span class="status-pill status-planned">BYOP + BYOK</span></div>
+          <div class="ai-feature-card"><div class="ai-feature-copy"><span class="ai-feature-label">CREACIÓN VISUAL · DISPONIBLE</span><h3>De una idea a una imagen.</h3><p>Describe lo que imaginas, elige un motor y crea una imagen descargable. Pollinations Connect, Hugging Face, Google Gemini y Groq pueden trabajar juntos. El usuario conecta sus propias cuentas y Prisma oculta los nombres técnicos de los modelos.</p><div class="hero-actions"><button class="button button-primary" id="open-image-gen"><span data-icon="sparkles"></span> Generar imagen</button><button class="button button-quiet" id="open-ai-assistant"><span data-icon="message-circle"></span> Asistente de texto</button></div></div><div class="ai-feature-art"><span class="ai-orb ai-orb-one"></span><span class="ai-orb ai-orb-two"></span><span class="ai-art-spark">✦</span></div></div><div class="provider-heading"><div><h3>Motores y ecosistema conectado</h3><p>IA multimodal, APIs para desarrolladores y proyectos open source que amplían Prisma.</p></div><span class="status-pill status-planned">BYOP + BYOK</span></div>
           <div class="provider-grid" id="provider-grid"></div>
-          <div class="notice-panel"><span data-icon="info"></span><p><strong>Conexión responsable:</strong> Pollinations Connect utiliza OAuth con PKCE: cada visitante autoriza su propio saldo y puede limitar el presupuesto y la vigencia. Hugging Face sigue disponible como opción personal, pero sus cuentas Free no reciben créditos mensuales de Inference Providers.</p></div>
+          <div class="notice-panel"><span data-icon="info"></span><p><strong>Conexión responsable:</strong> Pollinations Connect utiliza OAuth con PKCE y permite que cada persona autorice su propio límite. Hugging Face reúne modelos y proveedores como Groq, Fal AI y Together desde una sola conexión. Los costes y límites dependen de cada servicio.</p></div>
         </section>
 
         <footer class="main-footer"><span>Prisma Space <span class="footer-dot">·</span> Herramientas con intención.</span><span>Diseñado para trabajar mejor. <a href="./privacy.html#privacidad" id="privacy-link">Privacidad y uso</a></span></footer>

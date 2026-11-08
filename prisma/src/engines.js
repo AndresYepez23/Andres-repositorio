@@ -30,6 +30,16 @@ async function pdfTool(id,files,p,cb){
   return download(makeBlob(await out.save(),'application/pdf'),'prisma-documento-unido.pdf');
  }
  const src=await PDFDocument.load(await bytes(files[0]));const out=await PDFDocument.create();const total=src.getPageCount();
+ if(id==='pdf-metadata'){
+  const info={titulo:src.getTitle()||'No indicado',autor:src.getAuthor()||'No indicado',asunto:src.getSubject()||'No indicado',palabrasClave:src.getKeywords()||'No indicadas',creador:src.getCreator()||'No indicado',productor:src.getProducer()||'No indicado',fechaCreacion:src.getCreationDate()?.toISOString()||'No indicada',fechaModificacion:src.getModificationDate()?.toISOString()||'No indicada',paginas:total};
+  return {text:JSON.stringify(info,null,2),summary:'Metadatos leídos localmente. No se modificó el PDF.'};
+ }
+ if(id==='pdf-metadata-clean'){
+  const {PDFName,PDFDict}=await load(PDF_LIB);
+  try{const ref=src.context.trailerInfo.Info,info=ref?src.context.lookup(ref,PDFDict):null;if(info)for(const key of ['Title','Author','Subject','Keywords','Creator','Producer','CreationDate','ModDate','Trapped'])info.delete(PDFName.of(key));}catch{}
+  try{src.catalog.delete(PDFName.of('Metadata'));}catch{}
+  return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-metadatos.pdf');
+ }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
   const pages=src.getPageIndices();
@@ -60,6 +70,14 @@ async function imageTool(id,files,p,cb){
   const blob=await removeBackground(f,{quality:'quality',onProgress:e=>progress(cb,.25+(e.progress||0)*.65,e.message||'Eliminando fondo...')});
   return {...download(blob,fileName(f)+'-sin-fondo.png'),previewUrl:URL.createObjectURL(blob)};
  }
+ if(id==='image-strip-metadata'){
+  const bitmap=await createImageBitmap(f),canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+  canvas.getContext('2d').drawImage(bitmap,0,0);bitmap.close?.();
+  const type=['image/jpeg','image/png','image/webp'].includes(f.type)?f.type:'image/png';
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,type,.94));
+  if(!blob)throw Error('No se pudo reexportar la imagen.');
+  return {...download(blob,fileName(f)+'-sin-metadatos.'+(type==='image/jpeg'?'jpg':type.split('/')[1])),previewUrl:URL.createObjectURL(blob),summary:'Imagen reexportada localmente. Los metadatos EXIF habituales y la ubicación incrustada se descartan.'};
+ }
  if(id==='image-metadata'){
   const exifr=await import('https://esm.sh/exifr@7.1.3');
   const meta=await exifr.parse(f).catch(()=>null);
@@ -73,7 +91,7 @@ async function imageTool(id,files,p,cb){
  const img=new Image(),url=URL.createObjectURL(f);
  try{await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(Error('No se pudo abrir la imagen.'));img.src=url;});
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
- if(['image-grayscale','image-blur','image-adjust','image-rounded'].includes(id)){
+ if(['image-grayscale','image-blur','image-adjust','image-rounded','image-sepia'].includes(id)){
   const max=Math.max(128,Math.min(5000,Number(p.maxSize)||1600));
   const scale=id==='image-rounded'?Math.min(1,max/Math.max(img.width,img.height)):1;
   const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
@@ -86,12 +104,15 @@ async function imageTool(id,files,p,cb){
    if(id==='image-grayscale')ctx.filter='grayscale(1)';
    if(id==='image-blur')ctx.filter='blur('+Math.max(1,Math.min(30,Number(p.blur)||5))+'px)';
    if(id==='image-adjust')ctx.filter='brightness('+Math.max(10,Math.min(200,Number(p.brightness)||100))+'%) contrast('+Math.max(10,Math.min(200,Number(p.contrast)||100))+'%)';
+   if(id==='image-sepia')ctx.filter='sepia(1)';
    ctx.drawImage(img,pad,pad,w,h);ctx.filter='none';
   }
   const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
   return {...download(blob,fileName(f)+'-'+id+'.png'),previewUrl:URL.createObjectURL(blob),summary:w+' × '+h+' px'};
  }
+ if(id==='image-pixelate'){const block=Math.max(4,Math.min(80,Number(p.block)||16)),small=document.createElement('canvas');small.width=Math.max(1,Math.round(img.width/block));small.height=Math.max(1,Math.round(img.height/block));const sctx=small.getContext('2d');sctx.imageSmoothingEnabled=true;sctx.drawImage(img,0,0,small.width,small.height);canvas.width=img.width;canvas.height=img.height;ctx.imageSmoothingEnabled=false;ctx.drawImage(small,0,0,small.width,small.height,0,0,img.width,img.height);}
  if(id==='image-crop'){const w=Math.max(1,Math.round(img.width*Number(p.widthPct||80)/100)),h=Math.max(1,Math.round(img.height*Number(p.heightPct||80)/100));canvas.width=w;canvas.height=h;ctx.drawImage(img,(img.width-w)/2,(img.height-h)/2,w,h,0,0,w,h);}
+ else if(id==='image-pixelate'){/* pixelated canvas prepared above */}
  else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  let type=p.format||'image/png',quality=Math.max(.1,Math.min(1,Number(p.quality||82)/100));
  if(id==='image-compress')type=p.format||'image/webp';
@@ -102,12 +123,46 @@ async function imageTool(id,files,p,cb){
 async function runVideo(id,files,p,cb){
  const {FFmpeg}=await load(FF),{fetchFile,toBlobURL}=await load(UTIL);const ff=new FFmpeg();
  const base='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+ progress(cb,.12,'Cargando motor multimedia...');
  await ff.load({coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')});
- const input='input.'+((files[0].name.split('.').pop()||'mp4').replace(/[^a-z0-9]/gi,''));
- const output=id==='video-audio'?'audio.wav':'clip.mp4';
- await ff.writeFile(input,await fetchFile(files[0]));
- const args=id==='video-audio'?['-i',input,'-vn','-acodec','pcm_s16le','-ar','44100','-ac','2',output]:['-ss',String(p.start||0),'-i',input,'-t',String(p.duration||10),'-c','copy',output];
- await ff.exec(args);progress(cb,.9,'Preparando archivo final...');const data=await ff.readFile(output);return download(makeBlob(data,id==='video-audio'?'audio/wav':'video/mp4'),fileName(files[0])+(id==='video-audio'?'-audio.wav':'-recorte.mp4'));
+ const ext=(files[0].name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4';
+ const input='input.'+ext;await ff.writeFile(input,await fetchFile(files[0]));
+ let output='prisma-video.mp4',args=['-i',input];
+ if(id==='video-speed'){
+  const speed=Math.max(.5,Math.min(2,Number(p.speed)||1.5));
+  output='video-velocidad-'+speed+'x.mp4';
+  args=['-i',input,'-filter:v','setpts='+(1/speed).toFixed(5)+'*PTS','-filter:a','atempo='+speed,'-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
+ }else if(id==='video-resize'){
+  const sizes={vertical:[1080,1920],portrait:[1080,1350],square:[1080,1080],landscape:[1920,1080],hd:[1280,720]};
+  const [w,h]=sizes[p.resolution]||sizes.vertical;
+  output='video-'+w+'x'+h+'.mp4';
+  args=['-i',input,'-vf','scale='+w+':'+h+':force_original_aspect_ratio=decrease,pad='+w+':'+h+':(ow-iw)/2:(oh-ih)/2','-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
+ }else if(id==='video-rotate'){
+  const filter=p.direction==='ccw'?'transpose=2':p.direction==='180'?'hflip,vflip':'transpose=1';
+  output='video-rotado.mp4';
+  args=['-i',input,'-vf',filter,'-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
+ }else if(id==='audio-convert'){
+  const format=['mp3','wav','ogg'].includes(p.format)?p.format:'mp3';
+  output='audio-convertido.'+format;
+  const codec=format==='mp3'?['-c:a','libmp3lame','-q:a','2']:format==='ogg'?['-c:a','libvorbis','-q:a','5']:['-c:a','pcm_s16le'];
+  args=['-i',input,'-vn',...codec,output];
+ }else if(id==='audio-normalize'){
+  output='audio-normalizado.m4a';
+  args=['-i',input,'-vn','-af','loudnorm=I=-16:TP=-1.5:LRA=11','-c:a','aac','-b:a','192k',output];
+ }else if(id==='video-audio'){
+  output='audio.wav';args=['-i',input,'-vn','-acodec','pcm_s16le','-ar','44100','-ac','2',output];
+ }else{
+  output='video-recortado.mp4';args=['-ss',String(p.start||0),'-i',input,'-t',String(p.duration||10),'-c','copy',output];
+ }
+ progress(cb,.38,'Procesando archivo...');
+ await ff.exec(args);
+ progress(cb,.9,'Preparando el resultado...');
+ const data=await ff.readFile(output);
+ const audio=id.startsWith('audio-')||id==='video-audio';
+ const mime=output.endsWith('.mp3')?'audio/mpeg':output.endsWith('.wav')?'audio/wav':output.endsWith('.ogg')?'audio/ogg':output.endsWith('.m4a')?'audio/mp4':'video/mp4';
+ const blob=makeBlob(data,mime);
+ progress(cb,1,'Archivo listo.');
+ return {...download(blob,fileName(files[0])+'-'+output),summary:'Procesamiento local en el navegador · '+formatBytesEngine(blob.size)};
 }
 function convertUnits(p){
  const v=Number(p.value);if(!Number.isFinite(v))throw Error('Introduce un valor válido.');
@@ -170,9 +225,82 @@ function textDiff(a,b){
  for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
  const out=[];let i=0,j=0,added=0,removed=0;
  while(i<A.length||j<B.length){if(i<A.length&&j<B.length&&A[i]===B[j]){out.push('  '+A[i]);i++;j++;}else if(j<B.length&&(i===A.length||dp[i][j+1]>=dp[i+1][j])){out.push('+ '+B[j++]);added++;}else{out.push('- '+A[i++]);removed++;}}
- return {text:out.join('\\n'),summary:added+' línea(s) añadida(s) · '+removed+' línea(s) eliminada(s)'};
+  return {text:out.join(String.fromCharCode(10)),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
 }
 
+async function formatSourceCode(p,kind){
+ const source=String(p.text||'');if(!source.trim())throw Error('Pega el código que quieres formatear.');
+ if(source.length>250000)throw Error('El límite para formatear es 250 KB.');
+ if(kind==='sql'){
+  const mod=await import('https://esm.sh/sql-formatter@15.4.6');
+  const format=mod.format||mod.default?.format;if(!format)throw Error('No se pudo cargar el formateador SQL.');
+  return {text:format(source,{language:p.dialect||'sql',tabWidth:Number(p.indent)||2,keywordCase:'upper'}),summary:'SQL organizado localmente en el navegador.'};
+ }
+ const prettier=await import('https://esm.sh/prettier@3.3.3/standalone');
+ const pluginPath=kind==='html'?'html':kind==='css'?'postcss':'babel';
+ const plugin=await import('https://esm.sh/prettier@3.3.3/plugins/'+pluginPath);
+ const estree=kind==='js'?await import('https://esm.sh/prettier@3.3.3/plugins/estree'):null;
+ const parser=kind==='html'?'html':kind==='css'?'css':'babel';
+ const formatted=await prettier.format(source,{parser,plugins:estree?[plugin,estree]:[plugin],tabWidth:Number(p.indent)||2,useTabs:p.indent==='tab',singleQuote:p.quote==='single',semi:p.semicolon!=='false'});
+ return {text:formatted,summary:'Código formateado en el navegador con Prettier.'};
+}
+function formatXmlText(source){
+ const parsed=new DOMParser().parseFromString(source,'application/xml');
+ if(parsed.querySelector('parsererror'))throw Error('El XML contiene errores de sintaxis. Revisa etiquetas y atributos.');
+ const serialized=new XMLSerializer().serializeToString(parsed).replace(/>\s*</g,'><');
+ const tokens=serialized.replace(/></g,'>\n<').split('\n');let depth=0;
+ const lines=[];
+ for(const token of tokens){
+  const line=token.trim();if(!line)continue;
+  if(/^<\//.test(line))depth=Math.max(0,depth-1);
+  lines.push('  '.repeat(depth)+line);
+  if(/^<[^!?/][^>]*[^/]?>$/.test(line)&&!/<\/[^>]+>$/.test(line)&&!/^<[^>]+\/>$/.test(line))depth++;
+ }
+ return lines.join('\n');
+}
+async function inspectFile(file){
+ if(!file)throw Error('Selecciona un archivo.');
+ const head=new Uint8Array(await file.slice(0,32).arrayBuffer());
+ const hex=[...head].map(x=>x.toString(16).padStart(2,'0')).join(' ').toUpperCase();
+ const ascii=[...head].map(x=>x>=32&&x<=126?String.fromCharCode(x):'.').join('');
+ let signature='No reconocida por firma';
+ const starts=(...b)=>b.every((v,i)=>head[i]===v);
+ if(starts(0x25,0x50,0x44,0x46))signature='PDF';
+ else if(starts(0x89,0x50,0x4e,0x47))signature='PNG';
+ else if(starts(0xff,0xd8,0xff))signature='JPEG';
+ else if(starts(0x47,0x49,0x46,0x38))signature='GIF';
+ else if(starts(0x50,0x4b,0x03,0x04))signature='ZIP / DOCX / XLSX / PPTX';
+ else if(ascii.slice(0,4)==='RIFF'&&ascii.slice(8,12)==='WEBP')signature='WebP';
+ else if(ascii.slice(4,8)==='ftyp')signature='MP4 / ISO Base Media';
+ else if(ascii.slice(0,3)==='ID3'||starts(0xff,0xfb))signature='MP3';
+ else if(ascii.slice(0,4)==='OggS')signature='OGG';
+ else if(ascii.slice(0,4)==='fLaC')signature='FLAC';
+ return {text:['Nombre: '+file.name,'Tamaño: '+formatBytesEngine(file.size),'Tipo MIME declarado: '+(file.type||'No indicado'),'Última modificación: '+(file.lastModified?new Date(file.lastModified).toLocaleString('es-CO'):'No indicada'),'Extensión: '+(file.name.includes('.')?file.name.split('.').pop().toUpperCase():'Sin extensión'),'Firma detectada: '+signature,'Primeros bytes (hex): '+hex,'Vista ASCII: '+ascii].join('\\n'),summary:'Inspección local. No se ha subido el archivo.'};
+}
+async function jsonToExcel(p){
+ const source=String(p.text||'').trim();if(!source)throw Error('Pega una lista JSON.');
+ let rows;try{rows=JSON.parse(source)}catch(e){throw Error('JSON inválido: '+e.message)}
+ if(!Array.isArray(rows)||!rows.length||rows.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw Error('El JSON debe ser una lista no vacía de objetos.');
+ if(rows.length>50000)throw Error('El límite es de 50.000 registros.');
+ const mod=await import('https://esm.sh/xlsx@0.18.5'),XLSX=mod.default||mod;
+ const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);
+ XLSX.utils.book_append_sheet(wb,ws,'Datos');
+ const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+ return {...download(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'prisma-datos.xlsx'),summary:rows.length+' registros exportados a Excel.'};
+}
+async function socialImageKit(file,p,cb){
+ const image=await createImageBitmap(file),JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
+ const formats=[['instagram-cuadrado',1080,1080],['instagram-retrato',1080,1350],['stories-reels',1080,1920],['youtube-miniatura',1280,720]];
+ for(let i=0;i<formats.length;i++){
+  const [name,w,h]=formats[i],canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d'),scale=Math.max(w/image.width,h/image.height),sw=w/scale,sh=h/scale,sx=(image.width-sw)/2,sy=(image.height-sh)/2;
+  ctx.drawImage(image,sx,sy,sw,sh,0,0,w,h);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
+  zip.file(name+'.jpg',await blob.arrayBuffer());progress(cb,(i+1)/formats.length*.8,'Preparando formato '+(i+1)+' de '+formats.length+'...');
+ }
+ image.close?.();const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+ return {...download(blob,'prisma-kit-redes-sociales.zip'),summary:'Incluye 4 formatos JPG listos para redes. Se utiliza recorte centrado para llenar cada proporción.'};
+}
 async function runText(id,p){
  const text=String(p.text||'');
  switch(id){
@@ -186,6 +314,18 @@ async function runText(id,p){
  case 'word-count':{const words=text.trim()?text.trim().split(/\s+/u).length:0;return {text:'Palabras: '+words+'\nCaracteres: '+text.length+'\nSin espacios: '+text.replace(/\s/g,'').length+'\nLíneas: '+(text?text.split(/\r\n|\r|\n/).length:0)+'\nLectura estimada: '+Math.ceil(words/200)+' min'};}
  case 'url-code':try{return {text:p.mode==='decode'?decodeURIComponent(text):encodeURIComponent(text)}}catch{throw Error('La secuencia URL no es válida.');}
  case 'text-case':{let v=text;if(p.mode==='upper')v=text.toLocaleUpperCase('es');if(p.mode==='lower')v=text.toLocaleLowerCase('es');if(p.mode==='title')v=text.toLocaleLowerCase('es').replace(/\b\p{L}/gu,c=>c.toLocaleUpperCase('es'));if(p.mode==='sentence')v=text.toLocaleLowerCase('es').replace(/(^\s*\p{L}|[.!?]\s*\p{L})/gu,c=>c.toLocaleUpperCase('es'));return {text:v};}
+ case 'text-remove-empty-lines':{const lines=text.replace(/\r/g,'').split('\n'),kept=lines.filter(line=>line.trim().length);return {text:kept.join('\n'),summary:(lines.length-kept.length)+' línea(s) vacía(s) eliminadas.'};}
+ case 'text-prefix-lines':{const lines=text.replace(/\r/g,'').split('\n'),prefix=String(p.prefix||''),suffix=String(p.suffix||'');return {text:lines.map(line=>prefix+line+suffix).join('\n'),summary:prefix+' añadido al inicio y '+suffix+' al final de cada línea.'};}
+ case 'text-replace':{const search=String(p.search||'');if(!search)throw Error('Escribe el texto que quieres buscar.');const flags=(p.caseSensitive?'g':'gi');const escaped=search.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const re=new RegExp(escaped,p.replaceAll===false?flags.replace('g',''):flags);const output=text.replace(re,String(p.replacement||''));return {text:output,summary:'Texto reemplazado localmente.'};}
+ case 'text-extract-hashtags':{const matches=text.match(/#[\p{L}\p{N}_]+/gu)||[],seen=new Set(),unique=matches.filter(tag=>{const key=tag.toLocaleLowerCase('es');if(seen.has(key))return false;seen.add(key);return true;});return {text:unique.join('\n'),summary:unique.length+' hashtag(s) único(s) encontrados.'};}
+ case 'text-extract-phones':{const matches=text.match(/\+?\d[\d\s().-]{5,}\d/g)||[],seen=new Set(),unique=matches.map(value=>value.trim()).filter(value=>{const digits=value.replace(/\D/g,'');if(digits.length<7||digits.length>15||seen.has(digits))return false;seen.add(digits);return true;});return {text:unique.join('\n'),summary:unique.length+' posible(s) teléfono(s) encontrados. Verifica los resultados.'};}
+ case 'json-flatten':{let value;try{value=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}const rows=[];const walk=(node,path)=>{if(Array.isArray(node)){if(!node.length)rows.push((path||'$')+' = []');node.forEach((item,index)=>walk(item,path+'['+index+']'));}else if(node&&typeof node==='object'){const keys=Object.keys(node);if(!keys.length)rows.push((path||'$')+' = {}');keys.forEach(key=>walk(node[key],path?path+'.'+key:key));}else rows.push((path||'$')+' = '+JSON.stringify(node));};walk(value,'');return {text:rows.join('\n'),summary:rows.length+' ruta(s) extraídas del JSON.'};}
+ case 'text-remove-accents':return {text:text.normalize('NFD').replace(/[\u0300-\u036f]/g,'') ,summary:'Tildes y marcas diacríticas eliminadas localmente.'};
+ case 'text-reverse':return {text:p.mode==='lines'?text.replace(/\r/g,'').split('\n').reverse().join('\n'):[...text].reverse().join(''),summary:p.mode==='lines'?'Orden de líneas invertido.':'Texto invertido respetando caracteres Unicode.'};
+ case 'text-extract-emails':{const matches=text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)||[];const unique=[...new Set(matches.map(x=>x.toLowerCase()))];return {text:unique.join('\n'),summary:unique.length+' correo(s) único(s) encontrados.'};}
+ case 'text-extract-urls':{const matches=text.match(/(?:https?:\/\/|www\.)[^\s<>"']+/gi)||[];const unique=[...new Set(matches.map(x=>x.replace(/[),.;!?]+$/,'')).filter(Boolean))];return {text:unique.join('\n'),summary:unique.length+' enlace(s) único(s) encontrados.'};}
+ case 'json-minify':{let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:JSON.stringify(obj),summary:'JSON validado y minificado localmente.'};}
+ case 'html-to-text':{const doc=new DOMParser().parseFromString(text,'text/html');doc.querySelectorAll('script,style,noscript,template').forEach(node=>node.remove());const output=(doc.body?.textContent||'').replace(/[\t\f\v ]+/g,' ').replace(/\s*\n\s*/g,'\n').replace(/\n{3,}/g,'\n\n').trim();return {text:output,summary:'Texto visible extraído localmente. No se ejecutó HTML ni JavaScript.'};}
  case 'markdown':{const html=text.replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');return {html,summary:'Vista previa HTML básica. No se ejecuta código.'};}
  case 'units':return convertUnits(p);
  case 'timestamp':{if(p.mode==='unix-to-date'){let n=Number(p.value);if(!Number.isFinite(n))throw Error('Marca de tiempo inválida.');if(Math.abs(n)<1e12)n*=1000;const d=new Date(n);if(isNaN(d))throw Error('Fecha fuera de rango.');return {text:d.toLocaleString('es-CO',{dateStyle:'full',timeStyle:'long'})+'\nISO: '+d.toISOString()};}const d=new Date(p.value);if(isNaN(d))throw Error('Fecha inválida.');return {text:'Segundos Unix: '+Math.floor(d.getTime()/1000)+'\nMilisegundos: '+d.getTime()};}
@@ -204,8 +344,47 @@ async function runText(id,p){
  case 'date-diff':{const a=new Date(p.start+'T00:00:00Z'),b=new Date(p.end+'T00:00:00Z');if(isNaN(a)||isNaN(b))throw Error('Selecciona dos fechas válidas.');const days=Math.round((b-a)/86400000);return {text:Math.abs(days)+' días',summary:days===0?'Las fechas coinciden.':days>0?'La fecha final está '+days+' días después.':'La fecha final está '+Math.abs(days)+' días antes.'};}
  case 'timezone':{const d=new Date(p.datetime);if(isNaN(d))throw Error('Selecciona una fecha y hora válidas.');return {text:new Intl.DateTimeFormat('es-CO',{dateStyle:'full',timeStyle:'long',timeZone:p.zone||'America/Bogota'}).format(d),summary:'Zona horaria: '+(p.zone||'America/Bogota')};}
  case 'contrast':{const ratio=contrastRatio(p.foreground||'#111827',p.background||'#ffffff');return {text:ratio.toFixed(2)+':1',summary:'WCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+' · WCAG AAA: '+(ratio>=7?'Cumple':'No cumple')};}
- case 'text-sort':{const lines=text.split(/\r?\n/);lines.sort((a,b)=>a.localeCompare(b,'es',{sensitivity:p.caseSensitive?'variant':'base'}));return {text:lines.join('\n'),summary:lines.length+' líneas ordenadas.'};}
- case 'word-frequency':{const words=text.toLocaleLowerCase('es').match(/[\p{L}\p{N}']+/gu)||[],counts=new Map();words.forEach(w=>counts.set(w,(counts.get(w)||0)+1));const rows=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,30);return {text:rows.map(([w,n])=>w+' — '+n).join('\n'),summary:words.length+' palabras analizadas · '+counts.size+' palabras únicas.'};}
+ case 'text-sort':{const lines=text.replace(/\r/g,'').split('\n');const sensitivity=p.caseSensitive?'variant':'base';lines.sort((a,b)=>a.localeCompare(b,'es',{sensitivity,numeric:true}));return {text:lines.join('\n'),summary:lines.length+' líneas ordenadas alfabéticamente.'};}
+ case 'word-frequency':{const words=text.toLocaleLowerCase('es').match(/[\p{L}\p{N}']+/gu)||[];const counts=new Map();for(const word of words)counts.set(word,(counts.get(word)||0)+1);const rows=[...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'es')).slice(0,30);return {text:rows.map(([word,count],index)=>(index+1)+'. '+word+' — '+count).join('\n'),summary:words.length+' palabras analizadas · '+counts.size+' palabras únicas.'};}
+ case 'html-format':return formatSourceCode(p,'html');
+ case 'css-format':return formatSourceCode(p,'css');
+ case 'js-format':return formatSourceCode(p,'js');
+ case 'sql-format':return formatSourceCode(p,'sql');
+ case 'xml-format':return {text:formatXmlText(text),summary:'XML validado y formateado localmente.'};
+ case 'json-schema':{
+  const dataText=String(p.data||'').trim(),schemaText=String(p.schema||'').trim();
+  if(!dataText||!schemaText)throw Error('Introduce el JSON y el esquema JSON.');
+  if(dataText.length>1000000||schemaText.length>200000)throw Error('El tamaño máximo es 1 MB para los datos y 200 KB para el esquema.');
+  let data,schema;try{data=JSON.parse(dataText);schema=JSON.parse(schemaText)}catch(e){throw Error('JSON o esquema inválido: '+e.message)}
+  const mod=await import('https://esm.sh/ajv@8.17.1'),Ajv=mod.default||mod.Ajv,ajv=new Ajv({allErrors:true,strict:false});
+  let validate;try{validate=ajv.compile(schema)}catch(e){throw Error('El esquema no es válido: '+e.message)}
+  const valid=validate(data),errors=(validate.errors||[]).map(x=>(x.instancePath||'/')+' '+x.message);
+  return {text:valid?'JSON VÁLIDO\n\nEl documento cumple el esquema indicado.':('JSON NO VÁLIDO\n\n'+errors.join('\n')),summary:valid?'Todos los campos cumplen el esquema.':errors.length+' error(es) de validación.'};
+ }
+ case 'csv-stats':{
+  const rows=parseCsv(text,p.delimiter||',');if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila.');
+  const headers=rows[0],body=rows.slice(1),out=['FILAS: '+body.length,'COLUMNAS: '+headers.length,'','RESUMEN POR COLUMNA'];
+  headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('',(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
+  return {text:out.join('\\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
+ }
+ case 'citation-generator':{
+  const author=String(p.author||'').trim(),year=String(p.year||'').trim(),title=String(p.title||'').trim(),source=String(p.source||'').trim(),url=String(p.url||'').trim(),doi=String(p.doi||'').trim();
+  if(!author||!title||!year)throw Error('Autor, título y año son campos necesarios.');
+  const authorMark=author.endsWith('.')?author:author+'.';
+  const apa=authorMark+' ('+year+'). '+title+'.'+(source?' '+source+'.':'')+(doi?' https://doi.org/'+doi.replace(/^https?:\/\/doi\.org\//,''):url?' '+url:'');
+  const vancouver=authorMark+' '+title+'. '+source+(source?'; ':'')+year+'.'+(doi?' doi:'+doi:url?' Disponible en: '+url:'');
+  const mla=authorMark+' “'+title+'.” '+source+(source?', ':'')+year+'.'+(url?' '+url:'');
+  const selected=p.style==='vancouver'?vancouver:p.style==='mla'?mla:apa;
+  return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
+  return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
+ }
+ case 'flashcards-export':{
+  const lines=text.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean),cards=[];
+  for(const line of lines){const parts=line.split(/\s*(?:\||\t|::)\s*/);if(parts.length<2)continue;const front=parts.shift().trim(),back=parts.join(' — ').trim();if(front&&back)cards.push([front,back]);}
+  if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
+  const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join('\n');
+  return {...download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'prisma-tarjetas-anki.csv'),text:csv,summary:cards.length+' tarjetas listas para importar en Anki.'};
+ }
  case 'color-palette':{const base=Math.floor(Math.random()*360),angles=p.harmony==='complementary'?[0,180,0,180,0]:p.harmony==='triadic'?[0,120,240,0,120]:[0,30,60,180,210];const colors=angles.map((a,i)=>'hsl('+((base+a)%360)+' 62% '+([55,62,48,68,52][i])+'%)');return {text:colors.join('\n'),summary:'Paleta generada al azar. Copia los valores HSL.'};}
  }
  throw Error('Herramienta de texto no disponible.');
@@ -268,6 +447,14 @@ async function pdfToText(file,cb){
  }
  return {text:parts.join('\n\n'),summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
 }
+function imageModelFor(provider,quality){
+ const profiles={
+  pollinations:{fast:'tongyi-mai/z-image-turbo',balanced:'black-forest-labs/flux.1-schnell',high:'black-forest-labs/flux.1.1-pro'},
+  huggingface:{fast:'black-forest-labs/FLUX.1-schnell',balanced:'black-forest-labs/FLUX.1-dev',high:'Qwen/Qwen-Image'},
+  gemini:{fast:'gemini-3.1-flash-lite-image',balanced:'gemini-nano-banana-2.1',high:'gemini-3-pro-image'}
+ };
+ return profiles[provider]?.[quality||'balanced']||profiles[provider]?.balanced;
+}
 async function generateImage(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<8)throw Error('Describe la imagen con un poco más de detalle.');
@@ -283,51 +470,110 @@ async function generateImage(p,cb){
  };
  let fullPrompt=(styles[p.style]||'')+prompt;
  if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
- if(p.provider==='pollinations'){
+ let provider=p.provider||'auto';
+ if(provider==='auto')provider=p.polliToken?'pollinations':p.hfToken?'huggingface':p.geminiKey?'gemini':'';
+ if(!provider)throw Error('Conecta Pollinations, Hugging Face o Google Gemini desde el Laboratorio IA.');
+ const model=p.model||imageModelFor(provider,p.qualityProfile);
+ if(provider==='pollinations'){
   const token=String(p.polliToken||'').trim();
-  if(!token)throw Error('Conecta tu cuenta de Pollinations antes de generar. Cada visitante usa su propio presupuesto.');
+  if(!token)throw Error('Conecta tu cuenta de Pollinations desde el Laboratorio IA.');
   progress(cb,.16,'Conectando con Pollinations...');
   const url=new URL('https://gen.pollinations.ai/image/'+encodeURIComponent(fullPrompt));
-  url.searchParams.set('model',p.model||'black-forest-labs/flux.1-schnell');
-  url.searchParams.set('width',String(width));url.searchParams.set('height',String(height));
+  url.searchParams.set('model',model);url.searchParams.set('width',String(width));url.searchParams.set('height',String(height));
   if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))url.searchParams.set('seed',String(Number(p.seed)));
-  progress(cb,.3,'Generando con '+(p.model||'FLUX.1 Schnell')+'...');
+  progress(cb,.3,'Creando tu imagen...');
   const response=await fetch(url,{headers:{Authorization:'Bearer '+token}});
-  if(!response.ok){let detail='';try{detail=await response.text();}catch{}throw Error('Pollinations respondió '+response.status+'. '+detail.slice(0,240));}
+  if(!response.ok){let detail='';try{detail=await response.text();}catch{}throw Error('Pollinations respondió '+response.status+'. '+detail.slice(0,200));}
   const blob=await response.blob();
-  if(!blob.type.startsWith('image/'))throw Error('El proveedor no devolvió una imagen. Revisa el modelo y el saldo autorizado.');
+  if(!blob.type.startsWith('image/'))throw Error('El proveedor no devolvió una imagen. Revisa el saldo autorizado.');
   progress(cb,1,'Imagen generada.');
-  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('png')?'png':'jpg')),previewUrl:URL.createObjectURL(blob),summary:'Modelo: '+p.model+' · '+width+' × '+height+' px · Generación con tu presupuesto personal de Pollinations.'};
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('png')?'png':'jpg')),previewUrl:URL.createObjectURL(blob),provider:'pollinations',model,summary:'Imagen creada con Pollinations · '+width+' × '+height+' px.'};
  }
- const token=String(p.hfToken||'').trim();
- if(!token.startsWith('hf_'))throw Error('Introduce un token de Hugging Face válido (comienza por hf_).');
- progress(cb,.12,'Conectando con Hugging Face Inference...');
- const {InferenceClient}=await import(HF_INFERENCE);
- const client=new InferenceClient(token);
- const parameters={width,height,num_inference_steps:Math.max(4,Math.min(30,Number(p.steps)||4))};
- if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))parameters.seed=Number(p.seed);
- progress(cb,.24,'Generando imagen con '+p.model+'...');
- const image=await client.textToImage({provider:'auto',model:p.model||'black-forest-labs/FLUX.1-schnell',inputs:fullPrompt,parameters});
- const blob=image instanceof Blob?image:new Blob([image],{type:'image/png'});
- progress(cb,1,'Imagen generada.');
- return {...download(blob,'prisma-imagen-'+Date.now()+'.png'),previewUrl:URL.createObjectURL(blob),summary:'Modelo: '+(p.model||'FLUX.1 Schnell')+' · '+width+' × '+height+' px · Se utilizó tu token personal de Hugging Face.'};
+ if(provider==='gemini'){
+  const token=String(p.geminiKey||'').trim();
+  if(!token)throw Error('Conecta Google Gemini desde el Laboratorio IA.');
+  progress(cb,.18,'Conectando con Google Gemini...');
+  const aspectRatio={square:'1:1',landscape:'4:3',portrait:'3:4',wide:'16:9'}[p.ratio]||'1:1';
+  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
+   method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},
+   body:JSON.stringify({contents:[{role:'user',parts:[{text:fullPrompt}]}],generationConfig:{responseModalities:['TEXT','IMAGE'],responseFormat:{image:{aspectRatio,imageSize:p.qualityProfile==='high'?'2K':'1K'}}}})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
+  const parts=data.candidates?.[0]?.content?.parts||[];
+  const imagePart=parts.find(part=>part.inlineData?.data||part.inline_data?.data);
+  if(!imagePart)throw Error('Gemini no devolvió una imagen. Comprueba que el modelo y tu proyecto admitan generación de imágenes.');
+  const inline=imagePart.inlineData||imagePart.inline_data;
+  const binary=atob(inline.data),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  const mime=inline.mimeType||inline.mime_type||'image/png',blob=new Blob([bytes],{type:mime});
+  progress(cb,1,'Imagen generada.');
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(mime.includes('jpeg')?'jpg':'png')),previewUrl:URL.createObjectURL(blob),provider:'gemini',model,summary:'Imagen creada con Google Gemini · '+width+' × '+height+' px.'};
+ }
+ if(provider==='huggingface'){
+  const token=String(p.hfToken||'').trim();
+  if(!token.startsWith('hf_'))throw Error('Conecta Hugging Face desde el Laboratorio IA.');
+  progress(cb,.12,'Conectando con Hugging Face...');
+  const {InferenceClient}=await import(HF_INFERENCE);
+  const client=new InferenceClient(token);
+  const parameters={width,height,num_inference_steps:p.qualityProfile==='high'?28:p.qualityProfile==='fast'?4:12};
+  if(String(p.seed||'').trim()&&Number.isFinite(Number(p.seed)))parameters.seed=Number(p.seed);
+  progress(cb,.24,'Creando tu imagen...');
+  const image=await client.textToImage({provider:'auto',model,inputs:fullPrompt,parameters});
+  const blob=image instanceof Blob?image:new Blob([image],{type:'image/png'});
+  if(!blob.type.startsWith('image/'))throw Error('Hugging Face no devolvió una imagen.');
+  progress(cb,1,'Imagen generada.');
+  return {...download(blob,'prisma-imagen-'+Date.now()+'.png'),previewUrl:URL.createObjectURL(blob),provider:'huggingface',model,summary:'Imagen creada con Hugging Face · '+width+' × '+height+' px.'};
+ }
+ throw Error('El motor de imagen seleccionado todavía no está disponible.');
 }
 async function generateText(p,cb){
- const token=String(p.polliToken||'').trim(),prompt=String(p.prompt||'').trim();
- if(!token)throw Error('Conecta tu cuenta de Pollinations antes de usar el asistente.');
+ const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const lengths={short:500,medium:1200,long:2600};
  const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
  const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
- progress(cb,.2,'Consultando el modelo de texto...');
- const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/gpt-5.4-nano',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
- const text=data.choices?.[0]?.message?.content||data.output_text||'';
- if(!text)throw Error('El modelo no devolvió texto.');
- progress(cb,1,'Respuesta lista.');
- return {text,summary:'Modelo: '+(p.model||'openai/gpt-5.4-nano')+' · Respuesta generada con tu autorización personal.'};
+ const preferred=p.provider||'auto';
+ const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
+ const errors=[];
+ for(const provider of candidates){
+  const token=provider==='pollinations'?String(p.polliToken||'').trim():provider==='huggingface'?String(p.hfToken||'').trim():provider==='gemini'?String(p.geminiKey||'').trim():String(p.groqKey||'').trim();
+  if(!token)continue;
+  progress(cb,.2,'Preparando respuesta...');
+  try{
+   let text='';
+   if(provider==='pollinations'){
+    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/gpt-5.4-nano',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
+    text=data.choices?.[0]?.message?.content||data.output_text||'';
+   }else if(provider==='huggingface'){
+    const {InferenceClient}=await import(HF_INFERENCE),client=new InferenceClient(token);
+    const data=await client.chatCompletion({model:'openai/gpt-oss-120b:cheapest',messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:lengths[p.length]||1200,temperature:.7});
+    text=data.choices?.[0]?.message?.content||'';
+   }else if(provider==='groq'){
+    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-oss-20b',messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_completion_tokens:lengths[p.length]||1200,stream:false})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error?.message||'Groq respondió '+response.status+'.');
+    text=data.choices?.[0]?.message?.content||'';
+   }else if(provider==='gemini'){
+    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
+    text=(data.candidates?.[0]?.content?.parts||[]).map(part=>part.text||'').join('').trim();
+   }
+   if(!text)throw Error('El modelo no devolvió texto.');
+   progress(cb,1,'Respuesta lista.');
+   const names={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini'};
+   return {text,provider,summary:'Respuesta generada con '+names[provider]+'.'};
+  }catch(error){
+   errors.push((provider==='huggingface'?'Hugging Face':provider==='gemini'?'Google Gemini':provider==='groq'?'Groq':'Pollinations')+': '+(error?.message||'fallo de conexión'));
+   if(preferred!=='auto')throw error;
+  }
+ }
+ if(errors.length)throw Error('No fue posible generar la respuesta con los motores conectados. '+errors.join(' | '));
+ throw Error('Conecta al menos un motor de texto desde el Laboratorio IA.');
 }
 async function generateSpeech(p,cb){
  const token=String(p.polliToken||'').trim(),input=String(p.prompt||'').trim();
@@ -472,6 +718,89 @@ function contrastRatio(hex1,hex2){
  return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
 }
 
+function validatePublicApiUrl(value){
+ const url=new URL(String(value||'').trim());
+ if(url.protocol!=='https:')throw Error('Por seguridad, utiliza una URL HTTPS pública.');
+ if(url.username||url.password)throw Error('No incluyas credenciales dentro de la URL.');
+ const host=url.hostname.toLowerCase();
+ if(host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host==='::1'||host.startsWith('fc')||host.startsWith('fd')||host.startsWith('fe80:'))throw Error('No se permiten direcciones locales o privadas.');
+ const ipv4=host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+ if(ipv4){
+  const a=Number(ipv4[1]),b=Number(ipv4[2]);
+  if(a===0||a===10||a===127||a>=224||a===169&&b===254||a===192&&b===168||a===172&&b>=16&&b<=31||a===100&&b>=64&&b<=127)throw Error('No se permiten direcciones IP privadas o reservadas.');
+ }
+ for(const key of url.searchParams.keys()){
+  if(/^(?:api[_-]?key|key|token|access[_-]?token|secret|password|authorization)$/i.test(key))throw Error('No incluyas claves ni tokens en una API pública. Las credenciales privadas deben conectarse desde un proveedor seguro.');
+ }
+ return url;
+}
+async function explorePublicApi(p,cb){
+ const url=validatePublicApiUrl(p.url);
+ progress(cb,.12,'Consultando el endpoint público...');
+ let response,source='Conexión directa';
+ try{
+  response=await fetch(url.href,{method:'GET',headers:{Accept:'application/json, text/plain, */*'},credentials:'omit',cache:'no-store'});
+ }catch(directError){
+  progress(cb,.38,'El navegador bloqueó la conexión directa. Probando cors.dev para lectura pública...');
+  try{
+   response=await fetch('https://proxy.cors.dev/'+url.href,{method:'GET',headers:{Accept:'application/json, text/plain, */*'},credentials:'omit',cache:'no-store'});
+   source='cors.dev';
+  }catch(proxyError){
+   throw Error('No fue posible leer la API. Comprueba que el endpoint sea público y esté disponible. '+(proxyError?.message||''));
+  }
+ }
+ const declared=Number(response.headers.get('content-length')||0);
+ if(declared>6*1024*1024)throw Error('La respuesta supera el límite de 6 MiB del explorador público.');
+ progress(cb,.7,'Leyendo respuesta...');
+ const buffer=await response.arrayBuffer();
+ if(buffer.byteLength>6*1024*1024)throw Error('La respuesta supera el límite de 6 MiB del explorador público.');
+ const mime=response.headers.get('content-type')||'text/plain;charset=utf-8';
+ if(mime.startsWith('image/')){
+  const imageBlob=new Blob([buffer],{type:mime});
+  progress(cb,1,'Imagen recibida.');
+  return {blob:imageBlob,previewUrl:URL.createObjectURL(imageBlob),filename:'prisma-api-imagen.'+(mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg'),summary:'HTTP '+response.status+' · '+source+' · '+mime+' · '+(buffer.byteLength/1024).toFixed(1)+' KB'};
+ }
+ const raw=new TextDecoder().decode(buffer);
+ let text=raw,extension='txt';
+ if((p.format||'json')==='json'){
+  try{text=JSON.stringify(JSON.parse(raw),null,2);extension='json';}
+  catch{text=raw;extension='txt';}
+ }
+ const blob=new Blob([text],{type:extension==='json'?'application/json;charset=utf-8':'text/plain;charset=utf-8'});
+ const statusLabel=response.status+' '+(response.statusText||'');
+ const summary='HTTP '+statusLabel+' · '+source+' · '+mime+' · '+(buffer.byteLength/1024).toFixed(1)+' KB';
+ progress(cb,1,'Respuesta recibida.');
+ return {text:text.slice(0,100000),blob,filename:'prisma-api-respuesta.'+extension,summary,source,status:response.status};
+}
+async function discoverGitHubProjects(p,cb){
+ const query=String(p.query||'').trim();
+ if(query.length<2)throw Error('Escribe al menos dos caracteres para buscar proyectos.');
+ const language=p.language&&p.language!=='any'?' language:'+p.language:'';
+ const sort=['stars','updated','forks'].includes(p.sort)?p.sort:'stars';
+ const limit=Math.max(5,Math.min(20,Number(p.limit)||10));
+ const url='https://api.github.com/search/repositories?q='+encodeURIComponent(query+language)+'&sort='+sort+'&order=desc&per_page='+limit;
+ progress(cb,.2,'Buscando proyectos públicos en GitHub...');
+ let response;
+ try{response=await fetch(url,{headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},credentials:'omit',cache:'no-store'});}
+ catch{throw Error('GitHub no respondió. Comprueba tu conexión e inténtalo de nuevo.');}
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok){
+  if(response.status===403||response.status===429)throw Error('GitHub alcanzó el límite de búsquedas públicas para esta conexión. Espera un momento y vuelve a intentarlo.');
+  throw Error(data.message||'GitHub respondió '+response.status+'.');
+ }
+ const items=data.items||[];
+ const lines=['PROYECTOS OPEN SOURCE EN GITHUB','Búsqueda: '+query+(language?' · '+p.language:''),'Resultados encontrados: '+(data.total_count||items.length),''];
+ items.forEach((repo,index)=>{
+  lines.push((index+1)+'. '+repo.full_name);
+  if(repo.description)lines.push('   '+repo.description.replace(/\s+/g,' '));
+  lines.push('   ★ '+(repo.stargazers_count||0).toLocaleString('es-CO')+' · Forks '+(repo.forks_count||0).toLocaleString('es-CO')+' · '+(repo.language||'Lenguaje no indicado')+' · '+(repo.license?.spdx_id||'Licencia no indicada'));
+  lines.push('   '+repo.html_url,'');
+ });
+ if(!items.length)lines.push('No se encontraron repositorios para esa búsqueda.');
+ const text=lines.join('\n'),blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+ progress(cb,1,'Búsqueda completada.');
+ return {text,blob,filename:'prisma-github-open-source.txt',summary:items.length+' proyectos listados · GitHub API pública · límite no autenticado de GitHub aplicado.'};
+}
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
@@ -488,8 +817,19 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='video-thumbnail'||id==='video-gif'||id==='video-mute'||id==='audio-trim')return mediaAdvanced(id,files,p,cb);
  if(id==='qr-scan')return scanQr(files[0]);
  if(id==='hash-file')return hashFile(files[0]);
+ if(id==='file-inspector')return inspectFile(files[0]);
+ if(id==='json-xlsx')return jsonToExcel(p);
+ if(id==='image-social-kit')return socialImageKit(files[0],p,cb);
+ if(id==='qr-vcard'){
+  const escapeV=v=>String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+  const vcard=['BEGIN:VCARD','VERSION:3.0','FN:'+escapeV(p.name),'TEL;TYPE=CELL:'+escapeV(p.phone),'EMAIL:'+escapeV(p.email),'ORG:'+escapeV(p.organization),'END:VCARD'].join('\n');
+  const result=await runQr({text:vcard},cb);result.filename='prisma-contacto-qr.png';result.summary='Código QR vCard generado. Escanéalo con la cámara para guardar el contacto.';return result;
+ }
+ if(id==='api-explorer')return explorePublicApi(p,cb);
+ if(id==='github-discover')return discoverGitHubProjects(p,cb);
  if(id==='excel-json')return excelToJson(files[0],p,cb);
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
+ if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
  if(id==='ai-voice')return generateSpeech(p,cb);
  if(id==='ai-transcribe')return transcribeAudio(files,p,cb);
