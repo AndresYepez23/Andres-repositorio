@@ -83,6 +83,8 @@ export async function getCentralProviderStatus() {
     providers: { gemini: false, huggingface: false, groq: false, cloudflare: false },
     models: {},
     modelCatalog: {chat:{},image:{},audio:{}},
+    warnings: {},
+    configured: {},
     features: {cloudflareImages:false,huggingfaceImages:false,groqAudio:false},
   };
   try {
@@ -100,6 +102,8 @@ export async function getCentralProviderStatus() {
       providers: { ...empty.providers, ...(data.providers || {}) },
       models: data.models || {},
       modelCatalog: data.modelCatalog || empty.modelCatalog,
+      warnings: data.warnings || {},
+      configured: data.configured || {},
       features: { ...empty.features, ...(data.features || {}) },
     };
   } catch {

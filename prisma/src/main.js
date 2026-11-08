@@ -444,7 +444,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,huggingfaceImages:false,groqAudio:false},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,huggingfaceImages:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div></article>';
@@ -476,12 +476,12 @@ function renderProviderConnections(){
 }
 async function refreshProviderConnectionStatuses(){
   const central=await getCentralProviderStatus();
-  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog});
+  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured});
   const connected={pollinations:!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
-      status.textContent=provider==='pollinations'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':'Pendiente de configurar';
+      status.textContent=provider==='pollinations'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
     if(provider==='pollinations'){
@@ -597,7 +597,7 @@ function providerNoticeText(provider,quality,task='image'){
    selected=order.find(item=>connected[item]&&(task!=='image'||item!=='huggingface'||features.huggingfaceImages)&&(task!=='audio'||item!=='huggingface'||features.huggingfaceAudio))||'';
  }
  if(!selected)return 'No hay un motor activo para esta tarea. Revisa las conexiones del Laboratorio IA.';
- if(!connected[selected])return 'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
+ if(!connected[selected])return centralConnectionState.warnings?.[selected]||'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
  if(selected==='huggingface'&&task==='image'&&!features.huggingfaceImages)return 'Hugging Face permite generar imágenes, pero está desactivado para no agotar tus créditos gratuitos. Usa Cloudflare FLUX.';
  if(selected==='huggingface'&&task==='audio'&&!features.huggingfaceAudio)return 'El audio de Hugging Face está desactivado para proteger el crédito mensual.';
  if(selected==='cloudflare')return 'Cloudflare Workers AI: motor compartido, limitado por las cuotas gratuitas diarias y el control de solicitudes de Prisma.';
@@ -624,7 +624,7 @@ function setupAIAuthorization(tool){
  quality?.addEventListener('change',update);
  $('#open-ai-settings')?.addEventListener('click',()=>{closeTool();showView('ai');$('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});});
  void getCentralProviderStatus().then(data=>{
-   Object.assign(centralConnectionState,{providers:data.providers,features:data.features,modelCatalog:data.modelCatalog});
+   Object.assign(centralConnectionState,{providers:data.providers,features:data.features,modelCatalog:data.modelCatalog,warnings:data.warnings,configured:data.configured});
    update();
  }).catch(()=>update());
  if(tool.id==='image-gen')void loadPollinationsPricing('image').then(update);
@@ -801,7 +801,7 @@ function renderFileList(){
 function formatBytes(bytes){if(!bytes)return '0 B';const u=['B','KB','MB','GB'];const i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];}
 async function attachProviderCredentials(params){
   const central=await getCentralProviderStatus();
-  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog});
+  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured});
   params.polliToken=getPollinationsToken();
   params.hfToken='';
   params.geminiKey='';

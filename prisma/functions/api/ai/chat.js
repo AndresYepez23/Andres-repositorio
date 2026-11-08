@@ -1,3 +1,4 @@
+import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js";
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
 const headers = {
@@ -94,6 +95,10 @@ export async function onRequestPost({ request, env }) {
   if (requestedModel && !allowedModel(provider, "chat", requestedModel)) {
     return json({error:"Modelo no permitido para el proveedor seleccionado."},400);
   }
+  if(provider==="huggingface"){
+    const hold=await getProviderHold(env,"huggingface");
+    if(hold)return json({error:hold.reason,provider:"huggingface",status:402},402);
+  }
   const limitError = await checkLimits(env, request, provider);
   if (limitError) return json({error:limitError.error},limitError.status);
 
@@ -127,6 +132,8 @@ export async function onRequestPost({ request, env }) {
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
+      if(response.status===402)await setProviderHold(env,"huggingface","quota_exhausted","Hugging Face no tiene créditos disponibles (HTTP 402).",21600);
+      if(response.status===401||response.status===403)await setProviderHold(env,"huggingface","auth_error","Revisa el token de Hugging Face y sus permisos de Inference Providers.",3600);
       const providerMessage = String(data.error?.message || data.error || "").slice(0, 240);
       let message = "Hugging Face respondió con un error (" + response.status + ").";
       if (response.status === 401 || response.status === 403) {
