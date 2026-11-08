@@ -132,7 +132,7 @@ function toolPolicy(tool){
   };
 }
 function availableCatalog(){
-  return tools.filter(tool=>tool.status==='ready').map(tool=>({
+  return tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>({
     id:tool.id,name:tool.name,description:tool.description,category:tool.category,
     mode:tool.mode,file:!!tool.file,multiple:!!tool.multiple,accept:tool.accept||'',
     tag:tool.tag||'',policy:toolPolicy(tool)
@@ -141,10 +141,10 @@ function availableCatalog(){
 function buildPlannerPrompt(userText){
   const catalog=availableCatalog();
   return [
-    'Eres el planificador de ejecución de PRISMA CORE. Convierte la solicitud del usuario en un plan concreto usando exclusivamente el catálogo proporcionado.',
+    'Eres PRISMA CORE, el agente central de un ecosistema de herramientas. No eres un buscador de herramientas: entiendes el resultado final que la persona quiere y orquestas las operaciones necesarias para entregarlo.',
     'Devuelve SOLO JSON válido, sin Markdown ni texto fuera del objeto. Esquema: {"message":"explicación breve en español","needs_clarification":false,"question":"","steps":[{"tool_id":"id exacto","reason":"por qué se usa","params":{}}]}.',
-    'Reglas: máximo '+MAX_STEPS+' pasos; 0 pasos si necesitas una aclaración; nunca inventes IDs ni capacidades; usa solo herramientas con status ready (el catálogo ya está filtrado); ordena pasos por dependencia; usa params con nombres de campos esperados por la herramienta; para herramientas de texto usa params.text; para IA usa params.prompt; no afirmes que se ha ejecutado nada.',
-    'Si el usuario pide una función no disponible, dilo en message y no inventes una herramienta. No selecciones una operación beta o próximamente.',
+    'Reglas: máximo '+MAX_STEPS+' pasos; 0 pasos si necesitas una aclaración; nunca inventes IDs ni capacidades; usa solo herramientas ready o beta incluidas en el catálogo; ordena pasos por dependencia; usa parámetros exactos según las instrucciones de cada herramienta; para herramientas de texto usa params.text y para IA params.prompt. No digas al usuario que abra una herramienta manual si puedes ejecutar la operación aquí.',
+    'Piensa en el resultado final y no en una única operación. Ejemplos: analizar PDF = extraer texto + sintetizar hallazgos; preparar imagen para redes = quitar fondo, ajustar y comprimir según lo pedido; crear documento desde información = analizar contenido + redactar o generar archivo si existe una herramienta compatible. No agregues pasos innecesarios ni repitas conversiones. Si una operación no existe, dilo con honestidad y ofrece la alternativa más cercana.',
     'Si el usuario adjuntó archivos, considera que estarán disponibles para los pasos compatibles. No pidas que vuelva a describir el archivo.',
     'No selecciones herramientas de envío, publicación, compra, borrado externo ni acciones irreversibles. No hay autorización para esas acciones.',
     'CONTEXTO RECIENTE DE LA CONVERSACIÓN:\n'+messages.slice(-8).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+item.content).join('\n').slice(-7000),
@@ -160,7 +160,7 @@ function compatibleFiles(tool,files){
 function validatePlan(plan){
   if(!plan||typeof plan!=='object'||!Array.isArray(plan.steps))throw new Error('El plan no tiene el formato esperado.');
   if(plan.steps.length>MAX_STEPS)throw new Error('El plan supera el máximo seguro de '+MAX_STEPS+' operaciones.');
-  const ready=new Map(tools.filter(tool=>tool.status==='ready').map(tool=>[tool.id,tool]));
+  const ready=new Map(tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>[tool.id,tool]));
   const steps=plan.steps.map((step,index)=>{
     const tool=ready.get(String(step.tool_id||''));
     if(!tool)throw new Error('El plan solicitó una herramienta no disponible: '+String(step.tool_id||'desconocida'));
@@ -207,7 +207,22 @@ async function requestPlan(userText){
     return;
   }
   status('Analizando tu solicitud y seleccionando herramientas…');setProgress(.04,'Entendiendo la solicitud y consultando el catálogo…');
-  const plannerPrompt=buildPlannerPrompt(userText);
+  let attachmentContext='';
+  const pdfs=attachments.filter(file=>file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'));
+  const wantsAnalysis=/analiz|resum|extrae|lee|conclus|explica|investiga|compara|contenido|ideas principales/i.test(userText);
+  if(pdfs.length&&wantsAnalysis){
+    status('Leyendo localmente el contenido del PDF para entender mejor tu solicitud…');
+    const extracted=[];
+    for(const file of pdfs.slice(0,3)){
+      if(file.size>25*1024*1024)continue;
+      try{
+        const result=await runTool('pdf-text',[file],{},(p,msg)=>{status(msg||'Leyendo PDF…');});
+        if(result?.text)extracted.push('DOCUMENTO '+file.name+'\\n'+String(result.text).slice(0,12000));
+      }catch(error){console.warn('No se pudo preleer el PDF:',error);}
+    }
+    if(extracted.length)attachmentContext='\\n\\nCONTENIDO EXTRAÍDO LOCALMENTE DE LOS PDF (fragmento para planificar; el archivo original sigue disponible para las herramientas):\\n'+extracted.join('\\n\\n').slice(0,18000);
+  }
+  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext);
   let plan,steps;
   try{
     const result=await runTool('ai-assistant',[],{
