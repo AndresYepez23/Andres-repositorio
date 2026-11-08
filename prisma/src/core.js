@@ -159,12 +159,25 @@ async function requestPlan(userText){
     return;
   }
   status('Analizando tu solicitud y seleccionando herramientas…');
-  const result=await runTool('ai-assistant',[],{
-    prompt:buildPlannerPrompt(userText),provider:'auto',tone:'professional',length:'long',...creds
-  },(p,msg)=>status(msg||'Planificando…'));
-  const plan=parsePlan(result.text);plan.userRequest=userText;
+  const plannerPrompt=buildPlannerPrompt(userText);
+  let plan,steps;
+  try{
+    const result=await runTool('ai-assistant',[],{
+      prompt:plannerPrompt,provider:'auto',tone:'professional',length:'long',...creds
+    },(p,msg)=>status(msg||'Planificando…'));
+    plan=parsePlan(result.text);
+    if(!plan.needs_clarification)steps=validatePlan(plan);
+  }catch(firstError){
+    status('Revisando el formato y la compatibilidad del plan…');
+    const repair=await runTool('ai-assistant',[],{
+      prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\\n\\nSOLICITUD Y CATÁLOGO ORIGINAL:\\n'+plannerPrompt,
+      provider:'auto',tone:'professional',length:'long',...creds
+    },(p,msg)=>status(msg||'Corrigiendo el plan…'));
+    plan=parsePlan(repair.text);
+    if(!plan.needs_clarification)steps=validatePlan(plan);
+  }
+  plan.userRequest=userText;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
-  const steps=validatePlan(plan);
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
   showPlan(plan,steps);status('Plan listo. Revisa las operaciones antes de autorizarlas.','success');
 }
