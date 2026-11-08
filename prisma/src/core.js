@@ -99,6 +99,7 @@ function buildPlannerPrompt(userText){
     'Si el usuario pide una función no disponible, dilo en message y no inventes una herramienta. No selecciones una operación beta o próximamente.',
     'Si el usuario adjuntó archivos, considera que estarán disponibles para los pasos compatibles. No pidas que vuelva a describir el archivo.',
     'No selecciones herramientas de envío, publicación, compra, borrado externo ni acciones irreversibles. No hay autorización para esas acciones.',
+    'CONTEXTO RECIENTE DE LA CONVERSACIÓN:\n'+messages.slice(-8).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+item.content).join('\n').slice(-7000),
     'CATÁLOGO DISPONIBLE:\n'+JSON.stringify(catalog),
     'ARCHIVOS ADJUNTOS:\n'+(attachments.length?attachments.map(f=>({name:f.name,type:f.type,size:f.size})): 'Ninguno'),
     'SOLICITUD DEL USUARIO:\n'+userText
