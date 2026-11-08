@@ -337,6 +337,7 @@ function buildFields(t){
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-assistant':return textareaField('¿Qué necesitas crear o resolver?','prompt','','Ejemplo: redacta una descripción profesional para un producto...')+
       selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+
+      selectField('Capacidad del modelo','reasoning',[['fast','Rápido · menor latencia'],['balanced','Equilibrado · recomendado'],['smart','Avanzado · mejor razonamiento']],'balanced')+
       selectField('Tono','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Directo y breve']],'professional')+
       selectField('Extensión','length',[['short','Breve'],['medium','Media'],['long','Detallada']],'medium')+
       textareaField('Contexto adicional (opcional)','context','','Añade datos que el modelo deba tener en cuenta.')+
