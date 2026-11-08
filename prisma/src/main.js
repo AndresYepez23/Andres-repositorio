@@ -990,10 +990,25 @@ function setupHeroInteraction(){
   });
 }
 
-renderCategories();renderProviders();render();
-initPrismaCore();
-setupHeroInteraction();setupProfileMenu();setupHomeDashboard();setupMobileSearch();setupPollinationsSettings();
-void finishPollinationsAuth();
+// Startup is fault-isolated: one optional module must never disable the entire interface.
+function safeStartup(label,callback){
+  try{callback();return true;}
+  catch(error){
+    console.error('[Prisma startup] '+label,error);
+    const region=$('#toast-region');
+    if(region){const notice=document.createElement('div');notice.className='toast error';notice.textContent='Un módulo de Prisma no pudo inicializarse ('+label+'). El resto de la página sigue disponible.';region.append(notice);}
+    return false;
+  }
+}
+safeStartup('categorías',renderCategories);
+safeStartup('proveedores',renderProviders);
+safeStartup('interfaz',render);
+safeStartup('interacción visual',setupHeroInteraction);
+safeStartup('menú de perfil',setupProfileMenu);
+safeStartup('panel principal',setupHomeDashboard);
+safeStartup('búsqueda móvil',setupMobileSearch);
+safeStartup('conexiones',setupPollinationsSettings);
+void finishPollinationsAuth().catch(error=>console.warn('[Prisma auth] No se pudo completar la autorización:',error));
 $$('[data-workflow]').forEach(button=>button.addEventListener('click',()=>openWorkflow(workflows.find(workflow=>workflow.id===button.dataset.workflow))));
 $('#open-image-gen')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
 $('#open-image-gen-hero')?.addEventListener('click',()=>{const tool=tools.find(t=>t.id==='image-gen');if(tool)openTool(tool);});
@@ -1014,7 +1029,8 @@ $('#modal-run').addEventListener('click',executeCurrentTool);
 $('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#mobile-menu').setAttribute('aria-expanded',String(open));});
 $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
 
-$$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));render();}));
+$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
+safeStartup('Prisma Core',initPrismaCore);
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
   if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar').classList.contains('open'))closeSidebar();}
