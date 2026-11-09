@@ -1,7 +1,7 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
-import { getProviderUsage, getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
+import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
   "Cache-Control": "no-store",
@@ -24,7 +24,7 @@ export async function onRequestGet({ env }) {
     [provider, getCredentialSlots(env, provider).length]
   ));
   const usageEntries = await Promise.all(poolProviders
-    .filter(provider => provider !== "openrouter" && configured[provider] > 0)
+    .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
     .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider))]));
   const usage = Object.fromEntries(usageEntries);
   if (limited && env.AI?.run) {
@@ -34,8 +34,10 @@ export async function onRequestGet({ env }) {
     const daily = usage[provider]?.daily;
     return !daily || daily.remaining > 0;
   };
+  const aihubmixLifetime = limited ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
   const available = Object.fromEntries(poolProviders.map(provider =>
-    [provider, limited && configured[provider] > 0 && !holds[provider] && dailyAvailable(provider)]
+    [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
+      dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0)]
   ));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
@@ -64,6 +66,8 @@ export async function onRequestGet({ env }) {
   const warnings = {};
   for (const provider of poolProviders) {
     if (holds[provider]) warnings[provider] = holds[provider].reason;
+    else if (provider === "kilo" && !configured[provider]) warnings[provider] = "Acceso gratuito anónimo activo; KILO_API_KEY es opcional.";
+    else if (provider === "aihubmix" && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
@@ -88,6 +92,7 @@ export async function onRequestGet({ env }) {
       reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 ? warnings[provider] : null),
       retryAt: holds[provider]?.valid_until || null,
       dailyUsage: usage[provider]?.daily || null,
+      lifetimeUsage: provider === "aihubmix" ? aihubmixLifetime : null,
     }])),
     providers: {
       pollinations: pollinationsReady,
@@ -96,6 +101,13 @@ export async function onRequestGet({ env }) {
       groq: groqReady,
       cloudflare: cloudflareReady,
       openrouter: openrouterReady,
+      kilo: Boolean(available.kilo),
+      requesty: Boolean(available.requesty),
+      sensenova: Boolean(available.sensenova),
+      zai: Boolean(available.zai),
+      baidu: Boolean(available.baidu),
+      aihubmix: Boolean(available.aihubmix),
+      amd: Boolean(available.amd),
     },
     configured: {
       pollinations: configured.pollinations > 0,
@@ -104,13 +116,20 @@ export async function onRequestGet({ env }) {
       groq: configured.groq > 0,
       cloudflare: Boolean(env.AI?.run),
       openrouter: configured.openrouter > 0,
+      kilo: configured.kilo > 0,
+      requesty: configured.requesty > 0,
+      sensenova: configured.sensenova > 0,
+      zai: configured.zai > 0,
+      baidu: configured.baidu > 0,
+      aihubmix: configured.aihubmix > 0,
+      amd: configured.amd > 0,
     },
     warnings,
     capacity: {
       dailyBudget: getSharedDailyBudget(env),
       visitorDailyLimit: getVisitorDailyLimit(env),
       perMinutePerVisitor: 20,
-      configuredProviders: ["gemini","groq","huggingface","pollinations","openrouter"].filter(provider => configured[provider] > 0).concat(env.AI?.run ? ["cloudflare"] : []),
+      configuredProviders: poolProviders.filter(provider => configured[provider] > 0 || provider === "kilo").concat(env.AI?.run ? ["cloudflare"] : []),
       configuredCredentials: Object.values(configured).reduce((sum,count) => sum + count, 0) + (env.AI?.run ? 1 : 0),
     },
     usage,
@@ -132,6 +151,13 @@ export async function onRequestGet({ env }) {
       cloudflare: "@cf/google/gemma-4-26b-a4b-it",
       groq: "openai/gpt-oss-20b",
       openrouter: "openrouter/free",
+      kilo: "z-ai/glm-5:free",
+      requesty: "nemotron-3.5-lightning-30b-a3b",
+      sensenova: "sensenova-6.8-flash-lite",
+      zai: "glm-4.7-flash",
+      baidu: "ernie-speed-128k",
+      aihubmix: "coding-glm-5.3-free",
+      amd: "DeepSeek-V4-Flash",
     },
   }), { status: 200, headers });
 }
