@@ -1551,11 +1551,6 @@ body.is-core-view.is-prisma-standalone:not(.is-keyboard-open) .core-composer {
  * standalone installations: normal Safari, Android, tablets and desktop retain
  * the tested responsive spacing. Avoid expanding the WKWebView or shifting
  * document coordinates, which previously caused clipping on iPhone. */
-@media (max-width: 620px) and (display-mode: standalone) {
-  body.is-core-view.is-prisma-ios.is-prisma-standalone:not(.is-keyboard-open) .core-composer {
-    padding-bottom: 2px !important;
-  }
-}
 @media (max-width: 620px) {
   body.is-core-view.is-prisma-ios.is-prisma-standalone:not(.is-keyboard-open) .core-composer {
     padding-bottom: 2px !important;
