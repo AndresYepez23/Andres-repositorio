@@ -3,7 +3,7 @@ import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
-import { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools, isToolDiscoveryQuestion } from './core-tool-intelligence.js';
+import { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools, isToolDiscoveryQuestion, coreCapabilityContext } from './core-tool-intelligence.js';
 import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
@@ -989,8 +989,14 @@ async function answerConversation(text,creds,task='conversation'){
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
   const contextMessages=messages.slice(-13,-1).filter(m=>['user','assistant'].includes(m.role)&&String(m.content||'').trim())
    .map(m=>({role:m.role,content:String(m.content).slice(0,1800)}));
+  const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter'};
+  const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
+  const providerContext=connected.length
+    ?'Motores de texto configurados en el servidor: '+connected.join(', ')+'. Configurado no significa disponibilidad garantizada: respeta sus cuotas y no inventes cuál respondió.'
+    :'No se ha confirmado ningún motor compartido conectado en este momento. No afirmes que un proveedor está disponible.';
+  const assistantContext=[instruction,coreCapabilityContext(),providerContext].join('\n\n').slice(0,1950);
   const response=await runTool(toolId,[],{
-    prompt:taskText,context:instruction,contextMessages,provider:'auto',
+    prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
     reasoning:task==='reasoning'?'smart':'balanced',
     tone:task==='songwriting'||task==='creative'?'creative':'friendly',
     length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
