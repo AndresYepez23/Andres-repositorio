@@ -430,6 +430,15 @@ async function answerConversation(text,creds){
   status('Listo.','success');
 }
 async function requestPlan(userText){
+  // Simple greetings must work instantly, even when every external inference
+  // provider is unavailable; do not spend AI quota on a basic salutation.
+  const greeting=String(userText||'').trim().toLocaleLowerCase('es').normalize('NFD')
+   .replace(/[\u0300-\u036f]/g,'').replace(/[!?,.¿¡]/g,'').trim();
+  if(/^(hola+(?: prisma)?|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|buenos dias|buenas noches)$/.test(greeting)&&!attachments.length){
+    addMessage('assistant','¡Hola! Soy Prisma Core. Pídeme una tarea o adjunta un archivo: puedo seleccionar las herramientas disponibles y ayudarte a crear, analizar o convertir contenido.');
+    status('Listo para ayudarte.','success');
+    return;
+  }
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
   centralFeatures=centralStatus.features||centralFeatures;
