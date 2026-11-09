@@ -686,7 +686,8 @@ async function generateText(p,cb){
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
  const modelFor=provider=>{
-  const desired=modelProfiles[provider]?.[tier]||'';
+  // Planning needs compact structured output; prefer the faster model, not maximum reasoning tokens.
+  const desired=task==='planner'&&provider==='groq'?modelProfiles.groq.fast:task==='planner'&&provider==='gemini'?modelProfiles.gemini.fast:modelProfiles[provider]?.[tier]||'';
   const catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(!catalog.length)return desired;
   return catalog.some(item=>item.id===desired)?desired:catalog[0]?.id||desired;
