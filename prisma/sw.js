@@ -11,5 +11,5 @@ self.addEventListener("fetch",event=>{
   return;
  }
  if(!/\.(?:js|css|svg|png|webp|ico|webmanifest)$/.test(url.pathname))return;
- event.respondWith(caches.match(req).then(cached=>cached||fetch(req).then(resp=>{if(resp.ok){const copy=resp.clone();caches.open(CACHE).then(cache=>cache.put(req,copy)).catch(()=>{});}return resp;})));
+ event.respondWith(fetch(req).then(resp=>{if(resp.ok){const copy=resp.clone();caches.open(CACHE).then(cache=>cache.put(req,copy)).catch(()=>{});}return resp;}).catch(async()=>await caches.match(req)||Response.error()));
 });
