@@ -2,6 +2,7 @@ import { tools } from './registry.js';
 import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
+import { buildSmartLocalFlow } from './smart-flows.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -620,6 +621,22 @@ async function requestPlan(userText){
    status('Herramienta disponible. Adjunta un archivo para continuar.','info');
    return;
   }
+  const previousUserTexts=messages.slice(-9,-1).filter(m=>m.role==='user').map(m=>m.content);
+  const guidedFlow=buildSmartLocalFlow(userText,attachments,previousUserTexts);
+  if(guidedFlow){
+    if(guidedFlow.type!=='ready'){
+      addMessage('assistant',guidedFlow.message);
+      status('Entendí la operación: falta información para ejecutarla.','info');
+      return;
+    }
+    const guidedPlan={message:guidedFlow.message,steps:guidedFlow.steps,needs_clarification:false,userRequest:userText,combineFinalFiles:true};
+    const guidedSteps=validatePlan(guidedPlan);
+    pendingPlan={plan:guidedPlan,steps:guidedSteps};
+    const external=guidedSteps.some(({tool})=>!['local','browser'].includes(tool.mode));
+    if(external){showPlan(guidedPlan,guidedSteps);status('Este flujo usa un servicio externo; revisa y autoriza.','warning');}
+    else{addMessage('assistant',guidedPlan.message);await executePlan();}
+    return;
+  }
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
   centralFeatures=centralStatus.features||centralFeatures;
@@ -883,7 +900,8 @@ async function sendMessage(){
   // instead of launching an unrelated AI analysis of the uploaded document.
   const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
     messages.slice(-9,-1).some(item=>item.role==='user'&&isPdfEditIntent(item.content));
-  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
+  const priorRequest=messages.slice(-9,-1).reverse().find(m=>m.role==='user'&&String(m.content||'').trim())?.content||'';
+  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':priorRequest?'Aquí está el archivo para la tarea anterior.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
   try{await requestPlan(requestText);}
   catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
