@@ -1205,6 +1205,8 @@ function setupPrismaCoreViewport(){
   const root=document.documentElement;
   const input=document.querySelector('#core-input');
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true;
+  const isIOS=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   let raf=0,lastUnfocusedHeight=0;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
@@ -1213,7 +1215,9 @@ function setupPrismaCoreViewport(){
       const visible=Math.max(240,Math.round(vv?.height||window.innerHeight||0));
       const layoutHeight=Math.max(visible,Math.round(window.innerHeight||0),Math.round(root.clientHeight||0));
       const standalone=isStandalone();
-      const screenHeight=standalone?Math.round(window.screen?.height||0):0;
+      // screen.height is only a valid full-window estimate on an installed
+      // iPhone/iPad PWA. Desktop standalone windows must use innerHeight.
+      const screenHeight=standalone&&isIOS()?Math.round(window.screen?.height||0):0;
       const focused=document.activeElement===input;
       const fullHeight=Math.max(layoutHeight,screenHeight);
       // Track the unoccluded height instead of comparing against innerHeight,
@@ -1253,7 +1257,7 @@ function setupPrismaCoreViewport(){
   window.visualViewport?.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
   window.addEventListener('scroll',sync,{passive:true});
-  window.addEventListener('orientationchange',settle,{passive:true});
+  window.addEventListener('orientationchange',()=>{lastUnfocusedHeight=0;settle();},{passive:true});
   window.addEventListener('pageshow',settle,{passive:true});
   sync();
 }
