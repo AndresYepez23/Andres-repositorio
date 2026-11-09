@@ -266,9 +266,12 @@ function renderMessageActions(message){
   try{await navigator.clipboard.writeText(message.content);status('Respuesta copiada.','success');}
   catch{status('No fue posible copiar al portapapeles.','warning');}
  });
- button('share','Compartir respuesta',async()=>{
-  if(navigator.share){try{await navigator.share({title:'Respuesta de Prisma',text:message.content});}catch(error){if(error.name!=='AbortError')status('No se pudo compartir.','warning');}}
-  else{try{await navigator.clipboard.writeText(message.content);status('Respuesta copiada para compartir.','success');}catch{status('Compartir no está disponible en este navegador.','warning');}}
+ button('share','Compartir respuesta o archivo',async()=>{
+  const fileResult=message.results?.map(entry=>entry.result).find(result=>result?.blob&&result.blob.size<100*1024*1024);
+  const shareFile=fileResult?new File([fileResult.blob],fileResult.filename||'prisma-archivo',{type:fileResult.blob.type||'application/octet-stream'}):null;
+  const payload=shareFile&&navigator.canShare?.({files:[shareFile]})?{title:'Prisma Space',files:[shareFile]}:{title:'Respuesta de Prisma',text:message.content};
+  if(navigator.share){try{await navigator.share(payload);}catch(error){if(error.name!=='AbortError')status('No se pudo compartir.','warning');}}
+  else{try{await navigator.clipboard.writeText(message.content);status('Texto copiado para compartir. Descarga el archivo para enviarlo.','success');}catch{status('Compartir no está disponible en este navegador.','warning');}}
  });
  for(const [key,title] of [['like','Me gustó'],['dislike','No me gustó']]){
   const el=button(key,title,()=>{
