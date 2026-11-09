@@ -1215,3 +1215,10 @@ body.profile-open::before{content:"";position:fixed;inset:0;z-index:14;backgroun
 body.is-core-view .core-welcome-gradient{display:block;margin-top:.08em}
 body.is-core-view .core-top-actions .icon-button:focus-visible,
 body.is-core-view .core-voice-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media(max-width:850px){
+ .profile-menu .profile-menu-action{font-size:14px;min-height:46px}
+ .profile-menu .profile-menu-privacy{font-size:11px}
+ .auth-panel{gap:10px}
+ .auth-panel .auth-guest{display:block;padding:9px 12px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:10px;text-align:center;color:var(--accent);background:var(--panel-2)}
+}
