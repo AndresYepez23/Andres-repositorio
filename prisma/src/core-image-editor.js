@@ -68,7 +68,7 @@ function redraw(){
  ctx.shadowBlur=0;
 }
 function close(){imageEditor()?.classList.add('hidden');document.body.classList.remove('core-editor-open');}
-export async function openImageEditor({blob,filename,onSave}){
+export async function openImageEditor({blob,filename,initialText='',onSave}){
  if(!blob||!String(blob.type||'').startsWith('image/'))throw Error('Selecciona una imagen válida para editar.');
  close();
  if(sourceUrl)URL.revokeObjectURL(sourceUrl);
@@ -76,7 +76,7 @@ export async function openImageEditor({blob,filename,onSave}){
  const img=new Image();
  img.decoding='async';img.src=sourceUrl;await img.decode();
  sourceImage=img;saveCallback=onSave;
- $('#core-editor-main-text').value='';$('#core-editor-sub-text').value='';
+ $('#core-editor-main-text').value=String(initialText||'').slice(0,68);$('#core-editor-sub-text').value='';
  $('#core-editor-position').value='left';$('#core-editor-color').value='#ffffff';
  $('#core-editor-size').value='82';$('#core-editor-shade').checked=true;
  imageEditor().classList.remove('hidden');document.body.classList.add('core-editor-open');
