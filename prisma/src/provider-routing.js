@@ -90,7 +90,7 @@ export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_O
     const cooling=recent&&Number(record.coolingUntil||0)>now;
     const failures=recent?Math.min(4,Number(record.failures||0)):0;
     const latency=recent&&Number(record.averageMs||0)>0?Math.min(3,Number(record.averageMs)/10000):0;
-    return {name,score:index*10+(cooling?100:0)+failures*3+latency};
+    return {name,score:index*10+(cooling?100:0)+failures*3+latency+(name==='openrouter'?1000:0)};
   }).sort((a,b)=>a.score-b.score).map(item=>item.name);
 }
 
