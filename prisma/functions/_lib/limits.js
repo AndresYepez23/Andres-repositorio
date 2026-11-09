@@ -16,6 +16,7 @@ export function getProviderDailyLimit(env,provider){
  const variable='PRISMA_'+String(provider||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')+'_DAILY_LIMIT';
  const configured=Number(env?.[variable]);
  if(Number.isFinite(configured)&&configured>0)return Math.max(1,Math.min(5000,Math.floor(configured)));
+ if(provider==="aihubmix"&&env?.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1")return 25;
  return LIMITS[provider]||10;
 }
 export function getSharedDailyBudget(env){
@@ -95,6 +96,7 @@ export async function checkLimits(env,request,provider){
   ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
   ...(provider==="aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1" ? [["provider-lifetime:aihubmix",0,10,"PROVIDER_LIMIT"]] : []),
+  ...(provider==="aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1" ? [["provider-minute:aihubmix",minute,10,"PROVIDER_MINUTE_LIMIT"]] : []),
   // OpenRouter is the independent paid/free safety net. It must remain usable
   // when the shared free quotas of the primary Prisma providers are exhausted.
   ...(provider==="openrouter"?[]:[["total-day",day,getSharedDailyBudget(env),"GLOBAL_LIMIT"]])
@@ -105,7 +107,7 @@ export async function checkLimits(env,request,provider){
   return {status:429,code,scope:scope.split(":")[0],
    retryAfter:Math.max(1,reset-Math.floor(Date.now()/1000)),
    error:code==="PROVIDER_MINUTE_LIMIT"
-    ?"OpenRouter alcanzó su límite de solicitudes por minuto. Espera un momento y vuelve a intentarlo."
+    ?(provider==="openrouter"?"OpenRouter alcanzó su límite de solicitudes por minuto. Espera un momento y vuelve a intentarlo.":provider+" alcanzó su límite de solicitudes por minuto.")
     :code==="PROVIDER_LIMIT"
      ?(provider==="openrouter"?"OpenRouter alcanzó la cuota diaria de respaldo o el límite de seguridad de este visitante.":"Este proveedor alcanzó su límite diario de solicitudes.")
      :"Prisma alcanzó su límite temporal gratuito global. Las herramientas locales siguen disponibles."};
