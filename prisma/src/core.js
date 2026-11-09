@@ -340,7 +340,7 @@ function renderMessages({forceBottom=false}={}){
     else body.textContent=message.content;
     bubble.append(label,body);
     if(message.role==='assistant'&&message.engine){
-      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face',kilo:'Kilo',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',baidu:'Baidu ERNIE',aihubmix:'AIHubMix'};
+      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face',kilo:'Kilo',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
       const source=document.createElement('small');source.className='core-message-engine';
       source.textContent='Respondió '+(names[message.engine]||message.engine)+(message.model?' · '+String(message.model).slice(0,60):'')+(message.fallbackFrom?' · Respaldo después de '+(names[message.fallbackFrom]||message.fallbackFrom):'');
       if(message.fallbackReason)source.title=String(message.fallbackReason).slice(0,240);
