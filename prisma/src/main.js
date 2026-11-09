@@ -592,7 +592,7 @@ async function refreshOpenRouterUsage(){
       if(daily){
         lines.push('<strong>Solicitudes de Prisma hoy:</strong> '+daily.used+' / '+daily.limit+' · quedan '+daily.remaining);
       }else lines.push('<strong>Contador de Prisma:</strong> no disponible (revisa el binding D1).');
-      if(minute)lines.push('<strong>Velocidad:</strong> '+minute.limit+' solicitudes/min · '+minute.used+' usadas en este minuto.');
+      if(minute)lines.push('<strong>Velocidad:</strong> OpenRouter '+minute.limit+' solicitudes/min; Prisma limita cada IP a '+(data.controls?.perIpMinuteLimit||10)+'/min y '+(data.controls?.perIpDailyLimit||30)+'/día.');
       if(account){
         lines.push('<strong>Cuota OpenRouter Free:</strong> '+account.externalFreeDailyLimit+' solicitudes/día según el nivel de la cuenta.');
         if(account.dailySpendUsd!==null)lines.push('<strong>Gasto de la cuenta hoy:</strong> '+money(account.dailySpendUsd)+'.');
