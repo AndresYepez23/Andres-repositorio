@@ -31,11 +31,13 @@ Las variables `GEMINI_API_KEY_BACKUP` y `GROQ_API_KEY_BACKUP` se siguen reconoci
 4. Las cuotas diarias, los límites por visitante y los controles D1 **siguen siendo compartidos por proveedor** dentro de Prisma, independientemente de cuántas claves haya.
 5. Varias claves de una misma cuenta, organización o proyecto suelen compartir el mismo límite externo. No utilizarlas para eludir cuotas o condiciones contractuales del proveedor.
 6. OpenRouter conserva el enrutamiento `openrouter/free` con su control interno y una verificación conservadora de la cuenta; no interpreta cinco claves como cinco cuotas acumulables.
-7. AIHubMix limita la modalidad sin recarga a 10 llamadas totales de prueba. Tras una recarga mínima de USD 1, activa `AIHUBMIX_DAILY_QUOTA_ACTIVE=1`; Prisma mantiene por defecto un tope interno de 25 solicitudes/día y 10/minuto. No aumentes el límite hasta implementar y verificar el conteo de tokens frente al millón diario del proveedor.
-8. AMD Radeon Cloud Token Factory es exclusivamente para evaluación; su catálogo se consulta en vivo y solo se admiten modelos con precio cero y entrada/salida de texto. No forma parte del enrutamiento automático.
-9. Kilo consulta su catálogo público y solo admite modelos con precio cero. Los endpoints NVIDIA gratuitos son de evaluación y pueden registrar prompts; por eso Kilo permanece manual y no recibe solicitudes automáticamente.
-10. Requesty usa Ling alojado por Novita como opción automática; los endpoints NVIDIA de prueba quedan disponibles en el catálogo manual, no como primera elección automática.
-7. Las herramientas locales se ejecutan sin inferencia cuando los parámetros son claros. Prisma Core usa un planificador ligero cuando necesita decidir entre herramientas; reserva la inferencia más elaborada para peticiones complejas.
+7. AIHubMix limita la modalidad sin recarga a 10 llamadas totales de prueba. Tras una recarga mínima de USD 1, activa `AIHUBMIX_DAILY_QUOTA_ACTIVE=1`; Prisma consulta en vivo el catálogo y el mapa de pesos, excluye modelos con peso mayor a 1 y limita el uso a 15 solicitudes/día y 10/minuto. El tope diario prudente protege también el millón de tokens diario compartido del proveedor.
+8. AMD Radeon Cloud Token Factory es exclusivamente para evaluación; su catálogo se consulta en vivo y solo se admiten modelos marcados gratis con entrada/salida de texto. Sus términos prohíben cargas de producción; no forma parte del enrutamiento automático.
+9. Kilo consulta su catálogo público y solo admite modelos con precio cero. Los endpoints NVIDIA gratuitos son de evaluación y pueden registrar prompts; por eso Kilo permanece manual y no recibe solicitudes automáticamente. El límite interno es 20/día y 3/minuto, inferior al máximo anónimo de 200 solicitudes/hora por IP.
+10. Requesty ofrece 13 modelos publicados como gratuitos y hasta 200 solicitudes/día y 20/minuto por organización. Prisma limita el uso compartido a 25/día y 10/minuto; prioriza Ling 3.1 Flash de Novita en el enrutamiento automático.
+11. SenseNova 6.8 Flash Lite dispone de beta pública gratuita con hasta 1.500 llamadas por modelo cada cinco horas; Prisma limita el uso a 25/día y 5/minuto. Z.AI solo habilita los modelos Flash gratuitos y Prisma aplica un límite de 25/día y 3/minuto.
+12. Baidu Qianfan permanece en selección manual hasta confirmar elegibilidad y cuota gratuita de la cuenta/región. No se enruta automáticamente.
+13. Las herramientas locales se ejecutan sin inferencia cuando los parámetros son claros. Prisma Core usa un planificador ligero cuando necesita decidir entre herramientas; reserva la inferencia más elaborada para peticiones complejas.
 
 ## Añadir claves posteriormente
 
