@@ -1,4 +1,4 @@
-import { getCredentialSlots } from "./credential-pool.js";
+import { getCredentialSlots, requestWithCredentialPool } from "./credential-pool.js";
 
 let cachedModels = [];
 let cacheExpiresAt = 0;
@@ -6,13 +6,15 @@ let cacheExpiresAt = 0;
 // AMD documents this catalogue as cheap to call and identical for all Token
 // Factory keys. Cache it briefly, then filter strictly to zero-cost text models.
 export async function getAmdFreeModels(env, { force = false } = {}) {
-  const credential = getCredentialSlots(env, "amd")[0]?.value;
-  if (!credential) return [];
+  const slots = getCredentialSlots(env, "amd");
+  if (!slots.length) return [];
   if (!force && cachedModels.length && Date.now() < cacheExpiresAt) return cachedModels;
   try {
-    const response = await fetch("https://developer.amd.com.cn/radeon/api/v1/models", {
-      headers: { Authorization: "Bearer " + credential },
-    });
+    const response = await requestWithCredentialPool(env, "amd", credential =>
+      fetch("https://developer.amd.com.cn/radeon/api/v1/models", {
+        headers: { Authorization: "Bearer " + credential },
+      })
+    );
     if (!response.ok) {
       cacheExpiresAt = Date.now() + 30_000;
       return [];
