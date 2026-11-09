@@ -623,7 +623,7 @@ function isGenericModelRefusal(text){
 }
 function isRestrictedSongRequest(prompt){
  const q=String(prompt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- return /\b(letra exacta|letra completa de|continua(?:r)? la letra|sigue la letra|copia(?:r)? la letra|(?:en|al) estilo de|imita(?:r)? a|exactamente como canta|como la cancion de|igual que canta)\b/.test(q);
+ return /\b(letra exacta|letra completa de|continua(?:r)? la letra|sigue la letra|copia(?:r)? la letra|en el estilo de|al estilo de|imita(?:r)? a|exactamente como canta|como la cancion de|igual que canta)\b/.test(q);
 }
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
