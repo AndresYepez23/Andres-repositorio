@@ -1,4 +1,4 @@
-// Five protected, optional server-side credential slots per external provider.
+// Six protected credential slots for every external provider except Groq (five).
 // Quotas remain governed by each account/project and by Prisma's shared D1 limits.
 // Never expose credential values to the browser, logs or status endpoints.
 import { getProviderHold, setProviderHold } from "./provider-health.js";
@@ -10,13 +10,26 @@ export const CREDENTIAL_ROOTS = Object.freeze({
   openrouter: "OPENROUTER_API_KEY",
   pollinations: "POLLINATIONS_API_KEY",
 });
-export const MAX_CREDENTIAL_SLOTS = 5;
+export const CREDENTIAL_SLOT_LIMITS = Object.freeze({
+  gemini: 6,
+  groq: 5,
+  huggingface: 6,
+  openrouter: 6,
+  pollinations: 6,
+});
+// Backwards-compatible global maximum; use maxCredentialSlots(provider)
+// whenever displaying or enumerating an individual provider's slots.
+export const MAX_CREDENTIAL_SLOTS = 6;
+export function maxCredentialSlots(provider) {
+  return CREDENTIAL_SLOT_LIMITS[provider] || 0;
+}
 
 export function getCredentialSlots(env, provider) {
   const root = CREDENTIAL_ROOTS[provider];
   if (!root) return [];
   const seen = new Set(), slots = [];
-  for (let number = 1; number <= MAX_CREDENTIAL_SLOTS; number++) {
+  const limit = maxCredentialSlots(provider);
+  for (let number = 1; number <= limit; number++) {
     const name = number === 1 ? root : root + "_" + number;
     // _BACKUP is a legacy alias for slot 2, not a sixth credential.
     const value = String((number === 2 ? env?.[name] || env?.[root + "_BACKUP"] : env?.[name]) || "").trim();
@@ -29,10 +42,11 @@ export function getCredentialSlots(env, provider) {
 
 export function getCredentialStatus(env, provider) {
   const occupied = new Set(getCredentialSlots(env, provider).map(item => item.number));
+  const max = maxCredentialSlots(provider);
   return {
     count: occupied.size,
-    max: MAX_CREDENTIAL_SLOTS,
-    slots: Array.from({ length: MAX_CREDENTIAL_SLOTS }, (_, i) => ({
+    max,
+    slots: Array.from({ length: max }, (_, i) => ({
       slot: i + 1,
       configured: occupied.has(i + 1),
       variable: CREDENTIAL_ROOTS[provider] + (i ? "_" + (i + 1) : ""),
