@@ -1818,3 +1818,48 @@ body.sidebar-search-open .sidebar-search-slot .core-history-search{display:flex}
 /* Core is the first paint: keep the old landing navigation out of the boot frame. */
 body.is-core-view #core-workspace > .core-history{display:none!important}
 .core-sidebar-loading{margin:0;padding:8px 10px;color:var(--subtle);font-size:10px;line-height:1.5}
+
+
+/* Coordinated first paint: never expose the pre-hydrated shell. */
+body.app-booting{overflow:hidden!important;background:var(--bg)}
+body.app-booting .app-shell{visibility:hidden!important}
+.app-startup{
+ position:fixed;inset:0;z-index:10000;display:grid;place-items:center;
+ padding:24px;background:var(--bg);color:var(--text);
+}
+.app-startup.hidden{display:none!important}
+.app-startup-card{
+ display:grid;justify-items:center;gap:12px;width:min(320px,100%);
+ padding:28px 24px;border:1px solid var(--line);border-radius:20px;
+ background:var(--panel);box-shadow:var(--shadow);text-align:center;
+}
+.app-startup-mark{width:48px;height:48px;display:grid;place-items:center;color:var(--accent)}
+.app-startup-mark svg{width:44px;height:44px}
+.app-startup-card>strong{font:800 18px/1.2 Manrope,system-ui,sans-serif;letter-spacing:-.035em}
+.app-startup-status{min-height:18px;color:var(--muted);font-size:11px;line-height:1.5}
+.app-startup-spinner{
+ width:20px;height:20px;border:2px solid var(--line-strong);
+ border-top-color:var(--accent);border-radius:50%;
+ animation:prismaBootSpin .8s linear infinite;
+}
+@keyframes prismaBootSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.app-startup-spinner{animation:none;border-color:var(--accent)}}
+
+/* Account modal: guest mode stays compact; unavailable sign-in methods are hidden. */
+.auth-panel{
+ width:min(440px,calc(100vw - 32px));
+ max-height:min(82dvh,640px);
+ padding:24px;
+ gap:13px;
+ overflow-x:hidden;
+ overflow-y:auto;
+ scrollbar-width:thin;
+}
+.auth-panel>img{width:48px;height:48px;object-fit:cover}
+.auth-panel h2{font-size:22px}
+.auth-panel .auth-availability{font-size:11px;line-height:1.55}
+.auth-panel .auth-guest{min-height:42px}
+@media(max-width:620px){
+ .auth-backdrop{padding:14px}
+ .auth-panel{width:100%;max-height:calc(100dvh - 28px);padding:22px 18px;border-radius:18px}
+}
