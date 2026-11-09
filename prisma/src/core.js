@@ -993,10 +993,17 @@ async function answerConversation(text,creds,task='conversation'){
    : task==='coding'?'Resuelve la solicitud de programación e incluye código. No simules ejecución.'
    : 'Responde de forma natural a la solicitud actual, atendiendo correctamente los turnos anteriores.';
   const taskText=String(text||'');
-  const toolId=task==='songwriting'?'music-lyrics':
-   task==='coding'?'ai-code-helper':
-   /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
-   /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
+   const intent=taskText.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+   const compare=/(?:compara|comparar|comparacion|comparativa|pros y contras|cual conviene|ventajas y desventajas)/.test(intent);
+   const plan=/(?:plan de accion|planifica|organiza un plan|hoja de ruta|roadmap|cronograma|paso a paso)/.test(intent);
+   const review=/(?:revisa|revision|corrige|mejora|critica).{0,42}(?:texto|borrador|redaccion|escrito|documento)/.test(intent);
+   const toolId=task==='songwriting'?'music-lyrics':
+    task==='coding'?'ai-code-helper':
+    review?'ai-text-review':
+    compare?'ai-compare-options':
+    plan?'ai-action-plan':
+    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
+    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
   const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,{
    maxMessages:13,maxChars:14000
   });
