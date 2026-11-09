@@ -1,0 +1,59 @@
+{
+  "name": "Prisma Space · Tu espacio con IA",
+  "short_name": "Prisma Space",
+  "description": "Crea, transforma y resuelve con Prisma Core y herramientas digitales.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#101218",
+  "theme_color": "#101218",
+  "lang": "es",
+  "categories": [
+    "productivity",
+    "utilities",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/prisma-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/prisma-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/prisma-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Prisma Core",
+      "short_name": "Core",
+      "url": "/?view=core",
+      "description": "Conversar con Prisma"
+    },
+    {
+      "name": "Herramientas",
+      "url": "/?view=explore",
+      "description": "Explorar herramientas"
+    }
+  ]
+}

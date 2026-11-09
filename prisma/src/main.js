@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { initPrismaExperience } from './prisma-experience.js';
 import { initPrismMotion } from './prism-motion.js';
 import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
@@ -268,20 +269,20 @@ function recordRecentTool(id){
 }
 function closeProfileMenu(){
   const menu=$('#profile-menu'),toggle=$('#profile-toggle');if(!menu||!toggle)return;
-  menu.classList.add('hidden');toggle.setAttribute('aria-expanded','false');
+  menu.classList.add('hidden');toggle.setAttribute('aria-expanded','false');document.body.classList.remove('profile-open');
 }
 function setupProfileMenu(){
   const toggle=$('#profile-toggle'),menu=$('#profile-menu');
-  toggle.addEventListener('click',event=>{event.stopPropagation();const open=menu.classList.toggle('hidden')===false;toggle.setAttribute('aria-expanded',String(open));});
+  // Safari: backdrop-filter en .topbar crea un containing block para elementos fixed.
+  // Montar el panel en body permite situarlo en el viewport real.
+  if(menu&&menu.parentElement!==document.body)document.body.append(menu);
+  toggle.addEventListener('click',event=>{event.stopPropagation();const open=menu.classList.toggle('hidden')===false;toggle.setAttribute('aria-expanded',String(open));document.body.classList.toggle('profile-open',open);});
   menu.addEventListener('click',event=>event.stopPropagation());document.addEventListener('click',closeProfileMenu);
   $('#clear-local-data').addEventListener('click',()=>{
-    if(!window.confirm('Se borrarán favoritos, historial, tema y la App Key guardada en este navegador. ¿Continuar?'))return;
-    favorites.clear();recentTools=[];
-    ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id'].forEach(key=>localStorage.removeItem(key));
+    if(!window.confirm('Esto borrará tus conversaciones, favoritos y preferencias locales de este dispositivo. No se puede deshacer. ¿Continuar?'))return;
+    ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
     ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
-    document.documentElement.dataset.theme='dark';$('#theme-toggle').innerHTML=icon('sun');
-    const keyInput=$('#polli-app-key');if(keyInput)keyInput.value='';
-    refreshPollinationsStatus();closeProfileMenu();render();toast('Se borraron los datos locales de este navegador.','success');
+    closeProfileMenu();location.reload();
   });
 }
 function setupHomeDashboard(){
@@ -1235,8 +1236,10 @@ $('#explore-search')?.addEventListener('input',e=>{searchTerm=e.target.value;act
 $('#explore-subcategory')?.addEventListener('change',e=>{activeView='explore';activeCategory=e.target.value;expandedToolFamily=familyForCategory(activeCategory)?.id||expandedToolFamily;renderCategories();render();});
 $$('[data-quick-tool]').forEach(button=>button.addEventListener('click',()=>{const t=tools.find(tool=>tool.id===button.dataset.quickTool);if(t)openTool(t);}));
 
-$('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;$('#theme-toggle').innerHTML=icon(next==='dark'?'sun':'moon');localStorage.setItem('prisma-theme',next);});
-const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme){document.documentElement.dataset.theme=savedTheme;$('#theme-toggle').innerHTML=icon(savedTheme==='dark'?'sun':'moon');}
+const updateThemeLabel=()=>{const el=$('#theme-mode-label');if(el)el.textContent='Cambiar a tema '+(document.documentElement.dataset.theme==='dark'?'claro':'oscuro');};
+$('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;localStorage.setItem('prisma-theme',next);updateThemeLabel();});
+
+const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme)document.documentElement.dataset.theme=savedTheme;updateThemeLabel();
 $('#explore-tools').addEventListener('click',()=>$('#tools-section').scrollIntoView({behavior:'smooth'}));
 $('#clear-search').addEventListener('click',()=>{$('#global-search').value='';searchTerm='';activeView='explore';activeCategory='all';render();scrollToCurrentView();});
 document.addEventListener('click',event=>{
@@ -1252,6 +1255,7 @@ $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herra
 
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
 safeStartup('Prisma Core',initPrismaCore);
+safeStartup('experiencia y PWA',initPrismaExperience);
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
   if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar').classList.contains('open'))closeSidebar();}

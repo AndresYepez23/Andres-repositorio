@@ -2,7 +2,7 @@
 <html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101218">
   <meta name="description" content="Prisma Space reúne herramientas digitales, procesamiento local e inteligencia artificial para crear, convertir, optimizar y experimentar en un solo lugar.">
   <meta name="application-name" content="Prisma Space">
@@ -17,6 +17,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
   <link rel="icon" href="./assets/prisma-mark.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./assets/prisma-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Prisma Space">
 </head>
 <body>
   <div class="app-shell">
@@ -47,13 +53,46 @@
     <button type="button" class="sidebar-backdrop" id="sidebar-backdrop" aria-label="Cerrar menú lateral"></button>
 
     <main class="main-area">
+      <div id="pwa-banner" class="pwa-banner hidden" role="region" aria-label="Instalar Prisma Space">
+        <img src="./assets/prisma-app-icon.svg" alt="" width="38" height="38"><div class="pwa-banner-copy"><strong>Prisma Space en tu dispositivo</strong><span>Tu asistente al alcance de un toque.</span></div>
+        <button type="button" id="pwa-install" class="pwa-banner-install">Instalar</button>
+        <button type="button" id="pwa-dismiss" class="pwa-banner-close" aria-label="Cerrar invitación">×</button>
+      </div>
       <header class="topbar">
         <button class="icon-button mobile-menu" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false" data-icon="menu"></button>
         <div class="breadcrumb"><span>PRISMA SPACE</span><span class="crumb-sep">/</span><strong id="breadcrumb-current">Explorar</strong></div>
         <div class="topbar-actions">
           <label class="global-search"><span data-icon="search" aria-hidden="true"></span><input id="global-search" type="search" aria-label="Buscar herramientas" placeholder="Buscar una herramienta..." autocomplete="off"><kbd>Ctrl K</kbd></label>
-          <button class="icon-button" id="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema" data-icon="sun"></button>
-          <div class="profile-wrap"><button type="button" class="profile-chip" id="profile-toggle" aria-label="Abrir espacio personal" aria-haspopup="true" aria-expanded="false"><span>I</span></button><div class="profile-menu hidden" id="profile-menu" role="menu" aria-label="Espacio personal"><div class="profile-menu-heading"><strong>Tu espacio</strong><span>Modo invitado</span></div><p>Favoritos, tema e historial se guardan solo en este navegador. No necesitas crear una cuenta.</p><a href="./privacy.html#privacidad" role="menuitem">Privacidad y uso</a><button type="button" id="clear-local-data" role="menuitem">Borrar mis datos locales</button></div></div>
+          <div class="core-top-actions" id="core-top-actions">
+            <button type="button" class="icon-button" id="core-top-new" aria-label="Chat nuevo" title="Chat nuevo"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 5h6M18 2v6M8 15l5-5"/></svg></button>
+            <button type="button" class="icon-button" id="core-top-more" aria-label="Más opciones del chat" aria-expanded="false" title="Más opciones"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+            <div class="core-more-menu hidden" id="core-more-menu" role="menu">
+              <button type="button" id="core-more-history" role="menuitem">Conversaciones</button>
+              <button type="button" id="core-more-export" role="menuitem">Exportar este chat</button>
+              <button type="button" id="core-more-rename" role="menuitem">Renombrar conversación</button>
+              <button type="button" id="core-more-delete" role="menuitem">Eliminar conversación</button>
+              <button type="button" id="core-more-voice" role="menuitem">Conversación por voz</button>
+              <button type="button" id="core-more-install" role="menuitem">Instalar Prisma</button>
+            </div>
+          </div>
+          <div class="profile-wrap">
+            <button type="button" class="profile-chip" id="profile-toggle" aria-label="Tu espacio" aria-haspopup="true" aria-expanded="false"><span>I</span></button>
+            <div class="profile-menu hidden" id="profile-menu" role="menu" aria-label="Espacio personal">
+              <div class="profile-menu-top"><img src="./assets/prisma-app-icon.svg" alt="" width="36" height="36"><div><strong>Prisma Space</strong><small id="account-menu-state">Continuar como invitado</small></div></div>
+              <div class="profile-menu-section">
+                <button type="button" id="open-account-auth" class="profile-menu-action" role="menuitem"><span aria-hidden="true">◎</span><span id="profile-login-label">Iniciar sesión o crear cuenta</span></button>
+                <button type="button" id="theme-toggle" class="profile-menu-action" aria-label="Cambiar tema" role="menuitem"><span aria-hidden="true">◐</span><span id="theme-mode-label">Cambiar a tema claro</span></button>
+                <button type="button" id="profile-install" class="profile-menu-action" role="menuitem"><span aria-hidden="true">↧</span><span>Instalar aplicación</span></button>
+                <a href="./privacy.html#privacidad" class="profile-menu-action" role="menuitem"><span aria-hidden="true">◇</span><span>Privacidad y uso</span></a>
+              </div>
+              <div class="profile-menu-section">
+                <button type="button" id="clear-local-data" class="profile-menu-action danger" role="menuitem"><span aria-hidden="true">⌫</span><span>Borrar datos de este dispositivo</span></button>
+                <button type="button" id="account-sync" class="profile-menu-action hidden" role="menuitem"><span aria-hidden="true">☁</span><span>Sincronizar mis conversaciones</span></button>
+                <button type="button" id="account-signout" class="profile-menu-action hidden" role="menuitem"><span aria-hidden="true">↪</span><span>Cerrar sesión</span></button>
+              </div>
+              <p class="profile-menu-privacy" id="profile-menu-privacy">Prisma es gratis sin cuenta. El historial se guarda en este navegador; registrarte permitirá sincronizarlo.</p>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -94,8 +133,10 @@
                       </label>
                       <small>El motor automático intenta los respaldos autorizados si falla el principal. Adjunta hasta 8 archivos (100 MB en total).</small>
                     </div>
-                  </details></div>
-                  <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
+                  </details>
+                  <button type="button" class="core-voice-button" id="core-dictate" aria-label="Dictar mensaje" title="Dictar mensaje"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
+                  <button type="button" class="core-voice-button core-talk-button" id="core-talk" aria-label="Conversación por voz" title="Conversación por voz"><svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><path d="M4 9v6m4-10v14m4-17v20m4-15v10m4-8v6"/></svg></button></div>
+                  <button type="button" class="button button-primary" id="core-send"><span id="core-send-label">Enviar</span><span data-icon="arrow-right"></span></button>
                 </div>
 
 
@@ -246,6 +287,21 @@
       <footer><button type="button" class="mini-button" id="core-editor-reset">Restablecer</button><button type="button" class="button button-primary" id="core-editor-save">Guardar imagen en el chat</button></footer>
     </section>
   </div>
+<div class="auth-backdrop hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  <section class="auth-panel"><button type="button" class="auth-close" id="auth-close" aria-label="Cerrar">×</button><img src="./assets/prisma-app-icon.svg" alt="" width="55" height="55"><h2 id="auth-title">Bienvenido a Prisma Space</h2>
+    <p>Úsalo gratis sin registrarte. Con una cuenta podrás sincronizar conversaciones y preferencias cuando activemos la conexión segura.</p>
+    <button type="button" class="auth-guest" id="auth-guest">Seguir usando Prisma sin cuenta</button>
+    <p class="auth-availability" id="auth-availability">Preparando autenticación independiente de OdontoUdeC.</p>
+    <div class="auth-provider-grid"><button type="button" id="auth-google" disabled>Continuar con Google <small>Por configurar</small></button><button type="button" id="auth-apple" disabled>Continuar con Apple <small>Por configurar</small></button><button type="button" id="auth-phone" disabled>Continuar con teléfono <small>Requiere SMS</small></button></div>
+    <div class="auth-divider"><span>o con tu correo</span></div>
+    <div class="auth-tabs"><button type="button" id="auth-tab-login" class="active">Iniciar sesión</button><button type="button" id="auth-tab-signup">Crear cuenta</button></div>
+    <form id="auth-form"><label>Correo electrónico<input type="email" id="auth-email" autocomplete="email" required placeholder="correo@ejemplo.com"></label><label>Contraseña<input type="password" id="auth-password" autocomplete="current-password" minlength="6" required placeholder="Mínimo 6 caracteres"></label><button type="submit" class="auth-submit" id="auth-submit" disabled>Continuar</button></form>
+    <form class="hidden" id="auth-phone-form"><label>Teléfono internacional<input type="tel" id="auth-phone-number" autocomplete="tel" placeholder="+57 300 000 0000"></label><button type="button" id="auth-send-code">Enviar SMS</button><label>Código<input type="text" id="auth-otp-code" inputmode="numeric" maxlength="8"></label><button type="submit">Verificar código</button></form>
+    <button type="button" class="auth-reset" id="auth-reset" disabled>Recuperar contraseña</button><p class="auth-message" id="auth-message" role="status"></p>
+  </section>
+</div>
+<div class="voice-backdrop hidden" id="voice-modal" role="dialog" aria-modal="true" aria-labelledby="voice-title"><section class="voice-panel"><button class="auth-close" type="button" id="voice-close" aria-label="Cerrar voz">×</button><span class="voice-orb" aria-hidden="true">✦</span><h2 id="voice-title">Conversación por voz</h2><p>Habla por turnos con Prisma. La IA responde y tu dispositivo puede leer su mensaje. No es una llamada continua en tiempo real.</p><div class="voice-transcript" id="voice-transcript" role="status">Pulsa el micrófono para hablar.</div><div class="voice-controls"><button type="button" id="voice-record">Hablar</button><button type="button" id="voice-stop">Detener voz</button></div><small>La transcripción puede usar el servicio de voz del dispositivo o Groq, según disponibilidad y permiso.</small></section></div>
+<div class="pwa-instructions hidden" id="pwa-instructions" role="dialog" aria-modal="true" aria-label="Instalar Prisma"><section><button type="button" id="pwa-instructions-close" aria-label="Cerrar">×</button><img src="./assets/prisma-app-icon.svg" width="50" height="50" alt=""><h2>Instala Prisma Space</h2><p id="pwa-instructions-text">Abre el menú de compartir de Safari y elige «Añadir a pantalla de inicio».</p><button type="button" class="auth-submit" id="pwa-instructions-done">Entendido</button></section></div>
   <div class="modal-backdrop hidden" id="tool-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title">
     <section class="tool-modal">
       <header class="modal-header"><div class="modal-title-wrap"><span class="modal-icon" id="modal-icon"></span><div><div class="modal-kicker" id="modal-kicker">HERRAMIENTA</div><h2 id="modal-title">Herramienta</h2></div></div><button type="button" class="icon-button" id="modal-close" aria-label="Cerrar herramienta" title="Cerrar herramienta" data-icon="x"></button></header>
