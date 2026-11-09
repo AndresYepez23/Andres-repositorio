@@ -484,12 +484,14 @@ async function pdfToImages(file,p,cb){
   const page=await pdf.getPage(ids[n]+1),viewport=page.getViewport({scale});
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
   await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-  zip.file('pagina-'+String(ids[n]+1).padStart(3,'0')+'.png',await blob.arrayBuffer());
+  const jpg=String(p.format||'png').toLowerCase()==='jpeg';
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,jpg?'image/jpeg':'image/png',jpg?.9:undefined));
+  if(!blob)throw Error('No se pudo exportar la página '+(ids[n]+1)+'.');
+  zip.file('pagina-'+String(ids[n]+1).padStart(3,'0')+(jpg?'.jpg':'.png'),await blob.arrayBuffer());
   progress(cb,(n+1)/ids.length*.85,'Exportando página '+(n+1)+' de '+ids.length+'...');
  }
  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
- return {...download(blob,'prisma-paginas-png.zip'),summary:ids.length+' páginas exportadas como PNG.'};
+ return {...download(blob,'prisma-paginas-'+(p.format==='jpeg'?'jpg':'png')+'.zip'),summary:ids.length+' páginas exportadas como '+(p.format==='jpeg'?'JPG':'PNG')+' en ZIP.'};
 }
 async function pdfToWord(file,cb){
  const pdfjs=await getPdfJs();
