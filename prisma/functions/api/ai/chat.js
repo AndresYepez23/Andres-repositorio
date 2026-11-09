@@ -108,7 +108,7 @@ export async function onRequestPost({ request, env }) {
     if(hold)return json({error:hold.reason,provider:"groq",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
   }
   const limitError = await checkLimits(env, request, provider);
-  if (limitError) return json({error:limitError.error},limitError.status);
+  if (limitError) return json({error:limitError.error,code:limitError.code,scope:limitError.scope,retryAfter:limitError.retryAfter},limitError.status);
 
   if (provider === "pollinations") {
     if (!env.POLLINATIONS_API_KEY) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
