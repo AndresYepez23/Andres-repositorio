@@ -63,6 +63,8 @@ function initCoreMenu(){
  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMore();});
 }
 export function initPrismaExperience(){
+ // Keep the personal sheet out of Safari's backdrop-filter stacking context.
+ const profile=$('#profile-menu');if(profile&&profile.parentElement!==document.body)document.body.append(profile);
  initPwa();
  initCoreMenu();
  initPrismaAccount().catch(error=>console.warn('Cuenta Prisma no conectada:',error?.message||error));
