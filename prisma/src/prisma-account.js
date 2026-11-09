@@ -6,27 +6,48 @@ const SYNC_KEY='prisma-user-sync-consent-v1';
 function info(message,kind='info'){
  const el=$('#auth-message');if(!el)return;el.textContent=message;el.dataset.kind=kind;
 }
+function syncAuthUI(){
+ const signed=!!user,enabled=!!config.enabled&&!signed;
+ const providers=['google','apple','phone'].map(name=>{
+  const button=$('#auth-'+name),ready=!!config.features?.[name];
+  if(button){button.hidden=!ready;button.disabled=!ready;}
+  return ready;
+ });
+ const hasProvider=providers.some(Boolean);
+ $('.auth-provider-grid')?.classList.toggle('hidden',!enabled||!hasProvider);
+ $('.auth-divider')?.classList.toggle('hidden',!enabled||!hasProvider);
+ $('.auth-tabs')?.classList.toggle('hidden',!enabled);
+ $('#auth-form')?.classList.toggle('hidden',!enabled);
+ $('#auth-reset')?.classList.toggle('hidden',!enabled);
+ $('#auth-guest')?.classList.toggle('hidden',signed);
+ $('#auth-availability')?.classList.toggle('hidden',enabled);
+ if(signed){
+  $('#auth-title').textContent='Tu cuenta de Prisma Space';
+  $('#auth-description').textContent='Tu sesión está activa. Puedes sincronizar tus conversaciones desde el panel Tu espacio.';
+ }else if(!enabled){
+  $('#auth-title').textContent='Acceso a Prisma Space';
+  $('#auth-description').textContent='Puedes seguir utilizando Prisma gratis como invitado.';
+ }
+}
 function showAuth(show){
  const modal=$('#auth-modal');if(!modal)return;
  if(!show){
   if(modal.contains(document.activeElement))document.activeElement?.blur?.();
   modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');
  }else{
-  modal.removeAttribute('aria-hidden');
+  modal.setAttribute('aria-hidden','false');
   modal.classList.remove('hidden');
   const panel=modal.querySelector('.auth-panel');if(panel)panel.scrollTop=0;
  }
  document.body.classList.toggle('prisma-auth-open',show);
 }
 export function openPrismaAuth(){
- const signed=!!user;
- $('#auth-title').textContent=signed?'Tu cuenta de Prisma Space':'Bienvenido a Prisma Space';
- for(const selector of ['.auth-provider-grid','.auth-divider','.auth-tabs','#auth-form','#auth-reset']){
-  const element=$(selector);if(element)element.classList.toggle('hidden',signed);
- }
+ authMode='login';
+ updateTabs();
+ syncAuthUI();
  showAuth(true);
- if(signed)info('Sesión iniciada con '+(user.email||'tu cuenta')+'. Puedes sincronizar tus conversaciones desde el panel Tu espacio.','success');
- else if(!config.enabled)info('El registro se habilitará con un proyecto Supabase independiente. Prisma sigue siendo gratuito sin cuenta.');
+ if(user)info('Sesión iniciada con '+(user.email||'tu cuenta')+'. Puedes sincronizar tus conversaciones desde el panel Tu espacio.','success');
+ else if(!config.enabled)info('El acceso con cuenta todavía no está disponible. Puedes seguir usando Prisma gratis como invitado.');
 }
 function updateTabs(){
  const login=authMode==='login';
@@ -34,6 +55,12 @@ function updateTabs(){
  $('#auth-tab-signup')?.classList.toggle('active',!login);
  const button=$('#auth-submit');if(button)button.textContent=login?'Entrar con correo':'Crear cuenta';
  const password=$('#auth-password');if(password)password.autocomplete=login?'current-password':'new-password';
+ if(!user){
+  $('#auth-title').textContent=login?'Iniciar sesión en Prisma Space':'Crear cuenta en Prisma Space';
+  $('#auth-description').textContent=login
+   ?'Accede a tu cuenta para sincronizar tus conversaciones y preferencias.'
+   :'Crea tu cuenta para guardar y sincronizar tus conversaciones entre dispositivos.';
+ }
 }
 function refreshIdentity(){
  const label=$('#account-menu-state'),login=$('#profile-login-label'),logout=$('#account-signout'),sync=$('#account-sync');
@@ -45,6 +72,7 @@ function refreshIdentity(){
  if(helper)helper.textContent=user
   ? 'Tu cuenta está conectada. La sincronización del historial necesita tu autorización y utiliza el proyecto exclusivo de Prisma.'
   : 'Puedes utilizar Prisma gratis sin cuenta. Al registrarte, podrás sincronizar el historial y preferencias cuando la nube esté activa.';
+ syncAuthUI();
 }
 function selectedSync(){return !!user&&localStorage.getItem(SYNC_KEY)===user.id;}
 function sanitizeChats(){
@@ -170,18 +198,22 @@ export async function initPrismaAccount(){
  bindForms();
  let response;
  try{response=await fetch('/api/auth/config',{cache:'no-store'});}catch{response=null;}
- if(!response?.ok){$('#auth-availability').textContent='El acceso con cuenta aún no está configurado. Puedes usar Prisma gratis.';refreshIdentity();return;}
+ if(!response?.ok){
+  $('#auth-availability').textContent='El acceso con cuenta aún no está configurado. Puedes usar Prisma gratis.';
+  syncAuthUI();refreshIdentity();return;
+ }
  config=await response.json();
  if(!config.enabled){
-  $('#auth-availability').textContent='Registro pendiente: falta el proyecto independiente de Supabase. La versión gratuita funciona sin cuenta.';
-  refreshIdentity();return;
+  $('#auth-availability').textContent='El registro todavía no está configurado. La versión gratuita funciona sin cuenta.';
+  syncAuthUI();refreshIdentity();return;
  }
  $('#auth-availability').textContent='Puedes usar Prisma gratis como invitado o iniciar sesión para guardar tus chats.';
  const form=$('#auth-submit'),reset=$('#auth-reset');form.disabled=false;reset.disabled=false;
  for(const provider of ['google','apple','phone']){
   const button=$('#auth-'+provider),ready=!!config.features?.[provider];
-  if(button){button.disabled=!ready;const status=button.querySelector('small');if(status)status.textContent=ready?'Disponible':'Por configurar';}
+  if(button){button.disabled=!ready;button.hidden=!ready;}
  }
+ syncAuthUI();
  try{
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2.80.0?bundle');
   api=createClient(config.url,config.publishableKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
@@ -193,6 +225,7 @@ export async function initPrismaAccount(){
  }catch(err){
   form.disabled=true;reset.disabled=true;
   $('#auth-availability').textContent='No fue posible iniciar el sistema de cuentas. Puedes seguir gratis.';
+  syncAuthUI();
   console.warn('Prisma Auth:',err?.message||err);
  }
 }
