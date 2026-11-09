@@ -6,11 +6,23 @@ export const LOCAL_CREATOR_TOOL_IDS = Object.freeze([
 function redactSensitiveText(source) {
   if (!source.trim()) throw Error('Pega el texto que quieres revisar.');
   if (source.length > 150000) throw Error('El texto supera el límite local de 150.000 caracteres.');
-  let secrets = 0, emails = 0, phones = 0;
+  let secrets = 0, emails = 0, phones = 0, links = 0, ips = 0;
   let result = source.replace(
     /\b(?:rqsty-sk-|gsk_|AIza|sk-|hf_|xoxb-)[A-Za-z0-9+/_=-]{12,}(?![A-Za-z0-9+/_=-])/g,
     () => { secrets++; return '[CLAVE OCULTA]'; }
   );
+  // Replace URLs before IP and telephone detection so components within links
+  // are not counted again as independent sensitive identifiers.
+  result = result.replace(/https?:\/\/[^\s<>"']+/gi, candidate => {
+    const punctuation = candidate.match(/[),.;!?]+$/)?.[0] || '';
+    links++;
+    return '[ENLACE OCULTO]' + punctuation;
+  });
+  result = result.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, candidate => {
+    if (!candidate.split('.').every(value => Number(value) <= 255)) return candidate;
+    ips++;
+    return '[IP OCULTA]';
+  });
   result = result.replace(
     /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
     () => { emails++; return '[CORREO OCULTO]'; }
@@ -22,9 +34,9 @@ function redactSensitiveText(source) {
     phones++;
     return match.replace(candidate, '[TELÉFONO OCULTO]');
   });
-  const total = secrets + emails + phones;
+  const total = secrets + emails + phones + links + ips;
   return { text: result, summary: total + ' coincidencia(s) potencialmente sensibles ocultadas: ' +
-    secrets + ' claves, ' + emails + ' correos, ' + phones + ' teléfonos. ' +
+    secrets + ' claves, ' + emails + ' correos, ' + phones + ' teléfonos, ' + links + ' enlaces y ' + ips + ' direcciones IPv4. ' +
     'Revisa manualmente antes de publicar: este detector no garantiza anonimización completa.' };
 }
 
