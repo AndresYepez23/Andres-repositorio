@@ -35,7 +35,7 @@ export async function onRequestGet({ env }) {
     configured: {pollinations:Boolean(env.POLLINATIONS_API_KEY),gemini:Boolean(env.GEMINI_API_KEY),huggingface:Boolean(env.HF_TOKEN),groq:Boolean(env.GROQ_API_KEY),cloudflare:Boolean(env.AI?.run),openrouter:Boolean(env.OPENROUTER_API_KEY)},
     warnings: {...(blockedPollinations?{pollinations:blockedPollinations.reason}:{}),...(blockedSpeech?{pollinationsAudio:blockedSpeech.reason}:{}),...(blockedHF?{huggingface:blockedHF.reason}:{}),...(blockedGroq?{groq:blockedGroq.reason}:{}),...(blockedGroqAudio?{groqAudio:blockedGroqAudio.reason}:{}),...(blockedOpenRouter?{openrouter:blockedOpenRouter.reason}:{}),...(!env.OPENROUTER_API_KEY?{openrouter:"Falta el secreto OPENROUTER_API_KEY en Cloudflare."}:{})},
     modelCatalog: modelsForUI(),
-    features: {pollinationsAudio:speechReady,pollinationsImages:pollinationsReady,cloudflareImages: limited && Boolean(env.AI?.run), huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", geminiImages: limited && env.GEMINI_IMAGE_ENABLED==="1" && Boolean(env.GEMINI_API_KEY), huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", groqAudio: groqAudioReady},
+    features: {pollinationsAudio:speechReady,pollinationsImages:pollinationsReady,cloudflareImages: limited && Boolean(env.AI?.run), huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", geminiImages: limited && env.GEMINI_IMAGE_ENABLED==="1" && Boolean(env.GEMINI_API_KEY), huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", groqAudio: groqAudioReady, openrouterChat: openrouterReady},
     models: {
       pollinations:"openai/gpt-5.4-nano",
       gemini: env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
