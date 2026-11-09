@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
+import { getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -264,7 +265,7 @@ assert.ok(topbarIndex >= 0 && profileIndex > topbarIndex && profileIndex < topba
 
 // First-paint contract: static HTML must already match the default Core route.
 // This prevents the old tools dashboard from flashing before the module executes.
-assert.match(sidebarHtml, /<body class="is-core-view">/);
+assert.match(sidebarHtml, /<body class="is-core-view app-booting">/);
 assert.match(sidebarHtml, /class="nav-item active core-nav-item" data-view="core"/);
 assert.match(sidebarHtml, /id="breadcrumb-current">Prisma Core</);
 assert.match(sidebarHtml, /<section class="core-section" id="core-section">/);
