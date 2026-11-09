@@ -78,7 +78,7 @@ function save(){
       active.updated=Date.now();
       const first=messages.find(message=>message.role==='user'&&message.content.trim());
       if(first&&(!active.titled||active.title==='Nueva conversación')){
-        active.title=String(first.content).replace(/\\s+/g,' ').trim().slice(0,58)||'Nueva conversación';
+        active.title=String(first.content).replace(/\s+/g,' ').trim().slice(0,58)||'Nueva conversación';
         active.titled=true;
       }
     }
@@ -89,7 +89,7 @@ function save(){
 function newChatRecord(content=[]){
  const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
  const first=content.find(message=>message.role==='user'&&message.content?.trim());
- return {id,title:first?String(first.content).replace(/\\s+/g,' ').trim().slice(0,58):'Nueva conversación',
+ return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
    titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null};
 }
 function persistChatHistory(activeSerialized=null){
@@ -789,6 +789,7 @@ function describeUnattachedToolRequest(userText){
 // actual file conversion, image/audio generation and multi-stage operations.
 function thumbnailIntent(text){
  const q=normalizeCoreIntent(text);
+ if(/\b(prompt|ideas?|guion|descripcion|descripción)\b/.test(q)&&/\b(?:para|de)\b.{0,24}\bminiatura\b/.test(q))return false;
  const name=/\b(miniatura|thumbnail)\b|\bportada\b.{0,30}\b(youtube|video)\b/.test(q);
  const action=/(?:crea|crear|gener|diseñ|disen|haz|hacer|puedes|quiero|necesito|prepara|preparar|fabricar|editar|mejorar)/.test(q);
  return name&&action;
@@ -800,7 +801,7 @@ function thumbnailTopic(text){
   /(?:video|vídeo)\s+(?:sobre|de|que trata de)\s+(.{7,})/i,
   /(?:tema|asunto)\s*[:：-]\s*(.{5,})/i
  ];
- for(const pattern of candidates){const value=clean.match(pattern)?.[1]?.replace(/[?.!]+$/,'').trim();if(value&&!/^(?:youtube|un video|mi video|el video|algo|lo que sea)$/i.test(value))return value;}
+ for(const pattern of candidates){const value=clean.match(pattern)?.[1]?.replace(/[,;]\s*(?:texto|frase|titulo|título|estilo|colores)\s*[:：].*$/i,'').replace(/[?.!]+$/,'').trim();if(value&&!/^(?:youtube|un video|mi video|el video|algo|lo que sea)$/i.test(value))return value;}
  return '';
 }
 function extractThumbnailText(value){
