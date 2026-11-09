@@ -275,7 +275,7 @@ assert.match(sidebarHtml, /<section class="tools-section hidden" id="tools-secti
 assert.match(sidebarHtml, /<section class="ai-section hidden" id="ai-section">/);
 assert.ok(sidebarHtml.indexOf('id="core-messages"') < sidebarHtml.indexOf('class="core-welcome"'));
 assert.ok(sidebarHtml.includes('class="core-welcome"'));
-assert.match(sidebarHtml, /id="category-nav"[^>]*class="category-nav hidden"/);
+assert.ok(sidebarHtml.includes('class="category-nav hidden" id="category-nav"'));
 assert.doesNotMatch(sidebarHtml, /class="core-sidebar-conversations hidden"/);
 assert.ok(sidebarCore.includes('mainSidebarSlot.replaceChildren(integratedHistory)'));
 assert.ok(sidebarCss.includes('body.is-core-view #core-workspace > .core-history'));
