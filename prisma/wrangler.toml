@@ -9,3 +9,9 @@ database_id = "e02104b5-0861-475a-a60f-7658439d4fe0"
 
 [ai]
 binding = "AI"
+
+# Public Supabase client configuration (NOT a service_role key).
+# Wrangler is the source of truth for Pages; dashboard text vars are reset on deploy.
+[vars]
+PRISMA_SUPABASE_URL = "https://hyoxywiwhnhfekakhivp.supabase.co"
+PRISMA_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3I8riH969aihitAxy_qC4w_Vfpuacpd"
