@@ -5,6 +5,7 @@ import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWit
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
+import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -50,6 +51,27 @@ assert.ok(router.describeCoreTools('herramientas para editar un video', video).i
 
 // Validate typed tool handoffs: never pass a ZIP to PDF/image editing.
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+const stylesSource=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+
+// A short compliment about a previous song is a conversational turn, not a
+// new songwriting request. Explicitly asking for another song remains an action.
+assert.equal(isAcknowledgementMessage('Muy buena canción'),true);
+assert.equal(isAcknowledgementMessage('Me encantó la canción'),true);
+assert.equal(isAcknowledgementMessage('Gracias'),true);
+assert.equal(isAcknowledgementMessage('Muy buena canción, crea otra'),false);
+assert.match(buildAcknowledgementReply('Muy buena canción','Aquí está la letra completa de la canción.'),/esta misma/);
+assert.match(buildAcknowledgementReply('Gracias',''),/Con gusto/);
+const directTaskStart=coreSource.indexOf('function directCoreTask(text){');
+const directTaskEnd=coreSource.indexOf('async function answerConversation',directTaskStart);
+assert.ok(directTaskStart>=0&&directTaskEnd>directTaskStart,'Core conversation task router not found');
+const directTask=new Function('attachments',coreSource.slice(directTaskStart,directTaskEnd)+';return directCoreTask;')([]);
+assert.equal(directTask('Muy buena canción'),'conversation');
+assert.equal(directTask('Me encanta la canción'),'conversation');
+assert.equal(directTask('Crea una canción original'),'songwriting');
+assert.equal(directTask('Una canción sobre esperanza'),'songwriting');
+assert.match(coreSource,/core-message-row/,'messages must render inside a shared alignment lane');
+assert.match(stylesSource,/body\\.is-core-view \\.core-message-row/,'chat lane layout CSS is missing');
+assert.match(stylesSource,/overflow-x: hidden !important/,'Core must prevent page-level horizontal overflow');
 const start=coreSource.indexOf('function compatibleFiles(tool,files){');
 const finish=coreSource.indexOf('function showPlan(plan,steps){',start);
 assert.ok(start>=0&&finish>start,'Core validation module not found');
