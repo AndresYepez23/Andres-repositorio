@@ -57,7 +57,7 @@ El JSON es el método recomendado porque Cloudflare Workers tiene un límite de 
 ## Límites y condiciones particulares que no se multiplican
 
 - AIHubMix: la prueba sin recarga tiene 10 llamadas totales. Tras una recarga mínima de USD 1, activa `AIHUBMIX_DAILY_QUOTA_ACTIVE=1`; Prisma consulta el catálogo y pesos en vivo, filtra modelos de texto con peso 1 y conserva un límite interno compartido de 15 solicitudes/día y 10/minuto.
-- Kilo: solo modelos con precio cero; algunos endpoints de prueba pueden registrar prompts. No se enruta automáticamente.
+- Kilo: solo modelos de precio cero; el respaldo automático excluye los endpoints de prueba NVIDIA que pueden registrar prompts. Estos últimos requieren elección manual.
 - Requesty: máximo tres claves. Prisma limita el conjunto a 25 solicitudes/día y 10/minuto.
 - SenseNova: Prisma limita el conjunto a 25 solicitudes/día y 5/minuto.
 - Z.AI: Prisma limita el conjunto a 25 solicitudes/día y 3/minuto.
