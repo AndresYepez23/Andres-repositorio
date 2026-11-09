@@ -166,6 +166,17 @@
             <div><div class="eyebrow">CATÁLOGO</div><h2 id="section-title">Explora las herramientas</h2><p id="section-description">Elige una herramienta y empieza a trabajar al instante.</p></div>
             <div class="heading-actions"><button type="button" class="button button-quiet hidden" id="clear-recent">Borrar historial</button><div class="view-switch"><button class="view-button active" data-layout="grid" aria-label="Vista de cuadrícula" data-icon="grid"></button><button class="view-button" data-layout="list" aria-label="Vista de lista" data-icon="list"></button></div></div>
           </div>
+          <div class="explore-finder">
+            <label class="explore-query-wrap" for="explore-search"><span data-icon="search"></span><input id="explore-search" type="search" placeholder="¿Qué quieres hacer? Ej.: quitar fondo, transcribir audio, editar PDF" autocomplete="off" aria-label="Buscar herramientas por tarea"></label>
+            <label class="explore-specialty" for="explore-subcategory"><span>Especialidad</span><select id="explore-subcategory" aria-label="Filtrar por especialidad"><option value="all">Todas las especialidades</option></select></label>
+          </div>
+          <div class="quick-tool-actions" aria-label="Herramientas frecuentes">
+            <button type="button" data-quick-tool="pdf-extract">Extraer páginas PDF</button>
+            <button type="button" data-quick-tool="image-bg">Quitar fondo</button>
+            <button type="button" data-quick-tool="ai-transcribe">Transcribir audio</button>
+            <button type="button" data-quick-tool="image-social-kit">Tamaños para redes</button>
+            <button type="button" data-quick-tool="image-identify-local">IA visual local</button>
+          </div>
           <div class="filter-row"><div class="filter-chips" id="filter-chips"></div><span class="result-count" id="result-count"></span></div>
           <div class="tool-grid" id="tool-grid"></div>
           <div class="empty-state hidden" id="empty-state"><span data-icon="search-x"></span><h3 id="empty-title">No encontramos herramientas</h3><p id="empty-description">Prueba con otro término o cambia la categoría.</p><button class="button button-quiet" id="clear-search">Limpiar búsqueda</button></div>
