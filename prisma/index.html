@@ -90,7 +90,12 @@
 <input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip"></div>
                   <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
                 </div>
-                <small class="core-composer-note">Hasta 8 archivos · 100 MB. Se procesan localmente cuando es posible; el texto enviado a una IA externa se indica en cada operación.</small>
+                <details class="core-model-settings"><summary>Imagen: motor automático <span aria-hidden="true">⌄</span></summary>
+<label>Modelo de generación visual
+<select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option></select></label>
+<small>Elegir un motor concreto no garantiza su disponibilidad. La edición de texto de miniaturas es local y gratuita.</small>
+</details>
+<small class="core-composer-note">Hasta 8 archivos · 100 MB. Se procesan localmente cuando es posible; el texto enviado a una IA externa se indica en cada operación.</small>
               </div>
             </div>
             <aside class="core-side">
