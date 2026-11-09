@@ -9,6 +9,9 @@ const POLLINATIONS_APP_KEY = '';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const iconPaths = {
+  music:'<path d="M9 18V5l12-2v13"/><path d="M9 9l12-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="18" cy="16" rx="3" ry="2"/>',
+  clapperboard:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 7l2-4h16l-2 4M7 3l3 4m4-4 3 4M8 12l4 3-4 3Z"/>',
+  'graduation-cap':'<path d="m2 10 10-5 10 5-10 5-10-5Zm4 2v5c3 3 9 3 12 0v-5m4-2v8"/>',
   'brain-circuit':'<path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/><path d="M17.6 6.5a3 3 0 0 0-5.6-1.5 3 3 0 0 0-5.6 1.5A3.5 3.5 0 0 0 5 13a3.5 3.5 0 0 0 3.4 5h7.2A3.5 3.5 0 0 0 19 13a3.5 3.5 0 0 0-1.4-6.5Z"/><path d="M9 21h6"/>',
   paperclip:'<path d="m21.4 11.1-8.5 8.5a5 5 0 0 1-7.1-7.1l9.2-9.2a3.5 3.5 0 0 1 5 5l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
   plug:'<path d="M12 22v-5"/><path d="M9 8V2m6 6V2"/><path d="M5 8h14v4a7 7 0 0 1-14 0V8Z"/>',
@@ -338,6 +341,19 @@ function buildFields(t){
       field('Semilla (opcional)','seed','number','','Usa el mismo número para intentar reproducir una composición.','min="0" step="1"')+
       textareaField('Elementos que quieres evitar (opcional)','negativePrompt','','Elementos que prefieres evitar.')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+    case 'ai-youtube-kit':return textareaField('Tema de tu vídeo o publicación','prompt','','Describe tu idea, público objetivo y plataforma.')+
+      selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Detalle','reasoning',[['balanced','Equilibrado'],['smart','Avanzado']],'balanced')+
+      '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+    case 'ai-prompt-lab':return textareaField('Qué quieres conseguir con la IA','prompt','','Escribe una idea y para qué motor o formato quieres el prompt.')+
+      selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+    case 'ai-study-notes':return textareaField('Tema o apuntes de estudio','prompt','','Pega tus apuntes o describe el tema para obtener guía y preguntas de repaso.')+
+      selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+    case 'ai-code-helper':return textareaField('Código o tarea de programación','prompt','','Pega código, describe el error o explica qué función necesitas.')+
+      selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'music-lyrics':return textareaField('Idea, tema o historia de la canción','prompt','','Describe el mensaje, género musical, emoción, idioma y detalles que quieras incluir.')+
       selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['groq','Groq'],['huggingface','Hugging Face'],['pollinations','Pollinations · personal']],'auto')+
       selectField('Modelo específico','model',[['','Automático · según la tarea']],'')+
@@ -666,7 +682,7 @@ function openTool(t){
     drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');addSelectedFiles([...e.dataTransfer.files],t);});
     $('#file-list').addEventListener('click',e=>{const remove=e.target.closest('[data-remove-file]');if(remove){selectedFiles.splice(Number(remove.dataset.removeFile),1);renderFileList();return;}if(e.target.closest('[data-clear-files]')){selectedFiles=[];renderFileList();}});
   }
-  if(['image-gen','ai-assistant','music-lyrics','ai-voice','ai-transcribe'].includes(t.id))setupAIAuthorization(t);
+  if(['image-gen','ai-assistant','music-lyrics','ai-voice','ai-transcribe','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(t.id))setupAIAuthorization(t);
   if(t.id==='api-explorer')setupApiExplorer();
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
@@ -703,10 +719,29 @@ function buildWorkflowFields(workflow){
       selectField('Nivel de detalle','length',[['short','Breve'],['medium','Equilibrado'],['long','Detallado']],'medium')+
       '<div class="tool-hint">Prisma seleccionará automáticamente un motor conectado. Tus credenciales se configuran una sola vez en el Laboratorio IA.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
+  if(workflow.id==='song-studio'){
+    return textareaField('Tema y mensaje de la canción','prompt','','Describe el tema y a quién va dirigida.')+
+      selectField('Género musical','genre',[['worship','Worship / adoración'],['pop','Pop'],['balada','Balada'],['urbano','Urbano'],['rock','Rock'],['acustica','Acústica'],['libre','Libre']],'worship')+
+      selectField('Emoción','mood',[['esperanza','Esperanza'],['fe','Fe'],['alegria','Alegría'],['fortaleza','Fortaleza'],['reflexion','Reflexión']],'esperanza')+
+      selectField('Idioma','language',[['Español','Español'],['English','Inglés']],'Español')+
+      '<div class="tool-hint">Genera letra original y guía musical en Markdown. No produce audio. Utiliza un motor de texto disponible con respaldo automático.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+  }
+  if(workflow.id==='creator-studio'){
+    return textareaField('Tema del vídeo o publicación','prompt','','Escribe la idea, tema y el objetivo de tu contenido.')+
+      selectField('Plataforma','platform',[['YouTube','YouTube'],['TikTok','TikTok'],['Instagram','Instagram'],['Facebook','Facebook']],'YouTube')+
+      field('Público objetivo','audience','text','Público general')+
+      '<label class="workflow-check"><input type="checkbox" name="includeImage"><span><strong>Crear también imagen de miniatura</strong><small>Opcional: consume una solicitud de IA de imagen.</small></span></label>'+
+      '<div class="tool-hint">Prepara títulos, guion, descripción y hashtags. La miniatura solo se genera si la seleccionas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+  }
+  if(workflow.id==='study-studio'){
+    return textareaField('Tema de estudio','prompt','','Qué quieres estudiar o repasar.')+
+      textareaField('Apuntes o contexto (opcional)','notes','','Pega tus apuntes para personalizar preguntas y tarjetas.')+
+      '<div class="tool-hint">Prepara una guía, cuestionario con respuestas y tarjetas de repaso. Verifica datos importantes con tus fuentes de estudio.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+  }
   if(workflow.id==='ai-creation'){
-    return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['pollinations','Pollinations · tu saldo autorizado'],['huggingface','Hugging Face · tu cuenta'],['gemini','Google Gemini · tu cuenta']],'auto','Prisma solo utilizará las cuentas que hayas conectado.')+
+    return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['cloudflare','Cloudflare FLUX · central'],['pollinations','Pollinations · central o personal'],['huggingface','Hugging Face · créditos opcionales']],'auto','Se usan motores realmente habilitados en el backend.')+
       selectField('Calidad de generación','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
-      selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['pollinations','Pollinations'],['huggingface','Hugging Face'],['groq','Groq'],['gemini','Google Gemini']],'auto')+      '<div class="tool-hint workflow-provider-notice" id="workflow-provider-notice"></div><div class="tool-hint workflow-provider-notice" id="workflow-text-notice"></div>'+
+      selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare'],['pollinations','Pollinations'],['huggingface','Hugging Face']],'auto')+      '<div class="tool-hint workflow-provider-notice" id="workflow-provider-notice"></div><div class="tool-hint workflow-provider-notice" id="workflow-text-notice"></div>'+
       '<div class="prompt-examples"><span>Ideas para empezar</span><button type="button" class="mini-button prompt-example" data-prompt-example="Fotografía publicitaria premium de un perfume minimalista sobre una superficie de piedra, iluminación de estudio suave y fondo elegante.">Producto premium</button><button type="button" class="mini-button prompt-example" data-prompt-example="Una ciudad futurista bajo la lluvia al anochecer, luces cinematográficas, reflejos detallados y atmósfera épica.">Escena cinematográfica</button><button type="button" class="mini-button prompt-example" data-prompt-example="Ilustración editorial moderna sobre creatividad e inteligencia artificial, composición limpia y colores armónicos.">Ilustración editorial</button><button type="button" class="mini-button prompt-example" data-prompt-example="Miniatura de YouTube con alto contraste, sujeto principal expresivo, composición clara y espacio visual para un título corto.">Miniatura YouTube</button></div>'+
 
       textareaField('Cuéntanos qué quieres crear','prompt','','Describe el sujeto, el ambiente, el propósito y el estilo. Prisma se encarga de preparar el prompt visual.')+
@@ -773,6 +808,9 @@ function openWorkflow(workflow){
     });
   }
   if(workflow.id==='ai-creation')setupWorkflowAI();
+  else if(['ai-task','song-studio','creator-studio','study-studio'].includes(workflow.id)){
+    $('#open-ai-settings')?.addEventListener('click',()=>{closeTool();showView('ai');$('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});});
+  }
   $('#modal-close').focus({preventScroll:true});
 }
 function updateUnitOptions(){
@@ -815,7 +853,7 @@ async function attachProviderCredentials(params){
   params.hfToken='';
   params.geminiKey='';
   params.groqKey='';
-  params.centralProviders=central.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
+  params.centralProviders=central.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
   params.centralFeatures=central.features||{};
   params.centralModelCatalog=central.modelCatalog||{chat:{},image:{},audio:{}};
   return params;
