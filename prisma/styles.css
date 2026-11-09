@@ -719,3 +719,10 @@ body.core-editor-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
  .core-history,.core-history-backdrop{transition:none}
 }
+
+/* True 3D prism surface: animated tetrahedron geometry, not a flat rotating SVG */
+.prism-core.canvas-ready .hero-prism{display:none}
+.hero-prism-canvas{display:block;width:235px;height:235px;max-width:100%;aspect-ratio:1;filter:drop-shadow(0 16px 24px rgba(150,165,248,.22))}
+@media(max-width:850px){.hero-prism-canvas{width:195px;height:195px}}
+@media(max-width:620px){.hero-prism-canvas{width:165px;height:165px}}
+@media(prefers-reduced-motion:reduce){.hero-prism-canvas{animation:none}}
