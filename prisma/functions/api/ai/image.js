@@ -25,7 +25,7 @@ export async function onRequestPost({request,env}){
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!env.HF_TOKEN))
   return errorResponse("Las imágenes de Hugging Face requieren activar explícitamente HF_MEDIA_ENABLED=1; no consumiremos tus créditos sin autorización.",503);
  const quota=await checkLimits(env,request,provider+"-image");
- if(quota)return errorResponse(quota.error,quota.status);
+ if(quota)return Response.json({error:quota.error,code:quota.code||'LIMIT'},{status:quota.status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
  if(provider==="cloudflare"){
   try{
    const response=await env.AI.run(model,{prompt:prompt.slice(0,1800),steps:4,...(Number.isInteger(Number(payload.seed))&&Number(payload.seed)>0?{seed:Number(payload.seed)}:{})});
