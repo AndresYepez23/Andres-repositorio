@@ -26,7 +26,7 @@ export function resolvePrismaProductQuestion(text,history=[],providers={}){
  const selfModel=/(?:eres|usas|utilizas|funcionas con|que modelo|cual modelo|que ia|en prisma|aqui en prisma)/.test(q);
  const briefFollowup=/^(?:aqui|aqui en prisma|y aqui|y gemini|y groq|y ahora|eso|pero aqui|hay otros|hay mas modelos|y que modelos)$/.test(q);
  const inContext=queryModels||/\b(prisma|core|aqui|tu)\b/.test(q)||briefFollowup;
- const previousProduct=/\b(prisma|gemini|groq|modelo|motor|gpt|openai)\b/.test(earlier);
+ const previousProduct=/\b(prisma|gemini|groq|openrouter|modelo|motor|gpt|openai)\b/.test(earlier);
  if(localIdentity){
   return 'Sí, soy Prisma Core, el asistente de IA de Prisma Space. Puedo conversar y coordinar herramientas. No soy un modelo único: puedo utilizar motores diferentes según la tarea y la disponibilidad. '+modelLine(history);
  }
