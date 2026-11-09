@@ -166,7 +166,7 @@ export async function onRequestPost({ request, env }) {
         status === 402 ? "OpenRouter no tiene saldo disponible para esta solicitud." :
         status === 401 || status === 403 ? "OpenRouter rechazó la clave configurada. Revisa OPENROUTER_API_KEY." :
         "OpenRouter respondió con un error (" + status + ")." + (providerMessage ? " " + providerMessage : "");
-      return json({ error: message, provider: "openrouter", status, retryAfter: holdSeconds || null }, status === 429 || status === 402 ? status : status === 400 ? 400 : 502);
+      return json({ error: message, provider: "openrouter", status, code: status === 429 || status === 402 ? "PROVIDER_LIMIT" : status === 400 ? "INVALID_MODEL" : "PROVIDER_ERROR", retryAfter: holdSeconds || null }, status === 429 || status === 402 ? status : status === 400 ? 400 : 502);
     }
 
     const content = data.choices?.[0]?.message?.content;
