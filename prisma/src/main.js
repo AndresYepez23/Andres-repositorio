@@ -444,7 +444,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,huggingfaceImages:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div></article>';
@@ -600,6 +600,7 @@ function providerNoticeText(provider,quality,task='image'){
  if(!connected[selected])return centralConnectionState.warnings?.[selected]||'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
  if(selected==='huggingface'&&task==='image'&&!features.huggingfaceImages)return 'Hugging Face permite generar imágenes, pero está desactivado para no agotar tus créditos gratuitos. Usa Cloudflare FLUX.';
  if(selected==='huggingface'&&task==='audio'&&!features.huggingfaceAudio)return 'El audio de Hugging Face está desactivado para proteger el crédito mensual.';
+ if(selected==='groq'&&task==='audio'&&!features.groqAudio)return centralConnectionState.warnings?.groqAudio||'Groq Whisper está temporalmente en pausa. Prisma intentará otro motor de transcripción disponible.';
  if(selected==='cloudflare')return 'Cloudflare Workers AI: motor compartido, limitado por las cuotas gratuitas diarias y el control de solicitudes de Prisma.';
  if(selected==='huggingface')return 'Hugging Face: seis modelos de texto habilitados. El nivel gratuito incluye solo US$0,10 de créditos mensuales; selecciona modelos con cuidado.';
  if(selected==='groq')return 'Groq: usa la clave central de Cloudflare. Las solicitudes están sujetas al plan gratuito y límites de Prisma.';
@@ -808,6 +809,7 @@ async function attachProviderCredentials(params){
   params.groqKey='';
   params.centralProviders=central.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
   params.centralFeatures=central.features||{};
+  params.centralModelCatalog=central.modelCatalog||{chat:{},image:{},audio:{}};
   return params;
 }
 function readParams(){

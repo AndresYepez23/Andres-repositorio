@@ -204,7 +204,7 @@ async function audioWaveform(file,p,cb){
 async function hashFile(file){
  const digest=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());
  const hex=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
- return {text:'SHA-256  '+hex+'\\nArchivo: '+file.name+'\\nTamaño: '+formatBytesEngine(file.size),summary:'Huella calculada localmente con Web Crypto.'};
+ return {text:'SHA-256  '+hex+'\nArchivo: '+file.name+'\nTamaño: '+formatBytesEngine(file.size),summary:'Huella calculada localmente con Web Crypto.'};
 }
 async function excelToJson(file,p,cb){
  const mod=await import('https://esm.sh/xlsx@0.18.5'),XLSX=mod.default||mod;
@@ -221,10 +221,10 @@ function decodeJwt(token){
  const parts=String(token||'').trim().split('.');if(parts.length!==3)throw Error('Un JWT debe tener tres segmentos separados por puntos.');
  const decode=part=>{const normalized=part.replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(escape(atob(normalized.padEnd(Math.ceil(normalized.length/4)*4,'=')))));};
  const header=decode(parts[0]),payload=decode(parts[1]);
- return {text:'ENCABEZADO\\n'+JSON.stringify(header,null,2)+'\\n\\nPAYLOAD\\n'+JSON.stringify(payload,null,2),summary:'Contenido decodificado. La firma no se ha verificado y no debe confiarse en este resultado para autenticar usuarios.'};
+ return {text:'ENCABEZADO\n'+JSON.stringify(header,null,2)+'\n\nPAYLOAD\n'+JSON.stringify(payload,null,2),summary:'Contenido decodificado. La firma no se ha verificado y no debe confiarse en este resultado para autenticar usuarios.'};
 }
 function textDiff(a,b){
- const A=String(a||'').split(/\\r?\\n/),B=String(b||'').split(/\\r?\\n/);
+ const A=String(a||'').split(/\\r?\n/),B=String(b||'').split(/\\r?\n/);
  if(A.length>450||B.length>450)throw Error('Para mantener la respuesta rápida, compara hasta 450 líneas por texto.');
  const dp=Array.from({length:A.length+1},()=>new Uint16Array(B.length+1));
  for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
@@ -280,7 +280,7 @@ async function inspectFile(file){
  else if(ascii.slice(0,3)==='ID3'||starts(0xff,0xfb))signature='MP3';
  else if(ascii.slice(0,4)==='OggS')signature='OGG';
  else if(ascii.slice(0,4)==='fLaC')signature='FLAC';
- return {text:['Nombre: '+file.name,'Tamaño: '+formatBytesEngine(file.size),'Tipo MIME declarado: '+(file.type||'No indicado'),'Última modificación: '+(file.lastModified?new Date(file.lastModified).toLocaleString('es-CO'):'No indicada'),'Extensión: '+(file.name.includes('.')?file.name.split('.').pop().toUpperCase():'Sin extensión'),'Firma detectada: '+signature,'Primeros bytes (hex): '+hex,'Vista ASCII: '+ascii].join('\\n'),summary:'Inspección local. No se ha subido el archivo.'};
+ return {text:['Nombre: '+file.name,'Tamaño: '+formatBytesEngine(file.size),'Tipo MIME declarado: '+(file.type||'No indicado'),'Última modificación: '+(file.lastModified?new Date(file.lastModified).toLocaleString('es-CO'):'No indicada'),'Extensión: '+(file.name.includes('.')?file.name.split('.').pop().toUpperCase():'Sin extensión'),'Firma detectada: '+signature,'Primeros bytes (hex): '+hex,'Vista ASCII: '+ascii].join('\n'),summary:'Inspección local. No se ha subido el archivo.'};
 }
 async function jsonToExcel(p){
  const source=String(p.text||'').trim();if(!source)throw Error('Pega una lista JSON.');
@@ -311,7 +311,7 @@ async function runText(id,p){
  switch(id){
  case 'jwt-decode':return decodeJwt(p.token);
  case 'text-diff':return textDiff(p.textA,p.textB);
- case 'regex-test':{const pattern=String(p.pattern||'');if(pattern.length>200||text.length>5000)throw Error('Limita el patrón a 200 caracteres y el texto a 5.000.');let re;try{re=new RegExp(pattern,String(p.flags||'').replace(/[^gimsu]/g,''));}catch(e){throw Error('Expresión regular inválida: '+e.message)}const matches=[...text.matchAll(re.global?re:new RegExp(re.source,re.flags+'g'))].slice(0,100);return {text:matches.length?matches.map((m,i)=>(i+1)+'. '+m[0]+' · posición '+m.index).join('\\n'):'Sin coincidencias.',summary:matches.length+' coincidencia(s).'};}
+ case 'regex-test':{const pattern=String(p.pattern||'');if(pattern.length>200||text.length>5000)throw Error('Limita el patrón a 200 caracteres y el texto a 5.000.');let re;try{re=new RegExp(pattern,String(p.flags||'').replace(/[^gimsu]/g,''));}catch(e){throw Error('Expresión regular inválida: '+e.message)}const matches=[...text.matchAll(re.global?re:new RegExp(re.source,re.flags+'g'))].slice(0,100);return {text:matches.length?matches.map((m,i)=>(i+1)+'. '+m[0]+' · posición '+m.index).join('\n'):'Sin coincidencias.',summary:matches.length+' coincidencia(s).'};}
  case 'json-yaml':{const yaml=await import('https://esm.sh/js-yaml@4.1.0');if(p.mode==='yaml-to-json'){const obj=yaml.load(text);return {text:JSON.stringify(obj,null,2)};}let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:yaml.dump(obj,{noRefs:true,lineWidth:100})};}
  case 'css-gradient':{const a=p.color1||'#9adbd2',b=p.color2||'#a9a0ee',angle=Math.max(0,Math.min(360,Number(p.angle)||135));const css=p.type==='radial'?'background: radial-gradient(circle, '+a+', '+b+');':'background: linear-gradient('+angle+'deg, '+a+', '+b+');';return {text:css,summary:'Copia esta declaración y pégala dentro de una regla CSS.'};}
  case 'json-format':{let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:JSON.stringify(obj,p.indent==='tab'?'\t':Number(p.indent||2))};}
@@ -370,7 +370,7 @@ async function runText(id,p){
   const rows=parseCsv(text,p.delimiter||',');if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila.');
   const headers=rows[0],body=rows.slice(1),out=['FILAS: '+body.length,'COLUMNAS: '+headers.length,'','RESUMEN POR COLUMNA'];
   headers.forEach((name,i)=>{const values=body.map(r=>String(r[i]??'').trim()),nonEmpty=values.filter(Boolean),nums=nonEmpty.map(Number).filter(Number.isFinite);out.push('',(name||'Columna '+(i+1))+':','  Valores no vacíos: '+nonEmpty.length,'  Vacíos: '+(body.length-nonEmpty.length));if(nums.length){const sum=nums.reduce((a,b)=>a+b,0),sorted=[...nums].sort((a,b)=>a-b);out.push('  Numéricos: '+nums.length,'  Mínimo: '+Math.min(...nums),'  Máximo: '+Math.max(...nums),'  Promedio: '+(sum/nums.length).toFixed(3),'  Mediana: '+(sorted.length%2?sorted[(sorted.length-1)/2]:((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)).toFixed(3));}});
-  return {text:out.join('\\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
+  return {text:out.join('\n'),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
  }
  case 'citation-generator':{
   const author=String(p.author||'').trim(),year=String(p.year||'').trim(),title=String(p.title||'').trim(),source=String(p.source||'').trim(),url=String(p.url||'').trim(),doi=String(p.doi||'').trim();
@@ -384,7 +384,7 @@ async function runText(id,p){
   return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
  }
  case 'flashcards-export':{
-  const lines=text.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean),cards=[];
+  const lines=text.split(/\\r?\n/).map(x=>x.trim()).filter(Boolean),cards=[];
   for(const line of lines){const parts=line.split(/\s*(?:\||\t|::)\s*/);if(parts.length<2)continue;const front=parts.shift().trim(),back=parts.join(' — ').trim();if(front&&back)cards.push([front,back]);}
   if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
   const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join('\n');
@@ -402,14 +402,14 @@ async function runText(id,p){
   const chosen=scored.sort((a,b)=>b.score-a.score).slice(0,count).sort((a,b)=>a.index-b.index);
   return {text:chosen.map(x=>x.sentence.trim()).join(' '),summary:'Resumen extractivo local: '+chosen.length+' de '+sentences.length+' frases. No es una interpretación generativa.'};
  }
- case 'reading-time-local':{const words=text.trim()?text.trim().split(/\\s+/u).length:0;const wpm=Math.max(80,Math.min(400,Number(p.wpm)||220));const seconds=Math.ceil(words/wpm*60);return {text:'Palabras: '+words+'\\nVelocidad: '+wpm+' palabras/min\\nTiempo estimado: '+(seconds<60?seconds+' segundos':Math.floor(seconds/60)+' min '+seconds%60+' s'),summary:'Estimación calculada localmente.'};}
- case 'text-analyzer-local':{const words=text.toLocaleLowerCase('es').match(/[\\p{L}\\p{N}]{2,}/gu)||[],freq=new Map();words.forEach(w=>freq.set(w,(freq.get(w)||0)+1));const top=[...freq].sort((a,b)=>b[1]-a[1]).slice(0,12);const sentences=text.split(/[.!?]+/).filter(x=>x.trim()).length;return {text:'Palabras: '+words.length+'\\nPalabras únicas: '+freq.size+'\\nFrases: '+sentences+'\\nDiversidad léxica: '+(words.length?(freq.size/words.length*100).toFixed(1):0)+'%\\nTérminos frecuentes:\\n'+top.map(([w,n])=>w+' ('+n+')').join('\\n'),summary:'Análisis estadístico local del texto.'};}
- case 'csv-to-tsv-local':{const rows=parseCsv(text,p.delimiter||',');return {text:rows.map(row=>row.map(v=>String(v).replace(/\\t/g,' ')).join('\\t')).join('\\n'),summary:rows.length+' filas convertidas a TSV.'};}
- case 'tsv-to-csv-local':{const rows=text.replace(/\\r/g,'').split('\\n').filter(Boolean).map(line=>line.split('\\t'));return {text:rows.map(row=>row.map(csvCell).join(',')).join('\\n'),summary:rows.length+' filas convertidas a CSV.'};}
- case 'json-to-xml-local':{let data;try{data=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');const tag=k=>String(k).replace(/[^\\w.-]/g,'_').replace(/^[^A-Za-z_]/,'_');const node=(key,value)=>Array.isArray(value)?value.map(v=>node(key,v)).join(''):value&&typeof value==='object'?'<'+tag(key)+'>'+Object.entries(value).map(([k,v])=>node(k,v)).join('')+'</'+tag(key)+'>':'<'+tag(key)+'>'+esc(value??'')+'</'+tag(key)+'>';return {text:'<?xml version="1.0" encoding="UTF-8"?>\\n<root>'+node('item',data)+'</root>',summary:'JSON convertido a XML local.'};}
+ case 'reading-time-local':{const words=text.trim()?text.trim().split(/\\s+/u).length:0;const wpm=Math.max(80,Math.min(400,Number(p.wpm)||220));const seconds=Math.ceil(words/wpm*60);return {text:'Palabras: '+words+'\nVelocidad: '+wpm+' palabras/min\nTiempo estimado: '+(seconds<60?seconds+' segundos':Math.floor(seconds/60)+' min '+seconds%60+' s'),summary:'Estimación calculada localmente.'};}
+ case 'text-analyzer-local':{const words=text.toLocaleLowerCase('es').match(/[\\p{L}\\p{N}]{2,}/gu)||[],freq=new Map();words.forEach(w=>freq.set(w,(freq.get(w)||0)+1));const top=[...freq].sort((a,b)=>b[1]-a[1]).slice(0,12);const sentences=text.split(/[.!?]+/).filter(x=>x.trim()).length;return {text:'Palabras: '+words.length+'\nPalabras únicas: '+freq.size+'\nFrases: '+sentences+'\nDiversidad léxica: '+(words.length?(freq.size/words.length*100).toFixed(1):0)+'%\nTérminos frecuentes:\n'+top.map(([w,n])=>w+' ('+n+')').join('\n'),summary:'Análisis estadístico local del texto.'};}
+ case 'csv-to-tsv-local':{const rows=parseCsv(text,p.delimiter||',');return {text:rows.map(row=>row.map(v=>String(v).replace(/\\t/g,' ')).join('\\t')).join('\n'),summary:rows.length+' filas convertidas a TSV.'};}
+ case 'tsv-to-csv-local':{const rows=text.replace(/\\r/g,'').split('\n').filter(Boolean).map(line=>line.split('\\t'));return {text:rows.map(row=>row.map(csvCell).join(',')).join('\n'),summary:rows.length+' filas convertidas a CSV.'};}
+ case 'json-to-xml-local':{let data;try{data=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');const tag=k=>String(k).replace(/[^\\w.-]/g,'_').replace(/^[^A-Za-z_]/,'_');const node=(key,value)=>Array.isArray(value)?value.map(v=>node(key,v)).join(''):value&&typeof value==='object'?'<'+tag(key)+'>'+Object.entries(value).map(([k,v])=>node(k,v)).join('')+'</'+tag(key)+'>':'<'+tag(key)+'>'+esc(value??'')+'</'+tag(key)+'>';return {text:'<?xml version="1.0" encoding="UTF-8"?>\n<root>'+node('item',data)+'</root>',summary:'JSON convertido a XML local.'};}
  case 'xml-to-json-local':{const doc=new DOMParser().parseFromString(text,'application/xml');if(doc.querySelector('parsererror'))throw Error('XML inválido.');const convert=node=>{const children=[...node.children];if(!children.length)return node.textContent||'';const obj={};children.forEach(child=>{const value=convert(child);if(Object.hasOwn(obj,child.tagName))obj[child.tagName]=[].concat(obj[child.tagName],value);else obj[child.tagName]=value;});return obj;};return {text:JSON.stringify({[doc.documentElement.tagName]:convert(doc.documentElement)},null,2),summary:'XML convertido a JSON local.'};}
- case 'html-to-markdown-local':{const doc=new DOMParser().parseFromString(text,'text/html');const convert=node=>{if(node.nodeType===3)return node.nodeValue||'';if(node.nodeType!==1)return '';const inner=[...node.childNodes].map(convert).join('');switch(node.tagName.toLowerCase()){case 'h1':return '# '+inner+'\\n\\n';case 'h2':return '## '+inner+'\\n\\n';case 'h3':return '### '+inner+'\\n\\n';case 'strong':case 'b':return '**'+inner+'**';case 'em':case 'i':return '*'+inner+'*';case 'a':return '['+inner+']('+node.getAttribute('href')+')';case 'li':return '- '+inner+'\\n';case 'br':return '\\n';case 'p':case 'div':return inner+'\\n\\n';default:return inner;}};return {text:convert(doc.body).replace(/\\n{3,}/g,'\\n\\n').trim(),summary:'HTML convertido a Markdown básico sin ejecutar scripts.'};}
- case 'contrast-check-local':{const hex=v=>{const m=String(v||'').match(/^#?([0-9a-f]{6})$/i);if(!m)throw Error('Usa colores HEX de seis dígitos.');return [0,2,4].map(i=>parseInt(m[1].slice(i,i+2),16)/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);};const lum=c=>.2126*c[0]+.7152*c[1]+.0722*c[2];const a=lum(hex(p.color1||'#000000')),b=lum(hex(p.color2||'#ffffff')),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);return {text:'Contraste: '+ratio.toFixed(2)+':1\\nWCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+'\\nWCAG AA texto grande: '+(ratio>=3?'Cumple':'No cumple')+'\\nWCAG AAA texto normal: '+(ratio>=7?'Cumple':'No cumple'),summary:'Relación de contraste calculada según luminancia relativa WCAG.'};}
+ case 'html-to-markdown-local':{const doc=new DOMParser().parseFromString(text,'text/html');const convert=node=>{if(node.nodeType===3)return node.nodeValue||'';if(node.nodeType!==1)return '';const inner=[...node.childNodes].map(convert).join('');switch(node.tagName.toLowerCase()){case 'h1':return '# '+inner+'\n\n';case 'h2':return '## '+inner+'\n\n';case 'h3':return '### '+inner+'\n\n';case 'strong':case 'b':return '**'+inner+'**';case 'em':case 'i':return '*'+inner+'*';case 'a':return '['+inner+']('+node.getAttribute('href')+')';case 'li':return '- '+inner+'\n';case 'br':return '\n';case 'p':case 'div':return inner+'\n\n';default:return inner;}};return {text:convert(doc.body).replace(/\n{3,}/g,'\n\n').trim(),summary:'HTML convertido a Markdown básico sin ejecutar scripts.'};}
+ case 'contrast-check-local':{const hex=v=>{const m=String(v||'').match(/^#?([0-9a-f]{6})$/i);if(!m)throw Error('Usa colores HEX de seis dígitos.');return [0,2,4].map(i=>parseInt(m[1].slice(i,i+2),16)/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);};const lum=c=>.2126*c[0]+.7152*c[1]+.0722*c[2];const a=lum(hex(p.color1||'#000000')),b=lum(hex(p.color2||'#ffffff')),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);return {text:'Contraste: '+ratio.toFixed(2)+':1\nWCAG AA texto normal: '+(ratio>=4.5?'Cumple':'No cumple')+'\nWCAG AA texto grande: '+(ratio>=3?'Cumple':'No cumple')+'\nWCAG AAA texto normal: '+(ratio>=7?'Cumple':'No cumple'),summary:'Relación de contraste calculada según luminancia relativa WCAG.'};}
  case 'text-dedupe-words-local':{const output=text.replace(/\\b([\\p{L}\\p{N}]+)(\\s+)\\1\\b/giu,'$1');return {text:output,summary:'Se eliminaron repeticiones consecutivas idénticas.'};}
  case 'color-palette':{const base=Math.floor(Math.random()*360),angles=p.harmony==='complementary'?[0,180,0,180,0]:p.harmony==='triadic'?[0,120,240,0,120]:[0,30,60,180,210];const colors=angles.map((a,i)=>'hsl('+((base+a)%360)+' 62% '+([55,62,48,68,52][i])+'%)');return {text:colors.join('\n'),summary:'Paleta generada al azar. Copia los valores HSL.'};}
  }
@@ -608,83 +608,126 @@ async function generateImage(p,cb){
  }
  throw Error('El motor de imagen seleccionado todavía no está disponible.');
 }
+function classifyTextTask(prompt,tier='balanced'){
+ const q=String(prompt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ if(/\b(cancion|letra|componer|composicion|verso|coro|tema musical|musica original)\b/.test(q))return 'songwriting';
+ if(/\b(codigo|programacion|javascript|python|sql|api|debug|depurar|software)\b/.test(q))return 'coding';
+ if(/\b(resumen|resume|resumir|sintetiza|extrae las ideas|puntos clave)\b/.test(q))return 'summary';
+ if(/\b(idea|creativo|creativa|guion|historia|poema|eslogan|campana|contenido original)\b/.test(q))return 'creative';
+ if(tier==='smart'||/\b(razona|compara|evalua|analiza|investiga|argumenta|estrategia|planifica)\b/.test(q))return 'reasoning';
+ if(tier==='fast')return 'quick';
+ return 'general';
+}
+function isGenericModelRefusal(text){
+ return /^(?:lo siento[, ]*pero no puedo ayudar con eso|no puedo ayudar con eso|no puedo cumplir esa solicitud|no puedo generar ese contenido)[.!\s]*/i.test(String(text||'').trim());
+}
+function isRestrictedSongRequest(prompt){
+ const q=String(prompt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ return /\b(letra exacta|letra completa de|continua(?:r)? la letra|sigue la letra|copia(?:r)? la letra|en el estilo de|imita(?:r)? a|exactamente como canta)\b/.test(q);
+}
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const tier=p.reasoning||'balanced';
- const lengths={short:500,medium:1600,long:tier==='smart'?6000:3200};
- const modelProfiles={pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'openai/gpt-oss-120b:cheapest'},groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-20b',smart:'openai/gpt-oss-120b'},cloudflare:{fast:'@cf/google/gemma-4-26b-a4b-it',balanced:'@cf/google/gemma-4-26b-a4b-it',smart:'@cf/google/gemma-4-26b-a4b-it'},gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}};
- const system='Eres el asistente de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional);
- const user=prompt+(p.context?'\\n\\nContexto adicional:\\n'+p.context:'');
+ const task=classifyTextTask(prompt,tier);
+ const songInstruction=task==='songwriting'
+  ? 'La tarea es composición musical original. Si el usuario pide una canción, crea una letra completa, cantable y coherente con título, versos, pre-coro, coro, puente y cierre; añade una breve dirección musical y un prompt de producción. No respondas con una negativa genérica ante una petición creativa segura. No copies letras existentes ni imites exactamente a un artista. Si solicita un archivo de audio, aclara que este motor entrega texto y no ha renderizado música.'
+  : 'Ayuda a resolver la petición con precisión. Si el usuario solicita una acción que requiere una herramienta, no afirmes que la ejecutaste si no se ejecutó.';
+ const system='Eres el motor de texto de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional)+' '+songInstruction;
+ const user=prompt+(p.context?'\n\nContexto adicional:\n'+p.context:'');
+ const lengths={short:500,medium:1600,long:tier==='smart'?3200:2400};
+ const outputTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
+ const modelProfiles={
+  pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},
+  huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'deepseek-ai/DeepSeek-R1:cheapest'},
+  groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-20b',smart:'openai/gpt-oss-120b'},
+  cloudflare:{fast:'@cf/google/gemma-4-26b-a4b-it',balanced:'@cf/google/gemma-4-26b-a4b-it',smart:'@cf/meta/llama-3.3-70b-instruct-fp8-fast'},
+  gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}
+ };
+ const priorities={
+  songwriting:['groq','gemini','cloudflare','huggingface'],
+  creative:['groq','gemini','cloudflare','huggingface'],
+  coding:['groq','gemini','huggingface','cloudflare'],
+  reasoning:['gemini','groq','huggingface','cloudflare'],
+  summary:['gemini','cloudflare','groq','huggingface'],
+  quick:['gemini','cloudflare','groq','huggingface'],
+  general:['gemini','groq','cloudflare','huggingface']
+ };
  const preferred=p.provider||'auto';
- const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
- const errors=[];
- const centralCandidates=preferred==='auto'?['gemini','cloudflare','groq','huggingface']:[preferred];
- for(const provider of centralCandidates){
-  if(!p.centralProviders?.[provider])continue;
-  progress(cb,.18,'Conectando con '+(provider==='gemini'?'Gemini':provider==='huggingface'?'Hugging Face':provider==='cloudflare'?'Workers AI':'Groq')+' mediante Prisma…');
-  try{
-   const response=await fetch('/api/ai/chat',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Accept':'application/json'},
-    cache:'no-store',
-    body:JSON.stringify({
-     provider,
-     model:preferred==='auto'?(provider==='huggingface'?modelProfiles.huggingface.fast:modelProfiles[provider]?.[tier]):(p.model||modelProfiles[provider]?.[tier]),
-     messages:[{role:'system',content:system},{role:'user',content:user}],
-     temperature:.7,
-     maxOutputTokens:lengths[p.length]||1200
-    })
-   });
-   const data=await response.json().catch(()=>({}));
-   if(!response.ok)throw Error(data.error||'El motor central respondió '+response.status+'.');
-   if(!data.text)throw Error('El motor central no devolvió texto.');
-   progress(cb,1,'Respuesta lista.');
-   const names={gemini:'Google Gemini',huggingface:'Hugging Face',groq:'Groq',cloudflare:'Cloudflare Workers AI'};
-   return {text:data.text,provider,model:data.model||p.model||modelProfiles[provider]?.[tier]||'predeterminado',summary:'Respuesta generada con '+names[provider]+' · motor central de Prisma.'};
-  }catch(error){
-   errors.push((provider==='gemini'?'Google Gemini':provider==='huggingface'?'Hugging Face':provider==='cloudflare'?'Workers AI':'Groq')+': '+(error?.message||'fallo de conexión'));
-   if(preferred!=='auto')throw error;
+ const baseOrder=priorities[task]||priorities.general;
+ const providerOrder=preferred==='auto'
+  ? [...baseOrder]
+  : preferred==='pollinations'
+    ? ['pollinations',...baseOrder]
+    : [preferred,...baseOrder.filter(item=>item!==preferred)];
+ if(p.polliToken&&!providerOrder.includes('pollinations'))providerOrder.push('pollinations');
+ const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI'};
+ const errors=[],attempted=[];
+ const modelFor=provider=>{
+  const desired=modelProfiles[provider]?.[tier]||'';
+  const catalog=p.centralModelCatalog?.chat?.[provider]||[];
+  if(!catalog.length)return desired;
+  return catalog.some(item=>item.id===desired)?desired:catalog[0]?.id||desired;
+ };
+ for(const provider of [...new Set(providerOrder)]){
+  if(!['gemini','huggingface','groq','cloudflare','pollinations'].includes(provider))continue;
+  if(provider==='pollinations'&&!String(p.polliToken||'').trim())continue;
+  if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
+   if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
+   continue;
   }
- }
- for(const provider of candidates){
-  const token=provider==='pollinations'?String(p.polliToken||'').trim():provider==='huggingface'?String(p.hfToken||'').trim():provider==='gemini'?String(p.geminiKey||'').trim():String(p.groqKey||'').trim();
-  if(!token)continue;
-  progress(cb,.2,'Preparando respuesta...');
+  attempted.push(provider);
+  if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
+  else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
   try{
-   let text='';
+   let text='',model='';
    if(provider==='pollinations'){
-    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||modelProfiles.pollinations[tier],messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:lengths[p.length]||1200,stream:false})});
+    model=p.model||modelProfiles.pollinations[tier];
+    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{
+     method:'POST',
+     headers:{Authorization:'Bearer '+String(p.polliToken).trim(),'Content-Type':'application/json'},
+     body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:outputTokens,stream:false})
+    });
     const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.');
+    if(!response.ok)throw Object.assign(Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.'),{status:response.status});
     text=data.choices?.[0]?.message?.content||data.output_text||'';
-   }else if(provider==='huggingface'){
-    const {InferenceClient}=await import(HF_INFERENCE),client=new InferenceClient(token);
-    const data=await client.chatCompletion({model:p.model||modelProfiles.huggingface[tier],messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:lengths[p.length]||1200,temperature:.7});
-    text=data.choices?.[0]?.message?.content||'';
-   }else if(provider==='groq'){
-    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||modelProfiles.groq[tier],messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_completion_tokens:lengths[p.length]||1200,stream:false})});
+   }else{
+    model=provider===preferred&&p.model?p.model:modelFor(provider);
+    const response=await fetch('/api/ai/chat',{
+     method:'POST',
+     headers:{'Content-Type':'application/json','Accept':'application/json'},
+     cache:'no-store',
+     body:JSON.stringify({
+      provider,
+      model,
+      messages:[{role:'system',content:system},{role:'user',content:user}],
+      temperature:.7,
+      maxOutputTokens:outputTokens
+     })
+    });
     const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw Error(data.error?.message||'Groq respondió '+response.status+'.');
-    text=data.choices?.[0]?.message?.content||'';
-   }else if(provider==='gemini'){
-    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(p.model||modelProfiles.gemini[tier])+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':token},body:JSON.stringify({contents:[{role:'user',parts:[{text:system+'\\n\\n'+user}]}],generationConfig:{temperature:.7,maxOutputTokens:lengths[p.length]||1200}})});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw Error(data.error?.message||'Google Gemini respondió '+response.status+'.');
-    text=(data.candidates?.[0]?.content?.parts||[]).map(part=>part.text||'').join('').trim();
+    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status});
+    text=String(data.text||'').trim();model=data.model||model;
    }
-   if(!text)throw Error('El modelo no devolvió texto.');
+   if(!text)throw Error(providerNames[provider]+' no devolvió texto.');
+   if(task==='songwriting'&&!isRestrictedSongRequest(prompt)&&isGenericModelRefusal(text)){
+    throw Error('El modelo devolvió una negativa genérica ante una solicitud creativa original.');
+   }
    progress(cb,1,'Respuesta lista.');
-   const names={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini'};
-   return {text,provider,model:modelProfiles[provider]?.[tier]||p.model||'predeterminado',summary:'Respuesta generada con '+names[provider]+' · Perfil '+tier+'.'};
+   const firstAttempt=attempted[0];
+   const firstPreferred=preferred==='auto'?baseOrder[0]:preferred;
+   const fallbackFrom=firstPreferred!==provider?firstPreferred:(firstAttempt&&firstAttempt!==provider?firstAttempt:null);
+   const summary='Respuesta generada con '+providerNames[provider]+' · modelo '+(model||'predeterminado')+(fallbackFrom?' · respaldo automático tras fallo de '+providerNames[fallbackFrom]:'.');
+   return {text,provider,model:model||'predeterminado',fallbackFrom,summary};
   }catch(error){
-   errors.push((provider==='huggingface'?'Hugging Face':provider==='gemini'?'Google Gemini':provider==='groq'?'Groq':'Pollinations')+': '+(error?.message||'fallo de conexión'));
-   if(preferred!=='auto')throw error;
+   const code=error?.status?' HTTP '+error.status:'';
+   errors.push(providerNames[provider]+code+': '+(error?.message||'fallo de conexión'));
+   if(attempted.length<providerOrder.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
   }
  }
  if(errors.length)throw Error('No fue posible generar la respuesta con los motores conectados. '+errors.join(' | '));
- throw Error('Conecta al menos un motor de texto desde el Laboratorio IA.');
+ throw Error('No hay un motor de texto disponible para esta tarea. Revisa las conexiones del Laboratorio IA.');
 }
 async function generateSpeech(p,cb){
  const token=String(p.polliToken||'').trim(),input=String(p.prompt||'').trim();
@@ -698,34 +741,55 @@ async function generateSpeech(p,cb){
  return {...download(blob,'prisma-voz.'+(p.format||'mp3')),previewUrl:URL.createObjectURL(blob),audio:true,summary:'Voz: '+(p.voice||'nova')+' · Modelo: '+(p.model||'openai/tts-1')};
 }
 async function transcribeAudio(files,p,cb){
- let provider=p.provider||'auto';
- if(provider==='auto')provider=p.centralProviders?.groq?'groq':p.centralFeatures?.huggingfaceAudio?'huggingface':p.polliToken?'pollinations':'';
- if(provider==='groq'||provider==='huggingface'){
-  if(!files[0])throw Error('Selecciona un archivo de audio.');
-  const form=new FormData();
-  form.append('file',files[0]);
-  form.append('provider',provider);
-  form.append('model',provider==='groq'?'whisper-large-v3-turbo':'openai/whisper-large-v3');
-  progress(cb,.2,'Transcribiendo en el backend protegido de Prisma…');
-  const response=await fetch('/api/ai/transcribe',{method:'POST',body:form});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error(data.error||'La transcripción no está disponible ('+response.status+').');
-  progress(cb,1,'Transcripción lista.');
-  return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+provider+' · '+data.model};
- }
- if(provider==='huggingface')throw Error('El audio de Hugging Face está desactivado para proteger tus créditos.');
- const token=String(p.polliToken||'').trim();if(!token)throw Error('Activa Groq en Cloudflare o conecta Pollinations para transcribir.');
-
  if(!files[0])throw Error('Selecciona un archivo de audio.');
- const form=new FormData();form.append('file',files[0]);form.append('model',p.model||'openai/whisper-1');
- if(p.language&&p.language!=='auto')form.append('language',p.language);
- progress(cb,.2,'Transcribiendo audio...');
- const response=await fetch('https://gen.pollinations.ai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw Error(data.error?.message||data.message||'No se pudo transcribir el audio ('+response.status+').');
- if(!data.text)throw Error('El modelo no devolvió una transcripción.');
- progress(cb,1,'Transcripción lista.');
- return {text:data.text,summary:'Archivo: '+files[0].name+' · Modelo: '+(p.model||'openai/whisper-1')};
+ const selected=p.provider||'auto';
+ const hasGroqAudio=p.centralFeatures?.groqAudio!==false&&!!p.centralProviders?.groq;
+ const hasHfAudio=!!p.centralFeatures?.huggingfaceAudio;
+ const personalToken=String(p.polliToken||'').trim();
+ let order;
+ if(selected==='auto'){
+  order=[...(hasGroqAudio?['groq']:[]),...(hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
+ }else if(selected==='pollinations'){
+  order=['pollinations',...(hasGroqAudio?['groq']:[]),...(hasHfAudio?['huggingface']:[])];
+ }else{
+  order=[selected,...(selected!=='groq'&&hasGroqAudio?['groq']:[]),...(selected!=='huggingface'&&hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
+ }
+ const errors=[];
+ for(const provider of [...new Set(order)]){
+  try{
+   if(provider==='groq'||provider==='huggingface'){
+    if(provider==='huggingface'&&!hasHfAudio)throw Error('Hugging Face Audio está desactivado para proteger los créditos.');
+    if(provider==='groq'&&p.centralFeatures?.groqAudio===false)throw Error('Groq Whisper está temporalmente en pausa.');
+    const form=new FormData();
+    form.append('file',files[0]);
+    form.append('provider',provider);
+    form.append('model',provider==='groq'?'whisper-large-v3-turbo':'openai/whisper-large-v3');
+    if(p.language&&p.language!=='auto')form.append('language',p.language);
+    progress(cb,.2,'Transcribiendo con '+provider+' mediante el backend protegido de Prisma…');
+    const response=await fetch('/api/ai/transcribe',{method:'POST',body:form});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Object.assign(Error(data.error||'La transcripción no está disponible ('+response.status+').'),{status:response.status});
+    progress(cb,1,'Transcripción lista.');
+    return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+provider+' · '+data.model};
+   }
+   if(provider==='pollinations'){
+    if(!personalToken)continue;
+    const form=new FormData();form.append('file',files[0]);form.append('model',p.model||'openai/whisper-1');
+    if(p.language&&p.language!=='auto')form.append('language',p.language);
+    progress(cb,.2,'Groq no está disponible. Probando Pollinations como respaldo…');
+    const response=await fetch('https://gen.pollinations.ai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+personalToken},body:form});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Object.assign(Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.'),{status:response.status});
+    if(!data.text)throw Error('Pollinations no devolvió una transcripción.');
+    progress(cb,1,'Transcripción lista.');
+    return {text:data.text,summary:'Archivo: '+files[0].name+' · respaldo automático con Pollinations · '+(p.model||'openai/whisper-1')};
+   }
+  }catch(error){
+   errors.push(provider+(error?.status?' HTTP '+error.status:'')+': '+(error?.message||'fallo de conexión'));
+  }
+ }
+ if(errors.length)throw Error('No se pudo transcribir el audio con los motores disponibles. '+errors.join(' | '));
+ throw Error('No hay un motor de transcripción activo. Conecta Groq o autoriza un proveedor compatible desde el Laboratorio IA.');
 }
 async function imageAdvanced(id,files,p,cb){
  if(id==='image-gen')return generateImage(p,cb);
@@ -950,7 +1014,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='json-xlsx')return jsonToExcel(p);
  if(id==='image-social-kit')return socialImageKit(files[0],p,cb);
  if(id==='qr-vcard'){
-  const escapeV=v=>String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+  const escapeV=v=>String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\n');
   const vcard=['BEGIN:VCARD','VERSION:3.0','FN:'+escapeV(p.name),'TEL;TYPE=CELL:'+escapeV(p.phone),'EMAIL:'+escapeV(p.email),'ORG:'+escapeV(p.organization),'END:VCARD'].join('\n');
   const result=await runQr({text:vcard},cb);result.filename='prisma-contacto-qr.png';result.summary='Código QR vCard generado. Escanéalo con la cámara para guardar el contacto.';return result;
  }
@@ -960,6 +1024,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
  if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
+ if(id==='music-lyrics')return generateText({...p,prompt:'Compón una canción completamente original. Entrega título, concepto, género, tempo aproximado, versos, pre-coro, coro, puente y un prompt de producción musical. No copies letras existentes ni imites exactamente a un artista. No afirmes que has generado audio.\n\nIdea del usuario: '+String(p.prompt||p.text||'') ,tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);
  if(id==='ai-voice')return generateSpeech(p,cb);
  if(id==='ai-transcribe')return transcribeAudio(files,p,cb);
  if(id==='barcode')return makeBarcode(p);
