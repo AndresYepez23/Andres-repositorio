@@ -1,5 +1,5 @@
 // OpenRouter Free Router account metadata and conservative shared limits.
-import { getCredentialSlots } from "./credential-pool.js";
+import { getCredentialSlots, requestWithCredentialPool } from "./credential-pool.js";
 let accountCache = null;
 let accountCacheAt = 0;
 let accountCacheKey = "";
@@ -10,20 +10,26 @@ function numericOrNull(value) {
 }
 
 export async function getOpenRouterAccount(env) {
-  const key = getCredentialSlots(env,"openrouter")[0]?.value || "";
-  if (!key) return null;
-  const suffix = key.slice(-8);
+  const slots = getCredentialSlots(env,"openrouter");
+  if (!slots.length) return null;
+  const suffix = slots.map(slot => slot.value.slice(-8)).join(":");
   if (accountCache && accountCacheKey === suffix && Date.now() - accountCacheAt < 5 * 60 * 1000) {
     return accountCache;
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3000);
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/key", {
-      method: "GET",
-      headers: { Authorization: "Bearer " + key, Accept: "application/json" },
-      cache: "no-store",
-      signal: controller.signal,
+    const response = await requestWithCredentialPool(env, "openrouter", async key => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      try {
+        return await fetch("https://openrouter.ai/api/v1/key", {
+          method: "GET",
+          headers: { Authorization: "Bearer " + key, Accept: "application/json" },
+          cache: "no-store",
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
     });
     if (!response.ok) return null;
     const payload = await response.json().catch(() => ({}));
@@ -41,8 +47,6 @@ export async function getOpenRouterAccount(env) {
     return account;
   } catch {
     return null;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
