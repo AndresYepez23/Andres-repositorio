@@ -510,3 +510,9 @@ body.modal-open{overflow:hidden}
  .core-hero{padding:20px 0}
  .core-hero h2{font-size:clamp(30px,8vw,42px)}
 }
+
+/* Prisma Core: conversational output and subtle provider attribution */
+.core-message-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.core-message-engine{display:block;margin-top:10px;font-size:9px;color:var(--subtle);letter-spacing:.015em}
+.core-message.assistant:not(.has-results){min-width:0}
+@media(max-width:620px){.core-message-body{font-size:11px;line-height:1.7}.core-message-engine{font-size:9px}}
