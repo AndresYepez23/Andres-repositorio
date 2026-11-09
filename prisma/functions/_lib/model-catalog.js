@@ -1,5 +1,8 @@
 // Curated, server-controlled model allowlists. Never trust client supplied model IDs.
 export const CHAT_MODELS = {
+  pollinations: [
+    {id:"openai/gpt-5.4-nano",name:"GPT-5.4 Nano",specialty:"Texto rápido y tareas creativas"}
+  ],
   huggingface: [
     {id:"openai/gpt-oss-20b:cheapest",name:"GPT-OSS 20B",specialty:"Chat rápido y económico"},
     {id:"openai/gpt-oss-120b:cheapest",name:"GPT-OSS 120B",specialty:"Razonamiento avanzado"},
@@ -22,6 +25,10 @@ export const CHAT_MODELS = {
   ]
 };
 export const IMAGE_MODELS = {
+  pollinations: [
+    {id:"black-forest-labs/flux.1-schnell",name:"FLUX.1 Schnell",specialty:"Generación de imágenes"},
+    {id:"tongyi-mai/z-image-turbo",name:"Z-Image Turbo",specialty:"Imágenes rápidas"}
+  ],
   cloudflare: [{id:"@cf/black-forest-labs/flux-1-schnell",name:"FLUX.1 Schnell",specialty:"Generación de imágenes con Workers AI"}],
   // Higher-cost inference. Enabled only with HF_MEDIA_ENABLED=1.
   huggingface: [{id:"stabilityai/stable-diffusion-3-medium-diffusers",name:"Stable Diffusion 3 Medium",specialty:"Generación de imágenes con HF Inference"}]
