@@ -109,7 +109,7 @@ export async function onRequestGet({ env }) {
     capacity: {
       dailyBudget: getSharedDailyBudget(env),
       visitorDailyLimit: getVisitorDailyLimit(env),
-      perMinutePerVisitor: 10,
+      perMinutePerVisitor: 20,
       configuredProviders: ["gemini","groq","huggingface","pollinations","openrouter"].filter(provider => configured[provider] > 0).concat(env.AI?.run ? ["cloudflare"] : []),
       configuredCredentials: Object.values(configured).reduce((sum,count) => sum + count, 0) + (env.AI?.run ? 1 : 0),
     },
