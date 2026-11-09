@@ -746,10 +746,38 @@ function openTool(t){
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
   $('#modal-close').focus({preventScroll:true});
 }
+function textStudioModelSettings(){
+ return selectField('Motor de texto','provider',[['auto','Automático · mejor disponible'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['pollinations','Pollinations'],['huggingface','Hugging Face (créditos limitados)']],'auto')+
+  selectField('Modelo específico (opcional)','model',[['','Automático · según tarea']],'')+
+  '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice">Prisma elegirá el modelo más adecuado según la tarea.</div>';
+}
 function buildWorkflowFields(workflow){
+  if(workflow.id==='media-studio'){
+    return selectField('Qué necesitas hacer','mode',[['thumbnail','Capturar fotograma de vídeo'],['trim','Recortar audio o vídeo'],['mute','Quitar sonido del vídeo'],['extract','Extraer audio del vídeo'],['transcribe-summary','Transcribir y resumir (IA)']],'thumbnail')+
+      '<div class="inline-fields">'+field('Segundo de miniatura / inicio','second','number','1','Para recortes utiliza los campos de abajo.','min="0" step=".1"')+
+      field('Inicio de recorte (segundos)','start','number','0','','min="0" step=".1"')+
+      field('Duración de recorte (segundos)','duration','number','10','','min=".1" step=".1"')+'</div>'+
+      '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Marca de agua en la miniatura</strong><small>Solo se aplica a fotogramas.</small></span></label>'+
+      field('Texto de marca (si se activa)','watermark','text','','')+
+      selectField('Motor de transcripción','provider',[['auto','Automático · Groq Whisper'],['groq','Groq'],['pollinations','Pollinations · cuenta autorizada'],['huggingface','Hugging Face · si está habilitado']],'auto')+
+      selectField('Idioma del audio','language',[['auto','Detectar'],['es','Español'],['en','Inglés']],'auto')+
+      selectField('Motor para el resumen','textProvider',[['auto','Automático'],['groq','Groq'],['gemini','Gemini'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      '<div class="tool-hint">Las conversiones usan FFmpeg.wasm en el navegador. La transcripción y el resumen recurren a IA externa, sujeta a cuotas; solo se ejecutan si eliges ese modo.</div>';
+  }
+  if(workflow.id==='data-studio'){
+    return selectField('Operación','mode',[['audit','Auditoría CSV (recomendada)'],['csv-json','Convertir CSV a JSON'],['json-csv','Convertir JSON a CSV']],'audit')+
+      selectField('Separador','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\t','Tabulación']],'auto')+
+      '<div class="tool-hint">Prisma procesa el archivo localmente y entrega un informe o una conversión. Límite de 5 MB para proteger la memoria del navegador.</div>';
+  }
+  if(workflow.id==='privacy-studio'){
+    return '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Añadir marca de agua al resultado</strong><small>Opcional, para PDF o imagen.</small></span></label>'+
+      field('Texto de la marca (opcional)','watermark','text','','')+
+      '<div class="tool-hint">Se genera una copia reexportada y se limpian metadatos habituales. No equivale a anonimizar el contenido visible ni garantiza borrar todos los datos incrustados.</div>';
+  }
   if(workflow.id==='image-pipeline'){
     return '<div class="workflow-options">'+
-      '<label class="workflow-check"><input type="checkbox" name="removeBg" checked><span><strong>Quitar fondo</strong><small>Usa el motor local de IA cuando está disponible.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="removeBg"><span><strong>Quitar fondo con IA</strong><small>Opcional: descarga un modelo grande al utilizarlo.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="stripMetadata"><span><strong>Retirar metadatos</strong><small>Reexporta los píxeles para evitar compartir EXIF.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="resize" checked><span><strong>Ajustar dimensiones</strong><small>Mantiene la proporción de la imagen original.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="compress" checked><span><strong>Comprimir resultado</strong><small>WebP conserva transparencia y reduce el peso.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Añadir marca de agua</strong><small>Opcional: identifica tu creación.</small></span></label>'+
@@ -766,7 +794,9 @@ function buildWorkflowFields(workflow){
       '<label class="workflow-check"><input type="checkbox" name="merge" checked><span><strong>Combinar varios PDF</strong><small>Si seleccionas más de uno, los une en un único documento.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="numberPages" checked><span><strong>Numerar páginas</strong><small>Agrega numeración consecutiva al PDF final.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="extractText" checked><span><strong>Extraer texto disponible</strong><small>Genera un TXT adicional cuando el PDF permite seleccionar texto.</small></span></label>'+
-    '</div>'+selectField('Ubicación de la numeración','position',[['bottom','Parte inferior'],['top','Parte superior']],'bottom')+
+    '</div>'+field('Páginas a conservar (opcional)','pages','text','','Ejemplo: 2-4, 7. Vacío conserva todas las páginas.')+
+      field('Marca de agua (opcional)','watermark','text','','Vacío no añade marca de agua.')+
+      selectField('Ubicación de la numeración','position',[['bottom','Parte inferior'],['top','Parte superior']],'bottom')+
       '<div class="tool-hint">Los PDF se procesan localmente. Los documentos escaneados necesitan OCR; si no contienen texto seleccionable, se conserva el PDF y se informa.</div>';
   }
   if(workflow.id==='ai-task'){
@@ -775,26 +805,26 @@ function buildWorkflowFields(workflow){
       textareaField('Contexto o contenido (opcional)','context','','Pega el texto, añade contexto o indica el público al que va dirigido.')+
       selectField('Estilo de respuesta','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Breve y directo']],'professional')+
       selectField('Nivel de detalle','length',[['short','Breve'],['medium','Equilibrado'],['long','Detallado']],'medium')+
-      '<div class="tool-hint">Prisma seleccionará automáticamente un motor conectado. Tus credenciales se configuran una sola vez en el Laboratorio IA.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Prisma seleccionará automáticamente un motor conectado. También puedes elegir otro modelo en opciones avanzadas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='song-studio'){
     return textareaField('Tema y mensaje de la canción','prompt','','Describe el tema y a quién va dirigida.')+
       selectField('Género musical','genre',[['worship','Worship / adoración'],['pop','Pop'],['balada','Balada'],['urbano','Urbano'],['rock','Rock'],['acustica','Acústica'],['libre','Libre']],'worship')+
       selectField('Emoción','mood',[['esperanza','Esperanza'],['fe','Fe'],['alegria','Alegría'],['fortaleza','Fortaleza'],['reflexion','Reflexión']],'esperanza')+
       selectField('Idioma','language',[['Español','Español'],['English','Inglés']],'Español')+
-      '<div class="tool-hint">Genera letra original y guía musical en Markdown. No produce audio. Utiliza un motor de texto disponible con respaldo automático.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Genera letra original y guía musical en Markdown, no audio. El modelo es intercambiable.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='creator-studio'){
     return textareaField('Tema del vídeo o publicación','prompt','','Escribe la idea, tema y el objetivo de tu contenido.')+
       selectField('Plataforma','platform',[['YouTube','YouTube'],['TikTok','TikTok'],['Instagram','Instagram'],['Facebook','Facebook']],'YouTube')+
       field('Público objetivo','audience','text','Público general')+
       '<label class="workflow-check"><input type="checkbox" name="includeImage"><span><strong>Crear también imagen de miniatura</strong><small>Opcional: consume una solicitud de IA de imagen.</small></span></label>'+
-      '<div class="tool-hint">Prepara títulos, guion, descripción y hashtags. La miniatura solo se genera si la seleccionas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Prepara títulos, guion, descripción y hashtags. La imagen solo se genera si la seleccionas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='study-studio'){
     return textareaField('Tema de estudio','prompt','','Qué quieres estudiar o repasar.')+
       textareaField('Apuntes o contexto (opcional)','notes','','Pega tus apuntes para personalizar preguntas y tarjetas.')+
-      '<div class="tool-hint">Prepara una guía, cuestionario con respuestas y tarjetas de repaso. Verifica datos importantes con tus fuentes de estudio.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Prepara una guía, cuestionario y tarjetas. Verifica datos importantes con tus fuentes.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='ai-creation'){
     return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['cloudflare','Cloudflare FLUX · central'],['pollinations','Pollinations · central o personal'],['huggingface','Hugging Face · créditos opcionales']],'auto','Se usan motores realmente habilitados en el backend.')+
@@ -867,6 +897,7 @@ function openWorkflow(workflow){
   }
   if(workflow.id==='ai-creation')setupWorkflowAI();
   else if(['ai-task','song-studio','creator-studio','study-studio'].includes(workflow.id)){
+    setupAIAuthorization({id:'ai-assistant'});
     $('#open-ai-settings')?.addEventListener('click',()=>{closeTool();showView('ai');$('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});});
   }
   $('#modal-close').focus({preventScroll:true});
