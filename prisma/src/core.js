@@ -1,6 +1,7 @@
 import { tools } from './registry.js';
 import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
+import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -15,6 +16,7 @@ let centralProviders = { gemini: false, huggingface: false, groq: false, cloudfl
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
+let localBrainEnabled = false;
 const resultObjectUrls = new Map();
 
 function readPollinationsToken(){
@@ -262,8 +264,8 @@ function compactPlanningCatalog(userText){
     hint:tool.paramsHint.slice(0,140)
   }));
 }
-function buildPlannerPrompt(userText){
-  const catalog=compactPlanningCatalog(userText);
+function buildPlannerPrompt(userText,optionalCatalog=null){
+  const catalog=optionalCatalog||compactPlanningCatalog(userText);
   return [
     'Eres PRISMA CORE, asistente central que ejecuta tareas con las herramientas de Prisma.',
     'Responde SOLO JSON valido, sin Markdown. Formato: {"message":"breve explicación","needs_clarification":false,"question":"","steps":[{"tool_id":"id exacto","reason":"motivo","params":{}}]}.',
@@ -505,7 +507,21 @@ async function requestPlan(userText){
     }
     if(extracted.length)attachmentContext='\n\nCONTENIDO EXTRAÍDO EN EL DISPOSITIVO (solo el texto necesario se incluye en la solicitud al motor de IA; los archivos originales permanecen disponibles para ejecutar herramientas):\n'+extracted.join('\n\n').slice(0,22000);
   }
-  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500));
+  let miniShortlist=null;
+  if(localBrainEnabled){
+    try{
+      const baseline=compactPlanningCatalog(userText);
+      // The semantic model only reorders known, safe tools; it never executes an action.
+      miniShortlist=await rankLocalTools(userText,baseline,28);
+      status('Prisma Mini analizó las herramientas en este dispositivo; completando planificación…');
+    }catch(error){
+      console.warn('Prisma Mini ranking unavailable',error?.message||error);
+      localBrainEnabled=false;
+      const miniButton=$('#core-mini-toggle');
+      if(miniButton)miniButton.textContent='Activar Prisma Mini';
+    }
+  }
+  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500),miniShortlist);
   let plan,steps;
   // Provider/network errors must not trigger a second costly inference request.
   const result=await runTool('ai-assistant',[],{
@@ -657,6 +673,28 @@ export function initPrismaCore(){
   renderMessages({forceBottom:true});
   $('#core-messages').addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom($('#core-messages'));},{passive:true});
   $('#core-send').addEventListener('click',sendMessage);
+  const miniButton=$('#core-mini-toggle');
+  miniButton?.addEventListener('click',async()=>{
+    if(localBrainEnabled){localBrainEnabled=false;miniButton.textContent='Activar Prisma Mini';status('Prisma Mini en pausa. Las herramientas locales siguen disponibles.');return;}
+    if(busy)return;
+    miniButton.disabled=true;
+    miniButton.textContent='Descargando Prisma Mini…';
+    status('Descargando el modelo ONNX de clasificación al navegador. No se utiliza ninguna API de inferencia…');
+    try{
+      await loadLocalBrain(percent=>{
+        miniButton.textContent='Descargando Prisma Mini… '+percent+'%';
+      });
+      localBrainEnabled=true;
+      miniButton.textContent='Prisma Mini activo';
+      status('Prisma Mini listo: seleccionará herramientas localmente. No es un chatbot generativo.','success');
+    }catch(error){
+      miniButton.textContent='Activar Prisma Mini';
+      status('No se pudo descargar el motor local en este dispositivo. Prisma seguirá usando sus demás capacidades.','warning');
+      console.warn('Prisma Mini could not load',error?.message||error);
+    }finally{
+      miniButton.disabled=false;
+    }
+  });
   $('#core-cancel').addEventListener('click',()=>{if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
   $('#core-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}});
   $('#core-input').addEventListener('input',event=>{event.target.style.height='auto';event.target.style.height=Math.min(event.target.scrollHeight,160)+'px';});
