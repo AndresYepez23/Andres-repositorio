@@ -549,22 +549,51 @@ function validatePlan(plan){
    'video-audio':['audio.wav','audio/wav'],
    'video-trim':['video.mp4','video/mp4'],
    'video-mute':['video.mp4','video/mp4'],
+   'video-speed':['video.mp4','video/mp4'],
+   'video-resize':['video.mp4','video/mp4'],
+   'video-rotate':['video.mp4','video/mp4'],
+   'video-gif':['animacion.gif','image/gif'],
    'audio-trim':['audio.wav','audio/wav'],
+   'audio-normalize':['audio.m4a','audio/mp4'],
+   'audio-waveform':['onda.png','image/png'],
+   'ai-voice':['voz.mp3','audio/mpeg'],
+   'json-xlsx':['datos.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+   'image-social-kit':['redes.zip','application/zip'],
+   'image-favicon':['iconos.zip','application/zip'],
    'image-pdf':['documento.pdf','application/pdf'],
    'pdf-to-word':['documento.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
    'pdf-to-image':['imagenes.zip','application/zip'],
-   'pdf-split':['paginas.zip','application/zip']
+   'pdf-split':['paginas.zip','application/zip'],
+   'pdf-text':['documento.txt','text/plain'],
+   'docx-html':['documento.html','text/html']
   };
   return plan.steps.map((item,index)=>{
     const tool=ready.get(String(item.tool_id||''));
     if(!tool)throw new Error('La herramienta no está disponible: '+String(item.tool_id||'desconocida'));
     if(tool.file&&!inputs.length)throw new Error('Adjunta un archivo compatible con '+tool.name+'.');
     if(tool.file&&!compatibleFiles(tool,inputs).length)throw new Error('La salida del paso anterior no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'archivos compatibles')+'.');
-    const changed=changes[tool.id];
+    const params=item.params&&typeof item.params==='object'?item.params:{};
+    let changed=changes[tool.id];
+    if(tool.id==='table-file-convert'){
+      const format=String(params.output||'').toLowerCase();
+      changed=format==='xlsx'?['datos.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+        format==='json'?['datos.json','application/json']:
+        format==='csv'?['datos.csv','text/csv']:null;
+    }
+    if(tool.id==='audio-convert'){
+      const format=String(params.format||'mp3').toLowerCase();
+      changed=format==='wav'?['audio.wav','audio/wav']:
+        format==='ogg'?['audio.ogg','audio/ogg']:['audio.mp3','audio/mpeg'];
+    }
+    if(tool.id==='image-convert'){
+      const format=String(params.format||'image/png');
+      changed=format==='image/jpeg'?['imagen.jpg','image/jpeg']:
+        format==='image/webp'?['imagen.webp','image/webp']:['imagen.png','image/png'];
+    }
     if(changed)inputs=[{name:changed[0],type:changed[1]}];
     else if(tool.id.startsWith('pdf-')&&!['pdf-text','pdf-metadata','pdf-form-fields'].includes(tool.id))inputs=[{name:'documento.pdf',type:'application/pdf'}];
     else if(tool.id.startsWith('image-')&&!['image-ocr','image-palette','image-identify-local','image-metadata'].includes(tool.id))inputs=[{name:'imagen.png',type:'image/png'}];
-    return {tool,policy:toolPolicy(tool),reason:String(item.reason||'Paso '+(index+1)),params:item.params&&typeof item.params==='object'?item.params:{}};
+    return {tool,policy:toolPolicy(tool),reason:String(item.reason||'Paso '+(index+1)),params};
   });
 }
 function showPlan(plan,steps){
@@ -1310,7 +1339,18 @@ async function executePlan(){
         ].filter(Boolean).join('\n\n');
         params.provider='auto';params.reasoning='smart';params.tone='creative';params.length='long';params.task='songwriting';
       }
-      if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines','text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-flatten','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
+      // Pass the previous result to the next compatible text tool without
+      // invoking another model. Explicit model-supplied text always wins.
+      const textHandoff=['text-sort','word-frequency','text-remove-accents','text-reverse',
+        'text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines',
+        'text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-format',
+        'json-flatten','json-yaml','json-xlsx','json-csv','csv-json','csv-stats','csv-to-tsv-local',
+        'tsv-to-csv-local','json-to-xml-local','xml-to-json-local','html-to-text','html-to-markdown-local',
+        'text-summary-local','text-analyzer-local','reading-time-local','text-dedupe-words-local',
+        'word-count','clean-text','text-case','dedupe-lines','slug','markdown','html-format',
+        'css-format','js-format','sql-format','xml-format','text-reverse','qr','base64','url-code'];
+      if(!params.text&&lastText&&textHandoff.includes(tool.id))params.text=lastText;
+      if(tool.id==='ai-voice'&&!params.prompt&&!params.text&&lastText)params.prompt=lastText;
       let inputFiles=[];
       if(tool.file){
         if(!currentFiles.length)throw new Error('El paso '+tool.name+' necesita un archivo y el paso anterior no produjo uno.');
@@ -1321,6 +1361,11 @@ async function executePlan(){
       const result=await runTool(tool.id,inputFiles,params,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);});
       executed.push({name:tool.name,reason,result});setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
       if(result?.text)lastText=String(result.text).slice(0,30000);
+      else if(result?.html)lastText=String(result.html).slice(0,30000);
+      else if(result?.blob&&result.blob.size<=120000&&
+        /^(?:text\/|application\/(?:json|xml))/.test(String(result.blob.type||''))){
+        lastText=(await result.blob.text()).slice(0,30000);
+      }
       if(result?.blob){
         const file=new File([result.blob],result.filename||('prisma-paso-'+(index+1)),{type:result.blob.type||'application/octet-stream'});
         currentFiles=[file];
