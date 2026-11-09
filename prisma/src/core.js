@@ -435,6 +435,62 @@ function isConversationWithoutTools(text){
   const capabilityQuestion=/^(?:puedes|podrias|se puede|es posible|tienes la capacidad de)\b.{0,130}\?+$/i.test(normalized)&&!/(?:hazme|creame|escribeme|generame|preparame|componme|hacer|crear|escribir|generar|componer|preparar|producir|convertir|editar|quitar|traducir|resumir|analizar|transcribir|programar|disenar|dibujar|redactar)/i.test(normalized);
   return simpleConversation||capabilityQuestion;
 }
+
+function normalizeCoreIntent(value){
+ return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+function isPdfEditIntent(text){
+ const q=normalizeCoreIntent(text);
+ const pdfContext=/\b(pdf|documento|paginas?|folios?|hojas?|marca de agua|numeracion|enumerar|numerar|foliar)\b/.test(q);
+ const editAction=/extraer|extraccion|seleccion|conservar|quedarme|sacar|solo|especific|editar|marcar|marca de agua|numerar|enumerar|numeracion|foliar|renumerar/.test(q);
+ return pdfContext&&editAction;
+}
+function pdfPagesFromText(text){
+ const q=normalizeCoreIntent(text);
+ const part='\\d+(?:\\s*(?:-|a|hasta)\\s*\\d+)?';
+ const list=new RegExp('(?:paginas?|hojas?|folios?)\\s*(?:n(?:um(?:eros?)?)?\\.?\\s*|n(?:ro|ros)\\.?\\s*|de\\s+la\\s+|del?\\s+|:)?('+part+'(?:\\s*(?:,|y)\\s*'+part+')*)');
+ const matched=q.match(list);
+ const short=matched?.[1]||(/^(?:\s*\d+(?:\s*(?:-|a|hasta)\s*\d+)?(?:\s*(?:,|y)\s*\d+(?:\s*(?:-|a|hasta)\s*\d+)?)*)(?:\s|$)/.exec(q)?.[0]||'');
+ return String(short).replace(/\s*(?:a|hasta)\s*/g,'-').replace(/\s+y\s+/g,', ').replace(/\s*-\s*/g,'-').trim();
+}
+function pdfWatermarkFromText(text){
+ const source=String(text||'');
+ const matches=source.match(/marca\s+de\s+agua\s*(?:que\s+diga|con\s+(?:el\s+)?texto|de\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,65})/i);
+ return String(matches?.[1]||'').replace(/\s+(?:y|ademas|tambien)\s+(?:numeracion|numerar|enumerar|paginas?).*$/i,'').trim();
+}
+// Deterministic local execution: a document editor is more reliable than asking
+// a language model to guess whether a known PDF tool exists.
+function buildPdfEditPlan(userText){
+ const pdfAttached=attachments.some(file=>file.type==='application/pdf'||/\.pdf$/i.test(file.name));
+ let request=userText;
+ if(pdfAttached&&(!isPdfEditIntent(userText)||!pdfPagesFromText(userText))){
+  const previous=messages.slice(0,-1).reverse().find(message=>message.role==='user'&&isPdfEditIntent(message.content));
+  if(previous&&/^(?:aqui|ahi|adjunto|te envio|ya|este|listo|ese|el archivo|el pdf|subi|cargue|por favor|\d|marca de agua)/i.test(normalizeCoreIntent(userText).trim())){
+   request=previous.content+'\n'+userText;
+  }
+ }
+ if(!isPdfEditIntent(request))return null;
+ const q=normalizeCoreIntent(request);
+ const select=/\b(solo|unas|algunas|especific|seleccion|conservar|extraer|extraccion|sacar|dame|dejar|recortar)\b/.test(q)&&/\b(paginas?|folios?|hojas?)\b/.test(q);
+ const number=/\b(numerar|enumerar|numeracion|enumeracion|renumerar|foliar|numeros de pagina|numero de pagina)\b/.test(q);
+ const watermark=/marca de agua/.test(q);
+ if(!(select||number||watermark))return null;
+ const pages=pdfPagesFromText(request);
+ const mark=pdfWatermarkFromText(request);
+ const lacking=[];
+ if(!pdfAttached) {
+  return {type:'missing-file',message:'Sí. Prisma tiene herramientas locales para extraer páginas específicas, numerarlas y añadir una marca de agua; también puede aplicar las tres operaciones y entregarte un único PDF. Sube el archivo PDF'+(select&&!pages?', dime qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' e indica qué texto llevará la marca de agua':'')+'. No hace falta conectar ningún modelo para editar el documento.'};
+ }
+ if(select&&!pages)lacking.push('las páginas que quieres conservar (por ejemplo, 2-4, 7)');
+ if(watermark&&!mark)lacking.push('el texto de la marca de agua (por ejemplo, CONFIDENCIAL)');
+ if(lacking.length)return {type:'missing-parameters',message:'Puedo editar el PDF adjunto y realizar todo en un único archivo. Indícame '+lacking.join(' y ')+'.'+(number?' La numeración comenzará en 1 en las páginas resultantes.':'')};
+ const steps=[];
+ const add=(tool_id,params,reason)=>steps.push({tool_id,params,reason});
+ if(select)add('pdf-extract',{pages},'Conservar únicamente las páginas indicadas');
+ if(number)add('pdf-page-numbers',{position:/\b(arriba|superior|encabezado)\b/.test(q)?'top':'bottom'},'Numerar consecutivamente las páginas resultantes');
+ if(watermark)add('pdf-watermark',{watermark:mark},'Añadir la marca de agua solicitada');
+ return {type:'execute',plan:{message:'Editaré el PDF localmente: '+steps.map(step=>step.reason.toLowerCase()).join(', ')+'. Prepararé un solo archivo final para descargar.',needs_clarification:false,steps,combineFinalFiles:true,userRequest:request}};
+}
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
 function directCoreImage(text){
@@ -502,6 +558,16 @@ async function requestPlan(userText){
     addMessage('assistant','¡Hola! Soy Prisma Core. Pídeme una tarea o adjunta un archivo: puedo seleccionar las herramientas disponibles y ayudarte a crear, analizar o convertir contenido.');
     status('Listo para ayudarte.','success');
     return;
+  }
+  const pdfAction=buildPdfEditPlan(userText);
+  if(pdfAction){
+   if(pdfAction.type!=='execute'){addMessage('assistant',pdfAction.message);status('Edición de documentos lista.','info');return;}
+   const plan=pdfAction.plan;
+   const steps=validatePlan(plan);
+   pendingPlan={plan,steps};
+   addMessage('assistant',plan.message);
+   await executePlan();
+   return;
   }
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
@@ -688,7 +754,9 @@ async function executePlan(){
       if(single&&['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id)&&single.result?.text&&!single.result?.blob){
         addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model});
       }else{
-        addMessage('assistant',executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.',{results:executed,partial:false});
+        const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
+        const label=plan.combineFinalFiles?'PDF terminado. Incluye las páginas y modificaciones solicitadas; descarga el documento final.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
+        addMessage('assistant',label,{results:visibleResults,partial:false});
       }
       status('Ejecución completada.','success');
     }
