@@ -314,14 +314,29 @@ function validatePlan(plan){
   if(!plan||typeof plan!=='object'||!Array.isArray(plan.steps))throw new Error('El plan no tiene el formato esperado.');
   if(plan.steps.length>MAX_STEPS)throw new Error('El plan supera el máximo seguro de '+MAX_STEPS+' operaciones.');
   const ready=new Map(tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>[tool.id,tool]));
-  const steps=plan.steps.map((step,index)=>{
-    const tool=ready.get(String(step.tool_id||''));
-    if(!tool)throw new Error('El plan solicitó una herramienta no disponible: '+String(step.tool_id||'desconocida'));
-    if(tool.file&&!attachments.length)throw new Error('Para usar '+tool.name+' necesitas adjuntar un archivo compatible.');
-    if(tool.file&&!compatibleFiles(tool,attachments).length)throw new Error('El archivo adjunto no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'formato compatible')+'.');
-    return {tool,policy:toolPolicy(tool),reason:String(step.reason||'Paso '+(index+1)),params:step.params&&typeof step.params==='object'?step.params:{}};
+  let inputs=attachments.map(file=>({name:file.name,type:file.type||''}));
+  const changes={
+   'video-thumbnail':['fotograma.jpg','image/jpeg'],
+   'video-audio':['audio.wav','audio/wav'],
+   'video-trim':['video.mp4','video/mp4'],
+   'video-mute':['video.mp4','video/mp4'],
+   'audio-trim':['audio.wav','audio/wav'],
+   'image-pdf':['documento.pdf','application/pdf'],
+   'pdf-to-word':['documento.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+   'pdf-to-image':['imagenes.zip','application/zip'],
+   'pdf-split':['paginas.zip','application/zip']
+  };
+  return plan.steps.map((item,index)=>{
+    const tool=ready.get(String(item.tool_id||''));
+    if(!tool)throw new Error('La herramienta no está disponible: '+String(item.tool_id||'desconocida'));
+    if(tool.file&&!inputs.length)throw new Error('Adjunta un archivo compatible con '+tool.name+'.');
+    if(tool.file&&!compatibleFiles(tool,inputs).length)throw new Error('La salida del paso anterior no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'archivos compatibles')+'.');
+    const changed=changes[tool.id];
+    if(changed)inputs=[{name:changed[0],type:changed[1]}];
+    else if(tool.id.startsWith('pdf-')&&!['pdf-text','pdf-metadata','pdf-form-fields'].includes(tool.id))inputs=[{name:'documento.pdf',type:'application/pdf'}];
+    else if(tool.id.startsWith('image-')&&!['image-ocr','image-palette','image-identify-local','image-metadata'].includes(tool.id))inputs=[{name:'imagen.png',type:'image/png'}];
+    return {tool,policy:toolPolicy(tool),reason:String(item.reason||'Paso '+(index+1)),params:item.params&&typeof item.params==='object'?item.params:{}};
   });
-  return steps;
 }
 function showPlan(plan,steps){
   pendingPlan={plan,steps};
