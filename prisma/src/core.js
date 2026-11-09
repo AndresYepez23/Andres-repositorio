@@ -344,6 +344,11 @@ function renderMessages({forceBottom=false}={}){
       source.textContent='Respondió '+(names[message.engine]||message.engine)+(message.model?' · '+String(message.model).slice(0,60):'')+(message.fallbackFrom?' · Respaldo después de '+(names[message.fallbackFrom]||message.fallbackFrom):'');
       if(message.fallbackReason)source.title=String(message.fallbackReason).slice(0,240);
       bubble.append(source);
+      if(message.fallbackFrom&&message.fallbackReason){
+        const reason=document.createElement('small');reason.className='core-message-fallback-reason';
+        reason.textContent='Motivo del respaldo: '+String(message.fallbackReason).slice(0,180);
+        bubble.append(reason);
+      }
     }
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
