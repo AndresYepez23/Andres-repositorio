@@ -121,10 +121,10 @@ async function aiCreation(files,params,callback){
     try{
       callback?.(.08+index*.06,'Conectando con '+({pollinations:'Pollinations',huggingface:'Hugging Face',cloudflare:'Cloudflare'}[provider]||provider)+'…');
       generated=await runStep('image-gen',[],{
+        ...params,
         provider,qualityProfile:params.qualityProfile||'balanced',
         prompt,style:params.style||'photo',ratio:params.ratio||'square',
-        negativePrompt:params.negativePrompt||'',seed:params.seed||'',
-        ...params
+        negativePrompt:params.negativePrompt||'',seed:params.seed||''
       },callback,.12,.56,'Generando imagen');
       providerUsed=provider;
       break;
@@ -167,11 +167,11 @@ async function aiTask(params,callback){
   const taskLabels={write:'Redactar',summarize:'Resumir',explain:'Explicar',translate:'Traducir',ideas:'Generar ideas',improve:'Mejorar un texto'};
   const instruction='Actúa como un asistente experto y resuelve esta tarea. Tipo de tarea: '+(taskLabels[params.task]||'Resolver')+'.\n\nSolicitud del usuario:\n'+prompt+'\n\nContexto adicional:\n'+String(params.context||'No proporcionado')+'\n\nResponde en español claro, con estructura útil y sin inventar datos. Si falta información, indícalo. No describas pasos internos ni inventes fuentes.';
   const result=await runStep('ai-assistant',[],{
+    ...params,
     prompt:instruction,
     provider:params.provider||'auto',
     tone:params.tone||'professional',
     length:params.length||'medium',
-    ...params,
     task:'general'
   },callback,.05,.9,'Resolviendo tu solicitud con el mejor motor disponible');
   const answer=String(result?.text||'').trim();
