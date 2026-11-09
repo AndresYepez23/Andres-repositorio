@@ -8,7 +8,7 @@ function redactSensitiveText(source) {
   if (source.length > 150000) throw Error('El texto supera el límite local de 150.000 caracteres.');
   let secrets = 0, emails = 0, phones = 0;
   let result = source.replace(
-    /\b(?:rqsty-sk-|gsk_|AIza|sk-|hf_|xoxb-)[A-Za-z0-9+/_=-]{12,}\b/g,
+    /\b(?:rqsty-sk-|gsk_|AIza|sk-|hf_|xoxb-)[A-Za-z0-9+/_=-]{12,}(?![A-Za-z0-9+/_=-])/g,
     () => { secrets++; return '[CLAVE OCULTA]'; }
   );
   result = result.replace(
