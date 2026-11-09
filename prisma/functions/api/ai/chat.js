@@ -99,6 +99,10 @@ export async function onRequestPost({ request, env }) {
     const hold=await getProviderHold(env,"huggingface");
     if(hold)return json({error:hold.reason,provider:"huggingface",status:402},402);
   }
+  if(provider==="groq"){
+    const hold=await getProviderHold(env,"groq");
+    if(hold)return json({error:hold.reason,provider:"groq",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
+  }
   const limitError = await checkLimits(env, request, provider);
   if (limitError) return json({error:limitError.error},limitError.status);
 
@@ -166,12 +170,22 @@ export async function onRequestPost({ request, env }) {
       response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
         method:"POST",
         headers:{"Content-Type":"application/json",Authorization:"Bearer "+env.GROQ_API_KEY},
-        body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,2400,1200),stream:false})
+        body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
       });
-    }catch{return json({error:"No fue posible conectar con Groq."},502);}
+    }catch{
+      await setProviderHold(env,"groq","network_error","Groq no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.",60);
+      return json({error:"No fue posible conectar con Groq. Prisma lo pausará brevemente y probará otro motor.",provider:"groq",status:502,retryAfter:60},502);
+    }
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
-      return json({error:response.status===429?"Groq alcanzó su cuota gratuita. Prisma puede probar otro motor.":"Groq respondió con un error ("+response.status+").",provider:"groq",status:response.status},response.status===429?429:502);
+      const status=response.status;
+      let holdSeconds=0;
+      if(status===429)holdSeconds=Math.max(30,Math.min(300,Number(response.headers.get("retry-after")||90)));
+      else if(status===401||status===403)holdSeconds=3600;
+      else if([500,502,503,504].includes(status))holdSeconds=60;
+      if(holdSeconds)await setProviderHold(env,"groq",status===429?"rate_limited":status===401||status===403?"auth_error":"provider_unavailable",status===429?"Groq alcanzó un límite temporal; Prisma utilizará otro motor durante la pausa.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq está temporalmente indisponible; Prisma probará otro motor.",holdSeconds);
+      const message=status===429?"Groq alcanzó un límite temporal. Prisma cambiará automáticamente a otro proveedor.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq respondió con un error ("+status+").";
+      return json({error:message,provider:"groq",status,retryAfter:holdSeconds||null},status===429?429:status===400?400:502);
     }
     const text=String(data.choices?.[0]?.message?.content||"").trim();
     if(!text)return json({error:"Groq no devolvió texto."},502);

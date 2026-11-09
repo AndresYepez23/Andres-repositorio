@@ -85,7 +85,7 @@ export async function getCentralProviderStatus() {
     modelCatalog: {chat:{},image:{},audio:{}},
     warnings: {},
     configured: {},
-    features: {cloudflareImages:false,huggingfaceImages:false,groqAudio:false},
+    features: {cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},
   };
   try {
     const response = await fetch("/api/providers/status", {

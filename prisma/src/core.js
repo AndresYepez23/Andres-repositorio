@@ -12,6 +12,10 @@ let busy = false;
 let executionActive = false;
 let cancelRequested = false;
 let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false };
+let centralFeatures = { cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false };
+let centralModelCatalog = { chat:{}, image:{}, audio:{} };
+let userPinnedToBottom = true;
+const resultObjectUrls = new Map();
 
 function readPollinationsToken(){
   const expiry=Number(sessionStorage.getItem('prisma-polli-expiry')||0);
@@ -25,21 +29,47 @@ function credentials(){
     hfToken:'',
     geminiKey:'',
     groqKey:'',
-    centralProviders
+    centralProviders,
+    centralFeatures,
+    centralModelCatalog
   };
 }
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
 function save(){
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(messages.slice(-40).map(({role,content,time})=>({role,content,time}))));}catch{}
+  try{
+    const serializable=messages.slice(-40).map(message=>{
+      const item={role:message.role,content:message.content,time:message.time};
+      if(message.files?.length)item.files=message.files.slice(0,8);
+      if(message.partial)item.partial=true;
+      if(message.results?.length)item.results=message.results.map(entry=>({
+        name:entry.name,
+        reason:entry.reason,
+        result:{
+          summary:String(entry.result?.summary||'').slice(0,500),
+          text:typeof entry.result?.text==='string'?entry.result.text.slice(0,8000):'',
+          filename:String(entry.result?.filename||''),
+          html:typeof entry.result?.html==='string'?entry.result.html.slice(0,8000):'',
+          hasFile:!!(entry.result?.blob||entry.result?.hasFile)
+        }
+      }));
+      return item;
+    });
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(serializable));
+  }catch{}
 }
 function addMessage(role,content,extra={}){
   messages.push({role,content:String(content||''),time:Date.now(),...extra});
-  messages=messages.slice(-40);save();renderMessages();
+  messages=messages.slice(-40);save();renderMessages({forceBottom:role==='user'});
 }
-function renderMessages(){
+function isNearBottom(list,threshold=120){
+  return list.scrollHeight-list.scrollTop-list.clientHeight<threshold;
+}
+function renderMessages({forceBottom=false}={}){
   const list=$('#core-messages');if(!list)return;
+  const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
+  if(forceBottom)userPinnedToBottom=true;
   list.replaceChildren();
   if(!messages.length){
     const welcome=document.createElement('div');welcome.className='core-welcome';
@@ -55,9 +85,16 @@ function renderMessages(){
     const body=document.createElement('div');body.className='core-message-body';body.textContent=message.content;
     bubble.append(label,body);
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
+    if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
     list.append(bubble);
   }
-  list.scrollTop=list.scrollHeight;
+  if(shouldStick){
+    requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight;userPinnedToBottom=true;});
+  }
+  list.querySelectorAll('img.core-result-preview').forEach(img=>{
+    const keepVisible=()=>{if(userPinnedToBottom){list.scrollTop=list.scrollHeight;}};
+    if(img.complete)keepVisible();else img.addEventListener('load',keepVisible,{once:true});
+  });
 }
 function status(text,kind='info'){
   const el=$('#core-status');if(!el)return;el.textContent=text;el.dataset.kind=kind;
@@ -148,6 +185,7 @@ function toolParamsHint(id){
     'pdf-text':'No requiere parámetros; devuelve texto extraído.',
     'pdf-to-image':'Usa params.pages opcional y params.scale: 1, 1.5 o 2.',
     'ai-assistant':'Usa params.prompt con la instrucción completa, params.context opcional, params.tone y params.length.',
+    'music-lyrics':'Usa params.prompt con la idea, tema, idioma, género y ambiente. Entrega letra original completa y un prompt de producción; no afirmes que se generó audio.',
     'image-gen':'Usa params.prompt con una descripción visual completa y params.ratio/style si aplica.',
     'image-bg':'No requiere parámetros; elimina el fondo de una imagen.',
     'image-ocr':'No requiere parámetros; extrae texto de imágenes.',
@@ -174,7 +212,7 @@ function compactPlanningCatalog(userText){
     text:/texto|escrit|redact|resumen|palabra|traduc|correg|frase/i,
     data:/dato|csv|json|excel|estadistic|tabla|analiz|grafica/i,
     office:/excel|xlsx|hoja de calculo|tabla|oficina/i,
-    ai:/inteligencia|modelo|razona|investiga|analiz|explica|escrib/i,
+    ai:/inteligencia|modelo|razona|investiga|analiz|explica|escrib|cancion|letra|compos|musica|musical/i,
     web:/pagina web|sitio web|landing|html|css|website|web/i,
     dev:/codigo|program|javascript|python|desarroll|html|css|sql|api/i,
     creator:/youtube|miniatura|publicacion|social|creativ|disen/i,
@@ -198,7 +236,11 @@ function compactPlanningCatalog(userText){
     [/comprim.*imagen|optimizar.*imagen/, 'image-compress'],
     [/miniatura|imagen.*youtube/, 'image-social-kit'],
     [/texto.*imagen|ocr/, 'image-ocr'],
-    [/analiz.*pdf|resumen.*pdf|extraer.*texto.*pdf/, 'pdf-text']
+    [/analiz.*pdf|resumen.*pdf|extraer.*texto.*pdf/, 'pdf-text'],
+    [/letra.*cancion|cancion.*original|compon|composicion musical|escrib.*cancion|haz.*cancion|haces.*cancion|quiero.*cancion|necesito.*cancion|hazme.*cancion|escribeme.*cancion|crea.*cancion|crear.*cancion|gener.*cancion/, 'music-lyrics'],
+    [/gener.*imagen|crear.*imagen|ilustracion.*ia/, 'image-gen'],
+    [/transcrib.*audio|audio.*texto|voz.*texto/, 'ai-transcribe'],
+    [/texto.*voz|voz sintetica|leer.*texto/, 'ai-voice']
   ];
   const preferredToolIds=new Set(directIntent.filter(([pattern])=>pattern.test(query)).map(([,id])=>id));
   const ranked=availableCatalog().map(tool=>{
@@ -226,6 +268,9 @@ function buildPlannerPrompt(userText){
     'Eres PRISMA CORE, asistente central que ejecuta tareas con las herramientas de Prisma.',
     'Responde SOLO JSON valido, sin Markdown. Formato: {"message":"breve explicación","needs_clarification":false,"question":"","steps":[{"tool_id":"id exacto","reason":"motivo","params":{}}]}.',
     'Máximo '+MAX_STEPS+' pasos. Selecciona solo IDs del catálogo; el orden respeta dependencias. Usa params.text para texto, params.prompt para tareas con IA. No simules operaciones ejecutadas. No publiques, compres, elimines recursos externos ni autorices consumos.',
+    'Para crear una canción o letra original, selecciona music-lyrics; redacta letra original completa y un prompt de producción musical. ai-voice es texto a voz, no genera música. No afirmes que has creado un archivo musical si no existe un generador de música en el catálogo. Si piden audio musical final y no hay motor, explica la limitación y ofrece crear la letra como paso disponible.',
+    'No rechaces por defecto peticiones creativas seguras. Distingue entre escribir una obra original y copiar letras protegidas o imitar exactamente a un artista. Para lo primero, utiliza la herramienta creativa; para lo segundo, ofrece una alternativa original con rasgos musicales generales.',
+    'Antes de elegir una herramienta, identifica el resultado final que pide el usuario. Puedes encadenar lectura, transformación, generación y exportación cuando cada paso tenga entradas y salidas compatibles. No selecciones herramientas solo porque comparten palabras con la petición.',
     'Puedes generar un plan con 0 pasos si la solicitud es solo una pregunta o no puede ejecutarse con las herramientas mostradas. Explícalo en message sin inventar capacidades.',
     'HISTORIAL RECIENTE:\n'+messages.slice(-5).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,600)).join('\n').slice(-2400),
     'HERRAMIENTAS RELEVANTES:\n'+JSON.stringify(catalog),
@@ -355,7 +400,7 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
       'Para análisis de documentos, utiliza el texto adjunto y selecciona una operación local que pueda procesarlo.'
     ].join(' ')});
     const catalog=availableCatalog().filter(tool=>['local','browser'].includes(tool.mode));
-    const prompt='CATÁLOGO LOCAL:\\n'+JSON.stringify(catalog)+'\\nCONTEXTO DE ARCHIVOS:\\n'+attachmentContext.slice(0,12000)+'\\nMENSAJES RECIENTES:\\n'+messages.slice(-6).map(m=>(m.role==='user'?'Usuario: ':'Prisma: ')+m.content).join('\\n').slice(-4000)+'\\nSOLICITUD:\\n'+userText;
+    const prompt='CATÁLOGO LOCAL:\n'+JSON.stringify(catalog)+'\nCONTEXTO DE ARCHIVOS:\n'+attachmentContext.slice(0,12000)+'\nMENSAJES RECIENTES:\n'+messages.slice(-6).map(m=>(m.role==='user'?'Usuario: ':'Prisma: ')+m.content).join('\n').slice(-4000)+'\nSOLICITUD:\n'+userText;
     const answer=await session.prompt(prompt);
     const plan=parsePlan(answer);
     if(!plan||!Array.isArray(plan.steps)||plan.steps.length>6)return null;
@@ -367,15 +412,17 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
 function isConversationWithoutTools(text){
   if(attachments.length)return false;
   const normalized=String(text||'').trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  if(normalized.length>120)return false;
-  return /^(hola+(?: prisma)?|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|que tal|como estas|quien eres|que eres|gracias|muchas gracias|que puedes hacer|que sabes hacer|me escuchas|estas ahi|buenos dias|buenas noches)[!?,.\s]*$/i.test(normalized);
+  if(normalized.length>160)return false;
+  const simpleConversation=/^(hola+(?: prisma)?|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|que tal|como estas|quien eres|que eres|gracias|muchas gracias|que puedes hacer|que sabes hacer|me escuchas|estas ahi|buenos dias|buenas noches)[!?,.\s]*$/i.test(normalized);
+  const capabilityQuestion=/^(?:puedes|podrias|se puede|es posible|tienes la capacidad de)\b.{0,130}\?+$/i.test(normalized)&&!/(?:hazme|creame|escribeme|generame|preparame|componme|hacer|crear|escribir|generar|componer|preparar|producir|convertir|editar|quitar|traducir|resumir|analizar|transcribir|programar|disenar|dibujar|redactar)/i.test(normalized);
+  return simpleConversation||capabilityQuestion;
 }
 async function answerConversation(text,creds){
   status('Prisma está respondiendo…');
   const context=messages.slice(-5,-1).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,400)).join('\n');
   const response=await runTool('ai-assistant',[],{
-    prompt:'Responde a este mensaje como Prisma Core, en español, con naturalidad y brevedad. No prepares planes, no devuelvas JSON, no afirmes haber realizado acciones. Puedes explicar que ayudas con PDF, imágenes y herramientas si te preguntan por tus capacidades.\n'+(context?'Contexto reciente:\n'+context+'\n':'')+'Usuario: '+text,
-    provider:'auto',reasoning:'fast',tone:'friendly',length:'short',...creds
+    prompt:'Responde a este mensaje como Prisma Core, en español, con naturalidad y brevedad. No prepares planes, no devuelvas JSON, no afirmes haber realizado acciones. Explica con precisión qué herramientas están disponibles: puedes redactar letras originales, pero no generar audio musical si no existe un motor musical conectado; ai-voice solo convierte texto en voz. Si te preguntan por una canción, distingue letra original de audio musical.\n'+(context?'Contexto reciente:\n'+context+'\n':'')+'Usuario: '+text,
+    provider:'auto',reasoning:'fast',tone:'friendly',length:'short',task:'conversation',...creds
   },(p,msg)=>status(msg||'Redactando respuesta…'));
   addMessage('assistant',response.text||'¡Hola! Soy Prisma Core. ¿En qué puedo ayudarte?');
   status('Listo.','success');
@@ -383,6 +430,8 @@ async function answerConversation(text,creds){
 async function requestPlan(userText){
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
+  centralFeatures=centralStatus.features||centralFeatures;
+  centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
   if(isConversationWithoutTools(userText)){
@@ -405,10 +454,10 @@ async function requestPlan(userText){
           else if(name.endsWith('.docx')){const result=await runTool('docx-html',[file],{},()=>{});const html=await result?.blob?.text?.();if(html)content=new DOMParser().parseFromString(html,'text/html').body.textContent||'';}
           else if(/\\.(txt|md|csv)$/i.test(name)||file.type.startsWith('text/'))content=await file.text();
           else if(/\\.(xlsx|xls)$/i.test(name)){const result=await runTool('excel-json',[file],{sheet:'all',format:'json'},()=>{});content=result?.text||await result?.blob?.text?.()||'';}
-          if(content.trim())extracted.push(file.name+':\\n'+content.slice(0,9000));
+          if(content.trim())extracted.push(file.name+':\n'+content.slice(0,9000));
         }catch(error){console.warn('Lectura local del archivo falló:',file.name,error);}
       }
-      if(extracted.length)attachmentContext='\\n\\nCONTENIDO LEÍDO LOCALMENTE (no enviado a ningún modelo):\\n'+extracted.join('\\n\\n').slice(0,18000);
+      if(extracted.length)attachmentContext='\n\nCONTENIDO LEÍDO LOCALMENTE (no enviado a ningún modelo):\n'+extracted.join('\n\n').slice(0,18000);
     }
     status('Comprobando si el navegador ofrece un modelo de IA local…');
     const nativePlan=await requestNativeBrowserPlan(userText,attachmentContext);
@@ -451,16 +500,16 @@ async function requestPlan(userText){
           const result=await runTool('excel-json',[file],{sheet:'all',format:'json'},()=>{});
           content=await result?.blob?.text?.()||'';
         }
-        if(content.trim())extracted.push('ARCHIVO '+file.name+'\\n'+content.slice(0,10000));
+        if(content.trim())extracted.push('ARCHIVO '+file.name+'\n'+content.slice(0,10000));
       }catch(error){console.warn('No se pudo leer el archivo para contextualizar:',file.name,error);}
     }
-    if(extracted.length)attachmentContext='\\n\\nCONTENIDO EXTRAÍDO EN EL DISPOSITIVO (solo el texto necesario se incluye en la solicitud al motor de IA; los archivos originales permanecen disponibles para ejecutar herramientas):\\n'+extracted.join('\\n\\n').slice(0,22000);
+    if(extracted.length)attachmentContext='\n\nCONTENIDO EXTRAÍDO EN EL DISPOSITIVO (solo el texto necesario se incluye en la solicitud al motor de IA; los archivos originales permanecen disponibles para ejecutar herramientas):\n'+extracted.join('\n\n').slice(0,22000);
   }
   const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500));
   let plan,steps;
   // Provider/network errors must not trigger a second costly inference request.
   const result=await runTool('ai-assistant',[],{
-    prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
+    prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',task:'planner',...creds
   },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
   try{
     plan=parsePlan(result.text);
@@ -468,8 +517,8 @@ async function requestPlan(userText){
   }catch(firstError){
     status('Revisando el formato y la compatibilidad del plan…');setProgress(.17,'Corrigiendo el plan…');
     const repair=await runTool('ai-assistant',[],{
-      prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\\n\\nSOLICITUD Y CATÁLOGO ORIGINAL:\\n'+plannerPrompt,
-      provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
+      prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\n\nSOLICITUD Y CATÁLOGO ORIGINAL:\n'+plannerPrompt,
+      provider:'auto',reasoning:'smart',tone:'professional',length:'long',task:'planner',...creds
     },(p,msg)=>{status(msg||'Corrigiendo el plan…');setProgress(.17+Math.max(0,Math.min(1,Number(p)||0))*.08,msg||'Corrigiendo el plan…');});
     plan=parsePlan(repair.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
@@ -492,7 +541,20 @@ async function executePlan(){
       const {tool,params:plannedParams,reason}=steps[index];
       status('Paso '+(index+1)+' de '+steps.length+': '+tool.name+'…');setProgress(index/steps.length,'Paso '+(index+1)+' de '+steps.length+': '+tool.name);
       const params={...plannedParams,...credentials()};
-      if(tool.id==='ai-assistant'){const base=String(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea');const original=String(plan.userRequest||'');params.prompt=base+(original&&!base.includes(original)?'\\n\\nSOLICITUD Y CONTEXTO DEL USUARIO:\\n'+original.slice(0,18000):'')+(lastText?'\\n\\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\\n'+lastText.slice(0,18000):'');}
+      if(tool.id==='ai-assistant'){const base=String(params.prompt||plan.userRequest||plan.message||'Resuelve la tarea');const original=String(plan.userRequest||'');params.prompt=base+(original&&!base.includes(original)?'\n\nSOLICITUD Y CONTEXTO DEL USUARIO:\n'+original.slice(0,18000):'')+(lastText?'\n\nCONTENIDO OBTENIDO EN EL PASO ANTERIOR:\n'+lastText.slice(0,18000):'');}
+      if(tool.id==='music-lyrics'){
+        const base=String(params.prompt||plan.userRequest||'Crea una canción original');
+        const original=String(plan.userRequest||'');
+        params.prompt=[
+          'Compón una canción completamente original en español, con título, concepto, género, tempo aproximado y estructura clara (verso 1, pre-coro, coro, verso 2, puente y coro final).',
+          'Entrega una letra completa, coherente, memorable y cantable. Añade al final un prompt de producción musical listo para un futuro generador de audio. No copies letras existentes ni imites exactamente a un artista.',
+          'No afirmes que has renderizado audio: esta herramienta entrega letra y dirección musical en texto.',
+          'Idea solicitada: '+base,
+          original&&!base.includes(original)?'Contexto del usuario: '+original.slice(0,12000):'',
+          lastText?'Material del paso anterior: '+lastText.slice(0,12000):''
+        ].filter(Boolean).join('\n\n');
+        params.provider='auto';params.reasoning='smart';params.tone='creative';params.length='long';params.task='songwriting';
+      }
       if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines','text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-flatten','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
       let inputFiles=[];
       if(tool.file){
@@ -513,37 +575,68 @@ async function executePlan(){
         const textArtifact=result.artifacts.find(item=>item.text);if(textArtifact)lastText=textArtifact.text;
       }
     }
-    if(cancelRequested){renderExecutionResults(executed,true);addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.');status('Ejecución detenida por ti.','warning');}
-    else{renderExecutionResults(executed,false);addMessage('assistant','He completado '+executed.length+' operación(es). Revisa los resultados y descarga los archivos generados.');status('Ejecución completada.','success');}
+    if(cancelRequested){
+      addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.',{results:executed,partial:true});
+      status('Ejecución detenida por ti.','warning');
+    }else{
+      addMessage('assistant','He completado '+executed.length+' operación(es). Los resultados y archivos están disponibles en esta conversación.',{results:executed,partial:false});
+      status('Ejecución completada.','success');
+    }
   }catch(error){
-    console.error(error);renderExecutionResults(executed,true);addMessage('assistant','La ejecución se detuvo: '+(error?.message||'error inesperado')+'. Los resultados de los pasos que sí terminaron están disponibles abajo.');status('Ejecución detenida.','error');
+    console.error(error);
+    addMessage('assistant','La ejecución se detuvo: '+(error?.message||'error inesperado')+'. Los resultados de los pasos que sí terminaron se conservan en esta conversación.',{results:executed,partial:true});
+    status('Ejecución detenida.','error');
   }finally{
     executionActive=false;setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
   }
 }
-function renderExecutionResults(executed,partial){
-  const output=$('#core-results');output.replaceChildren();
-  if(!executed.length)return;
-  const header=document.createElement('div');header.className='core-results-heading';header.textContent=partial?'Resultados parciales · ejecución detenida':'✓ Trabajo completado';output.append(header);
+function resultObjectUrl(blob){
+  if(!blob)return '';
+  let url=resultObjectUrls.get(blob);
+  if(!url){url=URL.createObjectURL(blob);resultObjectUrls.set(blob,url);}
+  return url;
+}
+function releaseResultObjectUrls(){
+  for(const url of resultObjectUrls.values())URL.revokeObjectURL(url);
+  resultObjectUrls.clear();
+}
+function createExecutionResults(executed,partial){
+  const wrapper=document.createElement('div');wrapper.className='core-message-results';
+  const heading=document.createElement('div');heading.className='core-results-heading';
+  heading.textContent=partial?'Resultados parciales · ejecución detenida':'✓ Trabajo completado';
+  wrapper.append(heading);
   executed.forEach((entry,index)=>{
+    const result=entry.result||{};
     const card=document.createElement('section');card.className='core-result-card';
     const name=document.createElement('strong');name.textContent=(index+1)+'. '+entry.name;card.append(name);
-    if(entry.result?.summary){const summary=document.createElement('p');summary.textContent=entry.result.summary;card.append(summary);}
-    if(entry.result?.text){
-      const pre=document.createElement('pre');pre.textContent=String(entry.result.text).slice(0,8000);card.append(pre);
-      const copy=document.createElement('button');copy.type='button';copy.className='mini-button';copy.textContent='Copiar texto';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(entry.result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});card.append(copy);
+    if(result.summary){const summary=document.createElement('p');summary.textContent=result.summary;card.append(summary);}
+    if(result.text){
+      const pre=document.createElement('pre');pre.textContent=String(result.text).slice(0,8000);card.append(pre);
+      const copy=document.createElement('button');copy.type='button';copy.className='mini-button';copy.textContent='Copiar texto';
+      copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});
+      card.append(copy);
     }
-    if(entry.result?.blob){
-      if(String(entry.result.blob.type||'').startsWith('image/')){const preview=document.createElement('img');preview.className='core-result-preview';preview.alt=entry.result.filename||'Imagen generada';preview.src=URL.createObjectURL(entry.result.blob);card.append(preview);}
+    if(result.blob){
+      const url=resultObjectUrl(result.blob);
+      if(String(result.blob.type||'').startsWith('image/')){
+        const preview=document.createElement('img');preview.className='core-result-preview';preview.alt=result.filename||'Imagen generada';preview.loading='lazy';preview.src=url;card.append(preview);
+      }else if(String(result.blob.type||'').startsWith('audio/')){
+        const player=document.createElement('audio');player.className='core-result-player';player.controls=true;player.preload='metadata';player.src=url;card.append(player);
+      }else if(String(result.blob.type||'').startsWith('video/')){
+        const player=document.createElement('video');player.className='core-result-player';player.controls=true;player.preload='metadata';player.src=url;card.append(player);
+      }
       const row=document.createElement('div');row.className='core-result-download';
-      const label=document.createElement('span');label.textContent=entry.result.filename||'Archivo generado';
+      const label=document.createElement('span');label.textContent=result.filename||'Archivo generado';
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
-      button.addEventListener('click',()=>{const url=URL.createObjectURL(entry.result.blob);const a=document.createElement('a');a.href=url;a.download=entry.result.filename||'prisma-resultado';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);});
+      button.addEventListener('click',()=>{const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';a.click();});
       row.append(label,button);card.append(row);
+    }else if(result.hasFile){
+      const note=document.createElement('p');note.className='core-result-expired';note.textContent='Este archivo se generó en una sesión anterior y ya no está disponible para descargar. Puedes volver a ejecutar la tarea para obtenerlo.';card.append(note);
     }
-    if(entry.result?.html){const pre=document.createElement('pre');pre.textContent=String(entry.result.html).slice(0,8000);card.append(pre);}
-    output.append(card);
+    if(result.html){const pre=document.createElement('pre');pre.textContent=String(result.html).slice(0,8000);card.append(pre);}
+    wrapper.append(card);
   });
+  return wrapper;
 }
 async function sendMessage(){
   if(busy)return;
@@ -561,7 +654,8 @@ async function sendMessage(){
 export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
   try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(saved))messages=saved.slice(-40);}catch{messages=[];}
-  renderMessages();
+  renderMessages({forceBottom:true});
+  $('#core-messages').addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom($('#core-messages'));},{passive:true});
   $('#core-send').addEventListener('click',sendMessage);
   $('#core-cancel').addEventListener('click',()=>{if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
   $('#core-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}});
@@ -574,13 +668,15 @@ export function initPrismaCore(){
   });
   $('#core-clear').addEventListener('click',()=>{
     if(busy)return;
-    messages=[];pendingPlan=null;localStorage.removeItem(STORAGE_KEY);renderMessages();$('#core-plan').classList.add('hidden');$('#core-results').replaceChildren();status('Conversación nueva. El historial local se ha limpiado.','success');
+    releaseResultObjectUrls();messages=[];pendingPlan=null;userPinnedToBottom=true;localStorage.removeItem(STORAGE_KEY);renderMessages({forceBottom:true});$('#core-plan').classList.add('hidden');status('Conversación nueva. El historial local se ha limpiado.','success');
   });
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
     centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
+    centralFeatures=result.features||centralFeatures;
+    centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();
     const ready=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
