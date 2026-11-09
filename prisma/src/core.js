@@ -612,13 +612,14 @@ async function answerConversation(text,creds,task='conversation'){
  status('Listo. Puedes continuar la conversación o pedir ajustes.','success');
 }
 function speechIntent(message){
- const q=String(message||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const q=String(message||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  if(/(?:audio|voz)\s+a\s+texto|transcrib|subtitul/.test(q))return false;
- const speechTarget=/(?:texto|documento|archivo|pdf|word|frase|parrafo|respuesta|mensaje|lectura|guion|historia|narracion|voz)/.test(q);
- const request=/(?:pas(?:a|ar|ame|alo|ala)|conviert|convert|transform|genera|generar|crea|crear|haz(?:me)?|graba|produce|quiero|necesito|guardar|guarda).{0,65}(?:a\s+(?:un\s+)?(?:audio|mp3|voz)|en\s+(?:audio|mp3|voz)|voz\s+(?:ia|sintetica)|audio\s+(?:narrado|hablado))/.test(q);
- const narration=/(?:lee|leeme|lectura en voz alta|narra|narrame|ponle voz|hablalo|dilo en voz alta|escuchar.*(?:texto|respuesta|mensaje))/.test(q);
+ if(/(?:cancion|musica|melodia|instrumental|banda sonora)/.test(q)&&!/(?:letra|texto).*\b(?:voz|narrac|habla)/.test(q))return false;
+ if(/^[¿?\s]*(?:que es|como funciona|para que sirve|cuanto cuesta|es posible|puedes explicar)\b/.test(q))return false;
+ const narration=/(?:leeme|\blee\b|lectura en voz alta|\bnarra\b|narrame|ponle voz|hablalo|dilo en voz alta|escuchar.*(?:texto|respuesta|mensaje))/.test(q);
+ const generation=/(?:pas(?:a|ar|ame|alo|ala)|conviert|convert|transform|genera|generar|crea|crear|haz(?:me)?|graba|produce|quiero|necesito|guardar|guarda).{0,85}(?:audio|mp3|voz|narracion|hablado)/.test(q);
  const reverse=/(?:texto|archivo|documento|respuesta|mensaje|frase).{0,65}(?:a\s+audio|a\s+voz|en\s+audio|en\s+mp3)/.test(q);
- return narration||request||reverse||(speechTarget&&/(?:texto\s+a\s+(?:voz|audio)|text\s*to\s*speech|tts)/.test(q));
+ return narration||generation||reverse||/(?:texto\s+a\s+(?:voz|audio)|text\s*to\s*speech|\btts\b)/.test(q);
 }
 function inlineSpeechText(command){
  const full=String(command||'').trim();
