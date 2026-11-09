@@ -282,4 +282,21 @@ assert.ok(sidebarCore.includes('mainSidebarSlot.replaceChildren(integratedHistor
 assert.ok(sidebarCss.includes('body.is-core-view #core-workspace > .core-history'));
 assert.match(sidebarMain, /activeView='core'/);
 
+const themeBootstrapIndex = sidebarHtml.indexOf("localStorage.getItem('prisma-theme')");
+const stylesheetIndex = sidebarHtml.indexOf('rel="stylesheet" href="./styles.css"');
+assert.ok(themeBootstrapIndex >= 0 && themeBootstrapIndex < stylesheetIndex);
+assert.match(sidebarHtml, /id="app-startup"/);
+assert.match(sidebarHtml, /core-connect-banner hidden/);
+assert.ok(sidebarMain.indexOf("safeStartup('Prisma Core',initPrismaCore)") < sidebarMain.indexOf("document.body.classList.remove('app-booting')"));
+assert.match(sidebarMain, /syncThemeChrome/);
+const authSource = readFileSync(new URL('../src/prisma-account.js', import.meta.url), 'utf8');
+assert.match(authSource, /auth-provider-grid/);
+assert.match(authSource, /!enabled/);
+const experienceSource = readFileSync(new URL('../src/prisma-experience.js', import.meta.url), 'utf8');
+assert.match(experienceSource, /controllerchange/);
+assert.match(experienceSource, /updateViaCache/);
+const swSource = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+assert.match(swSource, /cache:"no-store"/);
+
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
