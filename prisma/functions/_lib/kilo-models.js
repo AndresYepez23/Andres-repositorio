@@ -1,4 +1,4 @@
-import { getCredentialSlots } from "./credential-pool.js";
+import { getCredentialSlots, requestWithCredentialPool } from "./credential-pool.js";
 
 let cachedModels = [];
 let cacheExpiresAt = 0;
@@ -8,10 +8,13 @@ let cacheExpiresAt = 0;
 export async function getKiloFreeModels(env, { force = false } = {}) {
   if (!force && cachedModels.length && Date.now() < cacheExpiresAt) return cachedModels;
   try {
-    const headers = {};
-    const key = getCredentialSlots(env, "kilo")[0]?.value;
-    if (key) headers.Authorization = "Bearer " + key;
-    const response = await fetch("https://ai-gateway.kilo.ai/api/v1/models", { headers });
+    const slots = getCredentialSlots(env, "kilo");
+    const send = key => fetch("https://ai-gateway.kilo.ai/api/v1/models", {
+      headers: key ? { Authorization: "Bearer " + key } : {},
+    });
+    const response = slots.length
+      ? await requestWithCredentialPool(env, "kilo", key => send(key))
+      : await send("");
     if (!response.ok) {
       cacheExpiresAt = Date.now() + 30_000;
       return [];
