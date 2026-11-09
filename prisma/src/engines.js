@@ -56,7 +56,13 @@ async function pdfTool(id,files,p,cb){
   const blob=await zip.generateAsync({type:'blob'});return download(blob,fileName(files[0])+'-paginas.zip');
  }
 
- if(id==='pdf-extract'){const ids=parsePages(p.pages,total);const pages=await out.copyPages(src,ids);pages.forEach(x=>out.addPage(x));}
+ if(id==='pdf-extract'){
+  const ids=parsePages(p.pages,total);
+  const selected=await out.copyPages(src,ids);
+  selected.forEach(page=>out.addPage(page));
+  progress(cb,1,'Se extrajeron '+selected.length+' páginas del PDF.');
+  return download(makeBlob(await out.save(),'application/pdf'),fileName(files[0])+'-paginas-seleccionadas.pdf');
+ }
  if(id==='pdf-rotate'){src.getPages().forEach(pg=>pg.setRotation(degrees((pg.getRotation().angle+Number(p.degrees))%360)));return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-rotado.pdf');}
  if(id==='pdf-remove-pages'){const ids=parsePages(p.pages,total);ids.sort((a,b)=>b-a).forEach(i=>src.removePage(i));if(!src.getPageCount())throw Error('No puedes eliminar todas las páginas del documento.');return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-paginas.pdf');}
  if(id==='pdf-page-numbers'){const font=await src.embedFont(StandardFonts.Helvetica);src.getPages().forEach((pg,i)=>{const {width,height}=pg.getSize(),text=String(i+1)+' / '+total;const size=10,w=font.widthOfTextAtSize(text,size),position=p.position||'bottom';pg.drawText(text,{x:(width-w)/2,y:position==='top'?height-24:18,size,font,color:rgb(.42,.45,.5),opacity:.9});});return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-numerado.pdf');}
