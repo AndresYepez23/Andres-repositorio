@@ -508,6 +508,17 @@ function buildFields(t){
     case 'image-pixelate':return field('Tamaño de bloque (px)','block','number','16','Cuanto mayor sea el número, más pixelado será el resultado.','min="4" max="80"');
     case 'image-sepia':return '<div class="tool-hint">Aplica un tono sepia clásico y exporta una copia PNG sin modificar el original.</div>';
     case 'image-social-kit':return '<div class="tool-hint">Genera cuatro recortes centrados: publicación cuadrada, retrato 4:5, historia/Reel 9:16 y miniatura horizontal 16:9. Descarga todo en un ZIP.</div>';
+    case 'text-redact-sensitive':return textareaField('Texto con datos que quieres ocultar','text','','Trabaja solo en tu navegador. Puede detectar claves, correos y teléfonos; revisa la copia antes de compartirla.')+
+      '<div class="tool-hint">Los datos no se envían a un servicio de IA. El resultado puede requerir ocultar otros datos manualmente.</div>';
+    case 'utm-builder':return field('URL de destino','url','url','https://ejemplo.com','URL completa HTTP o HTTPS.')+
+      '<div class="inline-fields">'+field('Origen (utm_source)','source','text','instagram')+field('Medio (utm_medium)','medium','text','social')+'</div>'+
+      field('Campaña (utm_campaign)','campaign','text','lanzamiento')+
+      '<div class="inline-fields">'+field('Contenido (opcional)','content','text','')+field('Término (opcional)','term','text','')+'</div>'+
+      '<div class="tool-hint">Crea un enlace rastreable sin pedir acceso a cuentas externas. Conserva parámetros existentes.</div>';
+    case 'subtitle-srt-local':return textareaField('Guion o frases','text','','Una frase por línea o pega un texto completo. Los tiempos son aproximados.')+
+      '<div class="inline-fields">'+field('Segundos por subtítulo','secondsPerCue','number','4','Duración estimada, entre 1 y 12 segundos.','min="1" max="12" step="0.5"')+
+      field('Caracteres máximos por subtítulo','charactersPerCue','number','72','','min="35" max="110"')+'</div>'+
+      '<div class="tool-hint">Descarga un archivo .srt real, compatible con CapCut y otros editores. Revisa la sincronía con el audio.</div>';
     case 'citation-generator':return field('Autor o autores','author','text','Apellido, N.','Usa los datos tal como aparecen en la publicación.')+field('Año','year','text','2026')+field('Título','title','text','','Título del artículo, libro o recurso.')+field('Revista, editorial o sitio','source','text','','Nombre de la fuente.')+field('DOI (opcional)','doi','text','','Puedes pegar el DOI o su URL.')+field('URL (opcional)','url','url','','Enlace directo a la fuente.')+selectField('Formato de salida principal','style',[['apa','APA 7'],['vancouver','Vancouver'],['mla','MLA 9']],'apa');
     case 'flashcards-export':return textareaField('Conceptos y definiciones','text','Caries | Enfermedad multifactorial que afecta los tejidos duros del diente.\\nPulpa | Tejido conectivo vascularizado e inervado del diente.','Una tarjeta por línea. Separa el concepto y la definición con |, tabulación o ::. Descarga CSV compatible con Anki.');
     case 'qr-vcard':return field('Nombre completo','name','text','Andrés Simón Yépez')+field('Teléfono','phone','tel','','Incluye el indicativo del país.')+field('Correo electrónico','email','email','','')+field('Empresa u organización','organization','text','','Opcional.');
