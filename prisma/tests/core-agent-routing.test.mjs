@@ -230,11 +230,11 @@ assert.doesNotMatch(pdfCapabilities, /Mis áreas principales/,
   'specific capability questions should show relevant tools, not the full generic catalog');
 assert.match(pdfCapabilities, /PDF/i);
 const engineSource = readFileSync(new URL('../src/engines.js', import.meta.url), 'utf8');
-const coreSource = readFileSync(new URL('../src/core.js', import.meta.url), 'utf8');
+const corePromptSource = readFileSync(new URL('../src/core.js', import.meta.url), 'utf8');
 assert.match(engineSource, /Formato universal/);
 assert.match(engineSource, /No escribas tablas ASCII/);
-assert.match(coreSource, /coreCapabilityContext/);
-assert.match(coreSource, /Motores de texto configurados en el servidor/);
+assert.match(corePromptSource, /coreCapabilityContext/);
+assert.match(corePromptSource, /Motores de texto configurados en el servidor/);
 
 // Sidebar UI contract: compact brand, persistent chat search, new-chat row,
 // desktop collapse/reopen, and profile kept in the main top bar.
