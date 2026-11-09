@@ -1547,7 +1547,7 @@ export function initPrismaCore(){
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();
