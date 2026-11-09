@@ -1,6 +1,7 @@
-// Six protected credential slots for every external provider except Groq (five).
-// Quotas remain governed by each account/project and by Prisma's shared D1 limits.
-// Never expose credential values to the browser, logs or status endpoints.
+// Up to six protected API credentials per external provider.
+// Compact JSON pools keep Cloudflare binding usage practical; individual legacy
+// variables remain supported. Provider quotas are shared and never multiplied
+// by the number of keys. Secret values never leave the backend.
 import { getProviderHold, setProviderHold } from "./provider-health.js";
 
 export const CREDENTIAL_ROOTS = Object.freeze({
@@ -17,25 +18,54 @@ export const CREDENTIAL_ROOTS = Object.freeze({
   aihubmix: "AIHUBMIX_API_KEY",
   amd: "RADEON_API_KEY",
 });
-export const CREDENTIAL_SLOT_LIMITS = Object.freeze({
-  gemini: 6,
-  groq: 5,
-  huggingface: 6,
-  openrouter: 6,
-  pollinations: 6,
-  kilo: 1,
-  requesty: 1,
-  sensenova: 1,
-  zai: 1,
-  baidu: 1,
-  aihubmix: 1,
-  amd: 1,
+
+// One encrypted Cloudflare secret per provider can contain a JSON array of up
+// to six keys. This is the recommended format on Workers Free, whose binding
+// count is lower than the 72 individual secrets needed for twelve providers.
+export const CREDENTIAL_POOL_VARIABLES = Object.freeze({
+  gemini: "GEMINI_API_KEYS_JSON",
+  groq: "GROQ_API_KEYS_JSON",
+  huggingface: "HF_API_KEYS_JSON",
+  openrouter: "OPENROUTER_API_KEYS_JSON",
+  pollinations: "POLLINATIONS_API_KEYS_JSON",
+  kilo: "KILO_API_KEYS_JSON",
+  requesty: "REQUESTY_API_KEYS_JSON",
+  sensenova: "SENSENOVA_API_KEYS_JSON",
+  zai: "ZAI_API_KEYS_JSON",
+  baidu: "QIANFAN_API_KEYS_JSON",
+  aihubmix: "AIHUBMIX_API_KEYS_JSON",
+  amd: "RADEON_API_KEYS_JSON",
 });
-// Backwards-compatible global maximum; use maxCredentialSlots(provider)
-// whenever displaying or enumerating an individual provider's slots.
+
+export const CREDENTIAL_SLOT_LIMITS = Object.freeze(
+  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [provider, 6]))
+);
 export const MAX_CREDENTIAL_SLOTS = 6;
+
 export function maxCredentialSlots(provider) {
   return CREDENTIAL_SLOT_LIMITS[provider] || 0;
+}
+
+function readJsonCredentialPool(env, provider) {
+  const variable = CREDENTIAL_POOL_VARIABLES[provider];
+  const raw = variable ? env?.[variable] : null;
+  if (raw == null || raw === "") return { variable, configured: false, valid: true, values: [] };
+  if (typeof raw !== "string") return { variable, configured: true, valid: false, values: [] };
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length > maxCredentialSlots(provider)
+      || parsed.some(value => typeof value !== "string")) {
+      return { variable, configured: true, valid: false, values: [] };
+    }
+    return {
+      variable,
+      configured: true,
+      valid: true,
+      values: parsed.map(value => value.trim()).filter(Boolean),
+    };
+  } catch {
+    return { variable, configured: true, valid: false, values: [] };
+  }
 }
 
 export function getCredentialSlots(env, provider) {
@@ -43,28 +73,51 @@ export function getCredentialSlots(env, provider) {
   if (!root) return [];
   const seen = new Set(), slots = [];
   const limit = maxCredentialSlots(provider);
+  const pool = readJsonCredentialPool(env, provider);
+
   for (let number = 1; number <= limit; number++) {
-    const name = number === 1 ? root : root + "_" + number;
-    // _BACKUP is a legacy alias for slot 2, not a sixth credential.
-    const value = String((number === 2 ? env?.[name] || env?.[root + "_BACKUP"] : env?.[name]) || "").trim();
+    const individualName = number === 1 ? root : root + "_" + number;
+    const legacyBackupName = number === 2 ? root + "_BACKUP" : null;
+    const individualValue = String(
+      env?.[individualName] || (legacyBackupName ? env?.[legacyBackupName] : "") || ""
+    ).trim();
+    const pooledValue = pool.values[number - 1] || "";
+    const value = individualValue || pooledValue;
     if (!value || seen.has(value)) continue;
     seen.add(value);
-    slots.push({ number, name, value });
+    slots.push({
+      number,
+      name: individualValue
+        ? (env?.[individualName] ? individualName : legacyBackupName)
+        : pool.variable + "[" + number + "]",
+      value,
+    });
   }
   return slots;
 }
 
 export function getCredentialStatus(env, provider) {
-  const occupied = new Set(getCredentialSlots(env, provider).map(item => item.number));
+  const slots = getCredentialSlots(env, provider);
+  const byNumber = new Map(slots.map(item => [item.number, item]));
+  const root = CREDENTIAL_ROOTS[provider];
+  const pool = readJsonCredentialPool(env, provider);
   const max = maxCredentialSlots(provider);
   return {
-    count: occupied.size,
+    count: slots.length,
     max,
-    slots: Array.from({ length: max }, (_, i) => ({
-      slot: i + 1,
-      configured: occupied.has(i + 1),
-      variable: CREDENTIAL_ROOTS[provider] + (i ? "_" + (i + 1) : ""),
-    })),
+    poolVariable: pool.variable,
+    poolConfigured: pool.configured,
+    poolValid: pool.valid,
+    slots: Array.from({ length: max }, (_, i) => {
+      const number = i + 1;
+      const configured = byNumber.get(number);
+      return {
+        slot: number,
+        configured: Boolean(configured),
+        variable: configured?.name || pool.variable + "[" + number + "]",
+        individualVariable: number === 1 ? root : root + "_" + number,
+      };
+    }),
   };
 }
 
@@ -78,9 +131,9 @@ function retryHoldSeconds(status, headers) {
   return 60;
 }
 
-// One network call in the healthy path, at most two per request for
-// key-specific auth/network faults. Provider-wide 402/429 responses stop the
-// whole provider pool: never rotate accounts to evade credit or rate limits.
+// Distribute healthy requests across configured credentials. A key-specific
+// auth/transient failure can try one alternate at most. Provider-wide 402/429
+// pauses the entire pool: keys are never rotated to evade billing or quotas.
 export async function requestWithCredentialPool(env, provider, send, options = {}) {
   const slots = getCredentialSlots(env, provider);
   if (!slots.length) {
@@ -98,12 +151,15 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     throw error;
   }
 
-  const maxAttempts = Math.min(2, Math.max(1, Number(options.maxAttempts) || 2));
+  const maxAttempts = Math.min(slots.length, 2, Math.max(1, Number(options.maxAttempts) || 2));
+  const startIndex = Number.isInteger(options.startIndex)
+    ? ((options.startIndex % slots.length) + slots.length) % slots.length
+    : Math.floor(Math.random() * slots.length);
   const retryable = new Set(options.retryStatuses || [401, 403, 500, 502, 503, 504]);
   let lastResponse, lastError, attempted = 0;
 
-  for (const slot of slots) {
-    if (attempted >= maxAttempts) break;
+  for (let offset = 0; offset < slots.length && attempted < maxAttempts; offset++) {
+    const slot = slots[(startIndex + offset) % slots.length];
     const healthKey = "credential-slot:" + provider + ":" + slot.number;
     const hold = await getProviderHold(env, healthKey);
     if (hold) continue;
