@@ -45,6 +45,8 @@ function save(){
       const item={role:message.role,content:message.content,time:message.time};
       if(message.engine)item.engine=message.engine;
       if(message.model)item.model=message.model;
+      if(message.fallbackFrom)item.fallbackFrom=message.fallbackFrom;
+      if(message.fallbackReason)item.fallbackReason=message.fallbackReason;
       if(message.files?.length)item.files=message.files.slice(0,8);
       if(message.partial)item.partial=true;
       if(message.results?.length)item.results=message.results.map(entry=>({
@@ -88,7 +90,13 @@ function renderMessages({forceBottom=false}={}){
     const label=document.createElement('span');label.className='core-message-label';label.textContent=message.role==='user'?'TÚ':'PRISMA CORE';
     const body=document.createElement('div');body.className='core-message-body';body.textContent=message.content;
     bubble.append(label,body);
-    if(message.role==='assistant'&&message.engine){const source=document.createElement('small');source.className='core-message-engine';source.textContent='Respondió '+({gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'}[message.engine]||message.engine);bubble.append(source);}
+    if(message.role==='assistant'&&message.engine){
+      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'};
+      const source=document.createElement('small');source.className='core-message-engine';
+      source.textContent='Respondió '+(names[message.engine]||message.engine)+(message.model?' · '+String(message.model).slice(0,60):'')+(message.fallbackFrom?' · Respaldo después de '+(names[message.fallbackFrom]||message.fallbackFrom):'');
+      if(message.fallbackReason)source.title=String(message.fallbackReason).slice(0,240);
+      bubble.append(source);
+    }
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
     list.append(bubble);
@@ -435,6 +443,99 @@ function isConversationWithoutTools(text){
   const capabilityQuestion=/^(?:puedes|podrias|se puede|es posible|tienes la capacidad de)\b.{0,130}\?+$/i.test(normalized)&&!/(?:hazme|creame|escribeme|generame|preparame|componme|hacer|crear|escribir|generar|componer|preparar|producir|convertir|editar|quitar|traducir|resumir|analizar|transcribir|programar|disenar|dibujar|redactar)/i.test(normalized);
   return simpleConversation||capabilityQuestion;
 }
+
+function normalizeCoreIntent(value){
+ return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+function isPdfEditIntent(text){
+ const q=normalizeCoreIntent(text);
+ const pdfContext=/\b(pdf|documento|paginas?|folios?|hojas?|marca de agua|numeracion|enumerar|numerar|foliar)\b/.test(q);
+ const editAction=/extrae|extraer|extraccion|seleccion|conservar|quedarme|sacar|solo|especific|editar|marcar|marca de agua|numer|enumer|foliar|renumerar/.test(q);
+ return pdfContext&&editAction;
+}
+function pdfPagesFromText(text){
+ const q=normalizeCoreIntent(text);
+ const part='\\d+(?:\\s*(?:-|a|hasta)\\s*\\d+)?';
+ const list=new RegExp('(?:paginas?|hojas?|folios?)\\s*(?:n(?:um(?:eros?)?)?\\.?\\s*|n(?:ro|ros)\\.?\\s*|de\\s+la\\s+|del?\\s+|:)?('+part+'(?:\\s*(?:,|y)\\s*'+part+')*)');
+ const matched=q.match(list);
+ const short=matched?.[1]||(/^(?:\s*\d+(?:\s*(?:-|a|hasta)\s*\d+)?(?:\s*(?:,|y)\s*\d+(?:\s*(?:-|a|hasta)\s*\d+)?)*)(?:\s|$)/.exec(q)?.[0]||'');
+ return String(short).replace(/\s*(?:a|hasta)\s*/g,'-').replace(/\s+y\s+/g,', ').replace(/\s*-\s*/g,'-').trim();
+}
+function pdfWatermarkFromText(text){
+ const source=String(text||'');
+ const matches=source.match(/marca\s+de\s+agua\s*(?:que\s+diga|con\s+(?:el\s+)?texto|de\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,65})/i);
+ return String(matches?.[1]||'').replace(/\s+(?:y|ademas|tambien)\s+(?:numer|enumer|foliar|paginas?).*$/i,'').trim();
+}
+// Deterministic local execution: a document editor is more reliable than asking
+// a language model to guess whether a known PDF tool exists.
+function buildPdfEditPlan(userText){
+ const pdfAttached=attachments.some(file=>file.type==='application/pdf'||/\.pdf$/i.test(file.name));
+ let request=userText;
+ if(pdfAttached){
+  // The last request may contain instructions while the next turn only
+  // attaches a file, supplies page numbers, or supplies a watermark label.
+  const previous=messages.slice(-8,-1).reverse().find(message=>message.role==='user'&&isPdfEditIntent(message.content));
+  const shortReply=normalizeCoreIntent(userText).trim();
+  const attachmentReply=/^(?:aqui|ahi|adjunto|te envio|ya|este|listo|ese|el archivo|el pdf|subi|cargue|por favor|\d|marca de agua|paginas?\s*\d)/.test(shortReply);
+  const labelReply=/^[\p{Lu}][\p{Lu}\s-]{2,45}$/u.test(String(userText).trim())||/^(?:el texto es|que diga|quiero que diga)\s+.{2,45}$/i.test(String(userText).trim());
+  if(previous&&(attachmentReply||labelReply)&&previous.content!==userText){
+   request=previous.content+'\n'+userText;
+  }
+ }
+ if(!isPdfEditIntent(request))return null;
+ const q=normalizeCoreIntent(request);
+ const select=/(solo|unas|algunas|especific|seleccion|conservar|extrae|extraccion|sacar|dame|dejar|recortar)/.test(q)&&/\b(paginas?|folios?|hojas?)\b/.test(q);
+ const number=/(numer|enumer|foliar|numero de pagina|numeros de pagina)/.test(q);
+ const watermark=/marca de agua/.test(q);
+ if(!(select||number||watermark))return null;
+ // Collect parameters from short follow-ups so that "2-4, 7" and then
+ // "CONFIDENCIAL" work without asking the same question twice.
+ const history=messages.slice(-9).filter(item=>item.role==='user').map(item=>String(item.content||''));
+ const lastRoot=history.findLastIndex(item=>isPdfEditIntent(item));
+ const replies=lastRoot>=0?history.slice(lastRoot+1):[];
+ const pages=pdfPagesFromText(userText)||pdfPagesFromText(request)||replies.map(pdfPagesFromText).find(Boolean)||'';
+ const labelFromReply=text=>{
+  const label=String(text||'').trim();
+  const assigned=label.match(/^(?:el texto es|que diga|quiero que diga)\s+(.{2,45})$/i)?.[1]?.trim();
+  if(assigned)return assigned;
+  return /^[\p{Lu}][\p{Lu}\s-]{2,45}$/u.test(label)?label:'';
+ };
+ const mark=pdfWatermarkFromText(userText)||pdfWatermarkFromText(request)||
+  (watermark?replies.map(item=>pdfWatermarkFromText(item)||labelFromReply(item)).filter(Boolean).at(-1)||'':'');
+ const lacking=[];
+ if(!pdfAttached) {
+  return {type:'missing-file',message:'Sí. Prisma tiene herramientas locales para extraer páginas específicas, numerarlas y añadir una marca de agua; también puede aplicar las tres operaciones y entregarte un único PDF. Sube el archivo PDF'+(select&&!pages?', dime qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' e indica qué texto llevará la marca de agua':'')+'. No hace falta conectar ningún modelo para editar el documento.'};
+ }
+ if(select&&!pages)lacking.push('las páginas que quieres conservar (por ejemplo, 2-4, 7)');
+ if(watermark&&!mark)lacking.push('el texto de la marca de agua (por ejemplo, CONFIDENCIAL)');
+ if(lacking.length)return {type:'missing-parameters',message:'Puedo editar el PDF adjunto y realizar todo en un único archivo. Indícame '+lacking.join(' y ')+'.'+(number?' La numeración comenzará en 1 en las páginas resultantes.':'')};
+ const steps=[];
+ const add=(tool_id,params,reason)=>steps.push({tool_id,params,reason});
+ if(select)add('pdf-extract',{pages},'Conservar únicamente las páginas indicadas');
+ if(number)add('pdf-page-numbers',{position:/\b(arriba|superior|encabezado)\b/.test(q)?'top':'bottom'},'Numerar consecutivamente las páginas resultantes');
+ if(watermark)add('pdf-watermark',{watermark:mark},'Añadir la marca de agua solicitada');
+ return {type:'execute',plan:{message:'Editaré el PDF localmente: '+steps.map(step=>step.reason.toLowerCase()).join(', ')+'. Prepararé un solo archivo final para descargar.',needs_clarification:false,steps,combineFinalFiles:true,userRequest:request}};
+}
+
+// File-based capabilities should be explained from the real registry before any
+// model is asked to invent capabilities or pretend to edit an absent file.
+function describeUnattachedToolRequest(userText){
+ if(attachments.length)return null;
+ const q=normalizeCoreIntent(userText);
+ const options=[
+  {id:'pdf-to-word',test:/\b(pdf.*(?:word|docx)|(?:word|docx).*pdf)\b/,description:'convertir un PDF digital con texto seleccionable a Word editable'},
+  {id:'pdf-merge',test:/(?:unir|combinar|juntar|fusionar).{0,50}(?:pdf|documentos?)/,description:'combinar varios PDF en uno'},
+  {id:'pdf-split',test:/(?:dividir|separar|partir).{0,50}(?:pdf|paginas?)|(?:pdf).{0,30}(?:dividir|separar)/,description:'dividir un PDF en archivos separados'},
+  {id:'pdf-compress',test:/(?:comprimir|optimizar|reducir).{0,50}(?:pdf|documento)/,description:'optimizar la estructura de un PDF'},
+  {id:'pdf-text',test:/(?:extraer|obtener|sacar|leer).{0,40}(?:texto|contenido).{0,30}pdf|pdf.{0,40}(?:extraer|sacar|leer).{0,20}texto/,description:'extraer texto seleccionable de un PDF'},
+  {id:'image-bg',test:/(?:quitar|eliminar|borrar).{0,40}fondo.{0,40}(?:foto|imagen|fotografia)|(?:foto|imagen|fotografia).{0,50}(?:quitar|eliminar).{0,30}fondo/,description:'eliminar el fondo de una imagen con un modelo que funciona en el navegador'},
+  {id:'image-compress',test:/(?:comprimir|optimizar|reducir).{0,50}(?:foto|imagen|jpg|png|webp)/,description:'comprimir imágenes directamente en el navegador'},
+  {id:'image-ocr',test:/(?:extraer|obtener|reconocer|leer).{0,40}texto.{0,30}(?:imagen|foto)|(?:imagen|foto).{0,40}(?:ocr|texto)/,description:'reconocer texto de imágenes mediante OCR'}
+ ];
+ const picked=options.find(item=>item.test.test(q)&&tools.some(t=>t.id===item.id&&['ready','beta'].includes(t.status)));
+ if(!picked)return null;
+ return 'Sí. Prisma ya dispone de la herramienta «'+tools.find(t=>t.id===picked.id).name+'» para '+picked.description+'. Adjunta el archivo y dime los ajustes que necesitas; la procesaré con esa herramienta, sin pedirle a un modelo que simule el resultado.';
+}
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
 function directCoreImage(text){
@@ -490,7 +591,7 @@ async function answerConversation(text,creds,task='conversation'){
  },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
  const answer=String(response?.text||'').trim();
  if(!answer)throw Error('El motor seleccionado no devolvió contenido. Intenta nuevamente.');
- addMessage('assistant',answer,{engine:response.provider,model:response.model});
+ addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
  status('Listo. Puedes continuar la conversación o pedir ajustes.','success');
 }
 async function requestPlan(userText){
@@ -502,6 +603,22 @@ async function requestPlan(userText){
     addMessage('assistant','¡Hola! Soy Prisma Core. Pídeme una tarea o adjunta un archivo: puedo seleccionar las herramientas disponibles y ayudarte a crear, analizar o convertir contenido.');
     status('Listo para ayudarte.','success');
     return;
+  }
+  const pdfAction=buildPdfEditPlan(userText);
+  if(pdfAction){
+   if(pdfAction.type!=='execute'){addMessage('assistant',pdfAction.message);status('Edición de documentos lista.','info');return;}
+   const plan=pdfAction.plan;
+   const steps=validatePlan(plan);
+   pendingPlan={plan,steps};
+   addMessage('assistant',plan.message);
+   await executePlan();
+   return;
+  }
+  const localCapability=describeUnattachedToolRequest(userText);
+  if(localCapability){
+   addMessage('assistant',localCapability);
+   status('Herramienta disponible. Adjunta un archivo para continuar.','info');
+   return;
   }
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
@@ -639,7 +756,7 @@ async function executePlan(){
   if(!pendingPlan||executionActive)return;
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
-  const executed=[];let currentFiles=[...attachments],lastText='';
+  const executed=[];let currentFiles=[...attachments],lastText='',successful=false;
   try{
     for(let index=0;index<steps.length;index++){
       if(cancelRequested)break;
@@ -686,10 +803,13 @@ async function executePlan(){
     }else{
       const single=executed.length===1?executed[0]:null;
       if(single&&['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id)&&single.result?.text&&!single.result?.blob){
-        addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model});
+        addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
       }else{
-        addMessage('assistant',executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.',{results:executed,partial:false});
+        const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
+        const label=plan.combineFinalFiles?'PDF terminado. Incluye las páginas y modificaciones solicitadas; descarga el documento final.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
+        addMessage('assistant',label,{results:visibleResults,partial:false});
       }
+      successful=true;
       status('Ejecución completada.','success');
     }
   }catch(error){
@@ -697,7 +817,11 @@ async function executePlan(){
     addMessage('assistant','No pude completar toda la tarea: '+(error?.message||'error inesperado')+'.'+(executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.'),{results:executed,partial:true});
     status('Ejecución detenida.','error');
   }finally{
-    executionActive=false;setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
+    executionActive=false;setBusy(false);
+    // Keep source files available after a failed or cancelled operation, so the
+    // user can correct a page range without uploading the original PDF again.
+    if(successful){attachments=[];$('#core-file-input').value='';}
+    renderAttachments();
   }
 }
 function resultObjectUrl(blob){

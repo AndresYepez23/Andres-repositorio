@@ -56,7 +56,13 @@ async function pdfTool(id,files,p,cb){
   const blob=await zip.generateAsync({type:'blob'});return download(blob,fileName(files[0])+'-paginas.zip');
  }
 
- if(id==='pdf-extract'){const ids=parsePages(p.pages,total);const pages=await out.copyPages(src,ids);pages.forEach(x=>out.addPage(x));}
+ if(id==='pdf-extract'){
+  const ids=parsePages(p.pages,total);
+  const selected=await out.copyPages(src,ids);
+  selected.forEach(page=>out.addPage(page));
+  progress(cb,1,'Se extrajeron '+selected.length+' páginas del PDF.');
+  return download(makeBlob(await out.save(),'application/pdf'),fileName(files[0])+'-paginas-seleccionadas.pdf');
+ }
  if(id==='pdf-rotate'){src.getPages().forEach(pg=>pg.setRotation(degrees((pg.getRotation().angle+Number(p.degrees))%360)));return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-rotado.pdf');}
  if(id==='pdf-remove-pages'){const ids=parsePages(p.pages,total);ids.sort((a,b)=>b-a).forEach(i=>src.removePage(i));if(!src.getPageCount())throw Error('No puedes eliminar todas las páginas del documento.');return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-paginas.pdf');}
  if(id==='pdf-page-numbers'){const font=await src.embedFont(StandardFonts.Helvetica);src.getPages().forEach((pg,i)=>{const {width,height}=pg.getSize(),text=String(i+1)+' / '+total;const size=10,w=font.widthOfTextAtSize(text,size),position=p.position||'bottom';pg.drawText(text,{x:(width-w)/2,y:position==='top'?height-24:18,size,font,color:rgb(.42,.45,.5),opacity:.9});});return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-numerado.pdf');}
@@ -654,6 +660,49 @@ async function fetchJsonWithDeadline(url,options,deadlineMs){
   return {response,data};
  }finally{clearTimeout(timeout);}
 }
+// The best model depends on the task and recent reliability, not one fixed default.
+// Only provider names, aggregate latency and temporary error codes are stored; never prompts.
+const ROUTE_MEMORY_KEY='prisma-core-provider-route-v2';
+function getRouteMemory(){
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(ROUTE_MEMORY_KEY)||'{}');
+  return saved&&typeof saved==='object'?saved:{};
+ }catch{return {};}
+}
+function reportModelAttempt(provider,task,success,elapsed,error){
+ try{
+  const all=getRouteMemory(),key=provider+':'+task;
+  const previous=all[key]||{},stamp=Date.now();
+  const status=Number(error?.status)||0;
+  const delay=success?0:status===401||status===403?15*60000:status===402?10*60000:
+   status===429?90000:error?.name==='AbortError'?120000:60000;
+  all[key]={
+   at:stamp,
+   successes:success?Math.min(12,(previous.successes||0)+1):0,
+   failures:success?0:Math.min(4,(previous.failures||0)+1),
+   averageMs:Math.round(success?(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed):(previous.averageMs||elapsed)),
+   coolingUntil:success?0:stamp+delay
+  };
+  // Expire stale health observations to avoid keeping old failures indefinitely.
+  for(const [name,entry] of Object.entries(all))if(stamp-Number(entry.at||0)>86400000)delete all[name];
+  sessionStorage.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
+ }catch{}
+}
+function orderModelsForTask(preferred,task,baseOrder,available){
+ const providers=[...new Set(preferred==='auto'?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])]
+   .filter(name=>available(name));
+ if(preferred!=='auto')return providers;
+ const now=Date.now(),memory=getRouteMemory();
+ // Preserve the task-specific default; cooldown a failing provider but do not
+ // keep one recent successful backend at the top for every kind of task.
+ return providers.map((name,index)=>{
+  const health=memory[name+':'+task]||{};
+  const recent=now-Number(health.at||0)<15*60000;
+  const cooled=recent&&Number(health.coolingUntil||0)>now;
+  return {name,score:index*1.0+(cooled?10:0)+(recent?Math.min(3,Number(health.failures||0))*1.8:0)
+   +(recent&&Number(health.averageMs||0)>20000?.7:0)};
+ }).sort((a,b)=>a.score-b.score).map(x=>x.name);
+}
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
@@ -675,28 +724,21 @@ async function generateText(p,cb){
   gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}
  };
  const priorities={
-  songwriting:['groq','gemini','cloudflare','huggingface','pollinations'],
-  creative:['groq','gemini','cloudflare','huggingface','pollinations'],
-  coding:['groq','gemini','huggingface','cloudflare','pollinations'],
-  reasoning:['gemini','groq','huggingface','cloudflare','pollinations'],
-  summary:['gemini','cloudflare','groq','huggingface','pollinations'],
-  quick:['gemini','cloudflare','groq','huggingface','pollinations'],
-  general:['gemini','groq','cloudflare','huggingface','pollinations'],
-  planner:['groq','gemini','pollinations','cloudflare','huggingface'],
-  conversation:['gemini','cloudflare','groq','huggingface','pollinations']
+  songwriting:['groq','gemini','pollinations','cloudflare','huggingface'],
+  creative:['groq','pollinations','gemini','cloudflare','huggingface'],
+  coding:['groq','pollinations','gemini','cloudflare','huggingface'],
+  reasoning:['gemini','groq','pollinations','cloudflare','huggingface'],
+  summary:['cloudflare','groq','gemini','pollinations','huggingface'],
+  quick:['groq','cloudflare','gemini','pollinations','huggingface'],
+  general:['groq','cloudflare','gemini','pollinations','huggingface'],
+  planner:['groq','cloudflare','gemini','pollinations','huggingface'],
+  conversation:['groq','cloudflare','gemini','pollinations','huggingface']
  };
  const preferred=p.provider||'auto';
  const baseOrder=priorities[task]||priorities.general;
- const providerOrder=preferred==='auto'
-  ? [...baseOrder]
-  : preferred==='pollinations'
-    ? ['pollinations',...baseOrder]
-    : [preferred,...baseOrder.filter(item=>item!==preferred)];
- if((p.polliToken||p.centralProviders?.pollinations)&&!providerOrder.includes('pollinations'))providerOrder.push('pollinations');
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI'};
  const errors=[],attempted=[];
- // Retried calls count against user and project quotas, so cap per task.
- const candidates=[...new Set(providerOrder)].filter(provider=>
+ const candidates=orderModelsForTask(preferred,task,baseOrder,provider=>
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
    : Boolean(p.centralProviders?.[provider])
@@ -727,6 +769,7 @@ async function generateText(p,cb){
   attempted.push(provider);
   if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
   else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
+  const attemptStart=Date.now();
   try{
    let text='',model='';
    if(provider==='pollinations'&&!p.centralProviders?.pollinations){
@@ -760,12 +803,15 @@ async function generateText(p,cb){
     throw Error('El modelo devolvió una negativa genérica ante una solicitud creativa original.');
    }
    progress(cb,1,'Respuesta lista.');
+   reportModelAttempt(provider,task,true,Date.now()-attemptStart);
    const firstAttempt=attempted[0];
    const firstPreferred=preferred==='auto'?baseOrder[0]:preferred;
    const fallbackFrom=firstPreferred!==provider?firstPreferred:(firstAttempt&&firstAttempt!==provider?firstAttempt:null);
    const summary='Respuesta generada con '+providerNames[provider]+' · modelo '+(model||'predeterminado')+(fallbackFrom?' · respaldo automático tras fallo de '+providerNames[fallbackFrom]:'.');
-   return {text,provider,model:model||'predeterminado',fallbackFrom,summary};
+   return {text,provider,model:model||'predeterminado',fallbackFrom,
+    fallbackReason:fallbackFrom?errors[0]||'El motor preferido no estuvo disponible.':'',summary};
   }catch(error){
+   reportModelAttempt(provider,task,false,Date.now()-attemptStart,error);
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
