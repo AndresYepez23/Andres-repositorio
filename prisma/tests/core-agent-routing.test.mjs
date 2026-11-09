@@ -3,12 +3,48 @@ import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
+import { onRequestGet as youtubeThumbnail } from '../functions/api/youtube/thumbnail.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
 const registrySource = readFileSync(new URL('../src/registry.js', import.meta.url), 'utf8');
 const registry = new Function(registrySource.replace(/^export /gm, '') + ';return {tools,categories};')();
 const registered = registry.tools;
+const youtubeTool=registered.find(tool=>tool.id==='youtube-media-kit');
+assert.ok(youtubeTool,'YouTube media utility must be discoverable in the registry');
+assert.equal(youtubeTool.file,true,'the original video is optional at execution time but accepted for local MP3 conversion');
+assert.match(youtubeTool.accept,/video/);
+const enginesSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+const parserStart=enginesSource.indexOf('function parseYouTubeVideoId(value){');
+const parserEnd=enginesSource.indexOf('async function youtubeMediaKit(',parserStart);
+assert.ok(parserStart>=0&&parserEnd>parserStart,'YouTube URL parser must exist');
+const parseVideoId=new Function('URL',enginesSource.slice(parserStart,parserEnd)+';return parseYouTubeVideoId;')(URL);
+assert.equal(parseVideoId('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),'dQw4w9WgXcQ');
+assert.equal(parseVideoId('https://youtu.be/dQw4w9WgXcQ?t=30'),'dQw4w9WgXcQ');
+assert.equal(parseVideoId('https://www.youtube.com/shorts/dQw4w9WgXcQ'),'dQw4w9WgXcQ');
+assert.equal(parseVideoId('https://youtube.com/playlist?list=PL123'),'');
+assert.equal(parseVideoId('javascript:alert(1)'),'');
+assert.match(enginesSource,/runVideo\('audio-convert',\[file\],\{format:'mp3'\}/);
+assert.match(enginesSource,/fetch\('\/api\/youtube\/thumbnail\?id=/);
+
+// Thumbnail proxy accepts only an 11-character video ID and falls back from a placeholder.
+const originalFetch=globalThis.fetch;
+const jpeg=new Uint8Array([0xff,0xd8,0xff,0xc0,0x00,0x11,0x08,0x01,0x68,0x02,0x80,0x03,0x01,0x11,0x00,0x02,0x11,0x00,0x03,0x11,0x00,0xff,0xd9]);
+const proxyCalls=[];
+try{
+ globalThis.fetch=async url=>{
+  proxyCalls.push(String(url));
+  if(String(url).endsWith('maxresdefault.jpg'))return new Response(new Uint8Array([0xff,0xd8,0xff,0xc0,0x00,0x11,0x08,0x00,0x5a,0x00,0x78,0x03,0x01,0x11,0x00,0x02,0x11,0x00,0x03,0x11,0x00]),{status:200,headers:{'content-type':'image/jpeg'}});
+  return new Response(jpeg,{status:200,headers:{'content-type':'image/jpeg'}});
+ };
+ const invalidThumbnail=await youtubeThumbnail({request:new Request('https://prismaspace.pages.dev/api/youtube/thumbnail?id=not-valid')});
+ assert.equal(invalidThumbnail.status,400);
+ const validThumbnail=await youtubeThumbnail({request:new Request('https://prismaspace.pages.dev/api/youtube/thumbnail?id=dQw4w9WgXcQ')});
+ assert.equal(validThumbnail.status,200);
+ assert.equal(validThumbnail.headers.get('content-type'),'image/jpeg');
+ assert.equal(proxyCalls.length,2,'a 120×90 placeholder must fall back to the standard thumbnail');
+}finally{globalThis.fetch=originalFetch;}
+
 const routerSource = readFileSync(new URL('../src/core-tool-intelligence.js', import.meta.url), 'utf8');
 const router = new Function('tools','categories', routerSource.replace(/^import .*;$/gm, '').replace(/^export /gm, '') +
   ';return { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools, isToolDiscoveryQuestion, coreCapabilityContext };')(registered,registry.categories);
