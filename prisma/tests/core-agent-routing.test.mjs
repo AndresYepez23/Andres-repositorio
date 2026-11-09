@@ -56,4 +56,22 @@ assert.throws(()=>validate(pdf)(mk(['pdf-split','pdf-page-numbers'])),/no es com
 assert.doesNotThrow(()=>validate(video)(mk(['video-audio','ai-transcribe','text-summary-local'])));
 assert.throws(()=>validate(picture)(mk(['image-favicon','image-convert'])),/no es compatible/);
 
+// Regression: edits to an existing image never authorize paid image generation.
+const webEditingRequest='Prisma, quiero preparar esta imagen para mi página web, quitarle los metadatos y sacar sus colores principales';
+const webEditing = router.planCoreOfflineAction(webEditingRequest,picture,[]);
+assert.deepEqual(webEditing?.steps?.map(step=>step.tool_id),
+ ['image-strip-metadata','image-compress','image-palette']);
+assert.equal(webEditing.steps[1].params.format,'image/webp');
+assert.equal(webEditing.steps[1].params.quality,82);
+assert.equal(router.planCoreOfflineAction(webEditingRequest,[],[])?.type,'needs-input');
+assert.equal(router.planCoreOfflineAction('Quiero preparar una imagen nueva para mi página web',[],[]),null);
+assert.deepEqual(router.planCoreOfflineAction('Saca los colores principales de esta imagen',picture,[])?.steps?.map(x=>x.tool_id),['image-palette']);
+// Route existing-image work before any remote image generator.
+assert.ok(coreSource.indexOf('const localImageIntent=planCoreOfflineAction(')>=0);
+assert.ok(coreSource.indexOf('const localImageIntent=planCoreOfflineAction(')<
+ coreSource.indexOf('if(await handleImageCreationRequest(userText))return;'));
+assert.doesNotThrow(()=>validate(picture)({
+ steps:webEditing.steps.map(step=>({tool_id:step.tool_id,params:step.params}))
+}));
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
