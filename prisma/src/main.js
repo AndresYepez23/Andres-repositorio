@@ -617,22 +617,24 @@ async function refreshProviderConnectionStatuses(){
   Object.entries(central.credentialSlots||{}).forEach(([provider,info])=>{
     const summary=$('[data-credential-summary="'+provider+'"]');
     const health=central.providerHealth?.[provider]||{};
-    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / '+Number(info.max||0)+(health.paused?' · Proveedor en pausa temporal':' · Ver espacios seguros');
+    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / '+Number(info.max||0)+(health.paused?' · Proveedor en pausa temporal':health.dailyUsage?.remaining===0?' · Presupuesto diario agotado':' · Ver espacios seguros');
     const target=$('[data-credential-slots="'+provider+'"]');
     if(target&&Array.isArray(info.slots)){
       const lines=info.slots.map(slot=>
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:5px 0"><code>'+
         escapeHtml(slot.variable)+'</code><small>'+
         (slot.configured?'Configurada':'Disponible para añadir')+'</small></div>').join('');
-      const pause=health.paused?'<small>En pausa temporal: '+escapeHtml(health.reason||'límite del proveedor')+'</small>':'';
-      target.innerHTML=pause+lines+'<small>Agrega las nuevas claves únicamente en los secretos de producción de Cloudflare. Las cuotas y los límites internos de Prisma siguen aplicándose a todos los espacios.</small>';
+      const daily=health.dailyUsage?'<small>Solicitudes de Prisma hoy: '+Number(health.dailyUsage.used||0)+' / '+Number(health.dailyUsage.limit||0)+' · quedan '+Number(health.dailyUsage.remaining||0)+'</small>':'';
+      const pause=health.paused||health.dailyUsage?.remaining===0?'<small>'+escapeHtml(health.reason||'Motor en pausa temporal por su límite diario.')+'</small>':'';
+      target.innerHTML=daily+pause+lines+'<small>Las claves no multiplican la cuota del proyecto o cuenta. Prisma respeta los límites reales del proveedor y usa los demás motores cuando corresponde.</small>';
     }
   });
   const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
-      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
+      const health=central.providerHealth?.[provider]||{};
+      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':health.dailyUsage?.remaining===0?'Límite diario interno alcanzado':health.paused?'Motor en pausa temporal':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
     if(provider==='pollinations-connect'){
