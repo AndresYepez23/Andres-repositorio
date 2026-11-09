@@ -796,7 +796,7 @@ function thumbnailIntent(text){
 function thumbnailTopic(text){
  const clean=String(text||'').trim();
  const candidates=[
-  /(?:miniatura|thumbnail|portada)\s+(?:para\s+(?:mi|un|el)\s+(?:video|youtube)\s+)?(?:de|sobre|acerca de|para)\s+(.{7,})/i,
+  /(?:miniatura|thumbnail|portada)(?:\s+para\s+(?:(?:mi|un|el)\s+)?(?:video|youtube))?\s+(?:de|sobre|acerca de|con|para)\s+(.{7,})/i,
   /(?:video|vídeo)\s+(?:sobre|de|que trata de)\s+(.{7,})/i,
   /(?:tema|asunto)\s*[:：-]\s*(.{5,})/i
  ];
@@ -827,6 +827,18 @@ async function handleThumbnailRequest(text){
  if(!chat)return false;
  const pending=chat.thumbnailBrief;
  const isThumbnail=thumbnailIntent(text);
+ const uploadedImage=attachments.find(file=>String(file.type||'').startsWith('image/'));
+ const wantsText=/(?:anade|añade|agrega|escribe|pon|coloca|editar|edita).{0,45}(?:texto|titulo|título|frase|miniatura)/i.test(normalizeCoreIntent(text));
+ if(uploadedImage&&wantsText){
+   const title=extractThumbnailText(text)||'';
+   await openImageEditor({blob:uploadedImage,filename:uploadedImage.name,initialText:title,onSave:async output=>{
+     addMessage('assistant','Edité la miniatura con texto localmente. Aquí puedes descargarla.',{
+      results:[{name:'Imagen editada',reason:'Texto añadido sin enviar la imagen a IA',result:output}]
+     });
+     attachments=[];renderAttachments();
+   }});
+   status('Editor de miniaturas abierto. No consume créditos de imagen.','success');return true;
+ }
  if(!pending&&!isThumbnail)return false;
  if(pending&&/^(?:cancelar|cancela|olvida|no quiero|salir|deja eso)\b/i.test(text.trim())){
   chat.thumbnailBrief=null;persistChatHistory();
@@ -863,7 +875,7 @@ async function answerWithImage(text,creds){
  status('Generando la imagen en el motor disponible…');
  const ratio=/\b(youtube|miniatura|horizontal|paisaje|panoramica|16:9)\b/i.test(text)?'wide':/\b(vertical|historia|story|reel|retrato)\b/i.test(text)?'portrait':'square';
  const result=await runTool('image-gen',[],{
-  ...creds,provider:'auto',prompt:text,ratio,style:'illustration'
+  ...creds,provider:$('#core-image-provider')?.value||'auto',prompt:text,ratio,style:'cinematic'
  },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.10)),msg||'Generando imagen…');});
  if(!result?.blob)throw Error('El generador no devolvió una imagen.');
  addMessage('assistant','Aquí está la imagen que pediste. Puedes descargarla y continuar la conversación.',{
@@ -1318,6 +1330,15 @@ function createExecutionResults(executed,partial){
         }});}catch(error){status(error?.message||'No pude abrir el editor.','warning');}
        });
        row.append(edit);
+       const variation=document.createElement('button');variation.type='button';variation.className='mini-button';
+       variation.textContent='Otra versión';
+       variation.addEventListener('click',()=>{
+         const last=messages.slice().reverse().find(entry=>entry.role==='user'&&/(?:miniatura|imagen|foto|diseñ|gener)/i.test(entry.content));
+         const input=$('#core-input');input.value=(last?.content||'Genera una miniatura de YouTube')+'; crea otra versión con composición diferente, calidad profesional y un sujeto más claro.';
+         input.dispatchEvent(new Event('input'));input.focus();
+         status('Petición preparada. Enviar generará otra imagen y utilizará cuota del modelo seleccionado.','info');
+       });
+       row.append(variation);
       }
       if(result.blob.size<=200*1024*1024&&!/\\.zip$/i.test(result.filename||'')){
         const reuse=document.createElement('button');reuse.type='button';reuse.className='mini-button';
