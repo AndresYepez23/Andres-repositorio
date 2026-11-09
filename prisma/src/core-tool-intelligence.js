@@ -190,8 +190,13 @@ const video=file=>fileKind(file)==='video';
 export function planCoreOfflineAction(query,files=[],history=[]){
  const q=normalize(query),file=files[0];
  if(!q)return null;
+ // A reference to an existing image is an editing request, not permission to
+ // create a new one. Ask for the missing file before any provider/API call.
+ if(!file&&/(?:esta|esa|mi|la|una imagen adjunta)\s+(?:imagen|foto|fotografia)\b/.test(q)
+   &&/(?:prepar|adapt|optimiz|edit|retoc|quit|elimin|borr|limpi|metadatos|exif|colores|paleta|redimension|web|png|webp|comprim)/.test(q))
+  return flow('Puedo preparar esa imagen sin consumir IA: optimizarla para web, quitar sus metadatos y extraer sus colores. Adjunta primero la imagen original para procesarla desde aquí.');
  if(file&&/^(?:aqui|adjunto|listo|hazlo|este archivo|te lo envio|ya lo subi)\b/.test(q)){
-  const prior=history.slice(-6).reverse().find(value=>/volte|sepi|pixel|favico|metadato|hash|huella|forma de onda|normaliz|aceler|velocid|gira|rotar|resolucion|qr/.test(normalize(value)));
+  const prior=history.slice(-6).reverse().find(value=>/volte|sepi|pixel|favico|metadato|hash|huella|forma de onda|normaliz|aceler|velocid|gira|rotar|resolucion|qr|prepar|pagina web|colores|paleta|comprim|optimiz/.test(normalize(value)));
   if(prior)return planCoreOfflineAction(prior+' '+query,files,[]);
  }
  if(file){
@@ -209,6 +214,19 @@ export function planCoreOfflineAction(query,files=[],history=[]){
   }
   if(image(file)){
    const tasks=[];
+   // Website preparation means editing the attached image; never image-gen.
+   // The three-step flow preserves the original, yields an optimized WebP
+   // without the source metadata, and reports its dominant colors locally.
+   const forWeb=/(?:prepar|adapt|optimiz|usar|publicar|lista).{0,65}(?:pagina web|sitio web|website|\bweb\b|pwa)|(?:imagen|foto).{0,45}(?:pagina web|sitio web|website)/.test(q);
+   const strip=/(?:elimin|borr|quit|limpi|retir).{0,42}(?:exif|metadatos|ubicacion|gps)/.test(q);
+   const palette=/(?:extrae|extraer|identifica|muestra|detecta|saca|sacar|obten|obtener).{0,38}(?:colores|paleta)|(?:colores (?:principales|dominantes)|paleta de colores)/.test(q);
+   if(forWeb){
+     if(strip)tasks.push(step('image-strip-metadata',{},'Eliminar metadatos y geolocalización de origen'));
+     const format=/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'image/webp';
+     tasks.push(step('image-compress',{format,quality:82},'Preparar una imagen optimizada para la web'));
+     if(palette)tasks.push(step('image-palette',{},'Obtener la paleta de colores principales'));
+     return ok(tasks);
+   }
    // Transformations before inspections prevent losing the original input.
    if(/(?:voltea|voltear|espejo|invertir horizontal|invertir vertical)/.test(q))
     tasks.push(step('image-flip',{direction:/(?:vertical|arriba.*abajo)/.test(q)?'vertical':'horizontal'},'Voltear imagen'));
@@ -221,7 +239,7 @@ export function planCoreOfflineAction(query,files=[],history=[]){
    // Metadata and palette are read-only: execute without changing the image.
    if(/(?:ver|muestra|inspeccion|consult|lee).{0,25}(?:metadatos|exif|informacion de la foto)/.test(q))
     tasks.push(step('image-metadata',{},'Inspeccionar metadatos de la imagen'));
-   if(/(?:extrae|extraer|identifica|muestra|detecta|saca).{0,25}(?:colores|paleta)|(?:colores dominantes|paleta de colores de)/.test(q))
+   if(palette)
     tasks.push(step('image-palette',{},'Extraer los colores dominantes'));
    if(/(?:escane|leer|descifrar|detecta).{0,24}(?:codigo qr|qr)/.test(q))
     tasks.push(step('qr-scan',{},'Leer código QR de la imagen'));
