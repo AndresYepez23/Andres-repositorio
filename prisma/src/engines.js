@@ -779,28 +779,29 @@ async function generateText(p,cb){
   huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'deepseek-ai/DeepSeek-R1:cheapest'},
   groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-20b',smart:'openai/gpt-oss-120b'},
   cloudflare:{fast:'@cf/google/gemma-4-26b-a4b-it',balanced:'@cf/google/gemma-4-26b-a4b-it',smart:'@cf/meta/llama-3.3-70b-instruct-fp8-fast'},
-  gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}
+  gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'},
+  openrouter:{fast:'openrouter/free',balanced:'openrouter/free',smart:'openrouter/free'}
  };
  const priorities={
-  songwriting:['groq','gemini','pollinations','cloudflare','huggingface'],
-  creative:['groq','pollinations','gemini','cloudflare','huggingface'],
-  coding:['groq','pollinations','gemini','cloudflare','huggingface'],
-  reasoning:['gemini','groq','pollinations','cloudflare','huggingface'],
-  summary:['cloudflare','groq','gemini','pollinations','huggingface'],
-  quick:['groq','cloudflare','gemini','pollinations','huggingface'],
-  general:['groq','cloudflare','gemini','pollinations','huggingface'],
-  planner:['groq','cloudflare','gemini','pollinations','huggingface'],
-  conversation:['groq','cloudflare','gemini','pollinations','huggingface']
+  songwriting:['groq','gemini','pollinations','cloudflare','huggingface','openrouter'],
+  creative:['groq','pollinations','gemini','cloudflare','huggingface','openrouter'],
+  coding:['groq','pollinations','gemini','cloudflare','huggingface','openrouter'],
+  reasoning:['gemini','groq','pollinations','cloudflare','huggingface','openrouter'],
+  summary:['cloudflare','groq','gemini','pollinations','huggingface','openrouter'],
+  quick:['groq','cloudflare','gemini','pollinations','huggingface','openrouter'],
+  general:['groq','cloudflare','gemini','pollinations','huggingface','openrouter'],
+  planner:['groq','cloudflare','gemini','pollinations','huggingface','openrouter'],
+  conversation:['groq','cloudflare','gemini','pollinations','huggingface','openrouter']
  };
  const preferred=p.provider||'auto';
  const baseOrder=priorities[task]||priorities.general;
- const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI'};
+ const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter'};
  const errors=[],attempted=[];
  const candidates=orderModelsForTask(preferred,task,baseOrder,provider=>
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
    : Boolean(p.centralProviders?.[provider])
- ).slice(0,5);
+ ).slice(0,6);
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
@@ -818,7 +819,7 @@ async function generateText(p,cb){
   const remaining=totalDeadline-(Date.now()-startedAt);
   if(remaining<=2500){errors.push('La búsqueda de un motor superó el tiempo total de espera.');break;}
   const requestDeadline=Math.min(individualDeadline,remaining);
-  if(!['gemini','huggingface','groq','cloudflare','pollinations'].includes(provider))continue;
+  if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter'].includes(provider))continue;
   if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
    if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
