@@ -4,7 +4,10 @@ export const workflows = [
   { id:'image-pipeline', name:'Optimizar una imagen', description:'Quita el fondo, ajusta el tamaño y comprime el resultado sin saltar entre herramientas.', icon:'image', tag:'Procesamiento local', file:true, multiple:false, accept:'image/*' },
   { id:'document-pipeline', name:'Preparar documentos PDF', description:'Combina archivos, numera páginas y extrae el texto disponible en un solo proceso.', icon:'files', tag:'PDF · Local', file:true, multiple:true, maxFiles:12, accept:'.pdf,application/pdf' },
   { id:'ai-creation', name:'Crear contenido con IA', description:'Convierte una idea en una imagen editada y un paquete de contenido listo para publicar.', icon:'sparkles', tag:'Motores intercambiables', file:false, multiple:false, accept:'*/*' },
-  { id:'ai-task', name:'Resolver una tarea con IA', description:'Redacta, resume, explica, traduce o convierte una idea en un resultado útil. Prisma elige el motor conectado.', icon:'brain-circuit', tag:'Enrutamiento automático', file:false, multiple:false, accept:'*/*' }
+  { id:'ai-task', name:'Resolver una tarea con IA', description:'Redacta, resume, explica, traduce o convierte una idea en un resultado útil. Prisma elige el motor conectado.', icon:'brain-circuit', tag:'Enrutamiento automático', file:false, multiple:false, accept:'*/*' },
+  { id:'song-studio', name:'Estudio de composición musical', description:'Crea una letra original con estructura, género, ambiente e instrucciones de producción, lista para llevar a un generador musical.', icon:'music', tag:'Canciones originales · Texto', file:false, multiple:false, accept:'*/*' },
+  { id:'creator-studio', name:'Estudio para YouTube y redes', description:'Prepara títulos, descripción, estructura del vídeo, hashtags y un concepto de miniatura. Generación de imagen opcional.', icon:'clapperboard', tag:'YouTube · Redes · Opcional imagen', file:false, multiple:false, accept:'*/*' },
+  { id:'study-studio', name:'Guía de estudio inteligente', description:'Transforma tus apuntes o un tema en explicación, preguntas de práctica y tarjetas de repaso.', icon:'graduation-cap', tag:'Aprendizaje · Repaso', file:false, multiple:false, accept:'*/*' }
 ];
 
 const asFile = (result, fallbackName) => {
@@ -78,70 +81,56 @@ function localContentPack(prompt,style){
   return ['TÍTULO',short.charAt(0).toLocaleUpperCase('es')+short.slice(1),'','DESCRIPCIÓN','Una idea convertida en una pieza visual. '+clean+'. Creada con Prisma Space'+(style?' · Estilo '+style:'')+'.','','HASHTAGS',[...new Set(hashtags)].join(' '),'','TEXTO ALTERNATIVO','Imagen de '+clean+'.'].join('\n');
 }
 
-async function generateContentPack(tokens,prompt,style,params,callback){
-  const instruction='Prepara contenido para publicar una imagen creada a partir de esta idea: "'+prompt+'". Devuelve exactamente cuatro secciones en español: TÍTULO (breve y atractivo), DESCRIPCIÓN (2 frases naturales), HASHTAGS (entre 4 y 7, relevantes y sin repetir) y TEXTO ALTERNATIVO (accesible, descriptivo y sin exageraciones). Estilo visual: '+style+'. No inventes marcas, cifras ni características que no aparezcan en la idea.';
-  const preferred=params.textProvider||'auto';
-  const candidates=preferred==='auto'?['groq','huggingface','gemini','pollinations']:[preferred];
-  const labels={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini'};
-  const errors=[];
-  for(const provider of candidates){
-    const available=provider==='pollinations'?!!tokens.pollinations:provider==='huggingface'?!!tokens.huggingface:provider==='gemini'?!!tokens.gemini:!!tokens.groq;
-    if(!available)continue;
-    try{
-      const result=await runStep('ai-assistant',[],{
-        prompt:instruction,provider,tone:'creative',length:'medium',
-        polliToken:tokens.pollinations,hfToken:tokens.huggingface,
-        geminiKey:tokens.gemini,groqKey:tokens.groq
-      },callback,.82,.17,'Preparando título, descripción y hashtags');
-      if(result?.text?.trim())return {text:result.text.trim(),source:labels[provider]};
-      throw new Error('El motor no devolvió contenido.');
-    }catch(error){
-      errors.push(labels[provider]+': '+(error?.message||'error de generación'));
-      if(preferred!=='auto')throw error;
-    }
-  }
-  return {text:localContentPack(prompt,style),source:'Plantilla local',warning:errors.length?errors.join(' | '):'No hay un motor de texto conectado.'};
+async function generateContentPack(params,prompt,style,callback){
+ const instruction='Crea contenido listo para publicar a partir de esta idea: '+prompt+
+  '\nEstilo visual: '+style+
+  '\nEntrega TÍTULO (breve), DESCRIPCIÓN (dos frases), HASHTAGS (4 a 7) y TEXTO ALTERNATIVO accesible. No inventes marcas, precios ni hechos no proporcionados.';
+ try{
+  const result=await runStep('ai-assistant',[],{
+   ...params,prompt:instruction,provider:params.textProvider||'auto',
+   task:'creative',tone:'creative',length:'medium',reasoning:'balanced'
+  },callback,.82,.17,'Creando título, descripción y hashtags');
+  if(!result?.text?.trim())throw new Error('El motor no devolvió contenido.');
+  return {text:result.text.trim(),source:result.provider||'IA'};
+ }catch(error){
+  return {text:localContentPack(prompt,style),source:'Plantilla local',warning:'El texto IA no estuvo disponible: '+(error?.message||'error')};
+ }
 }
 
 async function aiCreation(files,params,callback){
   const prompt=String(params.prompt||'').trim();
   if(prompt.length<8)throw new Error('Describe tu idea con al menos ocho caracteres.');
-  const tokens={
-    pollinations:String(params.polliToken||'').trim(),
-    huggingface:String(params.hfToken||'').trim(),
-    gemini:String(params.geminiKey||'').trim(),
-    groq:String(params.groqKey||'').trim()
+  const central=params.centralProviders||{};
+  const available={
+   cloudflare:!!central.cloudflare,
+   pollinations:!!(central.pollinations||params.polliToken),
+   huggingface:!!params.centralFeatures?.huggingfaceImages
   };
   const preferred=params.provider||'auto';
-  const candidates=preferred==='auto'?['pollinations','huggingface','gemini']:[preferred];
-  const available={
-    pollinations:!!tokens.pollinations,
-    huggingface:!!tokens.huggingface,
-    gemini:!!tokens.gemini
-  };
+  if(preferred==='gemini')throw new Error('La generación de imágenes con Gemini no está conectada todavía. Usa Cloudflare o Pollinations.');
+  const candidates=preferred==='auto'
+   ? ['cloudflare','pollinations','huggingface']
+   : [preferred,...(params.allowFallback?['cloudflare','pollinations','huggingface'].filter(x=>x!==preferred):[])];
   const providersToTry=candidates.filter(provider=>available[provider]);
-  if(!providersToTry.length){
-    if(preferred!=='auto')throw new Error('Conecta '+(preferred==='gemini'?'Google Gemini':preferred==='huggingface'?'Hugging Face':'Pollinations')+' desde el Laboratorio IA.');
-    throw new Error('Conecta al menos un motor de imágenes: Pollinations, Hugging Face o Google Gemini.');
-  }
+  if(!providersToTry.length)throw new Error('No hay un motor de imágenes disponible. Revisa Cloudflare o Pollinations central en Laboratorio IA.');
 
   const errors=[];
   let generated=null,providerUsed='';
   for(let index=0;index<providersToTry.length;index++){
     const provider=providersToTry[index];
     try{
-      callback?.(.08+index*.06,'Conectando con '+(provider==='pollinations'?'Pollinations':provider==='huggingface'?'Hugging Face':'Google Gemini')+'...');
+      callback?.(.08+index*.06,'Conectando con '+({pollinations:'Pollinations',huggingface:'Hugging Face',cloudflare:'Cloudflare'}[provider]||provider)+'…');
       generated=await runStep('image-gen',[],{
         provider,qualityProfile:params.qualityProfile||'balanced',
         prompt,style:params.style||'photo',ratio:params.ratio||'square',
         negativePrompt:params.negativePrompt||'',seed:params.seed||'',
-        polliToken:tokens.pollinations,hfToken:tokens.huggingface,geminiKey:tokens.gemini
+        ...params
       },callback,.12,.56,'Generando imagen');
       providerUsed=provider;
       break;
     }catch(error){
-      errors.push((provider==='pollinations'?'Pollinations':provider==='huggingface'?'Hugging Face':'Google Gemini')+': '+(error?.message||'error de generación'));
-      if(!params.allowFallback||preferred!=='auto')throw error;
+      errors.push(provider+': '+(error?.message||'error de generación'));
+      if(preferred!=='auto'&&!params.allowFallback)throw error;
     }
   }
   if(!generated?.blob)throw new Error('No fue posible generar la imagen. '+errors.join(' | '));
@@ -157,10 +146,10 @@ async function aiCreation(files,params,callback){
     if(finalImage?.previewUrl?.startsWith('blob:'))URL.revokeObjectURL(finalImage.previewUrl);
     finalImage=result;currentFile=asFile(result,'prisma-imagen-editada.webp');
   }
-  const content=await generateContentPack(tokens,prompt,params.style||'photo',params,callback);
+  const content=await generateContentPack(params,prompt,params.style||'photo',callback);
   const contentBlob=new Blob([content.text],{type:'text/plain;charset=utf-8'});
   callback?.(1,'Imagen y contenido preparados.');
-  const providerNames={pollinations:'Pollinations Connect',huggingface:'Hugging Face',gemini:'Google Gemini'};
+  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',cloudflare:'Cloudflare Workers AI'};
   return {
     artifacts:[
       {name:'Imagen lista para publicar',filename:finalImage.filename||'prisma-imagen-final.webp',blob:finalImage.blob,previewUrl:finalImage.previewUrl,type:finalImage.blob.type},
@@ -175,12 +164,6 @@ async function aiCreation(files,params,callback){
 async function aiTask(params,callback){
   const prompt=String(params.prompt||'').trim();
   if(prompt.length<5)throw new Error('Cuéntanos qué necesitas resolver.');
-  const tokens={
-    polliToken:String(params.polliToken||'').trim(),
-    hfToken:String(params.hfToken||'').trim(),
-    geminiKey:String(params.geminiKey||'').trim(),
-    groqKey:String(params.groqKey||'').trim()
-  };
   const taskLabels={write:'Redactar',summarize:'Resumir',explain:'Explicar',translate:'Traducir',ideas:'Generar ideas',improve:'Mejorar un texto'};
   const instruction='Actúa como un asistente experto y resuelve esta tarea. Tipo de tarea: '+(taskLabels[params.task]||'Resolver')+'.\n\nSolicitud del usuario:\n'+prompt+'\n\nContexto adicional:\n'+String(params.context||'No proporcionado')+'\n\nResponde en español claro, con estructura útil y sin inventar datos. Si falta información, indícalo. No describas pasos internos ni inventes fuentes.';
   const result=await runStep('ai-assistant',[],{
@@ -188,10 +171,8 @@ async function aiTask(params,callback){
     provider:params.provider||'auto',
     tone:params.tone||'professional',
     length:params.length||'medium',
-    polliToken:tokens.polliToken,
-    hfToken:tokens.hfToken,
-    geminiKey:tokens.geminiKey,
-    groqKey:tokens.groqKey
+    ...params,
+    task:'general'
   },callback,.05,.9,'Resolviendo tu solicitud con el mejor motor disponible');
   const answer=String(result?.text||'').trim();
   if(!answer)throw new Error('El motor conectado no devolvió una respuesta. Prueba con otro proveedor.');
@@ -204,11 +185,61 @@ async function aiTask(params,callback){
   };
 }
 
+function textArtifact(name,filename,text){
+ const content=String(text||'').trim();
+ return {name,filename,text:content,blob:new Blob([content],{type:'text/markdown;charset=utf-8'}),type:'text/markdown'};
+}
+async function songStudio(params,callback){
+ const idea=String(params.prompt||'').trim();
+ if(idea.length<8)throw new Error('Describe el tema de la canción para comenzar.');
+ const briefing='Crea una canción ORIGINAL y cantable para la siguiente idea: '+idea+
+  '\nIdioma: '+(params.language||'Español')+'; género: '+(params.genre||'libre')+
+  '; emoción: '+(params.mood||'esperanza')+
+  '. Incluye título, versos, precoro, coro memorable, puente, final y un prompt técnico breve de producción (instrumentación, tempo y tipo de voz). No copies canciones ni imites exactamente a un artista. No afirmes haber generado audio.';
+ const result=await runStep('music-lyrics',[],{...params,prompt:briefing,provider:'auto',task:'songwriting',tone:'creative',reasoning:'balanced',length:'long'},callback,.05,.92,'Componiendo letra y dirección musical');
+ if(!result?.text?.trim())throw new Error('No se pudo componer la canción.');
+ callback?.(1,'Composición preparada.');
+ return {artifacts:[textArtifact('Letra y producción','prisma-cancion-original.md',result.text)],summary:'Canción original compuesta con '+(result.provider||'un motor de IA')+'. Se entrega letra y guía de producción; no se generó un archivo musical.',steps:['Idea y género definidos','Letra original escrita','Instrucciones musicales preparadas']};
+}
+async function creatorStudio(params,callback){
+ const topic=String(params.prompt||'').trim();
+ if(topic.length<8)throw new Error('Escribe el tema de tu publicación o vídeo.');
+ const instruction='Actúa como productor editorial para YouTube y redes. Tema: '+topic+
+  '\nPlataforma: '+(params.platform||'YouTube')+'; público: '+(params.audience||'general')+
+  '. Entrega 5 títulos atractivos sin sensacionalismo engañoso; una descripción SEO legible; guion o escaleta de apertura, desarrollo y cierre; 7 hashtags pertinentes; propuesta de miniatura con máximo 4 palabras grandes; 3 ideas de clips cortos. No inventes métricas ni promesas de CTR.';
+ const result=await runStep('ai-assistant',[],{...params,prompt:instruction,task:'creative',provider:'auto',tone:'creative',length:'long',reasoning:'balanced'},callback,.04,.65,'Preparando estrategia y contenido');
+ if(!result?.text?.trim())throw new Error('No se pudo crear el paquete editorial.');
+ const artifacts=[textArtifact('Plan para redes y YouTube','prisma-kit-creador.md',result.text)];
+ const warnings=[];
+ if(params.includeImage){
+  try{
+   const image=await runStep('image-gen',[],{...params,provider:'auto',prompt:'Miniatura profesional de '+topic+'. Composición visual clara, alto contraste, sujeto dominante, espacio para título corto, sin marcas ni texto ilegible.',style:'cinematic',ratio:'wide'},callback,.70,.28,'Generando miniatura opcional');
+   if(image?.blob)artifacts.push({name:'Imagen de miniatura',filename:image.filename||'prisma-miniatura.png',blob:image.blob,type:image.blob.type,previewUrl:image.previewUrl});
+  }catch(error){warnings.push('La miniatura opcional no se generó: '+(error?.message||'error del motor')+'. Se conserva el kit editorial.');}
+ }
+ callback?.(1,'Kit de creación preparado.');
+ return {artifacts,summary:'Kit editorial creado con '+(result.provider||'IA')+'.'+(warnings.length?' La imagen opcional no estuvo disponible.':''),warnings,steps:['Tema y audiencia definidos','Títulos, guion y descripción preparados',...(params.includeImage?['Generación visual intentada']:[])]};
+}
+async function studyStudio(params,callback){
+ const topic=String(params.prompt||'').trim(),notes=String(params.notes||'').trim();
+ if(topic.length<5&&!notes)throw new Error('Escribe un tema o pega tus apuntes.');
+ const instruction='Elabora una GUÍA DE ESTUDIO didáctica basada en el tema '+topic+
+  (notes?'\nAPUNTES DEL USUARIO:\n'+notes.slice(0,12000):'')+
+  '\nIncluye: explicación clara por secciones, términos esenciales, ejemplos, 8 preguntas de práctica con respuestas al final y 10 tarjetas tipo Pregunta — Respuesta para repasar. Distingue datos comprobados de suposiciones; no inventes bibliografía ni citas.';
+ const result=await runStep('ai-assistant',[],{...params,prompt:instruction,task:'reasoning',provider:'auto',tone:'academic',length:'long',reasoning:'balanced'},callback,.05,.92,'Preparando guía, preguntas y tarjetas');
+ if(!result?.text?.trim())throw new Error('No se pudo preparar la guía de estudio.');
+ callback?.(1,'Material de estudio listo.');
+ return {artifacts:[textArtifact('Guía y preguntas de estudio','prisma-guia-estudio.md',result.text)],summary:'Material de estudio preparado. Revisa los datos importantes con tu docente o bibliografía de referencia.',steps:['Tema y apuntes organizados','Explicación elaborada','Preguntas y tarjetas de repaso generadas']};
+}
+
 export async function runWorkflow(id,files=[],params={},callback){
   callback?.(.02,'Preparando flujo inteligente...');
   if(id==='image-pipeline')return imagePipeline(files,params,callback);
   if(id==='document-pipeline')return documentPipeline(files,params,callback);
   if(id==='ai-creation')return aiCreation(files,params,callback);
   if(id==='ai-task')return aiTask(params,callback);
+  if(id==='song-studio')return songStudio(params,callback);
+  if(id==='creator-studio')return creatorStudio(params,callback);
+  if(id==='study-studio')return studyStudio(params,callback);
   throw new Error('No reconocemos ese flujo de trabajo.');
 }
