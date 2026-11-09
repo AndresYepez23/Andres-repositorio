@@ -536,7 +536,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,baidu:false,aihubmix:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     const usage=config.usageId?'<div class="provider-connection-detail" id="'+config.usageId+'">Consultando consumo y límites…</div>':'';
@@ -564,7 +564,6 @@ function renderProviderConnections(){
      {id:'requesty',name:'Requesty',summary:'13 modelos gratuitos · Nemotron, Gemma, Mistral y Ling',detail:'Plan gratuito oficial: 200 solicitudes/día y 20/minuto por organización, sin tarjeta. Prisma limita su uso compartido a 25 solicitudes/día y 10/minuto, y solo admite los 13 modelos publicados como gratuitos. Admite un máximo de tres claves mediante REQUESTY_API_KEYS_JSON o variables individuales. Secreto base: REQUESTY_API_KEY.',secretName:'REQUESTY_API_KEYS_JSON',shared:true},
      {id:'sensenova',name:'SenseNova / SenseTime',summary:'SenseNova 6.8 Flash Lite',detail:'Beta pública gratuita con hasta 1.500 llamadas por modelo cada cinco horas, según la oferta vigente. Prisma aplica un límite interno menor. Admite hasta seis claves mediante SENSENOVA_API_KEYS_JSON o variables individuales. Secreto base: SENSENOVA_API_KEY.',secretName:'SENSENOVA_API_KEYS_JSON',shared:true},
      {id:'zai',name:'Z.AI / Zhipu',summary:'GLM-4.7 Flash · GLM-4.5 Flash · GLM-4.6V Flash',detail:'Solo se permiten modelos Flash gratuitos. No se habilitan modelos GLM de pago. Admite hasta seis claves mediante ZAI_API_KEYS_JSON o variables individuales. Secreto base: ZAI_API_KEY.',secretName:'ZAI_API_KEYS_JSON',shared:true},
-     {id:'baidu',name:'Baidu Qianfan / ERNIE',summary:'ERNIE-Speed · ERNIE-Lite · ERNIE-Tiny',detail:'Baidu anunció acceso gratuito a estas familias para cuentas con verificación real completada, pero la elegibilidad depende de la cuenta y del servicio preestablecido. Prisma lo mantiene bloqueado hasta que confirmes en Qianfan que tu cuenta tiene precio cero y definas BAIDU_FREE_QUOTA_CONFIRMED=1. Admite hasta seis claves mediante QIANFAN_API_KEYS_JSON o variables individuales. Usa el API Key bce-v3 como QIANFAN_API_KEY.',secretName:'QIANFAN_API_KEYS_JSON',shared:true},
      {id:'aihubmix',name:'AIHubMix',summary:'Catálogo gratuito dinámico · 71 modelos publicados',detail:'10 llamadas de prueba totales sin tarjeta. Tras una recarga única de USD 1 se activa la cuota diaria oficial de 100 solicitudes, 10/minuto y 1 millón de tokens. Prisma conserva un límite más prudente de 15 solicitudes/día y 10/minuto, y solo habilita modelos de texto con peso de cuota 1. Admite hasta seis claves mediante AIHUBMIX_API_KEYS_JSON o variables individuales. Secreto base: AIHUBMIX_API_KEY.',secretName:'AIHUBMIX_API_KEYS_JSON',shared:true},
   ];
   container.innerHTML=configs.map(providerConnectionCard).join()+
@@ -639,7 +638,7 @@ async function refreshProviderConnectionStatuses(){
       target.innerHTML=daily+minute+pause+poolError+lines+poolHint+'<small>Las claves no multiplican la cuota del proyecto o cuenta. Prisma distribuye solicitudes entre credenciales sanas; ante un 402/429 pausa todo el proveedor y no rota para eludir límites.</small>';
     }
   });
-  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter,kilo:!!central.providers.kilo,requesty:!!central.providers.requesty,sensenova:!!central.providers.sensenova,zai:!!central.providers.zai,baidu:!!central.providers.baidu,aihubmix:!!central.providers.aihubmix};
+  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter,kilo:!!central.providers.kilo,requesty:!!central.providers.requesty,sensenova:!!central.providers.sensenova,zai:!!central.providers.zai,aihubmix:!!central.providers.aihubmix};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
@@ -876,7 +875,7 @@ function openTool(t){
   $('#modal-close').focus({preventScroll:true});
 }
 function textStudioModelSettings(){
- return selectField('Motor de texto','provider',[['auto','Automático · mejor disponible'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['sensenova','SenseNova'],['zai','Z.AI / GLM'],['requesty','Requesty'],['kilo','Kilo Gateway'],['baidu','Baidu ERNIE'],['aihubmix','AIHubMix · prueba limitada'],['pollinations','Pollinations'],['huggingface','Hugging Face (créditos limitados)']],'auto')+
+ return selectField('Motor de texto','provider',[['auto','Automático · mejor disponible'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['sensenova','SenseNova'],['zai','Z.AI / GLM'],['requesty','Requesty'],['kilo','Kilo Gateway'],['aihubmix','AIHubMix · prueba limitada'],['pollinations','Pollinations'],['huggingface','Hugging Face (créditos limitados)']],'auto')+
   selectField('Modelo específico (opcional)','model',[['','Automático · según tarea']],'')+
   '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice">Prisma elegirá el modelo más adecuado según la tarea.</div>';
 }
