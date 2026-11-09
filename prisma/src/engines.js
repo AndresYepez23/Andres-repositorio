@@ -955,6 +955,25 @@ async function imageAdvanced(id,files,p,cb){
  }
  throw Error('Operación de imagen no disponible.');
 }
+let localVisionPromise=null;
+async function classifyImageLocally(files,p,cb){
+ if(!files[0])throw Error('Selecciona una imagen JPG, PNG o WebP.');
+ progress(cb,.06,'Preparando ViT ONNX. La primera ejecución descarga el modelo gratuito al navegador…');
+ if(!localVisionPromise)localVisionPromise=(async()=>{
+   const {pipeline}=await load('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2');
+   return pipeline('image-classification','Xenova/vit-base-patch16-224',{device:'wasm',dtype:'q4'});
+ })().catch(e=>{localVisionPromise=null;throw e;});
+ const model=await localVisionPromise,url=URL.createObjectURL(files[0]);
+ try{
+  progress(cb,.72,'Reconociendo categorías visuales localmente…');
+  const predictions=await model(url,{top_k:5});
+  const rows=Array.isArray(predictions)?predictions:[predictions];
+  const report=['CLASIFICACIÓN VISUAL · ViT ONNX','Etiquetas aproximadas en inglés:','',
+   ...rows.map((x,i)=>(i+1)+'. '+x.label+' · '+Math.round(Number(x.score||0)*1000)/10+'%')].join('\\n');
+  progress(cb,1,'Clasificación local completada.');
+  return {text:report,summary:'Modelo ONNX en el navegador, sin API. Predicciones aproximadas de ImageNet; no identifica personas.',model:'Xenova/vit-base-patch16-224'};
+ }finally{URL.revokeObjectURL(url);}
+}
 async function mediaAdvanced(id,files,p,cb){
  if(id==='video-thumbnail'){
   const url=URL.createObjectURL(files[0]),video=document.createElement('video');
@@ -1142,6 +1161,7 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(id==='image-identify-local')return classifyImageLocally(files,p,cb);
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
  if(id==='pdf-to-word')return pdfToWord(files[0],cb);
  if(id==='pdf-text')return pdfToText(files[0],cb);
