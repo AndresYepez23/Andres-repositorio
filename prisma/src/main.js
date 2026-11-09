@@ -661,7 +661,11 @@ async function refreshProviderConnectionStatuses(){
   }
   if($('#openrouter-usage'))void refreshOpenRouterUsage();
   const count=Object.values(connected).filter(Boolean).length;
-  const summary=$('#connections-summary');if(summary)summary.textContent=count+' motor'+(count===1?'':'es')+' disponible'+(count===1?'':'s')+' para Prisma';
+  const summary=$('#connections-summary');
+  if(summary){
+    const capacity=central.capacity||{};
+    summary.textContent=count+' motores disponibles · '+Number(capacity.configuredCredentials||0)+' credenciales · hasta '+Number(capacity.dailyBudget||0)+' solicitudes internas/día';
+  }
 }
 async function connectPollinations(){
   const input=$('#polli-app-key');
