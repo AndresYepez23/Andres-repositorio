@@ -46,7 +46,8 @@ export async function onRequestGet({ env }) {
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
       dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
       !(provider === "amd" && amdModels.length === 0) && !(provider === "kilo" && kiloModels.length === 0) &&
-      !(provider === "aihubmix" && aihubmixModels.length === 0)]
+      !(provider === "aihubmix" && aihubmixModels.length === 0) &&
+      !(provider === "baidu" && env.BAIDU_FREE_QUOTA_CONFIRMED !== "1")]
   ));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
@@ -81,6 +82,7 @@ export async function onRequestGet({ env }) {
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "amd" && configured[provider] > 0 && amdModels.length === 0) warnings[provider] = "No se pudo validar un modelo gratuito de texto en el catálogo actual de AMD; permanece desactivado.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
+    else if (provider === "baidu" && configured[provider] > 0 && env.BAIDU_FREE_QUOTA_CONFIRMED !== "1") warnings[provider] = "Baidu está bloqueado para evitar consumo facturable. Confirma en Qianfan que ERNIE-Speed/Lite/Tiny tienen cuota gratuita en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
