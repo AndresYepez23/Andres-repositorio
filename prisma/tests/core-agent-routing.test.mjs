@@ -447,8 +447,8 @@ assert.throws(()=>runLocalCreatorTool('utm-builder',{url:'javascript:alert(1)',s
 const srt=runLocalCreatorTool('subtitle-srt-local',{text:'Hola Prisma\nBienvenidos',secondsPerCue:3});
 assert.match(srt.text,/00:00:00,000 --> 00:00:03,000/);
 assert.equal(srt.filename,'prisma-subtitulos.srt');
-const engineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
-assert.match(engineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
-assert.match(engineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
+const autoRouteEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
+assert.match(autoRouteEngineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
