@@ -61,6 +61,35 @@ function normalizeMessages(input) {
   return { system, contents, openaiMessages };
 }
 
+async function callOpenAICompatibleProvider(env, provider, endpoint, model, messages, payload, extraHeaders = {}) {
+  if (!getCredentialSlots(env,provider).length) return json({error:"Falta configurar la clave de "+provider+" en los secretos de Cloudflare.",provider},503);
+  let response;
+  try {
+    response = await requestWithCredentialPool(env, provider, credential => fetch(endpoint, {
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential,...extraHeaders},
+      body:JSON.stringify({model,messages,temperature:0.65,max_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false}),
+    }));
+  } catch (error) {
+    const status=Number(error?.status)||502;
+    return json({error:error?.message||"No fue posible conectar con "+provider+".",provider,status,retryAfter:error?.retryAfter||null},status===429?429:status===402?402:502);
+  }
+  const data=await response.json().catch(()=>({}));
+  if (!response.ok) {
+    const status=response.status;
+    const detail=String(data.error?.message||data.error?.code||data.message||"").slice(0,180);
+    const message=status===429?provider+" alcanzó su límite temporal. Prisma probará otro motor."
+      :status===402?provider+" no tiene crédito gratuito disponible."
+      :status===401||status===403?provider+" rechazó la clave configurada. Revisa su secreto en Cloudflare."
+      :provider+" respondió con un error ("+status+")."+(detail?" "+detail:"");
+    return json({error:message,provider,status,code:status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":"PROVIDER_ERROR"},status===429||status===402?status:status===400?400:502);
+  }
+  const content=data.choices?.[0]?.message?.content;
+  const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
+  if(!text)return json({error:provider+" no devolvió texto.",provider},502);
+  return json({ok:true,provider,model:data.model||model,text,usage:data.usage||null});
+}
+
 export async function onRequestPost({ request, env }) {
   const requestUrl = new URL(request.url);
   const origin = request.headers.get("Origin");
@@ -81,7 +110,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "baidu", "aihubmix", "amd"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
@@ -305,6 +334,51 @@ export async function onRequestPost({ request, env }) {
       console.error("Workers AI error",String(error?.message||error).slice(0,140));
       return json({error:"Cloudflare Workers AI no pudo completar la inferencia. Intenta otro motor."},502);
     }
+  }
+
+  if (provider === "kilo") {
+    const model=requestedModel||"z-ai/glm-5:free";
+    const key=getCredentialSlots(env,"kilo")[0]?.value||"";
+    const hold=await getProviderHold(env,"kilo");
+    if(hold)return json({error:hold.reason,provider:"kilo",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
+    const headers={"Content-Type":"application/json"};
+    if(key)headers.Authorization="Bearer "+key;
+    let response;
+    try{
+      response=await fetch("https://ai-gateway.kilo.ai/api/v1/chat/completions",{
+        method:"POST",headers,
+        body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
+      });
+    }catch{
+      await setProviderHold(env,"kilo","network_error","Kilo Gateway no respondió; Prisma lo pausó brevemente.",60);
+      return json({error:"No fue posible conectar con Kilo Gateway.",provider:"kilo"},502);
+    }
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      if(response.status===429)await setProviderHold(env,"kilo","rate_limited","Kilo Gateway alcanzó el límite anónimo o de la clave; Prisma probará otro motor.",Math.max(30,Math.min(600,Number(response.headers.get("retry-after")||90))));
+      else if(response.status===401||response.status===403)await setProviderHold(env,"kilo","auth_error","Kilo rechazó la clave opcional configurada.",3600);
+      const message=response.status===429?"Kilo Gateway alcanzó su límite temporal.":response.status===401||response.status===403?"Kilo rechazó la clave opcional.":"Kilo Gateway respondió con un error ("+response.status+").";
+      return json({error:message,provider:"kilo",status:response.status},response.status===429?429:502);
+    }
+    const content=data.choices?.[0]?.message?.content;
+    const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
+    if(!text)return json({error:"Kilo Gateway no devolvió texto.",provider:"kilo"},502);
+    return json({ok:true,provider:"kilo",model:data.model||model,text,usage:data.usage||null});
+  }
+
+  const compatibleProviders={
+    sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
+    zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
+    requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"nemotron-3.5-lightning-30b-a3b"},
+    baidu:{url:"https://qianfan.baidubce.com/v2/chat/completions",model:"ernie-speed-128k"},
+    aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:"coding-glm-5.3-free"},
+    amd:{url:"https://developer.amd.com.cn/radeon/api/v1/chat/completions",model:"DeepSeek-V4-Flash"},
+  };
+  if(compatibleProviders[provider]){
+    const config=compatibleProviders[provider];
+    const model=requestedModel||config.model;
+    const extraHeaders=provider==="requesty"?{"HTTP-Referer":"https://prismaspace.pages.dev","X-Title":"Prisma Space"}:{};
+    return callOpenAICompatibleProvider(env,provider,config.url,model,normalized.openaiMessages,payload,extraHeaders);
   }
 
   if (!getCredentialSlots(env,"gemini").length) {
