@@ -1489,11 +1489,10 @@ body.is-core-view .core-history-entry.active{
 body.is-core-view .core-attach-button span{display:none!important}
 
 
-/* Core iOS viewport v2: eliminate keyboard gap in Safari and orphan space in PWA.
- * Safari focus can pan the visual viewport independently of scrollY; positioning
- * the app in document coordinates (visualViewport.pageTop) follows that pan.
- * Standalone PWA WITHOUT keyboard fills the physical screen (viewport-fit=cover)
- * instead of depending on WKWebView's sometimes-short visualViewport.height. */
+/* Core iOS viewport: keyboard tracks visualViewport.pageTop + height.
+ * Standalone PWA without a keyboard uses the ACTUAL window.innerHeight, not
+ * screen.height (which includes unavailable iOS status/home-indicator areas).
+ * Never extend the chat behind the home indicator. */
 body.is-core-view{
   position:absolute!important;
   top:var(--prisma-vp-top,0px)!important;
