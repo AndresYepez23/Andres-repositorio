@@ -786,21 +786,32 @@ async function generateText(p,cb){
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
  const errors=[],attempted=[];
  let lastLimitError=null;
- const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>
-  provider==='pollinations'
-   ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
-   : Boolean(p.centralProviders?.[provider]),
-  getRouteMemory()
- );
+ const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>{
+  if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim());
+  if(!p.centralProviders?.[provider])return false;
+  // Preserve AIHubMix's ten lifetime trial calls unless the owner confirms the
+  // provider's one-time top-up. Manual selection still allows deliberate tests.
+  if(provider==='aihubmix'&&preferred==='auto')return Boolean(p.centralFeatures?.aihubmixDailyQuotaActive);
+  // Some NVIDIA trial endpoints may log prompts: never send user text there
+  // automatically. A user may select those manually after reading the warning.
+  if(provider==='kilo'&&preferred==='auto')return Boolean(
+   p.centralModelCatalog?.chat?.kilo?.some(model=>!String(model.id||'').toLowerCase().startsWith('nvidia/'))
+  );
+  return true;
+ },getRouteMemory());
  // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
  const candidates=rankedCandidates.filter(provider=>provider!=='openrouter');
  if(rankedCandidates.includes('openrouter'))candidates.push('openrouter');
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
- const modelFor=provider=>selectTaskModel(
-  provider,task,tier,p.centralModelCatalog?.chat?.[provider]||[]
- );
+ const modelFor=provider=>{
+  let catalog=p.centralModelCatalog?.chat?.[provider]||[];
+  if(provider==='kilo'&&preferred==='auto')catalog=catalog.filter(model=>
+   !String(model.id||'').toLowerCase().startsWith('nvidia/')
+  );
+  return selectTaskModel(provider,task,tier,catalog);
+ };
  for(let candidateIndex=0;candidateIndex<candidates.length;candidateIndex++){
   const provider=candidates[candidateIndex];
   const remaining=totalDeadline-(Date.now()-startedAt);
