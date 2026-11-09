@@ -4,12 +4,12 @@ import { getCredentialSlots } from "./credential-pool.js";
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
 export const LIMITS=Object.freeze({
  gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
- kilo:20,requesty:25,sensenova:25,zai:25,baidu:20,aihubmix:10,amd:10,
+ kilo:20,requesty:25,sensenova:25,zai:25,aihubmix:10,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
  "groq-audio":3,"pollinations-audio":2,"gemini-image":2
 });
 
-const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,baidu:3,aihubmix:10,amd:3});
+const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,aihubmix:10});
 export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[provider]||null;}
 
 // Internal budgets are per provider/project, not per API key. Multiple keys
@@ -23,7 +23,7 @@ export function getProviderDailyLimit(env,provider){
  return LIMITS[provider]||10;
 }
 export function getSharedDailyBudget(env){
- const pooled=['gemini','groq','huggingface','pollinations','requesty','sensenova','zai','baidu','aihubmix','amd'];
+ const pooled=['gemini','groq','huggingface','pollinations','requesty','sensenova','zai', 'aihubmix'];
  let budget=pooled.reduce((sum,provider)=>sum+(getCredentialSlots(env,provider).length?getProviderDailyLimit(env,provider):0),0);
  budget+=getProviderDailyLimit(env,'kilo');
  if(env?.AI?.run)budget+=getProviderDailyLimit(env,'cloudflare');
