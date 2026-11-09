@@ -9,6 +9,7 @@ import { openImageEditor, initImageEditor, applyImageText } from './core-image-e
 import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
+import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -348,7 +349,10 @@ function renderMessages({forceBottom=false}={}){
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
     if(message.role==='assistant'&&message.content?.trim())bubble.append(renderMessageActions(message));
-    list.append(bubble);
+    const row=document.createElement('div');
+    row.className='core-message-row '+(message.role==='user'?'user':'assistant');
+    row.append(bubble);
+    list.append(row);
   }
   if(shouldStick){
     requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight;userPinnedToBottom=true;});
@@ -969,7 +973,9 @@ function directCoreTask(text){
  const isPrompt=/(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b|\bplan\b).{0,40}(?:imagen|miniatura|video|audio)|(?:imagen|miniatura|video).{0,40}(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b)/.test(q);
  if(/\b(pdf|docx|xlsx|excel|csv|zip|ocr|archivo|subir|descargar|comprimir|convertir formato|rotar paginas|extraer paginas|codigo qr|codigo de barras|quitar fondo|eliminar fondo|redimensionar|transcribir audio|procesar video)\b/.test(q))return null;
  if(!isPrompt&&/(?:gener|crea|crear|haz|hacer|dibuja|editar|produce|producir|renderiza|conviert).{0,55}\b(imagen|foto|ilustracion|miniatura|poster|video|audio|mp3|wav|archivo 3d|modelo 3d)\b/.test(q))return null;
- if(/\b(letra|cancion|compon|composicion musical|estrofa|verso|coro|alabanza|balada)\b/.test(q))return 'songwriting';
+  const mentionsSong=/\b(letra|cancion|compon|composicion musical|estrofa|verso|coro|alabanza|balada)\b/.test(q);
+  const requestsSong=/^(?:por favor )?(?:(?:crea|crear|haz(?:me)?|escribe|compone|compon|genera|prepara|dame|quiero|necesito|inventa|produce|redacta|puedes hacer|me gustaria)\b|(?:(?:una|otra|nueva|otra nueva) )?(?:cancion|letra|alabanza|balada)\b|y si (?:hacemos|creamos|escribimos)\b)/.test(q);
+  if(mentionsSong&&requestsSong)return 'songwriting';
  if(/\b(codigo|programacion|javascript|typescript|python|sql|script|debug|desarrolla una funcion|corrige esta funcion)\b/.test(q))return 'coding';
  if(/\b(youtube|miniatura|instagram|tiktok|publicacion|marketing|anuncio|titulo|descripcion del video)\b/.test(q))return 'creative';
  if(/\b(analiz|investig|compara|explica|razona|solucion|estrategia|plan de|evalua)\b/.test(q))return 'reasoning';
@@ -1103,6 +1109,14 @@ async function requestPlan(userText){
     status('Listo para ayudarte.','success');
     return;
   }
+   // Pure praise/thanks is a conversational turn, not a request to repeat the
+   // previous creative task. "Muy buena canción" must not generate another song.
+   const previousAssistant=messages.slice(0,-1).reverse().find(item=>item.role==='assistant'&&String(item.content||'').trim());
+   if(!attachments.length&&isAcknowledgementMessage(userText)){
+     addMessage('assistant',buildAcknowledgementReply(userText,previousAssistant?.content||''));
+     status('Seguimos en la misma conversación.','success');
+     return;
+   }
   // Las preguntas sobre la identidad de Prisma y sus proveedores son hechos
   // del producto: no deben quedar expuestas a respuestas inventadas del LLM.
   if(!attachments.length){
