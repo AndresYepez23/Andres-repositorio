@@ -36,7 +36,7 @@ Las variables `GEMINI_API_KEY_BACKUP` y `GROQ_API_KEY_BACKUP` se siguen reconoci
 9. Kilo consulta su catálogo público y solo admite modelos con precio cero. Los endpoints NVIDIA gratuitos son de evaluación y pueden registrar prompts; por eso Kilo permanece manual y no recibe solicitudes automáticamente. El límite interno es 20/día y 3/minuto, inferior al máximo anónimo de 200 solicitudes/hora por IP.
 10. Requesty ofrece 13 modelos publicados como gratuitos y hasta 200 solicitudes/día y 20/minuto por organización. Prisma limita el uso compartido a 25/día y 10/minuto; prioriza Ling 3.1 Flash de Novita en el enrutamiento automático.
 11. SenseNova 6.8 Flash Lite dispone de beta pública gratuita con hasta 1.500 llamadas por modelo cada cinco horas; Prisma limita el uso a 25/día y 5/minuto. Z.AI solo habilita los modelos Flash gratuitos y Prisma aplica un límite de 25/día y 3/minuto.
-12. Baidu Qianfan permanece en selección manual hasta confirmar elegibilidad y cuota gratuita de la cuenta/región. No se enruta automáticamente.
+12. Baidu Qianfan permanece en selección manual y bloqueado por defecto. Baidu anunció ERNIE-Speed/Lite/Tiny gratuitos para cuentas con verificación real completada; solo después de confirmar que esos modelos aparecen a precio cero en la consola de la cuenta, añade `BAIDU_FREE_QUOTA_CONFIRMED=1` en Cloudflare Pages. Sin ese indicador Prisma rechaza la llamada para evitar cargos.
 13. Las herramientas locales se ejecutan sin inferencia cuando los parámetros son claros. Prisma Core usa un planificador ligero cuando necesita decidir entre herramientas; reserva la inferencia más elaborada para peticiones complejas.
 
 ## Añadir claves posteriormente
