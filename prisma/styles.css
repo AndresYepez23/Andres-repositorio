@@ -1487,3 +1487,49 @@ body.is-core-view .core-history-entry.active{
 
 /* La barra unificada usa solo el icono de clip; su etiqueta queda accesible en aria-label. */
 body.is-core-view .core-attach-button span{display:none!important}
+
+
+/* Core iOS viewport v2: eliminate keyboard gap in Safari and orphan space in PWA.
+ * Safari focus can pan the visual viewport independently of scrollY; positioning
+ * the app in document coordinates (visualViewport.pageTop) follows that pan.
+ * Standalone PWA WITHOUT keyboard fills the physical screen (viewport-fit=cover)
+ * instead of depending on WKWebView's sometimes-short visualViewport.height. */
+body.is-core-view{
+  position:absolute!important;
+  top:var(--prisma-vp-top,0px)!important;
+  bottom:auto!important;
+  height:var(--prisma-core-viewport,100dvh)!important;
+  min-height:0!important;
+  max-height:var(--prisma-core-viewport,100dvh)!important;
+}
+body.is-core-view.is-prisma-standalone:not(.is-keyboard-open){
+  position:fixed!important;
+  inset:0 0 auto 0!important;
+  height:var(--prisma-core-viewport,100dvh)!important;
+  max-height:var(--prisma-core-viewport,100dvh)!important;
+}
+body.is-core-view.is-prisma-standalone.is-keyboard-open{
+  position:absolute!important;
+  top:var(--prisma-vp-top,0px)!important;
+  bottom:auto!important;
+}
+body.is-core-view .app-shell,
+body.is-core-view .main-area{
+  height:100%!important;
+  max-height:100%!important;
+  min-height:0!important;
+}
+body.is-core-view .core-chat-column{min-height:0!important}
+body.is-core-view .core-messages{min-height:0!important}
+body.is-core-view .core-composer{margin-top:auto!important}
+body.is-core-view.is-keyboard-open .core-composer{
+  padding-bottom:4px!important;
+}
+body.is-core-view.is-prisma-standalone:not(.is-keyboard-open) .core-composer{
+  padding-bottom:max(7px,env(safe-area-inset-bottom))!important;
+}
+@supports (height:100dvh){
+  body.is-core-view.is-prisma-standalone:not(.is-keyboard-open) .app-shell{
+    min-height:0!important;
+  }
+}
