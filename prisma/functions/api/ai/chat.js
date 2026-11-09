@@ -118,7 +118,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "openrouter" && !getCredentialSlots(env,"openrouter").length) {
-    return json({ error: "OpenRouter no está configurado. Añade OPENROUTER_API_KEY como secreto de Cloudflare.", provider: "openrouter" }, 503);
+    return json({ error: "OpenRouter no está configurado. Añade OPENROUTER_API_KEYS_JSON o OPENROUTER_API_KEY como secreto de Cloudflare.", provider: "openrouter" }, 503);
   }
 
   let normalized;
@@ -224,7 +224,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "pollinations") {
-    if (!getCredentialSlots(env,"pollinations").length) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
+    if (!getCredentialSlots(env,"pollinations").length) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEYS_JSON o POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
     const model=requestedModel||"openai/gpt-5.4-nano";
     let response;
     try {
@@ -250,7 +250,7 @@ export async function onRequestPost({ request, env }) {
 
   if (provider === "huggingface") {
     if (!getCredentialSlots(env,"huggingface").length) {
-      return json({ error: "Hugging Face todavía no está configurado en los secretos de Cloudflare." }, 503);
+      return json({ error: "Hugging Face todavía no está configurado. Añade HF_API_KEYS_JSON o HF_TOKEN como secreto de Cloudflare." }, 503);
     }
 
     const model = requestedModel || "openai/gpt-oss-20b:cheapest";
@@ -305,7 +305,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "groq") {
-    if (!getCredentialSlots(env,"groq").length) return json({error:"Groq aún no tiene GROQ_API_KEY configurado en Cloudflare."},503);
+    if (!getCredentialSlots(env,"groq").length) return json({error:"Groq aún no tiene GROQ_API_KEYS_JSON ni GROQ_API_KEY configurado en Cloudflare."},503);
     const model=requestedModel||"openai/gpt-oss-20b";
     let response;
     const askGroq=key=>fetch("https://api.groq.com/openai/v1/chat/completions",{
@@ -408,7 +408,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (!getCredentialSlots(env,"gemini").length) {
-    return json({ error: "Gemini todavía no está configurado en los secretos de Cloudflare." }, 503);
+    return json({ error: "Gemini todavía no está configurado. Añade GEMINI_API_KEYS_JSON o GEMINI_API_KEY como secreto de Cloudflare." }, 503);
   }
 
   const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.8-flash");
