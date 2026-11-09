@@ -490,7 +490,7 @@ async function refreshProviderConnectionStatuses(){
       status.textContent=provider==='pollinations-connect'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
-    if(provider==='pollinations'){
+    if(provider==='pollinations-connect'){
       $('#polli-disconnect')?.classList.toggle('hidden',!isConnected);
       const openButton=$('#polli-connect-start');if(openButton)openButton.textContent=isConnected?'Conectar otra cuenta':'Conectar mi cuenta';
     }
