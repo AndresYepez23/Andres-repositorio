@@ -384,7 +384,7 @@ function setBusy(value){
   $('#core-send').disabled=value;
   $('#core-input').disabled=value;
   $('#core-file-button').disabled=value;
-  $('#core-send').textContent=value?'Trabajando…':'Enviar';
+  const sendLabel=$('#core-send-label');if(sendLabel)sendLabel.textContent=value?'Trabajando…':'Enviar';
   $('#core-composer').setAttribute('aria-busy',String(value));
   const cancelButton=$('#core-cancel');if(cancelButton){cancelButton.classList.toggle('hidden',!(value&&executionActive));cancelButton.disabled=false;}
   if(value)setProgress(.02,'Preparando…');
