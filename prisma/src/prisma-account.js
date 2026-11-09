@@ -27,7 +27,7 @@ function syncAuthUI(){
  }else if(!enabled){
   $('#auth-title').textContent='Acceso a Prisma Space';
   $('#auth-description').textContent='Puedes seguir utilizando Prisma gratis como invitado.';
- }
+ }else updateTabs();
 }
 function showAuth(show){
  const modal=$('#auth-modal');if(!modal)return;
