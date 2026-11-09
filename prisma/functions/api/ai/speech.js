@@ -26,7 +26,7 @@ export async function onRequestPost({request,env}){
  const format=String(payload?.format||"mp3");
  if(!MODELS.has(model)||!VOICES.has(voice)||!FORMATS.has(format))return error("Modelo, voz o formato no autorizado.",400);
  if(!getCredentialSlots(env,"pollinations").length)return error("No hay una conexión central de voz activa. Puedes conectar tu cuenta de Pollinations en Laboratorio IA.",503);
- const hold=await getProviderHold(env,"pollinations-audio");
+ const hold=getCredentialSlots(env,"pollinations").length<=1?await getProviderHold(env,"pollinations-audio"):null;
  if(hold)return error(hold.reason,hold.state==="quota_exhausted"?402:503);
  const limit=await checkLimits(env,request,"pollinations-audio");
  if(limit)return Response.json({error:limit.error,code:limit.code,retryAfter:limit.retryAfter},{status:limit.status,headers:HEADERS});
