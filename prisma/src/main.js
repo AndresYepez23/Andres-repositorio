@@ -612,18 +612,20 @@ async function refreshOpenRouterUsage(){
 }
 async function refreshProviderConnectionStatuses(){
   const central=await getCentralProviderStatus();
-  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured,credentialSlots:central.credentialSlots||{}});
+  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured,credentialSlots:central.credentialSlots||{},providerHealth:central.providerHealth||{}});
   // Safe public metadata: only variable names and occupied slot positions.
   Object.entries(central.credentialSlots||{}).forEach(([provider,info])=>{
     const summary=$('[data-credential-summary="'+provider+'"]');
-    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / '+Number(info.max||0)+' · Ver espacios seguros';
+    const health=central.providerHealth?.[provider]||{};
+    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / '+Number(info.max||0)+(health.paused?' · Proveedor en pausa temporal':' · Ver espacios seguros');
     const target=$('[data-credential-slots="'+provider+'"]');
     if(target&&Array.isArray(info.slots)){
       const lines=info.slots.map(slot=>
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:5px 0"><code>'+
         escapeHtml(slot.variable)+'</code><small>'+
         (slot.configured?'Configurada':'Disponible para añadir')+'</small></div>').join('');
-      target.innerHTML=lines+'<small>Agrega las nuevas claves únicamente en los secretos de producción de Cloudflare. Las cuotas y los límites internos de Prisma siguen aplicándose a todos los espacios.</small>';
+      const pause=health.paused?'<small>En pausa temporal: '+escapeHtml(health.reason||'límite del proveedor')+'</small>':'';
+      target.innerHTML=pause+lines+'<small>Agrega las nuevas claves únicamente en los secretos de producción de Cloudflare. Las cuotas y los límites internos de Prisma siguen aplicándose a todos los espacios.</small>';
     }
   });
   const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter};
