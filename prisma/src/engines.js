@@ -758,8 +758,20 @@ async function generateText(p,cb){
  const songInstruction=task==='songwriting'
   ? 'La tarea es composición musical original. Si el usuario pide una canción, crea una letra completa, cantable y coherente con título, versos, pre-coro, coro, puente y cierre; añade una breve dirección musical y un prompt de producción. No respondas con una negativa genérica ante una petición creativa segura. No copies letras existentes ni imites exactamente a un artista. Si solicita un archivo de audio, aclara que este motor entrega texto y no ha renderizado música.'
   : 'Ayuda a resolver la petición con precisión. Si el usuario solicita una acción que requiere una herramienta, no afirmes que la ejecutaste si no se ejecutó.';
- const system='Eres el motor de texto de PRISMA. Responde en español salvo que el usuario solicite otro idioma. '+(tones[p.tone]||tones.professional)+' '+songInstruction;
- const user=prompt+(p.context?'\n\nContexto adicional:\n'+p.context:'');
+ const system=[
+   'Eres Prisma Core, el asistente de Prisma Space, una plataforma multimodelo.',
+   'Nunca afirmes que Prisma Core es GPT-4, GPT-6, ChatGPT, OpenAI, Gemini o Google. Eres el asistente de Prisma Space.',
+   'No inventes qué motor concreto respondió: la aplicación muestra esa información de forma independiente.',
+   'Mantén el hilo real de los mensajes, especialmente ante preguntas cortas como «eso», «aquí» y «¿y ahora?».',
+   'Responde en español, salvo petición contraria. Evita repetir saludos cuando la conversación continúa.',
+   tones[p.tone]||tones.professional,songInstruction,
+   typeof p.context==='string'?p.context.slice(0,2000):''
+  ].filter(Boolean).join(' ');
+ const user=prompt;
+  const history=Array.isArray(p.contextMessages)?p.contextMessages.slice(-14).filter(m=>m&&['user','assistant'].includes(m.role)&&String(m.content||'').trim())
+   .map(m=>({role:m.role,content:String(m.content).slice(0,1700)})):[];
+  while(history.length&&history[0].role!=='user')history.shift();
+  const conversationMessages=[{role:'system',content:system},...history,{role:'user',content:user}];
  const lengths={short:500,medium:1600,long:tier==='smart'?3200:2400};
  const outputTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
  const modelProfiles={
@@ -788,7 +800,7 @@ async function generateText(p,cb){
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
    : Boolean(p.centralProviders?.[provider])
- ).slice(0,3);
+ ).slice(0,5);
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
@@ -823,7 +835,7 @@ async function generateText(p,cb){
     const {response,data}=await fetchJsonWithDeadline('https://gen.pollinations.ai/v1/chat/completions',{
      method:'POST',
      headers:{Authorization:'Bearer '+String(p.polliToken).trim(),'Content-Type':'application/json'},
-     body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:outputTokens,stream:false})
+     body:JSON.stringify({model,messages:conversationMessages,temperature:.7,max_tokens:outputTokens,stream:false})
     },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.'),{status:response.status});
     text=data.choices?.[0]?.message?.content||data.output_text||'';
@@ -836,12 +848,12 @@ async function generateText(p,cb){
      body:JSON.stringify({
       provider,
       model,
-      messages:[{role:'system',content:system},{role:'user',content:user}],
+      messages:conversationMessages,
       temperature:.7,
       maxOutputTokens:outputTokens
      })
     },requestDeadline);
-    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status});
+    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status,code:data.code||'',retryAfter:data.retryAfter||null});
     text=String(data.text||'').trim();model=data.model||model;
    }
    if(!text)throw Error(providerNames[provider]+' no devolvió texto.');
@@ -862,14 +874,13 @@ async function generateText(p,cb){
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
    // A shared IP quota applies to every provider; retrying another provider will not help.
-   if(error?.status===429&&/Prisma alcanzó su límite temporal gratuito/i.test(String(error?.message||''))){
-    errors.push('Se alcanzó el límite de solicitudes de Prisma. No se harán más intentos en esta operación.');
-    break;
+   if(error?.code==='GLOBAL_LIMIT'||error?.status===429&&/Prisma alcanzó su límite temporal gratuito global/i.test(String(error?.message||''))){
+    throw Object.assign(new Error('La cuota gratuita compartida de Prisma está agotada temporalmente.'),{code:'GLOBAL_LIMIT',status:429,retryAfter:error?.retryAfter||null});
    }
    if(attempted.length<candidates.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
   }
  }
- if(errors.length)throw Error('No fue posible generar la respuesta con los motores conectados. '+errors.join(' | '));
+ if(errors.length)throw Error('Los motores disponibles no pudieron responder: '+errors.slice(0,3).join(' | '));
  throw Error('No hay un motor de texto disponible para esta tarea. Revisa las conexiones del Laboratorio IA.');
 }
 async function generateSpeech(p,cb){
