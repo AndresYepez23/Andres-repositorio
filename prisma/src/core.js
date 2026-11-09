@@ -90,12 +90,12 @@ function newChatRecord(content=[]){
  const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
  const first=content.find(message=>message.role==='user'&&message.content?.trim());
  return {id,title:first?String(first.content).replace(/\\s+/g,' ').trim().slice(0,58):'Nueva conversación',
-   titled:!!first,updated:Date.now(),created:Date.now(),messages:content};
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null};
 }
 function persistChatHistory(activeSerialized=null){
  try{
   const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,MAX_CHATS).map(chat=>({
-   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,
+   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,
    messages:chat.id===activeConversationId&&activeSerialized
     ?activeSerialized:chat.messages.slice(-60).map(message=>({
      id:message.id||'',role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,
@@ -113,7 +113,7 @@ function persistChatHistory(activeSerialized=null){
   // persisted chats before retrying; never silently discard the active thread.
   try{
    const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,12).map(chat=>({
-     id:chat.id,title:chat.title,titled:chat.titled,created:chat.created,updated:chat.updated,
+     id:chat.id,title:chat.title,titled:chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,
      messages:chat.messages.slice(-20).map(m=>({id:m.id,role:m.role,content:String(m.content||'').slice(0,9000),time:m.time,engine:m.engine,model:m.model,feedback:m.feedback}))
    }));
    localStorage.setItem(CHATS_KEY,JSON.stringify(records));
@@ -125,7 +125,7 @@ function loadChatHistory(){
  try{
   const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
   if(Array.isArray(records))stored=records.filter(chat=>chat&&typeof chat.id==='string'&&Array.isArray(chat.messages))
-    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60)}));
+    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null}));
  }catch{}
  if(!stored.length){
   let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old.slice(-60);}catch{}
@@ -787,6 +787,72 @@ function describeUnattachedToolRequest(userText){
 }
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
+function thumbnailIntent(text){
+ const q=normalizeCoreIntent(text);
+ const name=/\b(miniatura|thumbnail)\b|\bportada\b.{0,30}\b(youtube|video)\b/.test(q);
+ const action=/(?:crea|crear|gener|diseñ|disen|haz|hacer|puedes|quiero|necesito|prepara|preparar|fabricar|editar|mejorar)/.test(q);
+ return name&&action;
+}
+function thumbnailTopic(text){
+ const clean=String(text||'').trim();
+ const candidates=[
+  /(?:miniatura|thumbnail|portada)\s+(?:para\s+(?:mi|un|el)\s+(?:video|youtube)\s+)?(?:de|sobre|acerca de|para)\s+(.{7,})/i,
+  /(?:video|vídeo)\s+(?:sobre|de|que trata de)\s+(.{7,})/i,
+  /(?:tema|asunto)\s*[:：-]\s*(.{5,})/i
+ ];
+ for(const pattern of candidates){const value=clean.match(pattern)?.[1]?.replace(/[?.!]+$/,'').trim();if(value&&!/^(?:youtube|un video|mi video|el video|algo|lo que sea)$/i.test(value))return value;}
+ return '';
+}
+function extractThumbnailText(value){
+ return String(value||'').match(/(?:texto|frase|título|titulo)\s*(?:principal|grande|de portada)?\s*[:：=]\s*["“']?([^"”'\n]{2,65})/i)?.[1]?.split(/[,;]|\s+y\s+(?:estilo|colores|rostro)/i)[0]?.trim()||'';
+}
+async function generateThumbnail(text,creds,topic){
+ const chosen=$('#core-image-provider')?.value||'auto';
+ const headline=extractThumbnailText(text);
+ const imagePrompt='Professional cinematic YouTube thumbnail image, 16:9 aspect ratio, visually striking detailed composition, clear central subject, dramatic contrast, impactful lighting, premium commercial art direction, optimized at small sizes, coherent relevant subject for this video: '+topic+'. Leave an uncluttered darker area on the left for optional typography overlay. Do not render letters, words, watermarks, brands or logos. This is a video thumbnail background, not a travel poster or wallpaper.';
+ status('Diseñando una miniatura de YouTube 16:9…');
+ const result=await runTool('image-gen',[],{
+  ...creds,prompt:imagePrompt,provider:chosen,style:'cinematic',ratio:'wide',
+  negativePrompt:'random scenery, unrelated abstract artwork, accidental text, small illegible writing, distorted faces, logos'
+ },(p,message)=>{status(message||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),message||'Generando miniatura…');});
+ if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
+ result.originTopic=topic;result.suggestedText=headline;
+ addMessage('assistant','Aquí tienes la base visual de la miniatura. Para que destaque en YouTube, pulsa «Añadir texto / Editar» bajo la imagen: puedes poner el título, cambiar su tamaño, color y posición sin gastar otra generación de IA.',{
+  results:[{name:'Miniatura base para YouTube',reason:'Fondo 16:9 preparado para añadir tipografía',result}]
+ });
+ status('Miniatura lista. Puedes editarla gratis dentro de Prisma.','success');
+}
+async function handleThumbnailRequest(text){
+ const chat=conversations.find(item=>item.id===activeConversationId);
+ if(!chat)return false;
+ const pending=chat.thumbnailBrief;
+ const isThumbnail=thumbnailIntent(text);
+ if(!pending&&!isThumbnail)return false;
+ if(pending&&/^(?:cancelar|cancela|olvida|no quiero|salir|deja eso)\b/i.test(text.trim())){
+  chat.thumbnailBrief=null;persistChatHistory();
+  addMessage('assistant','Perfecto. Cancelé la miniatura pendiente. ¿Qué quieres hacer ahora?');return true;
+ }
+ const topic=pending?String(text||'').trim():thumbnailTopic(text);
+ if(!topic||topic.length<7||/^(?:si|sí|vale|ok|claro|hazlo|como quieras)$/i.test(topic)){
+  chat.thumbnailBrief={original:pending?.original||text,started:Date.now()};
+  persistChatHistory();
+  addMessage('assistant','Claro. Para crear una miniatura que realmente represente tu video necesito una cosa: ¿de qué trata? Puedes añadir el texto que quieres en grande y un estilo, por ejemplo: «Guerra espiritual; texto: DIOS PELEA POR TI; estilo: cinematográfico». Después podrás ajustar el texto gratis.');
+  status('Esperando el tema de la miniatura; no se consumió ninguna generación de IA.','info');
+  return true;
+ }
+ chat.thumbnailBrief=null;persistChatHistory();
+ const statusData=await getCentralProviderStatus();
+ centralProviders=statusData.providers||centralProviders;
+ centralFeatures=statusData.features||centralFeatures;
+ centralModelCatalog=statusData.modelCatalog||centralModelCatalog;
+ if(!Object.values(centralProviders).some(Boolean)&&!readPollinationsToken()){
+  addMessage('assistant','No hay motores de imagen disponibles ahora. Revisa Laboratorio IA y vuelve a intentarlo.');
+  return true;
+ }
+ const original=pending?.original||text;
+ await generateThumbnail(original+'\n'+text,credentials(),topic);
+ return true;
+}
 function directCoreImage(text){
  if(attachments.length)return false;
  const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -933,6 +999,8 @@ async function requestPlan(userText){
     status('Listo para ayudarte.','success');
     return;
   }
+  // Collect the video topic before spending any image generation quota.
+  if(await handleThumbnailRequest(userText))return;
   // Text-to-speech is a real media output, never a prose-only model answer.
   if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
@@ -1242,7 +1310,7 @@ function createExecutionResults(executed,partial){
       if(String(result.blob.type||'').startsWith('image/')){
        const edit=document.createElement('button');edit.type='button';edit.className='mini-button core-edit-thumb';edit.textContent='Añadir texto / Editar';
        edit.addEventListener('click',async()=>{
-        try{await openImageEditor({blob:result.blob,filename:result.filename,onSave:async output=>{
+        try{await openImageEditor({blob:result.blob,filename:result.filename,initialText:result.suggestedText||'',onSave:async output=>{
          addMessage('assistant','Miniatura editada en tu dispositivo, sin gastar otra generación de IA.',{
           results:[{name:'Miniatura con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
          });
