@@ -25,7 +25,7 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
-let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, baidu:false, aihubmix:false, amd:false };
+let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false };
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
@@ -340,7 +340,7 @@ function renderMessages({forceBottom=false}={}){
     else body.textContent=message.content;
     bubble.append(label,body);
     if(message.role==='assistant'&&message.engine){
-      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face',kilo:'Kilo',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',baidu:'Baidu ERNIE',aihubmix:'AIHubMix',amd:'AMD Token Factory'};
+      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face',kilo:'Kilo',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
       const source=document.createElement('small');source.className='core-message-engine';
       source.textContent='Respondió '+(names[message.engine]||message.engine)+(message.model?' · '+String(message.model).slice(0,60):'')+(message.fallbackFrom?' · Respaldo después de '+(names[message.fallbackFrom]||message.fallbackFrom):'');
       if(message.fallbackReason)source.title=String(message.fallbackReason).slice(0,240);
@@ -995,7 +995,7 @@ async function answerConversation(text,creds,task='conversation'){
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
   const contextMessages=messages.slice(-13,-1).filter(m=>['user','assistant'].includes(m.role)&&String(m.content||'').trim())
    .map(m=>({role:m.role,content:String(m.content).slice(0,1800)}));
-  const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',baidu:'Baidu Qianfan',aihubmix:'AIHubMix',amd:'AMD Token Factory'};
+  const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
   if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
   const providerContext=connected.length
@@ -1225,7 +1225,7 @@ async function requestPlan(userText){
     return;
   }
   const centralStatus=await getCentralProviderStatus();
-  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,baidu:false,aihubmix:false,amd:false};
+  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
@@ -1670,7 +1670,7 @@ export function initPrismaCore(){
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,baidu:false,aihubmix:false,amd:false};
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();
