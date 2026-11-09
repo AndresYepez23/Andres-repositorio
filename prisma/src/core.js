@@ -1432,6 +1432,26 @@ async function sendMessage(){
   catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
   finally{setBusy(false);}
 }
+function renameActiveChat(){
+ if(busy||executionActive)return;
+ const chat=conversations.find(x=>x.id===activeConversationId);if(!chat)return;
+ const title=window.prompt('Nombre de la conversación',chat.title);
+ if(!title?.trim())return;
+ chat.title=title.trim().slice(0,70);chat.titled=true;chat.updated=Date.now();
+ persistChatHistory();renderConversationList();updateChatScreen();
+}
+function deleteActiveChat(){
+ if(busy||executionActive)return;
+ const chat=conversations.find(x=>x.id===activeConversationId);if(!chat)return;
+ if(!window.confirm('¿Eliminar definitivamente esta conversación? Esta acción también la borrará de la nube si activaste la sincronización.'))return;
+ const id=chat.id;
+ conversations=conversations.filter(x=>x.id!==id);
+ if(!conversations.length)conversations=[newChatRecord()];
+ activeConversationId=conversations[0].id;messages=conversations[0].messages.slice();attachments=[];renderAttachments();
+ pendingPlan=null;$('#core-plan')?.classList.add('hidden');
+ persistChatHistory();renderMessages({forceBottom:true});renderConversationList();updateChatScreen();
+ document.dispatchEvent(new CustomEvent('prisma:chat-deleted',{detail:{id}}));
+}
 function exportActiveChat(){
  const chat=conversations.find(x=>x.id===activeConversationId);if(!chat)return;
  const payload={title:chat.title,exportedAt:new Date().toISOString(),messages:messages.map(m=>({role:m.role,content:String(m.content||''),time:m.time}))};
@@ -1449,6 +1469,8 @@ export function initPrismaCore(){
   loadChatHistory();
   renderMessages({forceBottom:true});updateChatScreen();
   document.addEventListener('prisma:core-export-request',exportActiveChat);
+  document.addEventListener('prisma:core-rename-request',renameActiveChat);
+  document.addEventListener('prisma:core-delete-request',deleteActiveChat);
   document.addEventListener('prisma:remote-chats-ready',()=>{if(busy||executionActive)return;loadChatHistory();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();});
   $('#core-history-search')?.addEventListener('input',event=>{conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();renderConversationList();});
   $('#core-history-toggle')?.addEventListener('click',()=>$('#core-workspace')?.classList.toggle('history-open'));
