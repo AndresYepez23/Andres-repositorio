@@ -103,8 +103,24 @@ export function buildSmartLocalFlow(text,files=[],recentTexts=[]){
  const previous=recentTexts.slice(-7).reverse().find(s=>/(?:quita|elimina|redimension|comprim|convierte|audita|transcrib|recorta|miniatura|fotograma|formulario|blanco|ocr|divid|separ|partir|fragment|troce)/.test(normalized(s))&&String(s).length<1500);
  const reference=files.length&&/^(?:aqui|adjunto|este archivo|ya lo cargue|listo|hazlo|procesa este archivo|analiza los archivos)/.test(q)&&previous?previous+'\n'+latest:latest;
  const target=normalized(reference);
- const valid=ids=>ids.every(id=>true);
+ if(files.length>1&&files.every(pdf)&&/(?:une|unir|combinar|juntar|fusionar).{0,45}(?:pdf|documentos?|archivos?)|(?:pdf|documentos?).{0,35}(?:une|unir|combinar|juntar|fusionar)/.test(target))
+  return ready([step('pdf-merge',{},'Unir los PDF en el orden de los archivos adjuntos')],'PDF');
  if(pdf(file)){
+  if(/(?:comprim|optimiza|reduce).{0,40}(?:pdf|documento|peso|tamano)|(?:pdf).{0,30}(?:comprim|optimiza)/.test(target))
+   return ready([step('pdf-compress',{},'Optimizar el PDF sin subir el documento')],'PDF');
+  if(/(?:rotar|rota|gira|girar).{0,38}(?:pdf|paginas?|documento)|(?:pdf|documento).{0,30}(?:rotar|girar|rota)/.test(target)){
+   const degrees=Number(target.match(/\b(90|180|270)\s*(?:grados?|°)?\b/)?.[1]||0);
+   const direction=/\b(izquierda|antihorario)\b/.test(target)?270:/\b(derecha|horario)\b/.test(target)?90:0;
+   const value=degrees||direction;
+   if(!value)return result('¿Cuántos grados quieres rotar el PDF: 90, 180 o 270? Puedes indicar izquierda o derecha.');
+   return ready([step('pdf-rotate',{degrees:value},'Rotar el documento '+value+' grados')],'PDF');
+  }
+  if(/(?:elimina|eliminar|borra|borrar|quita|quitar).{0,35}(?:paginas?|hojas?|folios?)|(?:paginas?|hojas?).{0,28}(?:elimina|borra|quita)/.test(target)){
+   const match=target.match(/(?:paginas?|hojas?|folios?)\s*(?:numeros?\s*)?(\d+(?:\s*(?:-|a|hasta)\s*\d+)?(?:\s*(?:,|y)\s*\d+(?:\s*(?:-|a|hasta)\s*\d+)?)*)/);
+   const pages=match?.[1]?.replace(/\s*(?:a|hasta)\s*/g,'-').replace(/\s+y\s+/g,',')||'';
+   if(!pages)return result('Indica qué páginas quieres eliminar, por ejemplo 2, 5-7.');
+   return ready([step('pdf-remove-pages',{pages},'Eliminar solo las páginas indicadas')],'PDF');
+  }
   // A PDF split is an actual browser-side file operation, not an LLM task.
   // Route it before any remote model planning or quota checks.
   const splitIntent=/(?:divid|separ|partir|fragment|troce)/.test(target);
