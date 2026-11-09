@@ -633,8 +633,9 @@ async function refreshProviderConnectionStatuses(){
         escapeHtml(slot.variable)+'</code><small>'+
         (slot.configured?'Configurada':'Disponible para añadir')+'</small></div>').join('');
       const daily=health.dailyUsage?'<small>Solicitudes de Prisma hoy: '+Number(health.dailyUsage.used||0)+' / '+Number(health.dailyUsage.limit||0)+' · quedan '+Number(health.dailyUsage.remaining||0)+'</small>':'';
-      const pause=health.paused||health.dailyUsage?.remaining===0?'<small>'+escapeHtml(health.reason||'Motor en pausa temporal por su límite diario.')+'</small>':'';
-      target.innerHTML=daily+pause+lines+'<small>Las claves no multiplican la cuota del proyecto o cuenta. Prisma respeta los límites reales del proveedor y usa los demás motores cuando corresponde.</small>';
+      const minute=health.minuteUsage?'<small>Por minuto: '+Number(health.minuteUsage.used||0)+' / '+Number(health.minuteUsage.limit||0)+' · quedan '+Number(health.minuteUsage.remaining||0)+'</small>':'';
+      const pause=health.paused||health.dailyUsage?.remaining===0||health.minuteUsage?.remaining===0?'<small>'+escapeHtml(health.reason||'Motor en pausa temporal por su límite de uso.')+'</small>':'';
+      target.innerHTML=daily+minute+pause+lines+'<small>Las claves no multiplican la cuota del proyecto o cuenta. Prisma respeta los límites reales del proveedor y usa los demás motores cuando corresponde.</small>';
     }
   });
   const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter,kilo:!!central.providers.kilo,requesty:!!central.providers.requesty,sensenova:!!central.providers.sensenova,zai:!!central.providers.zai,baidu:!!central.providers.baidu,aihubmix:!!central.providers.aihubmix,amd:!!central.providers.amd};
@@ -642,7 +643,7 @@ async function refreshProviderConnectionStatuses(){
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
       const health=central.providerHealth?.[provider]||{};
-      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':health.dailyUsage?.remaining===0?'Límite diario interno alcanzado':health.lifetimeUsage?.remaining===0?'Prueba gratuita agotada':health.paused?'Motor en pausa temporal':provider==='kilo'&&isConnected&&!central.configured?.kilo?'Gratis sin clave · acceso anónimo':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
+      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':health.dailyUsage?.remaining===0?'Límite diario interno alcanzado':health.minuteUsage?.remaining===0?'Límite por minuto alcanzado':health.lifetimeUsage?.remaining===0?'Prueba gratuita agotada':health.paused?'Motor en pausa temporal':provider==='kilo'&&isConnected&&!central.configured?.kilo?'Gratis sin clave · acceso anónimo':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
     if(provider==='pollinations-connect'){
