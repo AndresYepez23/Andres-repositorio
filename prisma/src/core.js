@@ -3,6 +3,7 @@ import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
+import { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools, isToolDiscoveryQuestion } from './core-tool-intelligence.js';
 import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
@@ -465,7 +466,34 @@ function toolParamsHint(id){
     'image-bg':'No requiere parámetros; elimina el fondo de una imagen.',
     'image-ocr':'No requiere parámetros; extrae texto de imágenes.',
     'excel-json':'Usa params.sheet y params.format: "json" o "csv".',
-    'docx-pdf':'No requiere parámetros; prepara la vista de impresión.'
+    'docx-pdf':'No requiere parámetros; prepara la vista de impresión.',
+    'image-resize':'Usa width y height en píxeles. Si faltan ambos, pregunta el tamaño, no inventes 1080x1080.',
+    'image-convert':'Usa format: image/png, image/jpeg o image/webp.',
+    'image-flip':'Usa direction: horizontal o vertical.',
+    'image-crop':'Usa widthPct y heightPct; si el recorte no es claro pide confirmación.',
+    'image-adjust':'Usa brightness y contrast en escala porcentual 10-200.',
+    'image-blur':'Usa blur 1-30.',
+    'image-pixelate':'Usa block 4-80; valor predeterminado 16.',
+    'image-watermark':'Usa watermark con el texto real; si falta, pregunta.',
+    'video-speed':'Usa speed entre 0.5 y 2.0.',
+    'video-resize':'Usa resolution: vertical, portrait, square, landscape o hd.',
+    'video-rotate':'Usa direction: cw, ccw o 180.',
+    'video-trim':'Usa start y duration en segundos; si faltan los tiempos, pregunta.',
+    'video-thumbnail':'Usa second en segundos, opcional.',
+    'audio-trim':'Usa start y duration en segundos, no inventes un tramo.',
+    'audio-convert':'Usa format: mp3, wav u ogg.',
+    'json-format':'Usa text con JSON válido.',
+    'text-case':'Usa text y mode: upper, lower, title o sentence.',
+    'text-replace':'Usa text, search y replacement. No inventes valores.',
+    'table-file-convert':'Usa output: csv, json o xlsx y sheet opcional.',
+    'qr':'Usa text con el contenido real. No inventes enlaces.',
+    'barcode':'Usa value y format opcional (CODE128 o EAN13).',
+    'file-inspector':'Requiere archivo, no parámetros.',
+    'hash-file':'Requiere archivo, no parámetros.',
+    'image-metadata':'Requiere imagen, no parámetros.',
+    'image-palette':'Requiere imagen, no parámetros.',
+    'audio-waveform':'Requiere audio, no parámetros.',
+    'audio-normalize':'Requiere audio, no parámetros.'
   };
   return hints[id]||'Usa únicamente parámetros que estén descritos por la herramienta; si no requiere opciones, deja params como {}.';
 }
@@ -477,64 +505,15 @@ function availableCatalog(){
   }));
 }
 function compactPlanningCatalog(userText){
-  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const query=normalize(userText).slice(0,2400);
-  const words=new Set((query.match(/[a-z0-9]{3,}/g)||[]).filter(word=>!['para','con','que','como','este','esta','quiero','hacer','necesito','puedes','tengo','archivo','crear','prisma'].includes(word)));
-  const categoryHints={
-    pdf:/pdf|documento|docx|\bword\b|pagina(?:s)?\s+(?:de|del|en|pdf)\b/i,
-    image:/imagen|foto|miniatura|instagram|fondo|retrato|disen|ilustr|png|jpg|jpeg/i,
-    media:/video|clip|audio|voz|subtitul|musica|sonido|mp3|mp4|transcrib/i,
-    text:/texto|escrit|redact|resumen|palabra|traduc|correg|frase/i,
-    data:/dato|csv|json|excel|estadistic|tabla|analiz|grafica/i,
-    office:/excel|xlsx|hoja de calculo|tabla|oficina/i,
-    ai:/inteligencia|modelo|razona|investiga|analiz|explica|escrib|cancion|letra|compos|musica|musical/i,
-    web:/pagina web|sitio web|landing|html|css|website|web/i,
-    dev:/codigo|program|javascript|python|desarroll|html|css|sql|api/i,
-    creator:/youtube|miniatura|publicacion|social|creativ|disen/i,
-    study:/academ|articul|estudio|investig|cientific|universidad/i,
-    utility:/convert|gener|codigo qr|utilidad|comprim/i,
-    privacy:/privad|cifra|segurid|contrasen/i
-  };
-  const categories=new Set(Object.entries(categoryHints).filter(([,regex])=>regex.test(query)).map(([category])=>category));
-  const fileType=attachments.length?attachments[0].type.toLowerCase():'';
-  const fileName=attachments.length?attachments[0].name.toLowerCase():'';
-  if(fileType.includes('pdf')||fileName.endsWith('.pdf'))categories.add('pdf');
-  if(fileType.startsWith('image/'))categories.add('image');
-  if(fileType.startsWith('audio/')||fileType.startsWith('video/'))categories.add('media');
-  if(/\.(xlsx|xls|csv)$/.test(fileName)){categories.add('data');categories.add('office');}
-  if(/\.(docx|doc)$/.test(fileName)){categories.add('pdf');categories.add('text');}
-  const directIntent=[
-    [/divid|separ.*pagina|partir.*pdf/, 'pdf-split'],
-    [/pdf.*(?:word|docx)|(?:word|docx).*pdf/, 'pdf-to-word'],
-    [/quit.*fondo|elimin.*fondo|fondo.*transparen/, 'image-bg'],
-    [/redimension|cambiar.*tamano/, 'image-resize'],
-    [/comprim.*imagen|optimizar.*imagen/, 'image-compress'],
-    [/miniatura|imagen.*youtube/, 'image-social-kit'],
-    [/texto.*imagen|ocr/, 'image-ocr'],
-    [/analiz.*pdf|resumen.*pdf|extraer.*texto.*pdf/, 'pdf-text'],
-    [/letra.*cancion|cancion.*original|compon|composicion musical|escrib.*cancion|haz.*cancion|haces.*cancion|quiero.*cancion|necesito.*cancion|hazme.*cancion|escribeme.*cancion|crea.*cancion|crear.*cancion|gener.*cancion/, 'music-lyrics'],
-    [/gener.*imagen|crear.*imagen|ilustracion.*ia/, 'image-gen'],
-    [/transcrib.*audio|audio.*texto|voz.*texto/, 'ai-transcribe'],
-    [/texto.*voz|voz sintetica|leer.*texto/, 'ai-voice']
-  ];
-  const preferredToolIds=new Set(directIntent.filter(([pattern])=>pattern.test(query)).map(([,id])=>id));
-  const ranked=availableCatalog().map(tool=>{
-    const name=normalize(tool.name+' '+tool.id),description=normalize(tool.description);
-    let score=categories.has(tool.category)?10:0;
-    for(const word of words){if(name.includes(word))score+=10;else if(description.includes(word))score+=2;}
-    if(tool.file&&attachments.length)score+=2;
-    if(preferredToolIds.has(tool.id))score+=50;
-    if(tool.id==='ai-assistant')score+=6;
-    return {...tool,score};
-  });
-  ranked.sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'es'));
-  const shortlist=ranked.slice(0,28);
-  // The catalog is only a shortlist: preserve the full local registry for plan validation.
-  return shortlist.map(tool=>({
+  // Index ALL available tools before selecting a compact shortlist. Rank by
+  // task, attachment type and related capabilities, not exact keywords alone.
+  // This avoids spending model tokens listing 138 tools per request.
+  return searchCoreTools(userText,attachments,32).map(tool=>({
     id:tool.id,name:tool.name,category:tool.category,mode:tool.mode,
-    description:tool.description.slice(0,100),file:tool.file,
-    ...(tool.file?{accept:tool.accept.slice(0,65)}:{}),
-    hint:tool.paramsHint.slice(0,140)
+    description:tool.description.slice(0,115),file:!!tool.file,
+    ...(tool.file?{accept:String(tool.accept||'').slice(0,65)}:{}),
+    hint:toolParamsHint(tool.id).slice(0,190),
+    ...(tool.related?.length?{related:tool.related.slice(0,5)}:{})
   }));
 }
 function buildPlannerPrompt(userText,optionalCatalog=null){
@@ -547,9 +526,10 @@ function buildPlannerPrompt(userText,optionalCatalog=null){
     'No rechaces por defecto peticiones creativas seguras. Distingue entre escribir una obra original y copiar letras protegidas o imitar exactamente a un artista. Para lo primero, utiliza la herramienta creativa; para lo segundo, ofrece una alternativa original con rasgos musicales generales.',
     'Antes de elegir una herramienta, identifica el resultado final que pide el usuario. Puedes encadenar lectura, transformación, generación y exportación cuando cada paso tenga entradas y salidas compatibles. No selecciones herramientas solo porque comparten palabras con la petición.',
     'Eres el agente coordinador de las herramientas disponibles desde el CHAT, no un menú. Prioriza las herramientas de navegador para operaciones mecánicas; no insertes una llamada ai-assistant para explicar o autorizar cada paso local. Reserva los modelos para razonamiento, escritura, interpretación semántica realmente necesaria o generación. Para seleccionar páginas de un PDF y entregarlas por separado, encadena pdf-extract seguido de pdf-split; para añadir numeración/marca de agua, realiza esos pasos antes de pdf-split. Nunca afirmes haber procesado un archivo sin una herramienta ejecutada.',
+    'Compara herramientas equivalentes y complementarias antes de elegir. Prefiere la ruta con menos pasos y menos consumo; evita conversiones repetidas, OCR innecesario y generación remota si existe herramienta local. Si dos capacidades son similares, elige la que produce el archivo solicitado y considera sus salidas y compatibilidades. Pregunta solo cuando falta un parámetro esencial o hay cambios destructivos, nunca inventes valores. Las herramientas relacionadas se marcan con related.',
     'Puedes generar un plan con 0 pasos si la solicitud es solo una pregunta o no puede ejecutarse con las herramientas mostradas. Explícalo en message sin inventar capacidades.',
     'HISTORIAL RECIENTE:\n'+messages.slice(-5).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,600)).join('\n').slice(-2400),
-    'HERRAMIENTAS RELEVANTES:\n'+JSON.stringify(catalog),
+    'HERRAMIENTAS RELEVANTES (seleccionadas y relacionadas desde un índice de '+coreToolCatalog().length+' herramientas disponibles; otras herramientas pueden estar en el registro completo):\n'+JSON.stringify(catalog),
     'ARCHIVOS:\n'+JSON.stringify(attachments.slice(0,5).map(f=>({name:f.name,type:f.type,size:f.size}))),
     'PETICION:\n'+String(userText).slice(0,10500)
   ].join('\n\n');
@@ -1093,6 +1073,13 @@ async function requestPlan(userText){
     const productAnswer=resolvePrismaProductQuestion(userText,messages.slice(-16,-1),centralProviders);
     if(productAnswer){addMessage('assistant',productAnswer);status('Información de Prisma.','success');return;}
   }
+  // Universal discovery is local and cost-free. The assistant knows the full
+  // ready/beta registry and suggests related tools without provider requests.
+  if(isToolDiscoveryQuestion(userText)){
+    addMessage('assistant',describeCoreTools(userText,attachments));
+    status('Herramientas relacionadas identificadas sin usar IA.','success');
+    return;
+  }
   // Collect the video topic before spending any image generation quota.
   if(await handleImageCreationRequest(userText))return;
   // Text-to-speech is a real media output, never a prose-only model answer.
@@ -1144,6 +1131,25 @@ async function requestPlan(userText){
     const external=guidedSteps.some(({tool})=>!['local','browser'].includes(tool.mode));
     if(external){showPlan(guidedPlan,guidedSteps);status('Este flujo usa un servicio externo; revisa y autoriza.','warning');}
     else{addMessage('assistant',guidedPlan.message);await executePlan();}
+    return;
+  }
+  // More local tools are reachable from chat even without any provider quota:
+  // image privacy/effects, video speed/orientation, audio normalization,
+  // file inspection, hashes and safe text processing.
+  const directLocal=planCoreOfflineAction(userText,attachments,previousUserTexts);
+  if(directLocal){
+    if(directLocal.type!=='ready'){
+      addMessage('assistant',directLocal.message);
+      status('Falta un dato necesario para ejecutar esta herramienta.','info');
+      return;
+    }
+    const directPlan={message:directLocal.message,steps:directLocal.steps,userRequest:userText,
+      needs_clarification:false,combineFinalFiles:!directLocal.steps.some(s=>['image-palette','image-metadata','audio-waveform'].includes(s.tool_id))};
+    const directSteps=validatePlan(directPlan);
+    if(!directSteps.every(({tool})=>['local','browser'].includes(tool.mode)))throw Error('El flujo gratuito incluye una herramienta de consumo externo.');
+    pendingPlan={plan:directPlan,steps:directSteps};
+    addMessage('assistant',directPlan.message);
+    await executePlan();
     return;
   }
   const centralStatus=await getCentralProviderStatus();
