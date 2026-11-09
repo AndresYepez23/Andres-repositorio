@@ -783,15 +783,18 @@ async function generateText(p,cb){
  const outputTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
  const preferred=p.provider||'auto';
  const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
- const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter'};
+ const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',baidu:'Baidu Qianfan',aihubmix:'AIHubMix',amd:'AMD Token Factory'};
  const errors=[],attempted=[];
  let lastLimitError=null;
- const candidates=orderModelsForTask(preferred,task,baseOrder,provider=>
+ const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
    : Boolean(p.centralProviders?.[provider]),
   getRouteMemory()
- ).slice(0,6);
+ );
+ // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
+ const candidates=rankedCandidates.filter(provider=>provider!=='openrouter');
+ if(rankedCandidates.includes('openrouter'))candidates.push('openrouter');
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
@@ -803,7 +806,7 @@ async function generateText(p,cb){
   const remaining=totalDeadline-(Date.now()-startedAt);
   if(remaining<=2500){errors.push('La búsqueda de un motor superó el tiempo total de espera.');break;}
   let requestDeadline=Math.min(individualDeadline,remaining);
-  if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter'].includes(provider))continue;
+  if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter','kilo','requesty','sensenova','zai','baidu','aihubmix','amd'].includes(provider))continue;
   if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
    if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
