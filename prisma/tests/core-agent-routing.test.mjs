@@ -324,5 +324,6 @@ assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42
 const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
 assert.match(statusSource, /dailyUsage: usage/);
 assert.match(statusSource, /dailyAvailable/);
+assert.match(statusSource, /perMinutePerVisitor: 20/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
