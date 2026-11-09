@@ -1,3 +1,4 @@
+import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
 const PDF_LIB='https://esm.sh/pdf-lib@1.17.1';
 const QR='https://esm.sh/qrcode@1.5.4';
 const MAMMOTH='https://esm.sh/mammoth@1.9.1';
@@ -746,20 +747,8 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   sessionStorage.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
  }catch{}
 }
-function orderModelsForTask(preferred,task,baseOrder,available){
- const providers=[...new Set(preferred==='auto'?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])]
-   .filter(name=>available(name));
- if(preferred!=='auto')return providers;
- const now=Date.now(),memory=getRouteMemory();
- // Preserve the task-specific default; cooldown a failing provider but do not
- // keep one recent successful backend at the top for every kind of task.
- return providers.map((name,index)=>{
-  const health=memory[name+':'+task]||{};
-  const recent=now-Number(health.at||0)<15*60000;
-  const cooled=recent&&Number(health.coolingUntil||0)>now;
-  return {name,score:index*1.0+(cooled?10:0)+(recent?Math.min(3,Number(health.failures||0))*1.8:0)
-   +(recent&&Number(health.averageMs||0)>20000?.7:0)};
- }).sort((a,b)=>a.score-b.score).map(x=>x.name);
+function orderModelsForTask(preferred,task,baseOrder,available,health={}){
+ return rankProviders({preferred,task,baseOrder,available,health,now:Date.now()});
 }
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
@@ -786,48 +775,23 @@ async function generateText(p,cb){
   const conversationMessages=[{role:'system',content:system},...history,{role:'user',content:user}];
  const lengths={short:500,medium:1600,long:tier==='smart'?3200:2400};
  const outputTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
- const modelProfiles={
-  pollinations:{fast:'openai/gpt-5.4-nano',balanced:'openai/gpt-5.4-nano',smart:'openai/gpt-5.4-nano'},
-  huggingface:{fast:'openai/gpt-oss-20b:cheapest',balanced:'openai/gpt-oss-120b:cheapest',smart:'deepseek-ai/DeepSeek-R1:cheapest'},
-  groq:{fast:'openai/gpt-oss-20b',balanced:'openai/gpt-oss-20b',smart:'openai/gpt-oss-120b'},
-  cloudflare:{fast:'@cf/google/gemma-4-26b-a4b-it',balanced:'@cf/google/gemma-4-26b-a4b-it',smart:'@cf/meta/llama-3.3-70b-instruct-fp8-fast'},
-  gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'},
-  openrouter:{fast:'openrouter/free',balanced:'openrouter/free',smart:'openrouter/free'}
- };
- const priorities={
-  songwriting:['groq','gemini','pollinations','cloudflare','huggingface','openrouter'],
-  creative:['groq','pollinations','gemini','cloudflare','huggingface','openrouter'],
-  coding:['groq','pollinations','gemini','cloudflare','huggingface','openrouter'],
-  reasoning:['gemini','groq','pollinations','cloudflare','huggingface','openrouter'],
-  summary:['cloudflare','groq','gemini','pollinations','huggingface','openrouter'],
-  quick:['groq','cloudflare','gemini','pollinations','huggingface','openrouter'],
-  general:['groq','cloudflare','gemini','pollinations','huggingface','openrouter'],
-  planner:['groq','cloudflare','gemini','pollinations','huggingface','openrouter'],
-  conversation:['groq','cloudflare','gemini','pollinations','huggingface','openrouter']
- };
  const preferred=p.provider||'auto';
- const baseOrder=priorities[task]||priorities.general;
+ const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter'};
  const errors=[],attempted=[];
  let lastLimitError=null;
  const candidates=orderModelsForTask(preferred,task,baseOrder,provider=>
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
-   : Boolean(p.centralProviders?.[provider])
+   : Boolean(p.centralProviders?.[provider]),
+  getRouteMemory()
  ).slice(0,6);
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
- const modelFor=provider=>{
-  // Planning needs compact structured output; prefer the faster model, not maximum reasoning tokens.
-  const desired=(task==='songwriting'||task==='creative')&&provider==='groq'?'openai/gpt-oss-120b':
-   task==='coding'&&provider==='pollinations'?'qwen/qwen3-coder-30b-a3b-instruct':
-   task==='planner'&&provider==='groq'?modelProfiles.groq.fast:
-   task==='planner'&&provider==='gemini'?modelProfiles.gemini.fast:modelProfiles[provider]?.[tier]||'';
-  const catalog=p.centralModelCatalog?.chat?.[provider]||[];
-  if(!catalog.length)return desired;
-  return catalog.some(item=>item.id===desired)?desired:catalog[0]?.id||desired;
- };
+ const modelFor=provider=>selectTaskModel(
+  provider,task,tier,p.centralModelCatalog?.chat?.[provider]||[]
+ );
  for(let candidateIndex=0;candidateIndex<candidates.length;candidateIndex++){
   const provider=candidates[candidateIndex];
   const remaining=totalDeadline-(Date.now()-startedAt);
