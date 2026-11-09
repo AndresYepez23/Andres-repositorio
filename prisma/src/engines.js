@@ -883,10 +883,10 @@ async function generateText(p,cb){
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
-   // The shared daily cap for the primary free providers must not block the
-   // independent OpenRouter backup. IP anti-abuse limits still apply to both.
+   // Main-provider daily and visitor limits must not block OpenRouter.
+   // OpenRouter has its own capped per-visitor and provider D1 counters.
    if(error?.code==='GLOBAL_LIMIT'||error?.status===429&&/Prisma alcanzó su límite temporal gratuito global/i.test(String(error?.message||''))){
-    if(error?.scope==='total-day'&&p.centralProviders?.openrouter&&provider!=='openrouter'){
+    if(['total-day','ip-day','ip-minute'].includes(error?.scope)&&p.centralProviders?.openrouter&&provider!=='openrouter'){
      const backupIndex=candidates.indexOf('openrouter');
      if(backupIndex>candidateIndex){candidateIndex=backupIndex-1;continue;}
     }

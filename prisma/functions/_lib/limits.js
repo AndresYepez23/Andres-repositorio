@@ -45,10 +45,14 @@ export async function checkLimits(env,request,provider){
  const {minute,day}=windows();
  const openrouterLimits=provider==="openrouter"?await getOpenRouterLimits(env):null;
  const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:(LIMITS[provider]||10);
+ // Distinct per-visitor anti-abuse limits allow the backup to respond
+ // even if this visitor has already used their daily/minute allowance
+ // with Prisma's main providers. Neither allowance is unlimited.
+ const isBackup=provider==="openrouter";
  const scopes=[
-  ["ip-minute:"+key,minute,10,"GLOBAL_LIMIT"],
-  ["ip-day:"+key,day,30,"GLOBAL_LIMIT"],
-  ...(provider==="openrouter"?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
+  [isBackup?"ip-minute:openrouter:"+key:"ip-minute:"+key,minute,isBackup?5:10,isBackup?"PROVIDER_MINUTE_LIMIT":"GLOBAL_LIMIT"],
+  [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?20:30,isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
+  ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
   // OpenRouter is the independent paid/free safety net. It must remain usable
   // when the shared free quotas of the primary Prisma providers are exhausted.
@@ -62,7 +66,7 @@ export async function checkLimits(env,request,provider){
    error:code==="PROVIDER_MINUTE_LIMIT"
     ?"OpenRouter alcanzó su límite de solicitudes por minuto. Espera un momento y vuelve a intentarlo."
     :code==="PROVIDER_LIMIT"
-     ?"OpenRouter alcanzó el límite diario de solicitudes configurado para Prisma."
+     ?(provider==="openrouter"?"OpenRouter alcanzó la cuota diaria de respaldo o el límite de seguridad de este visitante.":"Este proveedor alcanzó su límite diario de solicitudes.")
      :"Prisma alcanzó su límite temporal gratuito global. Las herramientas locales siguen disponibles."};
  };
  const sql=String.raw`INSERT INTO ai_rate_limits(scope,window_start,request_count)
