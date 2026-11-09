@@ -79,19 +79,26 @@
               <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
               <div class="core-composer" id="core-composer">
                 <div class="core-attachments" id="core-attachments"></div>
-                <textarea id="core-input" rows="2" placeholder="Pregunta o describe lo que necesitas…" aria-label="Mensaje para Prisma Core"></textarea>
+                <textarea id="core-input" rows="1" placeholder="Pregunta o describe lo que necesitas…" aria-label="Mensaje para Prisma Core"></textarea>
                 <div class="core-composer-footer">
                   <div class="core-composer-tools"><button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20.8 11.6-8.6 8.6a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.3 9.3a2 2 0 0 1-2.8-2.8l8.6-8.6"/></svg><span>Adjuntar</span></button>
-<input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip"></div>
+<input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip"><details class="core-model-settings">
+                    <summary aria-label="Configurar motor de imágenes" title="Opciones de generación de imágenes">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5" fill="var(--panel)" stroke="currentColor"/><circle cx="15" cy="17" r="2.5" fill="var(--panel)" stroke="currentColor"/></svg>
+                    </summary>
+                    <div class="core-model-panel">
+                      <strong>Generación de imágenes</strong>
+                      <label>Motor de imagen
+                        <select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option><option value="huggingface">Hugging Face · requiere autorización</option><option value="gemini">Gemini Image · pago opcional</option></select>
+                      </label>
+                      <small>El motor automático intenta los respaldos autorizados si falla el principal. Adjunta hasta 8 archivos (100 MB en total).</small>
+                    </div>
+                  </details></div>
                   <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
                 </div>
-                <details class="core-model-settings"><summary>Imagen: motor automático <span aria-hidden="true">⌄</span></summary>
-<label>Modelo de generación visual
-<select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option><option value="huggingface">Hugging Face · requiere autorización</option><option value="gemini">Gemini Image · pago opcional</option></select></label>
-<small>Elegir un motor concreto no garantiza su disponibilidad. La edición de texto de miniaturas es local y gratuita.</small>
-</details>
-<small class="core-composer-note">Hasta 8 archivos · 100 MB. Se procesan localmente cuando es posible; el texto enviado a una IA externa se indica en cada operación.</small>
+
+
               </div>
             </div>
             <aside class="core-side">
