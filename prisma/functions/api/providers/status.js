@@ -147,6 +147,12 @@ export async function onRequestGet({ env }) {
     },
     usage,
     modelCatalog,
+    // Automatic inference only uses verified free text models with a safe route.
+    // NVIDIA trial endpoints stay manual; AIHubMix trial credits are reserved for intentional manual uses.
+    autoEligible: {
+      kilo: Boolean(available.kilo && kiloModels.some(model => !String(model.id||"").toLowerCase().startsWith("nvidia/"))),
+      aihubmix: Boolean(available.aihubmix && env.AIHUBMIX_DAILY_QUOTA_ACTIVE === "1"),
+    },
     features: {
       pollinationsAudio: speechReady,
       pollinationsImages: pollinationsReady,
