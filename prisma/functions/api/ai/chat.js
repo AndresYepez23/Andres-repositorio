@@ -112,7 +112,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "baidu", "aihubmix"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "aihubmix"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
@@ -141,7 +141,6 @@ export async function onRequestPost({ request, env }) {
   }
   if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
   if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
-  if(provider==="baidu"&&env.BAIDU_FREE_QUOTA_CONFIRMED!=="1")return json({error:"Baidu Qianfan está desactivado para evitar consumo facturable. Confirma primero la cuota gratuita de ERNIE-Speed/Lite/Tiny en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.",provider},403);
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
     if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
@@ -387,7 +386,6 @@ export async function onRequestPost({ request, env }) {
     sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
     zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
-    baidu:{url:"https://qianfan.baidubce.com/v2/chat/completions",model:"ernie-speed-128k"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
   };
   if(compatibleProviders[provider]){
