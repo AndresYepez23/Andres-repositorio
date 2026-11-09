@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "Prisma Space",
+  "short_name": "Prisma",
+  "description": "Tu espacio para crear, convertir y trabajar con inteligencia artificial.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "background_color": "#101218",
+  "theme_color": "#101218",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": [
+    "productivity",
+    "utilities",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "/assets/prisma-app-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/prisma-app-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
