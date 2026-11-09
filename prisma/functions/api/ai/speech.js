@@ -28,7 +28,7 @@ export async function onRequestPost({request,env}){
  const hold=await getProviderHold(env,"pollinations-audio");
  if(hold)return error(hold.reason,hold.state==="quota_exhausted"?402:503);
  const limit=await checkLimits(env,request,"pollinations-audio");
- if(limit)return error(limit.error,limit.status);
+ if(limit)return Response.json({error:limit.error,code:limit.code,retryAfter:limit.retryAfter},{status:limit.status,headers:HEADERS});
  let res;
  try{
   res=await fetch("https://gen.pollinations.ai/v1/audio/speech",{
