@@ -1,6 +1,7 @@
 import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js";
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
+import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -84,7 +85,7 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
-  if (provider === "openrouter" && !env.OPENROUTER_API_KEY) {
+  if (provider === "openrouter" && !getCredentialSlots(env,"openrouter").length) {
     return json({ error: "OpenRouter no está configurado. Añade OPENROUTER_API_KEY como secreto de Cloudflare.", provider: "openrouter" }, 503);
   }
 
@@ -122,11 +123,11 @@ export async function onRequestPost({ request, env }) {
     const model = requestedModel || "openrouter/free";
     let response;
     try {
-      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      response = await requestWithCredentialPool(env,"openrouter", credential => fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + env.OPENROUTER_API_KEY,
+          Authorization: "Bearer " + credential,
           "HTTP-Referer": "https://prismaspace.pages.dev",
           "X-Title": "Prisma Space",
         },
@@ -138,9 +139,9 @@ export async function onRequestPost({ request, env }) {
           stream: false,
           usage: { include: true },
         }),
-      });
+      }));
     } catch {
-      await setProviderHold(env, "openrouter", "network_error", "OpenRouter no respondió; Prisma lo pausó brevemente.", 60);
+      if(getCredentialSlots(env,"openrouter").length<=1)await setProviderHold(env, "openrouter", "network_error", "OpenRouter no respondió; Prisma lo pausó brevemente.", 60);
       return json({ error: "No fue posible conectar con OpenRouter.", provider: "openrouter", status: 502, retryAfter: 60 }, 502);
     }
 
@@ -160,7 +161,7 @@ export async function onRequestPost({ request, env }) {
           status === 402 ? "OpenRouter no tiene saldo o la cuenta no puede usar modelos gratuitos." :
           status === 401 || status === 403 ? "OpenRouter rechazó la clave. Revisa OPENROUTER_API_KEY en Cloudflare." :
           "OpenRouter está temporalmente indisponible.";
-        await setProviderHold(env, "openrouter", state, reason, holdSeconds);
+        if(getCredentialSlots(env,"openrouter").length<=1)await setProviderHold(env, "openrouter", state, reason, holdSeconds);
       }
       const message = status === 429 ? "OpenRouter alcanzó su límite temporal." :
         status === 402 ? "OpenRouter no tiene saldo disponible para esta solicitud." :
@@ -176,22 +177,22 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "pollinations") {
-    if (!env.POLLINATIONS_API_KEY) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
+    if (!getCredentialSlots(env,"pollinations").length) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
     const model=requestedModel||"openai/gpt-5.4-nano";
     let response;
     try {
-      response=await fetch("https://gen.pollinations.ai/v1/chat/completions",{
+      response=await requestWithCredentialPool(env,"pollinations", credential=>fetch("https://gen.pollinations.ai/v1/chat/completions",{
         method:"POST",
-        headers:{"Content-Type":"application/json",Authorization:"Bearer "+env.POLLINATIONS_API_KEY},
+        headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential},
         body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.7,max_tokens:clamp(payload.maxOutputTokens,128,2200,800),stream:false})
-      });
+      }));
     } catch {
       return json({error:"No fue posible conectar con Pollinations. Prisma probará otro motor.",provider:"pollinations"},502);
     }
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
-      if(response.status===402)await setProviderHold(env,"pollinations","quota_exhausted","Pollinations no dispone de saldo autorizado. Prisma usará los demás motores.",21600);
-      if(response.status===401||response.status===403)await setProviderHold(env,"pollinations","auth_error","La clave central Pollinations no está autorizada. Revisa el secreto en Cloudflare.",3600);
+      if(response.status===402&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations","quota_exhausted","Pollinations no dispone de saldo autorizado. Prisma usará los demás motores.",21600);
+      if((response.status===401||response.status===403)&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations","auth_error","La clave central Pollinations no está autorizada. Revisa el secreto en Cloudflare.",3600);
       const message=response.status===429?"Pollinations alcanzó su límite temporal.":response.status===402?"Pollinations no dispone de saldo autorizado.":"Pollinations respondió con un error ("+response.status+").";
       return json({error:message,provider:"pollinations",status:response.status},response.status===429?429:response.status===402?402:502);
     }
@@ -201,7 +202,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "huggingface") {
-    if (!env.HF_TOKEN) {
+    if (!getCredentialSlots(env,"huggingface").length) {
       return json({ error: "Hugging Face todavía no está configurado en los secretos de Cloudflare." }, 503);
     }
 
@@ -216,22 +217,22 @@ export async function onRequestPost({ request, env }) {
 
     let response;
     try {
-      response = await fetch("https://router.huggingface.co/v1/chat/completions", {
+      response = await requestWithCredentialPool(env,"huggingface", credential => fetch("https://router.huggingface.co/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + env.HF_TOKEN,
+          "Authorization": "Bearer " + credential,
         },
         body: JSON.stringify(body),
-      });
+      }));
     } catch {
       return json({ error: "No fue posible conectar con Hugging Face. Inténtalo nuevamente." }, 502);
     }
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if(response.status===402)await setProviderHold(env,"huggingface","quota_exhausted","Hugging Face no tiene créditos disponibles (HTTP 402).",21600);
-      if(response.status===401||response.status===403)await setProviderHold(env,"huggingface","auth_error","Revisa el token de Hugging Face y sus permisos de Inference Providers.",3600);
+      if(response.status===402&&getCredentialSlots(env,"huggingface").length<=1)await setProviderHold(env,"huggingface","quota_exhausted","Hugging Face no tiene créditos disponibles (HTTP 402).",21600);
+      if((response.status===401||response.status===403)&&getCredentialSlots(env,"huggingface").length<=1)await setProviderHold(env,"huggingface","auth_error","Revisa el token de Hugging Face y sus permisos de Inference Providers.",3600);
       const providerMessage = String(data.error?.message || data.error || "").slice(0, 240);
       let message = "Hugging Face respondió con un error (" + response.status + ").";
       if (response.status === 401 || response.status === 403) {
@@ -257,7 +258,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "groq") {
-    if (!env.GROQ_API_KEY) return json({error:"Groq aún no tiene GROQ_API_KEY configurado en Cloudflare."},503);
+    if (!getCredentialSlots(env,"groq").length) return json({error:"Groq aún no tiene GROQ_API_KEY configurado en Cloudflare."},503);
     const model=requestedModel||"openai/gpt-oss-20b";
     let response;
     const askGroq=key=>fetch("https://api.groq.com/openai/v1/chat/completions",{
@@ -266,16 +267,9 @@ export async function onRequestPost({ request, env }) {
       body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
     });
     try{
-      response=await askGroq(env.GROQ_API_KEY);
-      // Secondary credentials from Cloudflare are genuine backups; 429 gets one
-      // bounded attempt, then Prisma returns to its normal provider fallback.
-      // Prisma's shared D1 quotas continue to apply to either credential.
-      const groqBackup=String(env.GROQ_API_KEY_2||env.GROQ_API_KEY_BACKUP||'').trim();
-      if(groqBackup&&groqBackup!==env.GROQ_API_KEY&&[401,403,429,500,502,503,504].includes(response.status)){
-        response=await askGroq(groqBackup);
-      }
+      response=await requestWithCredentialPool(env,"groq",askGroq);
     }catch{
-      await setProviderHold(env,"groq","network_error","Groq no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.",60);
+      if(getCredentialSlots(env,"groq").length<=1)await setProviderHold(env,"groq","network_error","Groq no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.",60);
       return json({error:"No fue posible conectar con Groq. Prisma lo pausará brevemente y probará otro motor.",provider:"groq",status:502,retryAfter:60},502);
     }
     const data=await response.json().catch(()=>({}));
@@ -285,7 +279,7 @@ export async function onRequestPost({ request, env }) {
       if(status===429)holdSeconds=Math.max(30,Math.min(300,Number(response.headers.get("retry-after")||90)));
       else if(status===401||status===403)holdSeconds=3600;
       else if([500,502,503,504].includes(status))holdSeconds=60;
-      if(holdSeconds)await setProviderHold(env,"groq",status===429?"rate_limited":status===401||status===403?"auth_error":"provider_unavailable",status===429?"Groq alcanzó un límite temporal; Prisma utilizará otro motor durante la pausa.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq está temporalmente indisponible; Prisma probará otro motor.",holdSeconds);
+      if(holdSeconds&&getCredentialSlots(env,"groq").length<=1)await setProviderHold(env,"groq",status===429?"rate_limited":status===401||status===403?"auth_error":"provider_unavailable",status===429?"Groq alcanzó un límite temporal; Prisma utilizará otro motor durante la pausa.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq está temporalmente indisponible; Prisma probará otro motor.",holdSeconds);
       const message=status===429?"Groq alcanzó un límite temporal. Prisma cambiará automáticamente a otro proveedor.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq respondió con un error ("+status+").";
       return json({error:message,provider:"groq",status,retryAfter:holdSeconds||null},status===429?429:status===400?400:502);
     }
@@ -313,7 +307,7 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  if (!env.GEMINI_API_KEY) {
+  if (!getCredentialSlots(env,"gemini").length) {
     return json({ error: "Gemini todavía no está configurado en los secretos de Cloudflare." }, 503);
   }
 
@@ -335,7 +329,7 @@ export async function onRequestPost({ request, env }) {
     body.systemInstruction = { parts: [{ text: normalized.system.join("\n\n").slice(0, 12000) }] };
   }
 
-  const askGemini = (targetModel,key=env.GEMINI_API_KEY) => fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(targetModel) + ":generateContent", {
+  const askGemini = (targetModel,key) => fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(targetModel) + ":generateContent", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -346,19 +340,12 @@ export async function onRequestPost({ request, env }) {
 
   let response, data, activeModel = model;
   try {
-    response = await askGemini(activeModel);
+    response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
     data = await response.json().catch(() => ({}));
-    // A separate authorized Gemini project may still have capacity when the
-    // primary responds with 429; attempt the secondary at most once.
-    const geminiBackup=String(env.GEMINI_API_KEY_2||env.GEMINI_API_KEY_BACKUP||'').trim();
-    if (geminiBackup && geminiBackup !== env.GEMINI_API_KEY && [401,403,429,500,502,503,504].includes(response.status)) {
-      response = await askGemini(activeModel,geminiBackup);
-      data = await response.json().catch(() => ({}));
-    }
     if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
       // The higher-capability model can be temporarily overloaded; use a lower-cost model.
       activeModel = "gemini-3.5-flash-lite";
-      response = await askGemini(activeModel);
+      response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
       data = await response.json().catch(() => ({}));
     }
   } catch {
