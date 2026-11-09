@@ -982,19 +982,24 @@ function directCoreTask(text){
   if(mentionsSong&&requestsSong)return 'songwriting';
  if(/\b(codigo|programacion|javascript|typescript|python|sql|script|debug|desarrolla una funcion|corrige esta funcion)\b/.test(q))return 'coding';
  if(/\b(youtube|miniatura|instagram|tiktok|publicacion|marketing|anuncio|titulo|descripcion del video)\b/.test(q))return 'creative';
- if(/\b(analiz|investig|compara|explica|razona|solucion|estrategia|plan de|evalua)\b/.test(q))return 'reasoning';
+ if(/\b(resume|resumen|resumir|sintetiza|ideas principales|puntos clave)\b/.test(q))return 'summary';
+ if(/\b(compara|comparacion|comparativa|versus|pros y contras|que conviene|cual conviene|mejor opcion|ventajas y desventajas|analiza|investiga|explica|razona|solucion|estrategia|plan de|evalua|planifica|organiza|prioriza|revisa|revisar|corrige el texto|contradicciones|coherencia)\b/.test(q))return 'reasoning';
  return 'conversation';
 }
 async function answerConversation(text,creds,task='conversation'){
   status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
   const instruction=task==='songwriting'
-   ? 'Escribe una canción enteramente original con título, versos, coro, puente y una propuesta breve de producción; no simules haber generado audio.'
+   ? 'Respeta si se pide una canción nueva o una revisión de una canción anterior. Conserva título, tema y partes no solicitadas al editar. No simules haber generado audio.'
    : task==='creative'?'Entrega la pieza creativa solicitada, lista para copiar o adaptar.'
    : task==='coding'?'Resuelve la solicitud de programación e incluye código. No simules ejecución.'
    : 'Responde de forma natural a la solicitud actual, atendiendo correctamente los turnos anteriores.';
   const taskText=String(text||'');
+  const normalizedTask=taskText.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const toolId=task==='songwriting'?'music-lyrics':
    task==='coding'?'ai-code-helper':
+   task==='reasoning'&&/\b(compara|comparacion|comparativa|versus|pros y contras|que conviene|cual conviene|mejor opcion|ventajas y desventajas)\b/.test(normalizedTask)?'ai-compare-options':
+   task==='reasoning'&&/\b(plan de accion|planifica|planea|organiza|paso a paso|cronograma|hoja de ruta|roadmap|prioriza)\b/.test(normalizedTask)?'ai-action-plan':
+   task==='reasoning'&&/\b(revisa|revisar|revision|corrige|critica|contradicciones|coherencia|mejora este texto)\b/.test(normalizedTask)?'ai-text-review':
    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
   const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,{
