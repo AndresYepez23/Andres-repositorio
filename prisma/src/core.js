@@ -442,7 +442,7 @@ function normalizeCoreIntent(value){
 function isPdfEditIntent(text){
  const q=normalizeCoreIntent(text);
  const pdfContext=/\b(pdf|documento|paginas?|folios?|hojas?|marca de agua|numeracion|enumerar|numerar|foliar)\b/.test(q);
- const editAction=/extraer|extraccion|seleccion|conservar|quedarme|sacar|solo|especific|editar|marcar|marca de agua|numerar|enumerar|numeracion|foliar|renumerar/.test(q);
+ const editAction=/extrae|extraer|extraccion|seleccion|conservar|quedarme|sacar|solo|especific|editar|marcar|marca de agua|numer|enumer|foliar|renumerar/.test(q);
  return pdfContext&&editAction;
 }
 function pdfPagesFromText(text){
@@ -471,8 +471,8 @@ function buildPdfEditPlan(userText){
  }
  if(!isPdfEditIntent(request))return null;
  const q=normalizeCoreIntent(request);
- const select=/\b(solo|unas|algunas|especific|seleccion|conservar|extraer|extraccion|sacar|dame|dejar|recortar)\b/.test(q)&&/\b(paginas?|folios?|hojas?)\b/.test(q);
- const number=/\b(numerar|enumerar|numeracion|enumeracion|renumerar|foliar|numeros de pagina|numero de pagina)\b/.test(q);
+ const select=/(solo|unas|algunas|especific|seleccion|conservar|extrae|extraccion|sacar|dame|dejar|recortar)/.test(q)&&/\b(paginas?|folios?|hojas?)\b/.test(q);
+ const number=/(numer|enumer|foliar|numero de pagina|numeros de pagina)/.test(q);
  const watermark=/marca de agua/.test(q);
  if(!(select||number||watermark))return null;
  const pages=pdfPagesFromText(request);
