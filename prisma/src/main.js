@@ -1205,6 +1205,9 @@ function setupPrismaCoreViewport(){
   const root=document.documentElement;
   const input=document.querySelector('#core-input');
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true;
+  const isIOS=()=>/iPad|iPhone|iPod/i.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  document.body.classList.toggle('is-prisma-ios',isIOS());
   let raf=0,lastUnfocusedHeight=0;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
