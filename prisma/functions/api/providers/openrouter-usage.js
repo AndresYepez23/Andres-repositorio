@@ -35,10 +35,6 @@ export async function onRequestGet({ env }) {
     account: account ? {
       isFreeTier: account.isFreeTier,
       externalFreeDailyLimit: account.isFreeTier ? 50 : 1000,
-      dailySpendUsd: account.dailySpendUsd,
-      spendLimitUsd: account.spendLimitUsd,
-      spendRemainingUsd: account.spendRemainingUsd,
-      spendLimitReset: account.spendLimitReset,
     } : null,
     hold: hold ? {
       state: hold.state,
