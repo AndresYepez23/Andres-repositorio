@@ -38,7 +38,7 @@ function getTarget(text){
 }
 function hasConversionIntent(text){
  const q=norm(text);
- return /(?:convierte|convertir|conversion|conviertelo|conviertela|convirt|transforma|transformar|pasalo|pasala|pasame|pasa|pasar|exporta|exportar|guardalo|guardar|cambiar.*formato|de pdf a|de word a|de imagen a|a formato)/.test(q);
+ return /(?:convierte|convertir|conversion|conviertelo|conviertela|convirt|transforma|transformar|pasalo|pasala|pasame|pasa|pasar|exporta|exportar|guarda|guardalo|guardar|cambiar.*formato|de pdf a|de word a|de imagen a|a formato)/.test(q);
 }
 const step=(id,params={},description='Conversión solicitada')=>({tool_id:id,params,reason:description});
 const warning=(message,type='needs-input')=>({type,message,steps:[]});
