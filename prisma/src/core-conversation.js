@@ -1,9 +1,9 @@
 const fold = value => String(value || '')
   .toLocaleLowerCase('es')
   .normalize('NFD')
-  .replace(/[\\u0300-\\u036f]/g, '')
+  .replace(/[\u0300-\u036f]/g, '')
   .replace(/[¿?¡!.,;:…]/g, ' ')
-  .replace(/\\s+/g, ' ')
+  .replace(/\s+/g, ' ')
   .trim();
 
 const ACKNOWLEDGEMENT_PATTERNS = [
@@ -17,7 +17,7 @@ export function isAcknowledgementMessage(value) {
   const text = fold(value);
   if (!text || text.length > 100) return false;
   // A compliment that also asks for a new action is a real instruction.
-  if (/\\b(?:haz|crea|genera|escribe|compone|compon|dame|prepara|cambia|modifica|agrega|quita|continua|sigue|inventa|produce|otra|nuevo|nueva)\\b/.test(text)) return false;
+  if (/\b(?:haz|crea|genera|escribe|compone|compon|dame|prepara|cambia|modifica|agrega|quita|continua|sigue|inventa|produce|otra|nuevo|nueva)\b/.test(text)) return false;
   return ACKNOWLEDGEMENT_PATTERNS.some(pattern => pattern.test(text));
 }
 
@@ -27,7 +27,7 @@ export function buildAcknowledgementReply(value, previousAssistant = '') {
     return '¡Con gusto! Seguimos cuando quieras.';
   }
   const context = fold(previousAssistant);
-  const songContext = /\\b(?:cancion|letra|verso|coro|alabanza|balada|musica|musical)\\b/.test(context);
+  const songContext = /\b(?:cancion|letra|verso|coro|alabanza|balada|musica|musical)\b/.test(context);
   if (songContext) {
     return '¡Me alegra que te haya gustado la canción! Seguimos trabajando sobre esta misma; no generaré otra a menos que me la pidas.';
   }
