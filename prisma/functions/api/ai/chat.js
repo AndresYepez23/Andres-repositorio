@@ -143,6 +143,9 @@ export async function onRequestPost({ request, env }) {
     const message=provider==="amd"?"AMD no publica ese modelo como gratuito y compatible con texto en este momento.":provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":provider==="aihubmix"?"AIHubMix ya no publica ese modelo como gratuito de texto con peso de cuota 1; actualiza el catálogo.":"Modelo no permitido para el proveedor seleccionado.";
     return json({error:message},400);
   }
+  if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
+  if(provider==="amd"&&!amdModels?.length)return json({error:"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave.",provider},503);
+  if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
     if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
