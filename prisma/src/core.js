@@ -974,7 +974,7 @@ function directCoreTask(text){
  if(/\b(pdf|docx|xlsx|excel|csv|zip|ocr|archivo|subir|descargar|comprimir|convertir formato|rotar paginas|extraer paginas|codigo qr|codigo de barras|quitar fondo|eliminar fondo|redimensionar|transcribir audio|procesar video)\b/.test(q))return null;
  if(!isPrompt&&/(?:gener|crea|crear|haz|hacer|dibuja|editar|produce|producir|renderiza|conviert).{0,55}\b(imagen|foto|ilustracion|miniatura|poster|video|audio|mp3|wav|archivo 3d|modelo 3d)\b/.test(q))return null;
   const mentionsSong=/\b(letra|cancion|compon|composicion musical|estrofa|verso|coro|alabanza|balada)\b/.test(q);
-  const requestsSong=/^(?:por favor )?(?:(?:crea|crear|haz(?:me)?|escribe|compone|compon|genera|prepara|dame|quiero|necesito|inventa|produce|redacta|puedes hacer|me gustaria)\b|(?:(?:una|otra|nueva|otra nueva) )?(?:cancion|letra|alabanza|balada)\b|y si (?:hacemos|creamos|escribimos)\b)/.test(q);
+  const requestsSong=/^(?:por favor )?(?:(?:crea|crear|haz(?:me)?|escribe|compone|compon|genera|prepara|dame|quiero|necesito|inventa|produce|redacta|puedes hacer|me gustaria)\b|(?:(?:una|otra|nueva|otra nueva) )?(?:cancion|letra|alabanza|balada)\b|y si (?:hacemos|creamos|escribimos)\b)/.test(q)||/\b(?:crea|crear|haz|hazme|hazla|escribe|compone|compon|genera|prepara|dame|produce|inventa|redacta|modifica|cambia|ajusta|reescribe)\s+(?:(?:otra|una|nueva)\s+)?(?:cancion|letra|alabanza|balada)?\b/.test(q);
   if(mentionsSong&&requestsSong)return 'songwriting';
  if(/\b(codigo|programacion|javascript|typescript|python|sql|script|debug|desarrolla una funcion|corrige esta funcion)\b/.test(q))return 'coding';
  if(/\b(youtube|miniatura|instagram|tiktok|publicacion|marketing|anuncio|titulo|descripcion del video)\b/.test(q))return 'creative';
