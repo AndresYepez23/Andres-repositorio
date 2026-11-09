@@ -956,6 +956,71 @@ async function imageAdvanced(id,files,p,cb){
  }
  throw Error('Operación de imagen no disponible.');
 }
+async function convertTextFile(files,p,cb){
+ const file=files?.[0];if(!file)throw Error('Adjunta un documento de texto o Word.');
+ const ext=String(file.name||'').split('.').pop().toLowerCase();
+ let text='';
+ if(ext==='docx'){
+  const mammoth=await load(MAMMOTH);
+  const res=await mammoth.extractRawText({arrayBuffer:await bytes(file)});
+  text=String(res.value||'');
+ }else if(['html','htm'].includes(ext)){
+  const html=await file.text();text=new DOMParser().parseFromString(html,'text/html').body.textContent||'';
+ }else if(['txt','md','markdown'].includes(ext)||file.type.startsWith('text/'))text=await file.text();
+ else throw Error('Este conversor solo admite TXT, Markdown, HTML o DOCX.');
+ if(!text.trim())throw Error('El documento no contiene texto legible.');
+ if(text.length>1000000)throw Error('El límite para esta conversión es un millón de caracteres.');
+ const output=String(p.output||'pdf').toLowerCase();
+ const base=file.name.replace(/\\.[^.]+$/,'').slice(0,75)||'prisma-documento';
+ progress(cb,.25,'Preparando el contenido del documento…');
+ if(output==='txt'){
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  return {...download(blob,base+'.txt'),text:text.slice(0,12000),summary:'Texto exportado a TXT. Las imágenes y el formato complejo no se conservan.'};
+ }
+ if(output==='html'){
+  const escape=value=>String(value).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+escape(base)+'</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:850px;margin:45px auto;padding:0 20px;white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body>'+escape(text)+'</body></html>';
+  return {...download(new Blob([html],{type:'text/html;charset=utf-8'}),base+'.html'),summary:'HTML descargable con texto legible. No se ejecuta el código del archivo original.'};
+ }
+ if(output==='docx'){
+  const {Document,Packer,Paragraph,TextRun}=await load('https://esm.sh/docx@9.5.1');
+  const paragraphs=text.split(/\\r?\\n/).slice(0,12000).map(line=>new Paragraph({children:[new TextRun(line||' ')]}));
+  const document=new Document({sections:[{properties:{},children:paragraphs}]});
+  const blob=await Packer.toBlob(document);
+  return {...download(blob,base+'.docx'),summary:'Word editable generado con párrafos de texto. Los estilos del original pueden cambiar.'};
+ }
+ if(output==='pdf'){
+  const {PDFDocument,StandardFonts,rgb}=await load(PDF_LIB);
+  const document=await PDFDocument.create(),font=await document.embedFont(StandardFonts.Helvetica);
+  const width=595.28,height=841.89,margin=48,size=11,lineHeight=16,limit=width-margin*2;
+  const safe=text.replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g,'')
+   .replace(/[\\u2010-\\u2015]/g,'-').replace(/[\\u2018\\u2019]/g,"'").replace(/[\\u201C\\u201D]/g,'"')
+   .replace(/[^\\u000A\\u000D\\u0020-\\u00FF]/g,'?');
+  let page=document.addPage([width,height]),y=height-margin,lineCount=0;
+  const newLine=()=>{y-=lineHeight;if(y<margin){page=document.addPage([width,height]);y=height-margin;}};
+  const draw=line=>{page.drawText(line||' ',{x:margin,y,size,font,color:rgb(.1,.13,.19)});newLine();lineCount++;};
+  for(const original of safe.split(/\\r?\\n/)){
+   let line='';
+   for(const word of original.split(/\\s+/)){
+    const candidate=line?line+' '+word:word;
+    if(font.widthOfTextAtSize(candidate,size)<=limit){line=candidate;continue;}
+    if(line){draw(line);line='';}
+    let chunk='';
+    for(const ch of word){
+     if(font.widthOfTextAtSize(chunk+ch,size)>limit){draw(chunk);chunk='';}
+     chunk+=ch;
+    }
+    line=chunk;
+   }
+   draw(line);
+   if(lineCount>75000)throw Error('El archivo de texto es demasiado largo para exportarlo en este navegador.');
+  }
+  const blob=makeBlob(await document.save(),'application/pdf');
+  progress(cb,1,'PDF generado.');
+  return {...download(blob,base+'.pdf'),summary:document.getPageCount()+' página(s) de texto exportadas a PDF. Formato básico sin ilustraciones ni diseño complejo.'};
+ }
+ throw Error('Formato de salida no compatible. Usa PDF, DOCX, TXT o HTML.');
+}
 async function convertTabularFile(files,p,cb){
  const source=files?.[0];
  if(!source)throw Error('Selecciona un archivo CSV, JSON, XLS o XLSX.');
@@ -1251,6 +1316,7 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(id==='text-file-convert')return convertTextFile(files,p,cb);
  if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
  if(id==='json-schema-validate')return validateJsonSchema(p,cb);
