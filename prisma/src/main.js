@@ -569,12 +569,12 @@ function providerConnectionCard(config){
 function renderProviderConnections(){
   const container=$('#provider-connect-grid');if(!container)return;
   const configs=[
-    {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis de texto',detail:'Motor central de Prisma. Admite hasta seis claves protegidas, con rotación entre credenciales y cuotas compartidas por proyecto.',secretName:'GEMINI_API_KEYS_JSON',shared:true},
-    {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Motor compartido mediante Inference Providers. Admite hasta seis tokens. La cuenta gratuita de Hugging Face incluye crédito mensual limitado; Prisma conserva límites compartidos y no activa recargas automáticas.',secretName:'HF_API_KEYS_JSON',shared:true},
+    {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis de texto',detail:'Motor central de Prisma. Admite hasta seis claves protegidas, con rotación entre credenciales y cuotas compartidas por proyecto.',secretName:'GEMINI_API_KEYS_JSON',usageId:'gemini-image-usage',shared:true},
+    {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Motor compartido mediante Inference Providers. Admite hasta seis tokens. La cuenta gratuita de Hugging Face incluye crédito mensual limitado; Prisma conserva límites compartidos y no activa recargas automáticas.',secretName:'HF_API_KEYS_JSON',usageId:'huggingface-image-usage',shared:true},
     {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Admite hasta seis claves Groq. Prisma distribuye solicitudes entre las claves sanas, pero mantiene los límites internos y la cuota del proyecto compartidos.',secretName:'GROQ_API_KEYS_JSON',shared:true},
     {id:'openrouter',name:'OpenRouter',summary:'Respaldo automático de Prisma Core · OpenRouter Free Router',detail:'Último motor de respaldo de texto: solo se intenta después de que Gemini, Groq, Cloudflare, Pollinations y Hugging Face no puedan responder. Admite hasta seis claves y usa openrouter/free para seleccionar automáticamente un modelo gratuito disponible; no enruta a modelos de pago.',secretName:'OPENROUTER_API_KEYS_JSON',usageId:'openrouter-usage',shared:true},
-    {id:'cloudflare',name:'Cloudflare Workers AI',summary:'Gemma 4, Llama y FLUX.1 Schnell',detail:'Motor directo integrado en Cloudflare. Generación de texto e imágenes con asignación gratuita diaria y límites propios de Prisma.',bindingName:'AI',shared:true},
-    {id:'pollinations',name:'Pollinations central',summary:'Generación multimodal con la cuenta de Prisma',detail:'Admite hasta seis claves centrales. La clave sk_ se guarda como secreto en Cloudflare y consume el saldo de Prisma. Si no hay clave central, los usuarios pueden usar Pollinations Connect con su propio saldo.',secretName:'POLLINATIONS_API_KEYS_JSON',shared:true},
+    {id:'cloudflare',name:'Cloudflare Workers AI',summary:'Gemma 4, Llama y FLUX.1 Schnell',detail:'Motor directo integrado en Cloudflare. Generación de texto e imágenes con asignación gratuita diaria y límites propios de Prisma.',bindingName:'AI',usageId:'cloudflare-image-usage',shared:true},
+    {id:'pollinations',name:'Pollinations central',summary:'Generación multimodal con la cuenta de Prisma',detail:'Admite hasta seis claves centrales. La clave sk_ se guarda como secreto en Cloudflare y consume el saldo de Prisma. Si no hay clave central, los usuarios pueden usar Pollinations Connect con su propio saldo.',secretName:'POLLINATIONS_API_KEYS_JSON',usageId:'pollinations-image-usage',shared:true},
     {id:'pollinations-connect',name:'Pollinations Connect',shared:false},
      {id:'kilo',name:'Kilo AI Gateway',summary:'Catálogo dinámico de modelos gratuitos',detail:'No requiere clave. Prisma consulta el catálogo en vivo y solo permite modelos con precio cero. Límite público de 200 solicitudes/hora por IP; algunos endpoints NVIDIA son solo de prueba y pueden registrar prompts, por eso los endpoints NVIDIA son solo manuales. Los demás modelos de precio cero verificado sí pueden usarse como respaldo automático seguro. KILO_API_KEYS_JSON o hasta seis variables individuales son opcionales.',secretName:'KILO_API_KEYS_JSON (opcional)',shared:true},
      {id:'requesty',name:'Requesty',summary:'13 modelos gratuitos · Nemotron, Gemma, Mistral y Ling',detail:'Plan gratuito oficial: 200 solicitudes/día y 20/minuto por organización, sin tarjeta. Prisma limita su uso compartido a 25 solicitudes/día y 10/minuto, y solo admite los 13 modelos publicados como gratuitos. Admite un máximo de tres claves mediante REQUESTY_API_KEYS_JSON o variables individuales. Secreto base: REQUESTY_API_KEY.',secretName:'REQUESTY_API_KEYS_JSON',shared:true},
@@ -684,8 +684,24 @@ async function refreshProviderConnectionStatuses(){
       renderGroup('Imágenes · requiere activar consumo',catalog.image?.huggingface||[])+
       renderGroup('Audio · requiere activar consumo',catalog.audio?.huggingface||[]);
   }
+  // Image quotas differ from chat quotas; publish only aggregate usage, not
+  // credentials or user-generated content. Avoid retrying exhausted generators.
+  for(const provider of ['cloudflare','pollinations','huggingface','gemini']){
+    const target=$('#'+provider+'-image-usage');
+    if(!target)continue;
+    const quota=central.imageUsage?.[provider]?.daily;
+    const enabled=Boolean(central.features?.[provider+'Images']);
+    const optIn=provider==='gemini'||provider==='huggingface';
+    if(!central.ok||!quota){
+      target.textContent='Cuota de imágenes no verificable. No se usarán motores externos sin autorización.';
+    }else{
+      target.textContent='Imágenes de Prisma hoy: '+Number(quota.used||0)+' / '+Number(quota.limit||0)+
+        ' · quedan '+Number(quota.remaining||0)+
+        (enabled?' · Generación habilitada':optIn?' · Requiere habilitación explícita o cuota disponible':' · No disponible por ahora');
+    }
+  }
   if($('#openrouter-usage'))void refreshOpenRouterUsage();
-  const count=Object.values(connected).filter(Boolean).length;
+  const count=Object.values(central.providers||{}).filter(Boolean).length;
   const summary=$('#connections-summary');
   if(summary){
     const capacity=central.capacity||{};
