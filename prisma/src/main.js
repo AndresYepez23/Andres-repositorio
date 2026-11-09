@@ -1,4 +1,7 @@
 import { initPrismaCore } from './core.js';
+import { setupPrismaAuth } from './prisma-auth.js';
+import { setupPrismaPWA } from './prisma-pwa.js';
+import { setupPrismaVoice } from './prisma-voice.js';
 import { initPrismMotion } from './prism-motion.js';
 import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
@@ -267,21 +270,51 @@ function recordRecentTool(id){
   $('#recent-count').textContent=recentTools.length;renderHomeRecents();
 }
 function closeProfileMenu(){
-  const menu=$('#profile-menu'),toggle=$('#profile-toggle');if(!menu||!toggle)return;
-  menu.classList.add('hidden');toggle.setAttribute('aria-expanded','false');
+  const menu=$('#profile-menu'),toggle=$('#profile-toggle');
+  if(!menu||!toggle)return;
+  menu.classList.add('hidden');
+  $('#profile-backdrop')?.classList.add('hidden');
+  toggle.setAttribute('aria-expanded','false');
 }
 function setupProfileMenu(){
   const toggle=$('#profile-toggle'),menu=$('#profile-menu');
-  toggle.addEventListener('click',event=>{event.stopPropagation();const open=menu.classList.toggle('hidden')===false;toggle.setAttribute('aria-expanded',String(open));});
-  menu.addEventListener('click',event=>event.stopPropagation());document.addEventListener('click',closeProfileMenu);
+  const backdrop=document.createElement('button');
+  backdrop.type='button';backdrop.id='profile-backdrop';backdrop.className='profile-backdrop hidden';backdrop.setAttribute('aria-label','Cerrar perfil');
+  document.body.append(backdrop);
+  backdrop.addEventListener('click',closeProfileMenu);
+  const toggleMenu=event=>{
+    event?.stopPropagation();
+    const open=menu.classList.contains('hidden');
+    menu.classList.toggle('hidden',!open);
+    backdrop.classList.toggle('hidden',!open);
+    toggle.setAttribute('aria-expanded',String(open));
+    closeSidebar();
+  };
+  toggle.addEventListener('click',toggleMenu);
+  $('#sidebar-account-trigger')?.addEventListener('click',toggleMenu);
+  menu.addEventListener('click',event=>event.stopPropagation());
+  document.addEventListener('prisma:close-profile',closeProfileMenu);
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeProfileMenu();});
+  $('#profile-theme-toggle')?.addEventListener('click',()=>{
+    $('#theme-toggle').click();
+    $('#profile-theme-label').textContent=document.documentElement.dataset.theme==='dark'?'Oscuro':'Claro';
+  });
+  $('#profile-theme-label').textContent=document.documentElement.dataset.theme==='dark'?'Oscuro':'Claro';
+  $('#profile-help-link')?.addEventListener('click',()=>{
+    closeProfileMenu();
+    toast('Prisma funciona sin registro. La ayuda de herramientas y conexiones está en Laboratorio IA.','info');
+  });
   $('#clear-local-data').addEventListener('click',()=>{
-    if(!window.confirm('Se borrarán favoritos, historial, tema y la App Key guardada en este navegador. ¿Continuar?'))return;
+    if(!window.confirm('Se borrarán los favoritos, chats de invitado, historial y preferencias de este navegador. Las conversaciones de una cuenta guardadas en la nube no se eliminan. ¿Continuar?'))return;
     favorites.clear();recentTools=[];
-    ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id'].forEach(key=>localStorage.removeItem(key));
+    ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
     ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
     document.documentElement.dataset.theme='dark';$('#theme-toggle').innerHTML=icon('sun');
+    $('#profile-theme-label').textContent='Oscuro';
     const keyInput=$('#polli-app-key');if(keyInput)keyInput.value='';
-    refreshPollinationsStatus();closeProfileMenu();render();toast('Se borraron los datos locales de este navegador.','success');
+    refreshPollinationsStatus();closeProfileMenu();render();
+    document.dispatchEvent(new Event('prisma:clear-guest-history'));
+    toast('Se borraron tus datos locales de invitado.','success');
   });
 }
 function setupHomeDashboard(){
@@ -1220,6 +1253,8 @@ safeStartup('interfaz',render);
 safeStartup('interacción visual',setupHeroInteraction);
 safeStartup('prisma 3D',initPrismMotion);
 safeStartup('menú de perfil',setupProfileMenu);
+safeStartup('acceso opcional',setupPrismaAuth);
+safeStartup('instalación PWA',setupPrismaPWA);
 safeStartup('panel principal',setupHomeDashboard);
 safeStartup('búsqueda móvil',setupMobileSearch);
 safeStartup('conexiones',setupPollinationsSettings);
@@ -1252,8 +1287,16 @@ $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herra
 
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
 safeStartup('Prisma Core',initPrismaCore);
+safeStartup('voz Prisma Core',setupPrismaVoice);
 document.addEventListener('keydown',event=>{
-  if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
+  if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){
+    event.preventDefault();
+    if(activeView==='core'){
+      $('#sidebar').classList.add('open');
+      $('#sidebar-backdrop')?.classList.add('open');
+      $('#core-history-search')?.focus();
+    }else $('#global-search').focus();
+  }
   if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar').classList.contains('open'))closeSidebar();}
   if(event.key==='Tab'&&!$('#tool-modal').classList.contains('hidden')){
     const focusable=Array.from($('#tool-modal').querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href]')).filter(element=>!element.classList.contains('hidden')&&element.getAttribute('aria-hidden')!=='true'&&element.offsetParent!==null);
