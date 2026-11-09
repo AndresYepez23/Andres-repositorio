@@ -924,7 +924,19 @@ function createExecutionResults(executed,partial){
       const label=document.createElement('span');label.textContent=result.filename||'Archivo generado';
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
       button.addEventListener('click',()=>{const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';a.click();});
-      row.append(label,button);card.append(row);
+      row.append(label,button);
+      if(result.blob.size<=200*1024*1024&&!/\\.zip$/i.test(result.filename||'')){
+        const reuse=document.createElement('button');reuse.type='button';reuse.className='mini-button';
+        reuse.textContent='Usar en otra tarea';
+        reuse.title='Seleccionar el resultado para convertirlo o editarlo de nuevo dentro de Prisma Core';
+        reuse.addEventListener('click',()=>{
+          attachments=[new File([result.blob],result.filename||'prisma-resultado',{type:result.blob.type||'application/octet-stream'})];
+          renderAttachments();$('#core-input')?.focus();
+          status('Resultado seleccionado. Escribe qué deseas hacer ahora con este archivo.','success');
+        });
+        row.append(reuse);
+      }
+      card.append(row);
     }else if(result.hasFile){
       const note=document.createElement('p');note.className='core-result-expired';note.textContent='Este archivo se generó en una sesión anterior y ya no está disponible para descargar. Puedes volver a ejecutar la tarea para obtenerlo.';card.append(note);
     }
