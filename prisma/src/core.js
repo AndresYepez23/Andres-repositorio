@@ -1467,7 +1467,19 @@ export function initPrismaCore(){
   });
   $('#core-cancel').addEventListener('click',()=>{if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
   $('#core-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}});
-  $('#core-input').addEventListener('input',event=>{event.target.style.height='auto';event.target.style.height=Math.min(event.target.scrollHeight,160)+'px';});
+  $('#core-input').addEventListener('input',event=>{
+    const input=event.target;
+    input.style.height='44px';
+    input.style.height=Math.min(110,Math.max(44,input.scrollHeight))+'px';
+  });
+  // Motor de imágenes: desplegable discreto que se cierra fuera o con Escape.
+  const imageSettings=$('.core-model-settings');
+  document.addEventListener('pointerdown',event=>{
+    if(imageSettings?.open&&!imageSettings.contains(event.target))imageSettings.open=false;
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&imageSettings?.open)imageSettings.open=false;
+  });
   $('#core-file-button').addEventListener('click',()=>$('#core-file-input').click());
   $('#core-file-input').addEventListener('change',event=>{
     const incoming=[...event.target.files];const total=attachments.reduce((sum,file)=>sum+file.size,0)+incoming.reduce((sum,file)=>sum+file.size,0);
