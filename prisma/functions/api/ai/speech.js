@@ -1,5 +1,6 @@
 import {checkLimits} from "../../_lib/limits.js";
 import {getProviderHold,setProviderHold} from "../../_lib/provider-health.js";
+import {getCredentialSlots,requestWithCredentialPool} from "../../_lib/credential-pool.js";
 
 // Only two shared syntheses per day, with a bounded amount of text per call.
 // All API secrets stay on Cloudflare and the account budget remains unchanged.
@@ -24,24 +25,24 @@ export async function onRequestPost({request,env}){
  const voice=String(payload?.voice||"nova");
  const format=String(payload?.format||"mp3");
  if(!MODELS.has(model)||!VOICES.has(voice)||!FORMATS.has(format))return error("Modelo, voz o formato no autorizado.",400);
- if(!env.POLLINATIONS_API_KEY)return error("No hay una conexión central de voz activa. Puedes conectar tu cuenta de Pollinations en Laboratorio IA.",503);
+ if(!getCredentialSlots(env,"pollinations").length)return error("No hay una conexión central de voz activa. Puedes conectar tu cuenta de Pollinations en Laboratorio IA.",503);
  const hold=await getProviderHold(env,"pollinations-audio");
  if(hold)return error(hold.reason,hold.state==="quota_exhausted"?402:503);
  const limit=await checkLimits(env,request,"pollinations-audio");
  if(limit)return Response.json({error:limit.error,code:limit.code,retryAfter:limit.retryAfter},{status:limit.status,headers:HEADERS});
  let res;
  try{
-  res=await fetch("https://gen.pollinations.ai/v1/audio/speech",{
+  res=await requestWithCredentialPool(env,"pollinations",credential=>fetch("https://gen.pollinations.ai/v1/audio/speech",{
    method:"POST",
-   headers:{"Authorization":"Bearer "+env.POLLINATIONS_API_KEY,"Content-Type":"application/json","Accept":"audio/*"},
+   headers:{"Authorization":"Bearer "+credential,"Content-Type":"application/json","Accept":"audio/*"},
    body:JSON.stringify({model,input,voice,response_format:format}),
    signal:AbortSignal.timeout(45000)
-  });
+  }));
  }catch{return error("El motor de voz no respondió. Comprueba tu conexión o utiliza otro motor disponible.",502);}
  if(!res.ok){
-  if(res.status===402)await setProviderHold(env,"pollinations-audio","quota_exhausted","Pollinations no tiene saldo autorizado para generar voz.",3600);
-  if([401,403].includes(res.status))await setProviderHold(env,"pollinations-audio","auth_error","La clave central no dispone de permiso de audio.",3600);
-  if(res.status===429)await setProviderHold(env,"pollinations-audio","rate_limited","El motor de voz alcanzó su límite temporal.",60);
+  if(res.status===402&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations-audio","quota_exhausted","Pollinations no tiene saldo autorizado para generar voz.",3600);
+  if([401,403].includes(res.status)&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations-audio","auth_error","La clave central no dispone de permiso de audio.",3600);
+  if(res.status===429&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations-audio","rate_limited","El motor de voz alcanzó su límite temporal.",60);
   const message=res.status===402?"No hay saldo de Pollinations autorizado para esta voz. No se harán recargas automáticas.":
    [401,403].includes(res.status)?"La clave central no tiene permiso para generar audio.":
    res.status===429?"El motor de voz alcanzó su límite temporal.":"El proveedor de voz respondió con un error ("+res.status+").";
