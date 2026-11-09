@@ -100,11 +100,27 @@ function audioTasks(text){
 }
 export function buildSmartLocalFlow(text,files=[],recentTexts=[]){
  const latest=String(text||''),q=normalized(latest),file=files[0];
- const previous=recentTexts.slice(-7).reverse().find(s=>/(?:quita|elimina|redimension|comprim|convierte|audita|transcrib|recorta|miniatura|fotograma|formulario|blanco|ocr)/.test(normalized(s))&&String(s).length<1500);
+ const previous=recentTexts.slice(-7).reverse().find(s=>/(?:quita|elimina|redimension|comprim|convierte|audita|transcrib|recorta|miniatura|fotograma|formulario|blanco|ocr|divid|separ|partir|fragment|troce)/.test(normalized(s))&&String(s).length<1500);
  const reference=files.length&&/^(?:aqui|adjunto|este archivo|ya lo cargue|listo|hazlo|procesa este archivo|analiza los archivos)/.test(q)&&previous?previous+'\n'+latest:latest;
  const target=normalized(reference);
  const valid=ids=>ids.every(id=>true);
  if(pdf(file)){
+  // A PDF split is an actual browser-side file operation, not an LLM task.
+  // Route it before any remote model planning or quota checks.
+  const splitIntent=/(?:divid|separ|partir|fragment|troce)/.test(target);
+  if(splitIntent&&!/(?:separ|extrae|extraer).{0,30}(?:texto|audio|imagenes?)/.test(target)){
+   if(/(?:por|segun)\s+(?:capitulos|secciones|temas)/.test(target))
+    return result('Para dividir por capítulos o secciones, indícame las páginas donde empieza cada parte. No enviaré el documento a una IA.');
+   const match=target.match(/\b(?:en|entre)\s+(dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d{1,2})\s+(?:partes|archivos|pdfs?)\b/);
+   const words={dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10};
+   const parts=match?(words[match[1]]||Number(match[1])):0;
+   if(parts===1)return result('Para dividir el PDF necesito al menos dos partes; también puedo entregar cada página por separado.');
+   if(parts>20)return result('Por seguridad, puedes dividir el PDF en un máximo de 20 partes o separar cada página.');
+   if(!parts&&/\b(?:en|entre)\s+(?:varias\s+)?partes\b/.test(target))
+    return result('¿Quieres un PDF por página o dividirlo en un número concreto de partes? Por ejemplo, «en 2 partes».');
+   return result(parts?'Dividiré el PDF en '+parts+' partes consecutivas de tamaño similar, reunidas en un ZIP.':'Separaré todas las páginas del PDF en archivos individuales dentro de un ZIP.',
+    [step('pdf-split',parts?{parts}:{},parts?'Dividir el PDF en '+parts+' partes':'Separar cada página del PDF')]);
+  }
   if(/(?:inspeccion|revisa|lista|muestra|consulta).{0,36}(?:campo|formulario)/.test(target))return ready([step('pdf-form-fields',{},'Inspeccionar los campos interactivos')],'PDF');
   if(/(?:aplana|aplanar|fija|fijar).{0,35}(?:formulario|pdf|campos)/.test(target))return ready([step('pdf-form-flatten',{},'Aplanar el formulario')],'PDF');
   if(/(?:insert|anade|agrega|pon).{0,30}(?:pagina|hoja).{0,20}(?:blanc|vacia)/.test(target)){
@@ -129,6 +145,8 @@ export function buildSmartLocalFlow(text,files=[],recentTexts=[]){
  if(csv(file)&&/(?:auditor|analiz|perfil|columnas|nulos|vacios|duplicad|calidad de datos|estadistic)/.test(target))
   return ready([step('csv-profile-local',{delimiter:'auto'},'Analizar filas, columnas y duplicados')],'CSV');
  if(!file){
+  if(/(?:divid|separ|partir).{0,55}(?:pdf|archivo|documento|paginas?|hojas?)/.test(target))
+   return result('Puedo dividir un PDF sin consumir ninguna API. Adjunta el archivo y, si prefieres varias partes en vez de una por página, indica cuántas.');
   if(/(?:clasificar|reconocer|identificar).{0,35}(?:imagen|foto|objeto)/.test(target))
    return result('Puedo reconocer objetos con ViT ONNX directamente en tu dispositivo. Adjunta una imagen para descargar y ejecutar el modelo local.');
   if(/(?:transcrib|audio a texto|voz a texto)/.test(target))
