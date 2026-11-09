@@ -4,6 +4,7 @@ import { checkLimits } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
 import { getAmdFreeModels } from "../../_lib/amd-models.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
+import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -130,13 +131,16 @@ export async function onRequestPost({ request, env }) {
   const requestedModel = String(payload.model || "");
   const amdModels = provider === "amd" ? await getAmdFreeModels(env) : null;
   const kiloModels = provider === "kilo" ? await getKiloFreeModels(env) : null;
+  const aihubmixModels = provider === "aihubmix" ? await getAihubmixFreeModels(env) : null;
   const requestedModelAllowed = provider === "amd"
     ? Boolean(requestedModel && amdModels.some(model => model.id === requestedModel))
     : provider === "kilo"
       ? Boolean(requestedModel && kiloModels.some(model => model.id === requestedModel))
-      : !requestedModel || allowedModel(provider, "chat", requestedModel);
+      : provider === "aihubmix"
+        ? Boolean(requestedModel && aihubmixModels.some(model => model.id === requestedModel))
+        : !requestedModel || allowedModel(provider, "chat", requestedModel);
   if (requestedModel && !requestedModelAllowed) {
-    const message=provider==="amd"?"AMD no publica ese modelo como gratuito y compatible con texto en este momento.":provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":"Modelo no permitido para el proveedor seleccionado.";
+    const message=provider==="amd"?"AMD no publica ese modelo como gratuito y compatible con texto en este momento.":provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":provider==="aihubmix"?"AIHubMix ya no publica ese modelo como gratuito de texto con peso de cuota 1; actualiza el catálogo.":"Modelo no permitido para el proveedor seleccionado.";
     return json({error:message},400);
   }
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
@@ -380,15 +384,18 @@ export async function onRequestPost({ request, env }) {
   const compatibleProviders={
     sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
     zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
-    requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"nemotron-3.5-lightning-30b-a3b"},
+    requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
     baidu:{url:"https://qianfan.baidubce.com/v2/chat/completions",model:"ernie-speed-128k"},
-    aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:"coding-glm-5.3-free"},
+    aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
     amd:{url:"https://developer.amd.com.cn/radeon/api/v1/chat/completions",model:null},
   };
   if(compatibleProviders[provider]){
     const config=compatibleProviders[provider];
-    const model=requestedModel||(provider==="amd"?amdModels?.[0]?.id:config.model);
-    if(!model)return json({error:"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave. Revisa la cuenta y su aprobación regional.",provider},503);
+    const model=requestedModel||(provider==="amd"?amdModels?.[0]?.id:provider==="aihubmix"?(aihubmixModels?.find(item=>item.id==="coding-glm-5.3-free")?.id||aihubmixModels?.[0]?.id):config.model);
+    if(!model){
+      const message=provider==="amd"?"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave. Revisa la cuenta y su aprobación regional.":"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.";
+      return json({error:message,provider},503);
+    }
     const extraHeaders=provider==="requesty"?{"HTTP-Referer":"https://prismaspace.pages.dev","X-Title":"Prisma Space"}:{};
     return callOpenAICompatibleProvider(env,provider,config.url,model,normalized.openaiMessages,payload,extraHeaders);
   }
