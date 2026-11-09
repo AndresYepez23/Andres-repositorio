@@ -1586,7 +1586,7 @@ export function initPrismaCore(){
   const mainSidebarSlot=$('#core-sidebar-conversations');
   const sidebarSearchSlot=$('#sidebar-search-slot');
   const sidebarNewChatSlot=$('#sidebar-new-chat-slot');
-  if(integratedHistory&&mainSidebarSlot)mainSidebarSlot.append(integratedHistory);
+  if(integratedHistory&&mainSidebarSlot)mainSidebarSlot.replaceChildren(integratedHistory);
   // The chat search and new-chat action live in the persistent sidebar shell,
   // not inside the Core-only history list. They remain available on every view.
   const chatSearch=$('#core-history-search');
