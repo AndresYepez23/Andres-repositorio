@@ -536,11 +536,12 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     const usage=config.usageId?'<div class="provider-connection-detail" id="'+config.usageId+'">Consultando consumo y límites…</div>':'';
-    return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div>'+usage+'</article>';
+    const slots=config.secretName?'<details class="provider-credential-details"><summary data-credential-summary="'+config.id+'">Consultando espacios de credenciales…</summary><div data-credential-slots="'+config.id+'" class="provider-connection-detail">Las credenciales se administran únicamente en Cloudflare.</div></details>':'<p class="provider-connection-detail">Workers AI utiliza un binding de Cloudflare, no cinco claves API.</p>';
+    return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div>'+slots+usage+'</article>';
   }
   const connected=!!getPollinationsToken();
   const shared=!!centralConnectionState.providers.pollinations;
@@ -611,7 +612,20 @@ async function refreshOpenRouterUsage(){
 }
 async function refreshProviderConnectionStatuses(){
   const central=await getCentralProviderStatus();
-  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured});
+  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured,credentialSlots:central.credentialSlots||{}});
+  // Safe public metadata: only variable names and occupied slot positions.
+  Object.entries(central.credentialSlots||{}).forEach(([provider,info])=>{
+    const summary=$('[data-credential-summary="'+provider+'"]');
+    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / 5 · Ver espacios seguros';
+    const target=$('[data-credential-slots="'+provider+'"]');
+    if(target&&Array.isArray(info.slots)){
+      const lines=info.slots.map(slot=>
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:5px 0"><code>'+
+        escapeHtml(slot.variable)+'</code><small>'+
+        (slot.configured?'Configurada':'Disponible para añadir')+'</small></div>').join('');
+      target.innerHTML=lines+'<small>Agrega las nuevas claves únicamente en los secretos de producción de Cloudflare. Las cuotas y los límites internos de Prisma siguen aplicándose a todos los espacios.</small>';
+    }
+  });
   const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
