@@ -51,6 +51,8 @@ const ALIASES = {
   'word-count':['cuantas palabras','cuenta palabras'],
   'text-dedupe-words-local':['repeticion de palabras','palabras repetidas'],
   'text-summary-local':['resumen gratis','resumen extractivo','resume sin ia'],
+  'json-compare-local':['compara dos json','diferencias entre json','cambios de json'],
+  'citation-ids-local':['extraer doi','identificar pmid','referencias arxiv'],
   'json-format':['embellece json','ordena json'],
   'json-minify':['minifica json','comprime json'],
   'json-schema-validate':['validar esquema json','verificar schema'],
@@ -65,6 +67,9 @@ const ALIASES = {
   'ai-youtube-kit':['titulo youtube','guion para shorts','descripcion de video','hashtags youtube'],
   'music-lyrics':['escribe cancion','componer alabanza','letra original'],
   'ai-voice':['texto a voz','lee en voz alta','genera narracion'],
+  'ai-compare-options':['comparar alternativas','pros y contras','cual conviene'],
+  'ai-action-plan':['plan de accion','paso a paso','hoja de ruta'],
+  'ai-text-review':['revisar texto','corrige mi borrador','revision critica'],
   'ai-study-notes':['tarjetas de estudio','guia de estudio','preguntas tipo examen'],
   'qr-vcard':['qr de contacto','tarjeta de contacto qr'],
   'qr-scan':['leer qr','escanear codigo qr','escanea qr','escanea el qr','lee el qr','escanear qr'],
@@ -82,11 +87,11 @@ const RELATED = [
  ['video-trim','video-speed','video-resize','video-rotate','video-mute','video-thumbnail','video-gif','video-audio'],
  ['audio-trim','audio-convert','audio-normalize','audio-waveform','ai-transcribe','ai-voice'],
  ['table-file-convert','excel-json','json-xlsx','csv-profile-local','csv-stats','csv-json','json-csv','csv-to-tsv-local','tsv-to-csv-local'],
- ['json-format','json-minify','json-flatten','json-yaml','json-schema','json-schema-validate','json-to-xml-local','xml-to-json-local'],
+ ['json-format','json-minify','json-flatten','json-yaml','json-schema','json-schema-validate','json-to-xml-local','xml-to-json-local','json-compare-local'],
  ['word-count','word-frequency','text-analyzer-local','text-summary-local','reading-time-local','text-extract-emails','text-extract-urls','clean-text','text-sort','dedupe-lines'],
  ['html-to-text','html-format','html-to-markdown-local','css-format','js-format','sql-format','xml-format','css-gradient'],
- ['image-gen','image-social-kit','ai-youtube-kit','ai-prompt-lab','music-lyrics','ai-assistant'],
- ['citation-generator','flashcards-export','ai-study-notes','text-summary-local'],
+ ['image-gen','image-social-kit','ai-youtube-kit','ai-prompt-lab','music-lyrics','ai-assistant','ai-compare-options','ai-action-plan','ai-text-review'],
+ ['citation-generator','flashcards-export','ai-study-notes','citation-ids-local','text-summary-local'],
  ['qr','qr-vcard','barcode','qr-scan'],
  ['hash-file','file-inspector','image-metadata','pdf-metadata','jwt-decode']
 ];
@@ -276,12 +281,17 @@ export function planCoreOfflineAction(query,files=[],history=[]){
  }
  // No-file commands must carry a real value. Never send the user's instruction
  // itself to a text transformation as if it were the supplied content.
+ // Structural comparison requires two explicit JSON blocks, not inferred or guessed inputs.
+ const jsonBlocks=[...String(query).matchAll(/```(?:json)?\s*\n([\s\S]*?)\n```/gi)].map(match=>match[1].trim());
+ if(/\b(?:compara|comparar|diferencias)\b/.test(q)&&/\bjson\b/.test(q)&&jsonBlocks.length===2)
+  return ok([step('json-compare-local',{textA:jsonBlocks[0],textB:jsonBlocks[1]},'Comparar estructura y cambios entre los JSON')]);
  const code=String(query).match(/```(?:[a-z]+)?\s*\n([\s\S]*?)\n```/i)?.[1]||'';
- const labelled=String(query).match(/(?:texto|contenido|datos|lista)\s*[:：]\s*([\s\S]{3,})$/i)?.[1]||'';
+ const labelled=String(query).match(/(?:texto|contenido|datos(?:\s+personales)?|lista)\s*[:：]\s*([\s\S]{3,})$/i)?.[1]||'';
  const quoted=String(query).match(/[“«"]([^”»"]{4,})[”»"]/)?.[1]||'';
  const payload=(code||labelled||quoted).trim();
  if(payload){
   const actions=[
+    [/(?:extrae|saca|identifica|busca).{0,25}(?:doi|pmid|arxiv)/,'citation-ids-local',{}],
    [/(?:ocult|anonimiz|censur|enmascar).{0,35}(?:datos sensibles|claves|correos|telefonos|datos personales)|(?:borra|elimina).{0,24}(?:claves api|datos personales)/,'text-redact-sensitive',{}],
    [/(?:crea|generar|prepara|convertir|convierte).{0,36}(?:subtitulos|archivo srt|srt)/,'subtitle-srt-local',{secondsPerCue:4}],
    [/cuenta.{0,12}(?:palabras|caracteres)/,'word-count',{}],
