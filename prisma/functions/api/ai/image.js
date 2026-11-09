@@ -17,9 +17,10 @@ export async function onRequestPost({request,env}){
  const prompt=String(payload.prompt||"").trim();
  const provider=String(payload.provider||"cloudflare");
  if(prompt.length<8||prompt.length>1800)return errorResponse("Describe la imagen en 8 a 1800 caracteres.",400);
- if(!["cloudflare","huggingface"].includes(provider))return errorResponse("Motor de imagen no permitido.",400);
- const model=String(payload.model|| (provider==="cloudflare"?"@cf/black-forest-labs/flux-1-schnell":"stabilityai/stable-diffusion-3-medium-diffusers"));
+ if(!["cloudflare","huggingface","pollinations"].includes(provider))return errorResponse("Motor de imagen no permitido.",400);
+ const model=String(payload.model|| (provider==="cloudflare"?"@cf/black-forest-labs/flux-1-schnell":provider==="pollinations"?"black-forest-labs/flux.1-schnell":"stabilityai/stable-diffusion-3-medium-diffusers"));
  if(!allowedModel(provider,"image",model))return errorResponse("Modelo de imagen no disponible en Prisma.",400);
+ if(provider==="pollinations"&&!env.POLLINATIONS_API_KEY)return errorResponse("Pollinations compartido aún no está habilitado. Configura POLLINATIONS_API_KEY como secreto de Cloudflare.",503);
  if(provider==="cloudflare"&&!env.AI?.run)return errorResponse("Workers AI no está conectado en Cloudflare.",503);
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!env.HF_TOKEN))
   return errorResponse("Las imágenes de Hugging Face requieren activar explícitamente HF_MEDIA_ENABLED=1; no consumiremos tus créditos sin autorización.",503);
@@ -35,6 +36,29 @@ export async function onRequestPost({request,env}){
   }catch(error){
    console.error("Prisma image Workers AI",String(error?.message||error).slice(0,120));
    return errorResponse("No fue posible generar la imagen en Workers AI. Puede haberse agotado la cuota gratuita diaria.",502);
+  }
+ }
+ if(provider==="pollinations"){
+  try{
+   const imageUrl=new URL("https://gen.pollinations.ai/image/"+encodeURIComponent(prompt));
+   imageUrl.searchParams.set("model",model);
+   const ratios={square:[768,768],landscape:[1024,768],portrait:[768,1024],wide:[1024,576]};
+   const [width,height]=ratios[String(payload.ratio||"square")]||ratios.square;
+   imageUrl.searchParams.set("width",String(width));
+   imageUrl.searchParams.set("height",String(height));
+   if(Number.isInteger(Number(payload.seed))&&Number(payload.seed)>0)imageUrl.searchParams.set("seed",String(Number(payload.seed)));
+   const response=await fetch(imageUrl,{headers:{Authorization:"Bearer "+env.POLLINATIONS_API_KEY,Accept:"image/png,image/jpeg,image/webp"}});
+   if(!response.ok)return errorResponse(response.status===402?"Pollinations no dispone de saldo autorizado para generar imágenes.":"Pollinations no pudo generar la imagen ("+response.status+").",response.status===402?402:response.status===429?429:502);
+   const mime=(response.headers.get("content-type")||"").split(";")[0].trim();
+   if(!["image/png","image/jpeg","image/webp"].includes(mime))return errorResponse("Pollinations no devolvió una imagen válida.",502);
+   const length=Number(response.headers.get("content-length")||0);
+   if(length>10*1024*1024)return errorResponse("La imagen generada supera 10 MB.",502);
+   const bytes=await response.arrayBuffer();
+   if(bytes.byteLength>10*1024*1024)return errorResponse("La imagen generada supera 10 MB.",502);
+   return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+  }catch(error){
+   console.error("Prisma image Pollinations",String(error?.message||error).slice(0,100));
+   return errorResponse("No fue posible generar la imagen con Pollinations.",502);
   }
  }
  // Explicitly gated Hugging Face media provider.
