@@ -2,6 +2,7 @@ import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js"
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
+import { getAmdFreeModels } from "../../_lib/amd-models.js";
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -126,8 +127,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const requestedModel = String(payload.model || "");
-  if (requestedModel && !allowedModel(provider, "chat", requestedModel)) {
-    return json({error:"Modelo no permitido para el proveedor seleccionado."},400);
+  const amdModels = provider === "amd" ? await getAmdFreeModels(env) : null;
+  const requestedModelAllowed = provider === "amd"
+    ? Boolean(requestedModel && amdModels.some(model => model.id === requestedModel))
+    : !requestedModel || allowedModel(provider, "chat", requestedModel);
+  if (requestedModel && !requestedModelAllowed) {
+    return json({error:provider === "amd" ? "AMD no publica ese modelo como gratuito y compatible con texto en este momento." : "Modelo no permitido para el proveedor seleccionado."},400);
   }
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
@@ -372,11 +377,12 @@ export async function onRequestPost({ request, env }) {
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"nemotron-3.5-lightning-30b-a3b"},
     baidu:{url:"https://qianfan.baidubce.com/v2/chat/completions",model:"ernie-speed-128k"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:"coding-glm-5.3-free"},
-    amd:{url:"https://developer.amd.com.cn/radeon/api/v1/chat/completions",model:"DeepSeek-V4-Flash"},
+    amd:{url:"https://developer.amd.com.cn/radeon/api/v1/chat/completions",model:null},
   };
   if(compatibleProviders[provider]){
     const config=compatibleProviders[provider];
-    const model=requestedModel||config.model;
+    const model=requestedModel||(provider==="amd"?amdModels?.[0]?.id:config.model);
+    if(!model)return json({error:"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave. Revisa la cuenta y su aprobación regional.",provider},503);
     const extraHeaders=provider==="requesty"?{"HTTP-Referer":"https://prismaspace.pages.dev","X-Title":"Prisma Space"}:{};
     return callOpenAICompatibleProvider(env,provider,config.url,model,normalized.openaiMessages,payload,extraHeaders);
   }
