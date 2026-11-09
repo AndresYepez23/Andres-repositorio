@@ -307,7 +307,9 @@ async function dataStudio(files,params,callback){
   result=await runStep('csv-profile-local',[file],{delimiter:params.delimiter||'auto'},callback,.02,.96,'Auditando el CSV');
   label='Auditoría CSV';
  }else if(mode==='csv-json'){
-  result=await runStep('csv-json',[],{text:input,delimiter:params.delimiter&&params.delimiter!=='auto'?params.delimiter:',',format:'json'},callback,.02,.96,'Convirtiendo CSV a JSON');
+  const delimiter=params.delimiter&&params.delimiter!=='auto'?params.delimiter:
+   [',',';','\t'].map(ch=>({ch,count:(input.split(/\r?\n/)[0]||'').split(ch).length-1})).sort((x,y)=>y.count-x.count)[0].ch;
+  result=await runStep('csv-json',[],{text:input,delimiter,format:'json'},callback,.02,.96,'Convirtiendo CSV a JSON');
   label='Resultado JSON';
  }else if(mode==='json-csv'){
   result=await runStep('json-csv',[],{text:input},callback,.02,.96,'Convirtiendo JSON a CSV');
