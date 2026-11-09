@@ -28,6 +28,7 @@ let cancelRequested = false;
 let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false };
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
+let centralAutoEligible = { kilo:false, aihubmix:false };
 let userPinnedToBottom = true;
 let localBrainEnabled = false;
 let voiceReading = false;
@@ -48,7 +49,8 @@ function credentials(){
     groqKey:'',
     centralProviders,
     centralFeatures,
-    centralModelCatalog
+    centralModelCatalog,
+    centralAutoEligible
   };
 }
 function escapeHtml(value){
@@ -959,6 +961,7 @@ async function handleImageCreationRequest(text){
   centralProviders=available.providers||centralProviders;
   centralFeatures=available.features||centralFeatures;
   centralModelCatalog=available.modelCatalog||centralModelCatalog;
+   centralAutoEligible=available.autoEligible||centralAutoEligible;
   await generateVisualRequest(description,credentials(),kind||'image');
  }catch(error){
   const detail=String(error?.message||'El motor de imágenes no respondió.').slice(0,420);
@@ -1228,6 +1231,7 @@ async function requestPlan(userText){
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
+   centralAutoEligible=centralStatus.autoEligible||centralAutoEligible;
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
   // Las peticiones de generación visual ya fueron atendidas por el flujo contextual.
@@ -1673,6 +1677,7 @@ export function initPrismaCore(){
     centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
+   centralAutoEligible=result.autoEligible||centralAutoEligible;
     const creds=credentials();
     const ready=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
