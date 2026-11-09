@@ -797,6 +797,7 @@ async function generateText(p,cb){
  const baseOrder=priorities[task]||priorities.general;
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter'};
  const errors=[],attempted=[];
+ let lastLimitError=null;
  const candidates=orderModelsForTask(preferred,task,baseOrder,provider=>
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
@@ -815,15 +816,23 @@ async function generateText(p,cb){
   if(!catalog.length)return desired;
   return catalog.some(item=>item.id===desired)?desired:catalog[0]?.id||desired;
  };
- for(const provider of candidates){
+ for(let candidateIndex=0;candidateIndex<candidates.length;candidateIndex++){
+  const provider=candidates[candidateIndex];
   const remaining=totalDeadline-(Date.now()-startedAt);
   if(remaining<=2500){errors.push('La búsqueda de un motor superó el tiempo total de espera.');break;}
-  const requestDeadline=Math.min(individualDeadline,remaining);
+  let requestDeadline=Math.min(individualDeadline,remaining);
   if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter'].includes(provider))continue;
   if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
    if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
    continue;
+  }
+  if(provider!=='openrouter'&&candidates.includes('openrouter')&&p.centralProviders?.openrouter){
+   // Reserve enough of the total deadline to actually reach the independent backup
+   // if one or more primary providers hang instead of returning a quick 429/5xx.
+   const reserve=task==='songwriting'?14000:task==='planner'?10000:11000;
+   if(remaining<=reserve+2500){errors.push('Se reserva tiempo para probar OpenRouter como último respaldo.');continue;}
+   requestDeadline=Math.min(individualDeadline,remaining-reserve);
   }
   attempted.push(provider);
   if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
@@ -854,7 +863,7 @@ async function generateText(p,cb){
       maxOutputTokens:outputTokens
      })
     },requestDeadline);
-    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status,code:data.code||'',retryAfter:data.retryAfter||null});
+    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status,code:data.code||'',scope:data.scope||'',retryAfter:data.retryAfter||null});
     text=String(data.text||'').trim();model=data.model||model;
    }
    if(!text)throw Error(providerNames[provider]+' no devolvió texto.');
@@ -874,14 +883,24 @@ async function generateText(p,cb){
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
-   // A shared IP quota applies to every provider; retrying another provider will not help.
+   // The shared daily cap for the primary free providers must not block the
+   // independent OpenRouter backup. IP anti-abuse limits still apply to both.
    if(error?.code==='GLOBAL_LIMIT'||error?.status===429&&/Prisma alcanzó su límite temporal gratuito global/i.test(String(error?.message||''))){
-    throw Object.assign(new Error('La cuota gratuita compartida de Prisma está agotada temporalmente.'),{code:'GLOBAL_LIMIT',status:429,retryAfter:error?.retryAfter||null});
+    if(error?.scope==='total-day'&&p.centralProviders?.openrouter&&provider!=='openrouter'){
+     const backupIndex=candidates.indexOf('openrouter');
+     if(backupIndex>candidateIndex){candidateIndex=backupIndex-1;continue;}
+    }
+    throw Object.assign(new Error('La cuota gratuita compartida de Prisma está agotada temporalmente.'),{code:'GLOBAL_LIMIT',scope:error?.scope||'',status:429,retryAfter:error?.retryAfter||null});
    }
+   if(error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT')lastLimitError=error;
    if(attempted.length<candidates.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
   }
  }
- if(errors.length)throw Error('Los motores disponibles no pudieron responder: '+errors.slice(0,3).join(' | '));
+ if(errors.length){
+  const message='Los motores disponibles no pudieron responder: '+errors.slice(0,3).join(' | ');
+  if(lastLimitError)throw Object.assign(Error(message),{code:lastLimitError.code,scope:lastLimitError.scope||'',retryAfter:lastLimitError.retryAfter||null});
+  throw Error(message);
+ }
  throw Error('No hay un motor de texto disponible para esta tarea. Revisa las conexiones del Laboratorio IA.');
 }
 async function generateSpeech(p,cb){
