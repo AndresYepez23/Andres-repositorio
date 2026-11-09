@@ -64,9 +64,9 @@ function retryHoldSeconds(status, headers) {
   return 60;
 }
 
-// One network call in the healthy path, at most two per user request. A failed
-// credential is temporarily cooled down so the next request tries another slot.
-// This is availability failover, not an attempt to bypass account-wide limits.
+// One network call in the healthy path, at most two per request for
+// key-specific auth/network faults. Provider-wide 402/429 responses stop the
+// whole provider pool: never rotate accounts to evade credit or rate limits.
 export async function requestWithCredentialPool(env, provider, send, options = {}) {
   const slots = getCredentialSlots(env, provider);
   if (!slots.length) {
@@ -74,35 +74,55 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     error.code = "MISSING_CREDENTIAL";
     throw error;
   }
+
+  const providerHold = await getProviderHold(env, provider);
+  if (providerHold) {
+    const error = new Error(providerHold.reason || "El proveedor está temporalmente en pausa.");
+    error.code = "PROVIDER_COOLDOWN";
+    error.status = providerHold.state === "quota_exhausted" ? 402 : 429;
+    error.retryAfter = Math.max(1, Number(providerHold.valid_until || 0) - Math.floor(Date.now() / 1000));
+    throw error;
+  }
+
   const maxAttempts = Math.min(2, Math.max(1, Number(options.maxAttempts) || 2));
-  const retryable = new Set(options.retryStatuses || [401, 403, 429, 500, 502, 503, 504]);
+  const retryable = new Set(options.retryStatuses || [401, 403, 500, 502, 503, 504]);
   let lastResponse, lastError, attempted = 0;
+
   for (const slot of slots) {
     if (attempted >= maxAttempts) break;
     const healthKey = "credential-slot:" + provider + ":" + slot.number;
     const hold = await getProviderHold(env, healthKey);
     if (hold) continue;
+
     attempted++;
     try {
       const response = await send(slot.value, slot.number);
       lastResponse = response;
+
       if (response.ok) return response;
+
       if (response.status === 402) {
-        // Never cascade paid or exhausted-credit operations within a request.
-        await setProviderHold(env, healthKey, "quota_exhausted",
-          "Este espacio no dispone de saldo autorizado.", 3600);
+        await setProviderHold(env, provider, "quota_exhausted",
+          "El proveedor agotó el saldo o crédito disponible; Prisma pausó el conjunto de credenciales sin probar otras cuentas.", 21600);
         return response;
       }
+      if (response.status === 429) {
+        await setProviderHold(env, provider, "rate_limited",
+          "El proveedor alcanzó un límite de solicitudes; Prisma pausó el proveedor y utilizará otro motor.", retryHoldSeconds(429, response.headers));
+        return response;
+      }
+
       if (!retryable.has(response.status)) return response;
       await setProviderHold(env, healthKey,
-        response.status === 429 ? "rate_limited" : response.status === 401 || response.status === 403 ? "auth_error" : "provider_error",
-        "La credencial de respaldo requiere una pausa temporal.", retryHoldSeconds(response.status, response.headers));
+        response.status === 401 || response.status === 403 ? "auth_error" : "provider_error",
+        "Esta credencial requiere una pausa temporal; se probará como máximo una clave alternativa.", retryHoldSeconds(response.status, response.headers));
     } catch (error) {
       lastError = error;
       await setProviderHold(env, healthKey, "network_error",
         "La conexión de este espacio de credenciales falló.", 60);
     }
   }
+
   if (lastResponse) return lastResponse;
   const error = lastError || new Error("Todas las credenciales configuradas están temporalmente en pausa.");
   if (!lastError) error.code = "CREDENTIALS_PAUSED";
