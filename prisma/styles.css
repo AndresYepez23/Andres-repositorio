@@ -1818,3 +1818,64 @@ body.sidebar-search-open .sidebar-search-slot .core-history-search{display:flex}
 /* Core is the first paint: keep the old landing navigation out of the boot frame. */
 body.is-core-view #core-workspace > .core-history{display:none!important}
 .core-sidebar-loading{margin:0;padding:8px 10px;color:var(--subtle);font-size:10px;line-height:1.5}
+
+
+/* Auth sheet: independent of the chat's scrolled visual-viewport offset. */
+.auth-backdrop{
+  position:fixed!important;
+  inset:0!important;
+  top:0!important;
+  right:0!important;
+  bottom:0!important;
+  left:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  max-height:100dvh!important;
+  overflow-y:auto!important;
+  align-items:center;
+  padding:20px 16px;
+  overscroll-behavior:contain;
+}
+.auth-panel{
+  width:min(430px,100%);
+  max-height:calc(100dvh - 40px)!important;
+  padding:24px;
+  gap:13px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.auth-panel>img{width:42px;height:42px;object-fit:contain}
+.auth-heading{display:grid;gap:7px;padding-right:36px}
+.auth-panel h2{font-size:22px;line-height:1.2}
+.auth-heading p{font-size:12px;line-height:1.6}
+.auth-panel .auth-close{
+  position:absolute!important;
+  top:12px!important;
+  right:12px!important;
+  align-self:auto!important;
+  margin:0!important;
+  z-index:5;
+  background:var(--panel-2);
+  border-radius:50%;
+}
+.auth-panel .auth-guest{align-self:center;margin-top:2px;padding:8px 12px}
+.auth-panel .auth-provider-grid button[hidden]{display:none!important}
+.auth-panel #auth-form{gap:11px}
+.auth-panel #auth-form input{height:45px}
+.auth-panel .auth-submit{min-height:45px}
+body.prisma-auth-open{overflow:hidden}
+@media(max-width:620px){
+  .auth-backdrop{padding: max(14px,env(safe-area-inset-top)) 12px max(14px,env(safe-area-inset-bottom))}
+  .auth-panel{width:100%;max-height:calc(100dvh - 28px)!important;padding:22px 18px;border-radius:19px}
+}
+@media(display-mode:standalone){
+  .auth-backdrop{
+    padding-top:max(16px,env(safe-area-inset-top));
+    padding-bottom:max(16px,env(safe-area-inset-bottom));
+  }
+  .auth-panel{
+    max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)!important;
+  }
+}
