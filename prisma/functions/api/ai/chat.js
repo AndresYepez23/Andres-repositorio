@@ -358,7 +358,7 @@ export async function onRequestPost({ request, env }) {
     const model=requestedModel||kiloModels?.find(item=>!item.id.toLowerCase().startsWith("nvidia/"))?.id||kiloModels?.[0]?.id;
     if(!model)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider:"kilo"},503);
     const slots=getCredentialSlots(env,"kilo");
-    const hold=await getProviderHold(env,"kilo");
+    const hold=slots.length?null:await getProviderHold(env,"kilo");
     if(hold)return json({error:hold.reason,provider:"kilo",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
     const send=key=>fetch("https://ai-gateway.kilo.ai/api/v1/chat/completions",{
       method:"POST",
@@ -378,7 +378,7 @@ export async function onRequestPost({ request, env }) {
     if(!response.ok){
       if(!slots.length&&response.status===429)await setProviderHold(env,"kilo","rate_limited","Kilo Gateway alcanzó el límite anónimo; Prisma probará otro motor.",Math.max(30,Math.min(600,Number(response.headers.get("retry-after")||90))));
       else if(!slots.length&&(response.status===401||response.status===403))await setProviderHold(env,"kilo","auth_error","Kilo rechazó el acceso anónimo.",3600);
-      else if(response.status===402)await setProviderHold(env,"kilo","quota_exhausted","Kilo Gateway agotó la cuota disponible.",21600);
+      else if(!slots.length&&response.status===402)await setProviderHold(env,"kilo","quota_exhausted","Kilo Gateway agotó la cuota disponible.",21600);
       const message=response.status===429?"Kilo Gateway alcanzó su límite temporal.":response.status===401||response.status===403?"Kilo rechazó la clave opcional.":"Kilo Gateway respondió con un error ("+response.status+").";
       return json({error:message,provider:"kilo",status:response.status},response.status===429?429:502);
     }
