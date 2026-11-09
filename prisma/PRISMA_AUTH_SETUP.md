@@ -7,7 +7,7 @@
 ## Separación obligatoria
 Usar un proyecto **Prisma Space** en Supabase, nunca la base de OdontoUdeC ni las credenciales compartidas de su autenticación.
 
-Prisma Space dispone de un proyecto separado de Supabase (`hyoxywiwhnhfekakhivp`), creado en la organización autorizada con plan gratuito cotizado a **US$0/mes**. En noviembre de 2026 se aplicó el esquema de perfiles y conversaciones con RLS y no se modificó OdontoUdeC. Cloudflare Pages producción contiene la URL y la **clave publicable** de este proyecto; los demás secretos siguen en Cloudflare. Queda pendiente verificar las redirecciones de Auth, SMTP y proveedores OAuth antes de considerar el registro comprobado de extremo a extremo.
+Prisma Space dispone de un proyecto separado de Supabase (`hyoxywiwhnhfekakhivp`), creado en la organización autorizada con plan gratuito cotizado a **US$0/mes**. En noviembre de 2026 se aplicó el esquema de perfiles y conversaciones con RLS y no se modificó OdontoUdeC. Prisma publica la URL y la **clave publicable** de Supabase mediante `[vars]` en `wrangler.toml`: Cloudflare Pages usa este archivo como fuente de configuración y elimina las variables de texto que solo se agregan desde el panel en el siguiente despliegue. Las claves privadas y tokens de IA siguen exclusivamente como secretos de Cloudflare; nunca se incluyen en GitHub. Queda pendiente verificar las redirecciones de Auth, SMTP y proveedores OAuth antes de considerar el registro comprobado de extremo a extremo.
 
 ### Pasos para habilitarlo (una vez confirmado el proyecto)
 1. Crear Prisma Space en la organización autorizada de Supabase. Registrar URL y publishable key (NO service_role).
@@ -45,3 +45,5 @@ Antes de invitar usuarios, confirmar en Supabase:
 - Google, Apple y SMS solo se activan al instalar proveedores con sus credenciales y flags correspondientes.
 
 La aplicación debe seguir permitiendo el uso anónimo en navegador y PWA.
+
+**Nota de despliegue:** las variables `PRISMA_SUPABASE_URL` y `PRISMA_SUPABASE_PUBLISHABLE_KEY` son públicas por diseño, no equivalen a `service_role`. No reemplazar esa clave con una clave secreta. Después de publicar, comprobar `/api/auth/config` y el estado de la autenticación; Supabase Site URL, redirecciones y SMTP requieren verificación independiente.
