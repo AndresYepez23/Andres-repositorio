@@ -74,4 +74,26 @@ assert.doesNotThrow(()=>validate(picture)({
  steps:webEditing.steps.map(step=>({tool_id:step.tool_id,params:step.params}))
 }));
 
+// Provider-specific credential pools: six for Gemini/OpenRouter/HF/Pollinations,
+// but Groq deliberately remains capped at five.
+import { getCredentialSlots, getCredentialStatus, maxCredentialSlots } from '../functions/_lib/credential-pool.js';
+const fakeKeys = {
+ GEMINI_API_KEY:'g1', GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
+ GEMINI_API_KEY_4:'g4', GEMINI_API_KEY_5:'g5', GEMINI_API_KEY_6:'g6',
+ GROQ_API_KEY:'q1', GROQ_API_KEY_2:'q2', GROQ_API_KEY_3:'q3',
+ GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5', GROQ_API_KEY_6:'q6',
+ OPENROUTER_API_KEY:'o1', OPENROUTER_API_KEY_2:'o2', OPENROUTER_API_KEY_3:'o3',
+ OPENROUTER_API_KEY_4:'o4', OPENROUTER_API_KEY_5:'o5', OPENROUTER_API_KEY_6:'o6',
+};
+for (const provider of ['gemini','openrouter','huggingface','pollinations']) {
+ assert.equal(maxCredentialSlots(provider),6,provider+' must support six slots');
+}
+assert.equal(maxCredentialSlots('groq'),5);
+assert.equal(getCredentialSlots(fakeKeys,'gemini').length,6);
+assert.equal(getCredentialStatus(fakeKeys,'gemini').max,6);
+assert.equal(getCredentialSlots(fakeKeys,'openrouter').length,6);
+assert.equal(getCredentialStatus(fakeKeys,'openrouter').slots.length,6);
+assert.equal(getCredentialSlots(fakeKeys,'groq').length,5);
+assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,5);
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
