@@ -91,12 +91,12 @@ function newChatRecord(content=[]){
  const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
  const first=content.find(message=>message.role==='user'&&message.content?.trim());
  return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
-   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null};
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,pinned:false};
 }
 function persistChatHistory(activeSerialized=null){
  try{
   const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,MAX_CHATS).map(chat=>({
-   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,
+   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,pinned:!!chat.pinned,
    messages:chat.id===activeConversationId&&activeSerialized
     ?activeSerialized:chat.messages.slice(-60).map(message=>({
      id:message.id||'',role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,
@@ -126,7 +126,7 @@ function loadChatHistory(){
  try{
   const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
   if(Array.isArray(records))stored=records.filter(chat=>chat&&typeof chat.id==='string'&&Array.isArray(chat.messages))
-    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null}));
+    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null,pinned:!!chat.pinned}));
  }catch{}
  if(!stored.length){
   let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old.slice(-60);}catch{}
@@ -140,8 +140,10 @@ function loadChatHistory(){
 }
 function renderConversationList(){
  const list=$('#core-conversation-list');if(!list)return;
- const sorted=conversations.slice().sort((a,b)=>b.updated-a.updated);
- const visible=sorted.filter(chat=>!conversationSearch||chat.title.toLocaleLowerCase('es').includes(conversationSearch));
+ const sorted=conversations.slice().sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||b.updated-a.updated);
+ const visible=sorted.filter(chat=>!conversationSearch||
+  chat.title.toLocaleLowerCase('es').includes(conversationSearch)||
+  chat.messages.some(message=>String(message.content||'').toLocaleLowerCase('es').includes(conversationSearch)));
  list.replaceChildren();
  if(!visible.length){const empty=document.createElement('p');empty.className='core-history-empty';empty.textContent='No se encontraron conversaciones.';list.append(empty);return;}
  for(const chat of visible){
@@ -149,7 +151,7 @@ function renderConversationList(){
   const select=document.createElement('button');select.type='button';select.className='core-history-select';select.title=chat.title;
   select.setAttribute('aria-current',chat.id===activeConversationId?'page':'false');
   const strong=document.createElement('strong');strong.textContent=chat.title;
-  const small=document.createElement('small');small.textContent=chat.messages.length+' mensajes';
+  const small=document.createElement('small');small.textContent=(chat.pinned?'📌 · ':'')+chat.messages.length+' mensajes';
   select.append(strong,small);
   select.addEventListener('click',()=>openConversation(chat.id));
   const more=document.createElement('button');more.type='button';more.className='core-history-more';more.textContent='⋯';more.title='Opciones de conversación';more.setAttribute('aria-label','Opciones de '+chat.title);
@@ -171,7 +173,9 @@ function renderConversationList(){
     if(activeConversationId===chat.id){activeConversationId=conversations[0].id;messages=conversations[0].messages.slice();renderMessages({forceBottom:true});}
     persistChatHistory();renderConversationList();
    });
-   menu.append(rename,remove);row.append(menu);
+   const pin=document.createElement('button');pin.type='button';pin.textContent=chat.pinned?'Desanclar':'Anclar';
+   pin.addEventListener('click',()=>{chat.pinned=!chat.pinned;persistChatHistory();renderConversationList();});
+   menu.append(pin,rename,remove);row.append(menu);
   });
   row.append(select,more);list.append(row);
  }
