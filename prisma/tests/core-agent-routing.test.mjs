@@ -118,6 +118,10 @@ assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwe
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
 assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
 assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
+assert.equal(selectTaskModel('sensenova','general','balanced',[{id:'sensenova-6.8-flash-lite'}]),'sensenova-6.8-flash-lite');
+assert.equal(selectTaskModel('zai','reasoning','smart',[{id:'glm-4.7-flash'}]),'glm-4.7-flash');
+assert.equal(selectTaskModel('requesty','coding','balanced',[{id:'novita/ling-3.1-flash'}]),'novita/ling-3.1-flash');
+assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra:free'}]),'nvidia/nemotron-3-ultra:free');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
@@ -316,8 +320,8 @@ const capacityWithMoreKeys = {
 };
 assert.equal(getProviderDailyLimit(capacityEnv,'groq'),30);
 assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
-assert.equal(getSharedDailyBudget(capacityEnv),130);
-assert.equal(getVisitorDailyLimit(capacityEnv),65);
+assert.equal(getSharedDailyBudget(capacityEnv),150);
+assert.equal(getVisitorDailyLimit(capacityEnv),75);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
 assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}),60);
 assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
@@ -325,5 +329,10 @@ const statusSource = readFileSync(new URL('../functions/api/providers/status.js'
 assert.match(statusSource, /dailyUsage: usage/);
 assert.match(statusSource, /dailyAvailable/);
 assert.match(statusSource, /perMinutePerVisitor: 20/);
+assert.match(statusSource, /aihubmixLifetime/);
+assert.match(statusSource, /getKiloFreeModels/);
+assert.match(statusSource, /getAmdFreeModels/);
+const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
+for (const provider of ['kilo','requesty','sensenova','zai','baidu','aihubmix','amd']) assert.match(modelCatalogSource, new RegExp(provider+':'));
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
