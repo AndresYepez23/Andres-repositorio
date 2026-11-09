@@ -85,6 +85,7 @@ export async function getCentralProviderStatus() {
     modelCatalog: {chat:{},image:{},audio:{}},
     warnings: {},
     configured: {},
+    credentialSlots: {},
     features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},
   };
   const controller = new AbortController();
@@ -107,6 +108,7 @@ export async function getCentralProviderStatus() {
       modelCatalog: data.modelCatalog || empty.modelCatalog,
       warnings: data.warnings || {},
       configured: data.configured || {},
+      credentialSlots: data.credentialSlots || {},
       features: { ...empty.features, ...(data.features || {}) },
     };
   } catch {
