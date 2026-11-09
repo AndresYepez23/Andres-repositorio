@@ -447,7 +447,7 @@ function toolPolicy(tool){
 }
 function toolParamsHint(id){
   const hints={
-    'pdf-split':'No requiere parámetros: divide todas las páginas y entrega un ZIP.',
+    'pdf-split':'Opcional: params.parts para dividir en 2-20 bloques; params.chunkSize para grupos de N páginas. Sin parámetros, una página por PDF dentro de un ZIP. Después de extraer o editar, debe ser el último paso.',
     'pdf-to-word':'No requiere parámetros. Genera params.docx desde un PDF digital; requiere texto seleccionable.',
     'pdf-compress':'No requiere parámetros.',
     'pdf-merge':'No requiere parámetros; acepta varios PDF.',
@@ -546,6 +546,7 @@ function buildPlannerPrompt(userText,optionalCatalog=null){
     'Para crear una canción o letra original, selecciona music-lyrics; redacta letra original completa y un prompt de producción musical. ai-voice es texto a voz, no genera música. No afirmes que has creado un archivo musical si no existe un generador de música en el catálogo. Si piden audio musical final y no hay motor, explica la limitación y ofrece crear la letra como paso disponible.',
     'No rechaces por defecto peticiones creativas seguras. Distingue entre escribir una obra original y copiar letras protegidas o imitar exactamente a un artista. Para lo primero, utiliza la herramienta creativa; para lo segundo, ofrece una alternativa original con rasgos musicales generales.',
     'Antes de elegir una herramienta, identifica el resultado final que pide el usuario. Puedes encadenar lectura, transformación, generación y exportación cuando cada paso tenga entradas y salidas compatibles. No selecciones herramientas solo porque comparten palabras con la petición.',
+    'Eres el agente coordinador de las herramientas disponibles desde el CHAT, no un menú. Prioriza las herramientas de navegador para operaciones mecánicas; no insertes una llamada ai-assistant para explicar o autorizar cada paso local. Reserva los modelos para razonamiento, escritura, interpretación semántica realmente necesaria o generación. Para seleccionar páginas de un PDF y entregarlas por separado, encadena pdf-extract seguido de pdf-split; para añadir numeración/marca de agua, realiza esos pasos antes de pdf-split. Nunca afirmes haber procesado un archivo sin una herramienta ejecutada.',
     'Puedes generar un plan con 0 pasos si la solicitud es solo una pregunta o no puede ejecutarse con las herramientas mostradas. Explícalo en message sin inventar capacidades.',
     'HISTORIAL RECIENTE:\n'+messages.slice(-5).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,600)).join('\n').slice(-2400),
     'HERRAMIENTAS RELEVANTES:\n'+JSON.stringify(catalog),
@@ -714,7 +715,7 @@ function normalizeCoreIntent(value){
 function isPdfEditIntent(text){
  const q=normalizeCoreIntent(text);
  const pdfContext=/\b(pdf|documento|paginas?|folios?|hojas?|marca de agua|numeracion|enumerar|numerar|foliar)\b/.test(q);
- const editAction=/extrae|extraer|extraccion|seleccion|conservar|quedarme|sacar|solo|especific|editar|marcar|marca de agua|numer|enumer|foliar|renumerar/.test(q);
+ const editAction=/extrae|extraer|extraccion|seleccion|conservar|quedarme|sacar|solo|especific|editar|marcar|marca de agua|numer|enumer|foliar|renumerar|divid|separ|partir|fragment|troce|repart|entreg|dame/.test(q);
  return pdfContext&&editAction;
 }
 function pdfPagesFromText(text){
@@ -748,10 +749,18 @@ function buildPdfEditPlan(userText){
  }
  if(!isPdfEditIntent(request))return null;
  const q=normalizeCoreIntent(request);
- const select=/(solo|unas|algunas|especific|seleccion|conservar|extrae|extraccion|sacar|dame|dejar|recortar)/.test(q)&&/\b(paginas?|folios?|hojas?)\b/.test(q);
+ const select=/(solo|unas|algunas|especific|seleccion|conservar|extrae|extraccion|sacar|dame|entreg|dejar|recortar)/.test(q)&&/\b(paginas?|folios?|hojas?)\b/.test(q);
  const number=/(numer|enumer|foliar|numero de pagina|numeros de pagina)/.test(q);
  const watermark=/marca de agua/.test(q);
- if(!(select||number||watermark))return null;
+ const split=/(divid|separ|partir|fragment|troce|repart)/.test(q);
+ if(!(select||number||watermark||split))return null;
+ // Combine extraction, numbering, watermarking and splitting without an LLM
+ // when the command names exact operations and supplies their parameters.
+ const partsMatch=q.match(/\b(?:en|entre)\s+(dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d{1,2})\s+(?:partes|archivos|pdfs?)\b/);
+ const partsWords={dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10};
+ const parts=partsMatch?(partsWords[partsMatch[1]]||Number(partsMatch[1])):0;
+ const chunkMatch=q.match(/(?:cada|bloques? de|grupos? de)\s+(\d{1,3})\s+(?:paginas?|hojas?)/);
+ const chunkSize=chunkMatch?Number(chunkMatch[1]):0;
  // Collect parameters from short follow-ups so that "2-4, 7" and then
  // "CONFIDENCIAL" work without asking the same question twice.
  const history=messages.slice(-9).filter(item=>item.role==='user').map(item=>String(item.content||''));
@@ -768,17 +777,24 @@ function buildPdfEditPlan(userText){
   (watermark?replies.map(item=>pdfWatermarkFromText(item)||labelFromReply(item)).filter(Boolean).at(-1)||'':'');
  const lacking=[];
  if(!pdfAttached) {
-  return {type:'missing-file',message:'Sí. Prisma tiene herramientas locales para extraer páginas específicas, numerarlas y añadir una marca de agua; también puede aplicar las tres operaciones y entregarte un único PDF. Sube el archivo PDF'+(select&&!pages?', dime qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' e indica qué texto llevará la marca de agua':'')+'. No hace falta conectar ningún modelo para editar el documento.'};
+  return {type:'missing-file',message:'Puedo procesar el PDF directamente desde este chat y sin gastar cuota de IA: seleccionar páginas, numerarlas, aplicar marcas de agua y dividirlas en archivos separados. Adjunta el PDF'+(select&&!pages?', e indica qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' y el texto de la marca de agua':'')+'.'};
  }
  if(select&&!pages)lacking.push('las páginas que quieres conservar (por ejemplo, 2-4, 7)');
  if(watermark&&!mark)lacking.push('el texto de la marca de agua (por ejemplo, CONFIDENCIAL)');
- if(lacking.length)return {type:'missing-parameters',message:'Puedo editar el PDF adjunto y realizar todo en un único archivo. Indícame '+lacking.join(' y ')+'.'+(number?' La numeración comenzará en 1 en las páginas resultantes.':'')};
+ if(split&&/(?:por|segun)\s+(?:capitulos|secciones|temas)/.test(q))lacking.push('las páginas donde comienzan los capítulos o secciones');
+ if(split&&parts===1)lacking.push('al menos dos partes para dividir el documento');
+ if(split&&parts>20)lacking.push('un máximo de 20 partes para una división por cantidad');
+ if(split&&chunkSize>200)lacking.push('un máximo de 200 páginas por bloque');
+ if(split&&parts&&chunkSize)lacking.push('una sola forma de división: por número de partes o por páginas por bloque');
+ if(split&&!parts&&!chunkSize&&/\b(?:en|entre)\s+(?:varias\s+)?partes\b/.test(q))lacking.push('el número de partes (por ejemplo, 2 o 3)');
+ if(lacking.length)return {type:'missing-parameters',message:'Puedo organizar el PDF adjunto sin consumir cuota de IA. Indícame '+lacking.join(' y ')+'.'+(number?' La numeración comenzará en 1 en las páginas resultantes.':'')};
  const steps=[];
  const add=(tool_id,params,reason)=>steps.push({tool_id,params,reason});
  if(select)add('pdf-extract',{pages},'Conservar únicamente las páginas indicadas');
  if(number)add('pdf-page-numbers',{position:/\b(arriba|superior|encabezado)\b/.test(q)?'top':'bottom'},'Numerar consecutivamente las páginas resultantes');
  if(watermark)add('pdf-watermark',{watermark:mark},'Añadir la marca de agua solicitada');
- return {type:'execute',plan:{message:'Editaré el PDF localmente: '+steps.map(step=>step.reason.toLowerCase()).join(', ')+'. Prepararé un solo archivo final para descargar.',needs_clarification:false,steps,combineFinalFiles:true,userRequest:request}};
+ if(split)add('pdf-split',{...(parts?{parts}:{}),...(chunkSize?{chunkSize}:{})},parts?'Dividir el resultado en '+parts+' partes':chunkSize?'Dividir el resultado en bloques de '+chunkSize+' páginas':'Entregar cada página por separado en un ZIP');
+ return {type:'execute',plan:{message:'Desde el chat realizaré estas operaciones en el PDF, sin consumir cuota de IA: '+steps.map(step=>step.reason.toLowerCase()).join('; ')+'. Entregaré el resultado descargable.',needs_clarification:false,steps,combineFinalFiles:true,userRequest:request}};
 }
 
 // File-based capabilities should be explained from the real registry before any
