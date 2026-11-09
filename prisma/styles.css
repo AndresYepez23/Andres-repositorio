@@ -726,3 +726,9 @@ body.core-editor-open{overflow:hidden}
 @media(max-width:850px){.hero-prism-canvas{width:195px;height:195px}}
 @media(max-width:620px){.hero-prism-canvas{width:165px;height:165px}}
 @media(prefers-reduced-motion:reduce){.hero-prism-canvas{animation:none}}
+
+/* Keep the composer visible in the first mobile viewport without hiding the
+   gradient Prisma headline that introduces the assistant. */
+@media(max-width:750px){
+ .core-section:not(.has-conversation) .core-messages{height:clamp(275px,calc(100dvh - 455px),490px);min-height:275px}
+}
