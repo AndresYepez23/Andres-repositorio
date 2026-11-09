@@ -532,7 +532,8 @@ async function pdfToText(file,cb){
   parts.push('--- Página '+i+' ---\n'+data.items.map(x=>x.str).join(' '));
   progress(cb,i/pdf.numPages*.9,'Leyendo página '+i+' de '+pdf.numPages+'...');
  }
- return {text:parts.join('\n\n'),summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
+ const text=parts.join('\n\n');
+ return {...download(new Blob([text],{type:'text/plain;charset=utf-8'}),fileName(file)+'-texto.txt'),text,summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
 }
 function imageModelFor(provider,quality){
  const profiles={
