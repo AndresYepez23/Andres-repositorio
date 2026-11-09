@@ -133,7 +133,7 @@ export function buildSmartLocalFlow(text,files=[],recentTexts=[]){
    return result('Puedo reconocer objetos con ViT ONNX directamente en tu dispositivo. Adjunta una imagen para descargar y ejecutar el modelo local.');
   if(/(?:transcrib|audio a texto|voz a texto)/.test(target))
    return result('Puedo transcribir grabaciones usando Groq Whisper si hay cuota disponible. Adjunta un archivo de audio para empezar.');
-  if(/(?:quitar fondo|eliminar fondo|eliminar metadatos).{0,45}(?:imagen|foto)|(?:imagen|foto).{0,45}(?:quitar fondo|eliminar metadatos)/.test(target))
+  if(/(?:quita fondo|quitar fondo|elimina fondo|eliminar fondo|quita metadatos|eliminar metadatos).{0,45}(?:imagen|foto)|(?:imagen|foto).{0,45}(?:quitar fondo|eliminar metadatos)/.test(target))
    return result('Prisma tiene herramientas locales para esa edición. Adjunta la imagen para preparar el resultado.');
  }
  return null;
