@@ -510,3 +510,15 @@ body.modal-open{overflow:hidden}
  .core-hero{padding:20px 0}
  .core-hero h2{font-size:clamp(30px,8vw,42px)}
 }
+
+/* Prisma Core: conversational output and subtle provider attribution */
+.core-message-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.core-message-engine{display:block;margin-top:10px;font-size:9px;color:var(--subtle);letter-spacing:.015em}
+.core-message.assistant:not(.has-results){min-width:0}
+@media(max-width:620px){.core-message-body{font-size:11px;line-height:1.7}.core-message-engine{font-size:9px}}
+
+/* Inline, accessible indication of an in-flight Prisma Core response */
+.core-thinking{display:flex;align-items:center;gap:9px;align-self:flex-start;margin:8px 0;padding:10px 13px;border:1px solid var(--line);border-radius:12px;color:var(--muted);background:var(--panel);font-size:10px;line-height:1.45}
+.core-thinking-dot{color:var(--accent);font-size:15px;animation:prisma-thinking-pulse 1.6s ease-in-out infinite}
+@keyframes prisma-thinking-pulse{0%,100%{opacity:.45;transform:scale(.93)}50%{opacity:1;transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.core-thinking-dot{animation:none}}

@@ -534,22 +534,41 @@ async function generateImage(p,cb){
  if(!provider)throw Error('No hay un motor de imágenes habilitado. Cloudflare Workers AI debe estar activo o autoriza Pollinations.');
  const model=p.model||imageModelFor(provider,p.qualityProfile);
  if(provider==='cloudflare'||provider==='pollinations'&&p.centralFeatures?.pollinationsImages||provider==='huggingface'&&p.centralFeatures?.huggingfaceImages){
-  const chosenModel=p.model||(provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':provider==='pollinations'?'black-forest-labs/flux.1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers');
-  progress(cb,.15,'Procesando la imagen en el backend protegido de Prisma…');
-  const response=await fetch('/api/ai/image',{
-   method:'POST',headers:{'Content-Type':'application/json','Accept':'image/jpeg,image/png'},
-   body:JSON.stringify({provider,model:chosenModel,prompt:fullPrompt.slice(0,1800),ratio:p.ratio,seed:p.seed||undefined})
-  });
-  if(!response.ok){
-   const data=await response.json().catch(()=>({}));
-   throw Error(data.error||'No fue posible generar la imagen ('+response.status+').');
+  const candidates=p.provider==='auto'&&provider==='cloudflare'&&p.centralFeatures?.pollinationsImages
+   ? ['cloudflare','pollinations']: [provider];
+  const errors=[];
+  for(const selected of candidates){
+   const chosenModel=(selected===provider&&p.provider!=='auto'&&p.model)?p.model:
+    selected==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':
+    selected==='pollinations'?'black-forest-labs/flux.1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers';
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),45000);
+   try{
+    progress(cb,.15,'Generando imagen con '+selected+'…');
+    const response=await fetch('/api/ai/image',{
+     method:'POST',headers:{'Content-Type':'application/json','Accept':'image/jpeg,image/png,image/webp'},
+     signal:controller.signal,
+     body:JSON.stringify({provider:selected,model:chosenModel,prompt:fullPrompt.slice(0,1800),ratio:p.ratio,seed:p.seed||undefined})
+    });
+    if(!response.ok){
+     const data=await response.json().catch(()=>({}));
+     const detail=data.error||'No fue posible generar la imagen ('+response.status+').';
+     // Global visitor quotas do not improve by switching vendors.
+     if(response.status===429&&/Prisma alcanzó su límite temporal gratuito/i.test(detail))throw Object.assign(Error(detail),{stopFallback:true});
+     throw Error(detail);
+    }
+    const blob=await response.blob();
+    if(!blob.type.startsWith('image/'))throw Error('El motor no devolvió una imagen válida.');
+    progress(cb,1,'Imagen generada.');
+    return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':blob.type.includes('webp')?'webp':'png')),
+     previewUrl:URL.createObjectURL(blob),provider:selected,model:chosenModel,
+     summary:'Imagen generada con '+(selected==='cloudflare'?'Cloudflare FLUX':selected==='pollinations'?'Pollinations':'Hugging Face')+(errors.length?' · se utilizó respaldo automático.':'.')};
+   }catch(error){
+    errors.push(selected+': '+(error?.name==='AbortError'?'se agotó el tiempo de espera':error?.message||'error'));
+    if(error?.stopFallback)break;
+   }finally{clearTimeout(timeout);}
   }
-  const blob=await response.blob();
-  if(!blob.type.startsWith('image/'))throw Error('El motor central no devolvió una imagen válida.');
-  progress(cb,1,'Imagen generada.');
-  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':'png')),
-   previewUrl:URL.createObjectURL(blob),provider,model:chosenModel,
-   summary:'Imagen generada con '+(provider==='cloudflare'?'Cloudflare FLUX':provider==='pollinations'?'Pollinations':'Hugging Face')+' · resolución determinada por el modelo.'};
+  throw Error('No fue posible generar la imagen. '+errors.join(' | '));
  }
  if(provider==='huggingface'&&!p.centralFeatures?.huggingfaceImages)
   throw Error('Las imágenes de Hugging Face están desactivadas para proteger tus créditos. Utiliza Cloudflare FLUX.');
@@ -687,7 +706,10 @@ async function generateText(p,cb){
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
  const modelFor=provider=>{
   // Planning needs compact structured output; prefer the faster model, not maximum reasoning tokens.
-  const desired=task==='planner'&&provider==='groq'?modelProfiles.groq.fast:task==='planner'&&provider==='gemini'?modelProfiles.gemini.fast:modelProfiles[provider]?.[tier]||'';
+  const desired=(task==='songwriting'||task==='creative')&&provider==='groq'?'llama-3.3-70b-versatile':
+   task==='coding'&&provider==='pollinations'?'qwen/qwen3-coder-30b-a3b-instruct':
+   task==='planner'&&provider==='groq'?modelProfiles.groq.fast:
+   task==='planner'&&provider==='gemini'?modelProfiles.gemini.fast:modelProfiles[provider]?.[tier]||'';
   const catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(!catalog.length)return desired;
   return catalog.some(item=>item.id===desired)?desired:catalog[0]?.id||desired;
@@ -1022,6 +1044,34 @@ async function discoverGitHubProjects(p,cb){
  progress(cb,1,'Búsqueda completada.');
  return {text,blob,filename:'prisma-github-open-source.txt',summary:items.length+' proyectos listados · GitHub API pública · límite no autenticado de GitHub aplicado.'};
 }
+const SPECIALIZED_TEXT_TOOLS = {
+ 'ai-youtube-kit':{
+  task:'creative',label:'Kit de contenido creado',
+  instruction:'Actúa como productor profesional de YouTube y redes sociales. A partir de la idea, entrega 5 títulos atractivos sin clickbait engañoso, una descripción lista para publicar, 7 hashtags relevantes, un guion por secciones, 3 ideas de shorts y un prompt visual para miniatura con texto muy corto. No inventes estadísticas de rendimiento.'
+ },
+ 'ai-prompt-lab':{
+  task:'creative',label:'Prompt optimizado',
+  instruction:'Transforma la solicitud en un prompt profesional, claro, detallado y reutilizable para el medio indicado (texto, imagen, audio, vídeo o código). Entrega el PROMPT FINAL listo para copiar y una versión BREVE; después explica en máximo tres líneas las mejoras. No afirmes generar archivos.'
+ },
+ 'ai-study-notes':{
+  task:'reasoning',label:'Material de estudio preparado',
+  instruction:'Actúa como tutor académico. Explica el tema de forma clara, crea un esquema, preguntas tipo examen con respuestas separadas y tarjetas de repaso. Indica incertidumbres. No inventes referencias ni estudios y no sustituyas la orientación del docente.'
+ },
+ 'ai-code-helper':{
+  task:'coding',label:'Asistencia de programación preparada',
+  instruction:'Actúa como ingeniero de software. Analiza y resuelve la petición, entrega código funcional cuando sea posible, explica cambios esenciales, incluye pruebas o casos límite. No afirmes haber ejecutado el programa ni accedido a repositorios.'
+ }
+};
+async function runSpecializedTextTool(id,p,cb){
+ const spec=SPECIALIZED_TEXT_TOOLS[id];
+ const user=String(p.prompt||p.text||'').trim();
+ if(user.length<4)throw Error('Describe qué necesitas antes de ejecutar esta herramienta.');
+ const result=await generateText({...p,prompt:spec.instruction+'\n\nPETICIÓN DEL USUARIO:\n'+user,
+  task:spec.task,tone:spec.task==='reasoning'?'academic':'creative',
+  length:'long',reasoning:p.reasoning||'balanced'},cb);
+ return {...result,summary:spec.label+' · '+(result?.provider||'motor de IA')+'.'};
+}
+
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
@@ -1052,6 +1102,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='excel-json')return excelToJson(files[0],p,cb);
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
  if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
+ if(SPECIALIZED_TEXT_TOOLS[id])return runSpecializedTextTool(id,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
  if(id==='music-lyrics')return generateText({...p,task:'songwriting',prompt:'Compón una canción completamente original. Entrega título, concepto, género, tempo aproximado, versos, pre-coro, coro, puente y un prompt de producción musical. No copies letras existentes ni imites exactamente a un artista. No afirmes que has generado audio.\n\nIdea del usuario: '+String(p.prompt||p.text||'') ,tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);
  if(id==='ai-voice')return generateSpeech(p,cb);
