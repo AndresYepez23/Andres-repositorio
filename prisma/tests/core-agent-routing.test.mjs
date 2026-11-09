@@ -174,9 +174,12 @@ assert.equal(selectTaskModel('requesty','general','fast',CHAT_MODELS.requesty),'
 assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra:free'}]),'nvidia/nemotron-3-ultra:free');
 assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableAll})[0],'kilo');
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
-assert.equal(ROUTE_ORDER.general.includes('kilo'),false,'Kilo free trial endpoints remain manual-only');
-assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial stays manual-only');
-assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial remains manual until quotas are adequate');
+assert.equal(ROUTE_ORDER.general.includes('kilo'),true,'Kilo may auto-route only through verified non-NVIDIA zero-cost models');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),true,'AIHubMix is a conditional route, disabled until daily quota activation');
+assert.ok(ROUTE_ORDER.general.indexOf('kilo')<ROUTE_ORDER.general.indexOf('openrouter') && ROUTE_ORDER.general.indexOf('aihubmix')<ROUTE_ORDER.general.indexOf('openrouter'));
+assert.ok(!ROUTE_ORDER.general.includes('baidu')&&!ROUTE_ORDER.general.includes('amd'));
+assert.ok(ROUTE_ORDER.general.includes('groq')&&ROUTE_ORDER.general.includes('gemini'));
+assert.equal(getProviderDailyLimit({},'aihubmix'),10,'Do not activate the daily plan by merely configuring keys');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
@@ -405,8 +408,13 @@ assert.match(statusSource, /aihubmixLifetime/);
 assert.match(statusSource, /getKiloFreeModels/);
 assert.match(statusSource, /getAihubmixFreeModels/);
 assert.match(statusSource, /getProviderMinuteLimit/);
+assert.match(statusSource,/autoEligible/);
+assert.match(statusSource,/AIHUBMIX_DAILY_QUOTA_ACTIVE === "1"/);
 assert.doesNotMatch(statusSource, /BAIDU_FREE_QUOTA_CONFIRMED|QIANFAN|RADEON/i);
 const chatSource = readFileSync(new URL('../functions/api/ai/chat.js', import.meta.url), 'utf8');
+const engineSource = readFileSync(new URL('../src/engines.js', import.meta.url), 'utf8');
+assert.match(engineSource,/centralAutoEligible/);
+assert.ok(engineSource.includes("startsWith('nvidia/')"));
 assert.doesNotMatch(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED|QIANFAN|RADEON/i);
 assert.doesNotMatch(chatSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from chat routing');
 assert.doesNotMatch(statusSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from provider status');
