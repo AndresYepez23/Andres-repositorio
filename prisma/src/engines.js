@@ -779,8 +779,17 @@ async function generateText(p,cb){
    typeof p.context==='string'?p.context.slice(0,2000):''
   ].filter(Boolean).join(' ');
  const user=prompt;
-  const history=Array.isArray(p.contextMessages)?p.contextMessages.slice(-14).filter(m=>m&&['user','assistant'].includes(m.role)&&String(m.content||'').trim())
-   .map(m=>({role:m.role,content:String(m.content).slice(0,1700)})):[];
+  // Preserve the latest context without exceeding the backend's 30K-character ceiling.
+  const historyInput=Array.isArray(p.contextMessages)?p.contextMessages.slice(-14)
+   .filter(m=>m&&['user','assistant'].includes(m.role)&&String(m.content||'').trim()):[];
+  let contextBudget=Math.max(0,28000-system.length-user.length-600);
+  const history=[];
+  for(let i=historyInput.length-1;i>=0&&contextBudget>120;i--){
+   const original=String(historyInput[i].content);
+   const content=original.slice(-Math.min(1700,contextBudget));
+   history.unshift({role:historyInput[i].role,content});
+   contextBudget-=content.length;
+  }
   while(history.length&&history[0].role!=='user')history.shift();
   const conversationMessages=[{role:'system',content:system},...history,{role:'user',content:user}];
  const lengths={short:500,medium:1600,long:tier==='smart'?3200:2400};
