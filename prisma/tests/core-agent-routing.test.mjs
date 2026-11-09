@@ -109,7 +109,7 @@ for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
  assert.equal(slots.length,6,provider+' JSON pool must expose six keys');
  assert.equal(slots[5].number,6,provider+' JSON pool must map its sixth key');
  assert.equal(getCredentialStatus(compactPools,provider).poolValid,true);
- assert.match(getCredentialStatus(compactPools,provider).slots[0].variable,/\\[1\\]$/);
+ assert.ok(getCredentialStatus(compactPools,provider).slots[0].variable.endsWith('[1]'));
 }
 const mixedPool={REQUESTY_API_KEYS_JSON:'["json-key-1","json-key-2"]',REQUESTY_API_KEY_2:'manual-key-2'};
 assert.equal(getCredentialSlots(mixedPool,'requesty')[0].value,'json-key-1');
