@@ -82,7 +82,17 @@ function readStoredArray(key){
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
 let activeCategory='all',activeView='core',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
-const popularToolIds=['pdf-merge','image-bg','image-gen','docx-pdf','image-compress','qr'];
+const popularToolIds=['pdf-extract','image-bg','image-gen','ai-transcribe','pdf-merge','image-social-kit'];
+const toolFamilies=[
+ {id:'docs',name:'Documentos',icon:'file-text',categories:['pdf','office']},
+ {id:'visual',name:'Imagen y vídeo',icon:'image',categories:['image','media','creator']},
+ {id:'intelligence',name:'Inteligencia artificial',icon:'brain-circuit',categories:['ai','study']},
+ {id:'information',name:'Datos y texto',icon:'database',categories:['text','data','privacy']},
+ {id:'technical',name:'Web y utilidades',icon:'code',categories:['dev','web','utility']}
+];
+let expandedToolFamily='docs';
+const familyForCategory=id=>toolFamilies.find(group=>group.categories.includes(id));
+const currentCategoryName=()=>activeCategory.startsWith('family:')?toolFamilies.find(group=>group.id===activeCategory.slice(7))?.name||'Herramientas':categories.find(c=>c.id===activeCategory)?.name||'Herramientas';
 const searchAliases={
   'pdf-merge':'unir pdf juntar pdf combinar pdf fusionar documentos combinar archivos',
   'pdf-split':'separar pdf dividir pdf partir pdf separar paginas',
@@ -138,9 +148,24 @@ function normalizeSearch(value){
 }
 
 function renderCategories(){
-  const nav=$('#category-nav');
-  nav.innerHTML=categories.filter(c=>c.id!=='all').map(c=>'<button class="category-item" data-category="'+c.id+'"><span class="category-icon">'+icon(c.icon)+'</span><span>'+c.name+'</span></button>').join('');
-  document.querySelectorAll('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
+ const nav=$('#category-nav');if(!nav)return;
+ nav.innerHTML=toolFamilies.map(group=>{
+  const expanded=expandedToolFamily===group.id;
+  const children=group.categories.map(id=>categories.find(c=>c.id===id)).filter(Boolean);
+  const count=tools.filter(t=>group.categories.includes(t.category)).length;
+  return '<div class="category-family"><button type="button" class="category-family-toggle '+(expanded?'expanded':'')+'" data-family="'+group.id+'" aria-expanded="'+expanded+'"><span class="category-icon">'+icon(group.icon)+'</span><span>'+group.name+'</span><small>'+count+'</small><span class="category-chevron">'+icon('arrow-down')+'</span></button>'+
+   '<div class="category-family-children '+(expanded?'':'hidden')+'">'+children.map(c=>'<button type="button" class="category-item '+(activeCategory===c.id?'active':'')+'" data-category="'+c.id+'"><span>'+c.name+'</span></button>').join('')+'</div></div>';
+ }).join('');
+ nav.querySelectorAll('[data-family]').forEach(btn=>btn.addEventListener('click',()=>{
+  expandedToolFamily=expandedToolFamily===btn.dataset.family?'':btn.dataset.family;
+  activeView='explore';activeCategory='family:'+btn.dataset.family;searchTerm='';$('#global-search').value='';
+  renderCategories();render();closeSidebar();scrollToCurrentView();
+ }));
+ nav.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{
+  activeView='explore';activeCategory=btn.dataset.category;searchTerm='';$('#global-search').value='';
+  expandedToolFamily=familyForCategory(btn.dataset.category)?.id||expandedToolFamily;
+  renderCategories();render();closeSidebar();scrollToCurrentView();
+ }));
 }
 function renderProviders(){
   $('#provider-grid').innerHTML=providers.map(p=>'<article class="provider-card"><div class="provider-card-top"><span class="provider-stage">'+p.stage+'</span><span class="nav-dot"></span></div><h4>'+p.name+'</h4><div class="provider-kind">'+p.kind+'</div><div class="provider-tags">'+p.capabilities.map(t=>'<span>'+t+'</span>').join('')+'</div><p class="provider-note">'+p.note+'</p></article>').join('');
@@ -149,7 +174,9 @@ function visibleTools(){
   let list=tools;
   if(activeView==='favorites')list=list.filter(tool=>favorites.has(tool.id));
   if(activeView==='recent')list=recentTools.map(item=>tools.find(tool=>tool.id===item.id)).filter(Boolean);
-  if(activeView==='explore'&&activeCategory!=='all')list=list.filter(tool=>tool.category===activeCategory);
+  if(activeView==='explore'&&activeCategory!=='all')list=list.filter(tool=>activeCategory.startsWith('family:')
+ ?toolFamilies.find(group=>group.id===activeCategory.slice(7))?.categories.includes(tool.category)
+ :tool.category===activeCategory);
   if(searchTerm){
     const query=normalizeSearch(searchTerm),terms=query.split(/\s+/).filter(Boolean),aliasIds=new Set();
     Object.entries(queryToolAliases).forEach(([phrase,ids])=>{if(query.includes(phrase))ids.forEach(id=>aliasIds.add(id));});
@@ -182,8 +209,8 @@ function render(){
   $('.hero-section').classList.toggle('hidden',core||ai);
   $('.metric-strip').classList.toggle('hidden',core||ai);
   $('#tools-section').classList.toggle('hidden',ai||core);$('#ai-section').classList.toggle('hidden',!ai);$('#core-section').classList.toggle('hidden',!core);
-  $('#breadcrumb-current').textContent=core?'Prisma Core':ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?(categories.find(c=>c.id===activeCategory)?.name||'Explorar'):searchTerm?'Resultados':'Explorar';
-  $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
+  $('#breadcrumb-current').textContent=core?'Prisma Core':ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?currentCategoryName():searchTerm?'Resultados':'Explorar';
+  $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Encuentra lo que necesitas':currentCategoryName();
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
   $('#category-label').classList.toggle('hidden',activeView==='ai');$('#category-nav').classList.toggle('hidden',activeView==='ai');
@@ -200,7 +227,16 @@ function render(){
   $('#empty-title').textContent=activeView==='favorites'?'Todavía no tienes favoritos':activeView==='recent'?'Todavía no hay herramientas recientes':'No encontramos herramientas';
   $('#empty-description').textContent=activeView==='favorites'?'Guarda una herramienta con la estrella para tenerla siempre a mano.':activeView==='recent'?'Cuando abras una herramienta, aparecerá aquí para que puedas retomarla.':'Prueba con otras palabras o busca por lo que quieres conseguir.';
   $('#result-count').textContent=list.length+' herramientas';
-  $('#filter-chips').innerHTML=categories.map(category=>'<button type="button" class="filter-chip '+(activeCategory===category.id?'active':'')+'" data-filter="'+category.id+'" aria-pressed="'+(activeCategory===category.id)+'">'+category.name+'</button>').join('');
+  $('#filter-chips').innerHTML=[{id:'all',name:'Todas'},...toolFamilies.map(g=>({id:'family:'+g.id,name:g.name}))].map(item=>{
+ const active=activeCategory===item.id||(activeCategory!=='all'&&familyForCategory(activeCategory)?.id===item.id.slice(7));
+ return '<button type="button" class="filter-chip '+(active?'active':'')+'" data-filter="'+item.id+'" aria-pressed="'+active+'">'+item.name+'</button>';
+ }).join('');
+ const smallSelect=$('#explore-subcategory');if(smallSelect){
+  const options=['<option value="all">Todas las especialidades</option>',...toolFamilies.flatMap(group=>group.categories.map(id=>{const c=categories.find(x=>x.id===id);return c?'<option value="'+id+'">'+c.name+'</option>':''}))];
+  smallSelect.innerHTML=options.join('');
+  smallSelect.value=activeCategory.startsWith('family:')?'all':activeCategory;
+ }
+ const searchInput=$('#explore-search');if(searchInput&&searchInput.value!==searchTerm)searchInput.value=searchTerm;
   $('#metric-tools').textContent=tools.length;$('#metric-local').textContent=tools.filter(tool=>tool.mode==='local'||tool.mode==='browser').length;
   renderMiniTools('home-popular',popularToolIds,'Estamos preparando recomendaciones.');renderHomeRecents();
   $$('#tool-grid [data-tool]').forEach(card=>{
@@ -213,7 +249,7 @@ function render(){
     card.addEventListener('click',open);
   });
   $$('#tool-grid [data-favorite]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();toggleFavorite(button.dataset.favorite);}));
-  $$('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;render();}));
+  $('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;renderCategories();render();}));
 }
 
 function toggleFavorite(id){
