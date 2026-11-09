@@ -43,6 +43,8 @@ function save(){
   try{
     const serializable=messages.slice(-40).map(message=>{
       const item={role:message.role,content:message.content,time:message.time};
+      if(message.engine)item.engine=message.engine;
+      if(message.model)item.model=message.model;
       if(message.files?.length)item.files=message.files.slice(0,8);
       if(message.partial)item.partial=true;
       if(message.results?.length)item.results=message.results.map(entry=>({
@@ -86,6 +88,7 @@ function renderMessages({forceBottom=false}={}){
     const label=document.createElement('span');label.className='core-message-label';label.textContent=message.role==='user'?'TÚ':'PRISMA CORE';
     const body=document.createElement('div');body.className='core-message-body';body.textContent=message.content;
     bubble.append(label,body);
+    if(message.role==='assistant'&&message.engine){const source=document.createElement('small');source.className='core-message-engine';source.textContent='Respondió '+({gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'}[message.engine]||message.engine);bubble.append(source);}
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
     list.append(bubble);
@@ -419,15 +422,39 @@ function isConversationWithoutTools(text){
   const capabilityQuestion=/^(?:puedes|podrias|se puede|es posible|tienes la capacidad de)\b.{0,130}\?+$/i.test(normalized)&&!/(?:hazme|creame|escribeme|generame|preparame|componme|hacer|crear|escribir|generar|componer|preparar|producir|convertir|editar|quitar|traducir|resumir|analizar|transcribir|programar|disenar|dibujar|redactar)/i.test(normalized);
   return simpleConversation||capabilityQuestion;
 }
-async function answerConversation(text,creds){
-  status('Prisma está respondiendo…');
-  const context=messages.slice(-5,-1).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,400)).join('\n');
-  const response=await runTool('ai-assistant',[],{
-    prompt:'Responde a este mensaje como Prisma Core, en español, con naturalidad y brevedad. No prepares planes, no devuelvas JSON, no afirmes haber realizado acciones. Explica con precisión qué herramientas están disponibles: puedes redactar letras originales, pero no generar audio musical si no existe un motor musical conectado; ai-voice solo convierte texto en voz. Si te preguntan por una canción, distingue letra original de audio musical.\n'+(context?'Contexto reciente:\n'+context+'\n':'')+'Usuario: '+text,
-    provider:'auto',reasoning:'fast',tone:'friendly',length:'short',task:'conversation',...creds
-  },(p,msg)=>status(msg||'Redactando respuesta…'));
-  addMessage('assistant',response.text||'¡Hola! Soy Prisma Core. ¿En qué puedo ayudarte?');
-  status('Listo.','success');
+// Text requests are conversations, not approval screens. Reserve tool planning for
+// actual file conversion, image/audio generation and multi-stage operations.
+function directCoreTask(text){
+ if(attachments.length)return null;
+ const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const isPrompt=/(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b|\bplan\b).{0,40}(?:imagen|miniatura|video|audio)|(?:imagen|miniatura|video).{0,40}(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b)/.test(q);
+ if(/\b(pdf|docx|xlsx|excel|csv|zip|ocr|archivo|subir|descargar|comprimir|convertir formato|rotar paginas|extraer paginas|codigo qr|codigo de barras|quitar fondo|eliminar fondo|redimensionar|transcribir audio|procesar video)\b/.test(q))return null;
+ if(!isPrompt&&/(?:gener|crea|crear|haz|hacer|dibuja|editar|produce|producir|renderiza|conviert).{0,55}\b(imagen|foto|ilustracion|miniatura|poster|video|audio|mp3|wav|archivo 3d|modelo 3d)\b/.test(q))return null;
+ if(/\b(letra|cancion|compon|composicion musical|estrofa|verso|coro|alabanza|balada)\b/.test(q))return 'songwriting';
+ if(/\b(codigo|programacion|javascript|typescript|python|sql|script|debug|desarrolla una funcion|corrige esta funcion)\b/.test(q))return 'coding';
+ if(/\b(youtube|miniatura|instagram|tiktok|publicacion|marketing|anuncio|titulo|descripcion del video)\b/.test(q))return 'creative';
+ if(/\b(analiz|investig|compara|explica|razona|solucion|estrategia|plan de|evalua)\b/.test(q))return 'reasoning';
+ return 'conversation';
+}
+async function answerConversation(text,creds,task='conversation'){
+ status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
+ const context=messages.slice(-9,-1).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,1400)).join('\n').slice(-6500);
+ const instruction=task==='songwriting'
+  ? 'Escribe directamente una letra de canción COMPLETAMENTE ORIGINAL, cantable, con título, versos, coro, puente y un breve prompt de producción musical. La respuesta es la propia canción, NO una lista de herramientas, un plan JSON ni instrucciones de ejecución. No afirmes haber generado un archivo de audio.'
+  : task==='creative'?'Responde directamente con el contenido creativo solicitado, listo para copiar o adaptar. No menciones herramientas internas.'
+  : task==='coding'?'Entrega directamente la solución de programación pedida, incluyendo código cuando corresponda y una explicación concisa. No simules ejecuciones.'
+  : 'Resuelve la pregunta directamente en español, con naturalidad y detalle apropiado. No prepares planes, no devuelvas JSON ni afirmes haber ejecutado acciones. Si careces de datos verificables actuales, reconócelo.';
+ const prompt='Eres Prisma Core, un asistente conversacional que puede utilizar herramientas, pero aquí debes RESPONDER al usuario. '+instruction+'\n'+(context?'HISTORIAL RECIENTE:\n'+context+'\n':'')+'SOLICITUD ACTUAL:\n'+text;
+ const response=await runTool(task==='songwriting'?'music-lyrics':'ai-assistant',[],{
+  prompt,provider:'auto',reasoning:task==='reasoning'?'smart':'balanced',
+  tone:task==='songwriting'||task==='creative'?'creative':'friendly',
+  length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
+  task,...creds
+ },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
+ const answer=String(response?.text||'').trim();
+ if(!answer)throw Error('El motor seleccionado no devolvió contenido. Intenta nuevamente.');
+ addMessage('assistant',answer,{engine:response.provider,model:response.model});
+ status('Listo. Puedes continuar la conversación o pedir ajustes.','success');
 }
 async function requestPlan(userText){
   // Simple greetings must work instantly, even when every external inference
@@ -445,9 +472,10 @@ async function requestPlan(userText){
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
-  if(isConversationWithoutTools(userText)){
-    if(hasConnectedModel)await answerConversation(userText,creds);
-    else{addMessage('assistant','¡Hola! Soy Prisma Core. Puedo ayudarte a trabajar con documentos, imágenes y herramientas locales. ¿Qué necesitas hacer?');status('Listo.','success');}
+  const directTask=directCoreTask(userText);
+  if(directTask){
+    if(hasConnectedModel)await answerConversation(userText,creds,directTask);
+    else {addMessage('assistant','Puedo ayudarte con esta petición, pero los motores de texto no están disponibles ahora. Las herramientas locales siguen funcionando. Revisa Laboratorio IA o vuelve a intentarlo.');status('Motores de texto no disponibles.','warning');}
     return;
   }
 
@@ -551,9 +579,12 @@ async function requestPlan(userText){
   plan.userRequest=userText+attachmentContext;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
-  const requiresApproval=steps.some(({tool})=>!['local','browser'].includes(tool.mode));
-  if(requiresApproval){showPlan(plan,steps);status('El plan incluye servicios externos. Revisa y autoriza antes de continuar.','warning');setProgress(1,'Esperando tu autorización');}
-  else{pendingPlan={plan,steps};$('#core-plan').classList.add('hidden');addMessage('assistant',plan.message||'Ya entendí lo que necesitas. Voy a ejecutar las herramientas locales disponibles y te entregaré el resultado aquí.');await executePlan();}
+  // A single expressly requested generation can run directly; approvals remain
+  // for multi-provider pipelines or other external actions.
+  const safeSingleGeneration=steps.length===1&&['ai-assistant','music-lyrics','image-gen','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id);
+  const requiresApproval=!safeSingleGeneration&&steps.some(({tool})=>!['local','browser'].includes(tool.mode));
+  if(requiresApproval){showPlan(plan,steps);status('Este flujo usa servicios externos. Revisa y autoriza antes de continuar.','warning');setProgress(1,'Esperando tu autorización');}
+  else{pendingPlan={plan,steps};$('#core-plan').classList.add('hidden');await executePlan();}
 }
 async function executePlan(){
   if(!pendingPlan||executionActive)return;
@@ -604,12 +635,17 @@ async function executePlan(){
       addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.',{results:executed,partial:true});
       status('Ejecución detenida por ti.','warning');
     }else{
-      addMessage('assistant','He completado '+executed.length+' operación(es). Los resultados y archivos están disponibles en esta conversación.',{results:executed,partial:false});
+      const single=executed.length===1?executed[0]:null;
+      if(single&&['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id)&&single.result?.text&&!single.result?.blob){
+        addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model});
+      }else{
+        addMessage('assistant',executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.',{results:executed,partial:false});
+      }
       status('Ejecución completada.','success');
     }
   }catch(error){
     console.error(error);
-    addMessage('assistant','La ejecución se detuvo: '+(error?.message||'error inesperado')+'. Los resultados de los pasos que sí terminaron se conservan en esta conversación.',{results:executed,partial:true});
+    addMessage('assistant','No pude completar toda la tarea: '+(error?.message||'error inesperado')+'.'+(executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.'),{results:executed,partial:true});
     status('Ejecución detenida.','error');
   }finally{
     executionActive=false;setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
@@ -673,7 +709,7 @@ async function sendMessage(){
   const requestText=text||'Analiza los archivos adjuntos y recomienda operaciones útiles.';
   setBusy(true);
   try{await requestPlan(requestText);}
-  catch(error){console.error(error);addMessage('assistant','No pude preparar el plan: '+(error?.message||'error de conexión')+'. Revisa tus conexiones en Laboratorio IA e inténtalo otra vez.');status('No se pudo planificar.','error');}
+  catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
   finally{setBusy(false);}
 }
 export function initPrismaCore(){
