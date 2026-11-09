@@ -14,12 +14,13 @@ const exact = (q,term) => q.includes(normalize(term));
 const ALIASES = {
   'pdf-merge':['une pdf','combina documentos','fusionar pdf','juntar documentos'],
   'pdf-extract':['quedate con paginas','conserva paginas','sacame las hojas'],
+  'pdf-text':['extrae el texto del pdf','extrae texto del pdf','lee el texto del pdf','texto del documento pdf','pdf a texto'],
   'pdf-split':['divide pdf','separa hojas','dividelo en partes'],
   'image-bg':['quitar fondo','borrar fondo','fondo transparente'],
   'image-grayscale':['blanco y negro','escala de grises','foto monocromatica'],
   'image-palette':['colores dominantes','extrae colores','paleta de la foto'],
   'image-metadata':['datos exif','metadatos foto','informacion de imagen'],
-  'image-strip-metadata':['borra exif','quita ubicacion','limpia metadatos'],
+  'image-strip-metadata':['borra exif','quita ubicacion','limpia metadatos','quitale los metadatos','quita los metadatos','borra datos exif'],
   'image-flip':['voltear foto','espejo imagen','invierte horizontal'],
   'image-favicon':['iconos pwa','favicon','iconos web'],
   'image-sepia':['sepia','tono antiguo'],
@@ -63,7 +64,7 @@ const ALIASES = {
   'ai-voice':['texto a voz','lee en voz alta','genera narracion'],
   'ai-study-notes':['tarjetas de estudio','guia de estudio','preguntas tipo examen'],
   'qr-vcard':['qr de contacto','tarjeta de contacto qr'],
-  'qr-scan':['leer qr','escanear codigo qr'],
+  'qr-scan':['leer qr','escanear codigo qr','escanea qr','escanea el qr','lee el qr','escanear qr'],
   'file-inspector':['inspecciona archivo','tipo de archivo','firma binaria'],
   'hash-file':['hash de archivo','huella sha256','verificar integridad'],
   'pdf-metadata':['metadatos del pdf','autor del pdf'],
@@ -201,6 +202,8 @@ export function planCoreOfflineAction(query,files=[],history=[]){
   if(pdf(file)){
    if(/(?:limpi|quit|borr|elimin).{0,35}(?:metadatos|autor|informacion privada)/.test(q))
     return ok([step('pdf-metadata-clean',{},'Limpiar metadatos del PDF')]);
+   if(/(?:(?:extrae|extraer|saca|obten|lee|leer).{0,26}(?:texto|contenido).{0,32}(?:pdf|documento)|(?:pdf|documento).{0,28}(?:extrae|saca|lee|obten).{0,24}(?:texto|contenido))/.test(q))
+    return ok([step('pdf-text',{},'Extraer el texto seleccionable del PDF sin enviar el documento')]);
    if(/(?:metadatos|autor|propiedades).{0,30}(?:pdf|documento)?/.test(q))
     return ok([step('pdf-metadata',{},'Consultar metadatos del PDF')]);
   }
@@ -211,7 +214,7 @@ export function planCoreOfflineAction(query,files=[],history=[]){
     tasks.push(step('image-flip',{direction:/(?:vertical|arriba.*abajo)/.test(q)?'vertical':'horizontal'},'Voltear imagen'));
    if(/\bsepia\b|efecto antiguo/.test(q))tasks.push(step('image-sepia',{},'Aplicar efecto sepia'));
    if(/pixel(?:a|ar|ada|ado)|efecto pixel/.test(q))tasks.push(step('image-pixelate',{},'Aplicar efecto pixelado'));
-   if(/(?:eliminar|borrar|quitar|limpiar).{0,30}(?:exif|metadatos|ubicacion|gps)/.test(q))
+   if(/(?:elimin|borr|quit|limpi).{0,30}(?:exif|metadatos|ubicacion|gps)/.test(q))
     tasks.push(step('image-strip-metadata',{},'Eliminar metadatos de la imagen'));
    if(/(?:favicon|iconos? (?:para )?(?:web|pwa|sitio)|paquete de iconos)/.test(q))
     tasks.push(step('image-favicon',{},'Crear iconos para web y PWA'));
@@ -220,7 +223,7 @@ export function planCoreOfflineAction(query,files=[],history=[]){
     tasks.push(step('image-metadata',{},'Inspeccionar metadatos de la imagen'));
    if(/(?:extrae|extraer|identifica|muestra|detecta|saca).{0,25}(?:colores|paleta)|(?:colores dominantes|paleta de colores de)/.test(q))
     tasks.push(step('image-palette',{},'Extraer los colores dominantes'));
-   if(/(?:escanear|leer|descifrar|detecta).{0,24}(?:codigo qr|qr)/.test(q))
+   if(/(?:escane|leer|descifrar|detecta).{0,24}(?:codigo qr|qr)/.test(q))
     tasks.push(step('qr-scan',{},'Leer código QR de la imagen'));
    if(tasks.length&&tasks.length<=4)return ok(tasks);
   }
