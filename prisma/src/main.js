@@ -1135,7 +1135,9 @@ function closeSidebar(){
   $('#mobile-menu').setAttribute('aria-expanded','false');
 }
 function scrollToCurrentView(){
-  const target=activeView==='core'?$('#core-section'):activeView==='ai'?$('#ai-section'):
+  // Prisma Core is a viewport-sized chat. Never scroll its outer page.
+  if(activeView==='core'){window.scrollTo(0,0);return;}
+  const target=activeView==='ai'?$('#ai-section'):
     activeView==='explore'&&activeCategory==='all'&&!searchTerm?$('#home-dashboard'):$('#tools-section');
   if(!target)return;
   const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1193,6 +1195,25 @@ function safeStartup(label,callback){
     return false;
   }
 }
+// Safari iOS can shrink the visual viewport when the software keyboard opens.
+// Resize the chat shell while leaving scrolling exclusively inside the messages.
+function setupPrismaCoreViewport(){
+  let frame=0;
+  const sync=()=>{
+    if(frame)cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{
+      const visible=window.visualViewport?.height||window.innerHeight;
+      const height=Math.max(240,Math.round(visible));
+      document.documentElement.style.setProperty('--prisma-core-viewport',height+'px');
+    });
+  };
+  sync();
+  window.visualViewport?.addEventListener('resize',sync,{passive:true});
+  window.visualViewport?.addEventListener('scroll',sync,{passive:true});
+  window.addEventListener('resize',sync,{passive:true});
+  window.addEventListener('orientationchange',sync,{passive:true});
+}
+safeStartup('ventana del chat',setupPrismaCoreViewport);
 safeStartup('categorías',renderCategories);
 safeStartup('proveedores',renderProviders);
 safeStartup('interfaz',render);
