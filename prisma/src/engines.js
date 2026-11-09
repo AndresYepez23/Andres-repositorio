@@ -30,6 +30,28 @@ async function pdfTool(id,files,p,cb){
   return download(makeBlob(await out.save(),'application/pdf'),'prisma-documento-unido.pdf');
  }
  const src=await PDFDocument.load(await bytes(files[0]));const out=await PDFDocument.create();const total=src.getPageCount();
+ if(id==='pdf-form-fields'){
+  const fields=src.getForm().getFields();
+  const lines=['CAMPOS INTERACTIVOS DEL PDF','Archivo: '+files[0].name,'Páginas: '+total,'Campos encontrados: '+fields.length,''];
+  if(!fields.length)lines.push('Este PDF no contiene campos interactivos AcroForm.');
+  fields.forEach((item,i)=>lines.push((i+1)+'. '+item.getName()+' · '+(item.constructor?.name||'Campo')));
+  progress(cb,1,'Inspección de formulario completada.');
+  return {text:lines.join('\\n'),summary:fields.length+' campos identificados. Por privacidad solo se muestran nombres y tipos, nunca valores.'};
+ }
+ if(id==='pdf-form-flatten'){
+  const form=src.getForm(),fields=form.getFields();
+  if(!fields.length)throw Error('El PDF no contiene formularios editables.');
+  form.flatten();
+  progress(cb,1,'Formulario fijado.');
+  return {...download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-formulario-fijo.pdf'),summary:fields.length+' campos fijados en un PDF no editable como formulario.'};
+ }
+ if(id==='pdf-add-blank'){
+  const count=Math.max(1,Math.min(10,Math.round(Number(p.count)||1)));
+  const first=src.getPage(0),size=[first.getWidth(),first.getHeight()];
+  for(let i=0;i<count;i++)if(p.position==='start')src.insertPage(i,size);else src.addPage(size);
+  progress(cb,1,'Páginas insertadas.');
+  return {...download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-mas-paginas.pdf'),summary:count+' páginas en blanco añadidas '+(p.position==='start'?'al principio':'al final')+'.'};
+ }
  if(id==='pdf-metadata'){
   const info={titulo:src.getTitle()||'No indicado',autor:src.getAuthor()||'No indicado',asunto:src.getSubject()||'No indicado',palabrasClave:src.getKeywords()||'No indicadas',creador:src.getCreator()||'No indicado',productor:src.getProducer()||'No indicado',fechaCreacion:src.getCreationDate()?.toISOString()||'No indicada',fechaModificacion:src.getModificationDate()?.toISOString()||'No indicada',paginas:total};
   return {text:JSON.stringify(info,null,2),summary:'Metadatos leídos localmente. No se modificó el PDF.'};
