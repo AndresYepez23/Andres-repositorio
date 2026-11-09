@@ -1410,7 +1410,7 @@ async function runSpecializedTextTool(id,p,cb){
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(LOCAL_CREATOR_TOOL_IDS.includes(id))return runLocalCreatorTool(id,p);
-  if(['text-redact-local','json-compare-local','citation-ids-local'].includes(id))return runAdvancedTextTool(id,p);
+  if(['json-compare-local','citation-ids-local'].includes(id))return runAdvancedTextTool(id,p);
  if(id==='text-file-convert')return convertTextFile(files,p,cb);
  if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
