@@ -1,5 +1,5 @@
 import { getOpenRouterLimits } from "./openrouter.js";
-import { getCredentialSlots, CREDENTIAL_ROOTS } from "./credential-pool.js";
+import { getCredentialSlots } from "./credential-pool.js";
 
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
 export const LIMITS=Object.freeze({gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
