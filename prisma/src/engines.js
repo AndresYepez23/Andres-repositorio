@@ -534,22 +534,41 @@ async function generateImage(p,cb){
  if(!provider)throw Error('No hay un motor de imágenes habilitado. Cloudflare Workers AI debe estar activo o autoriza Pollinations.');
  const model=p.model||imageModelFor(provider,p.qualityProfile);
  if(provider==='cloudflare'||provider==='pollinations'&&p.centralFeatures?.pollinationsImages||provider==='huggingface'&&p.centralFeatures?.huggingfaceImages){
-  const chosenModel=p.model||(provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':provider==='pollinations'?'black-forest-labs/flux.1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers');
-  progress(cb,.15,'Procesando la imagen en el backend protegido de Prisma…');
-  const response=await fetch('/api/ai/image',{
-   method:'POST',headers:{'Content-Type':'application/json','Accept':'image/jpeg,image/png'},
-   body:JSON.stringify({provider,model:chosenModel,prompt:fullPrompt.slice(0,1800),ratio:p.ratio,seed:p.seed||undefined})
-  });
-  if(!response.ok){
-   const data=await response.json().catch(()=>({}));
-   throw Error(data.error||'No fue posible generar la imagen ('+response.status+').');
+  const candidates=p.provider==='auto'&&provider==='cloudflare'&&p.centralFeatures?.pollinationsImages
+   ? ['cloudflare','pollinations']: [provider];
+  const errors=[];
+  for(const selected of candidates){
+   const chosenModel=(selected===provider&&p.provider!=='auto'&&p.model)?p.model:
+    selected==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':
+    selected==='pollinations'?'black-forest-labs/flux.1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers';
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),45000);
+   try{
+    progress(cb,.15,'Generando imagen con '+selected+'…');
+    const response=await fetch('/api/ai/image',{
+     method:'POST',headers:{'Content-Type':'application/json','Accept':'image/jpeg,image/png,image/webp'},
+     signal:controller.signal,
+     body:JSON.stringify({provider:selected,model:chosenModel,prompt:fullPrompt.slice(0,1800),ratio:p.ratio,seed:p.seed||undefined})
+    });
+    if(!response.ok){
+     const data=await response.json().catch(()=>({}));
+     const detail=data.error||'No fue posible generar la imagen ('+response.status+').';
+     // Global visitor quotas do not improve by switching vendors.
+     if(response.status===429&&/Prisma alcanzó su límite temporal gratuito/i.test(detail))throw Object.assign(Error(detail),{stopFallback:true});
+     throw Error(detail);
+    }
+    const blob=await response.blob();
+    if(!blob.type.startsWith('image/'))throw Error('El motor no devolvió una imagen válida.');
+    progress(cb,1,'Imagen generada.');
+    return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':blob.type.includes('webp')?'webp':'png')),
+     previewUrl:URL.createObjectURL(blob),provider:selected,model:chosenModel,
+     summary:'Imagen generada con '+(selected==='cloudflare'?'Cloudflare FLUX':selected==='pollinations'?'Pollinations':'Hugging Face')+(errors.length?' · se utilizó respaldo automático.':'.')};
+   }catch(error){
+    errors.push(selected+': '+(error?.name==='AbortError'?'se agotó el tiempo de espera':error?.message||'error'));
+    if(error?.stopFallback)break;
+   }finally{clearTimeout(timeout);}
   }
-  const blob=await response.blob();
-  if(!blob.type.startsWith('image/'))throw Error('El motor central no devolvió una imagen válida.');
-  progress(cb,1,'Imagen generada.');
-  return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':'png')),
-   previewUrl:URL.createObjectURL(blob),provider,model:chosenModel,
-   summary:'Imagen generada con '+(provider==='cloudflare'?'Cloudflare FLUX':provider==='pollinations'?'Pollinations':'Hugging Face')+' · resolución determinada por el modelo.'};
+  throw Error('No fue posible generar la imagen. '+errors.join(' | '));
  }
  if(provider==='huggingface'&&!p.centralFeatures?.huggingfaceImages)
   throw Error('Las imágenes de Hugging Face están desactivadas para proteger tus créditos. Utiliza Cloudflare FLUX.');
