@@ -555,7 +555,7 @@ const fallbackModels={
 function modelOptions(kind,provider){
   if(provider==='auto')return [['','Automático · modelo recomendado']];
   const group=kind==='image'?'image':kind==='audio'?'audio':'chat';
-  if(provider!=='pollinations'){
+  if(provider!=='pollinations'||centralConnectionState.providers.pollinations){
     const models=centralConnectionState.modelCatalog?.[group]?.[provider]||[];
     return models.length?models.map(item=>[item.id,item.name+' · '+item.specialty]):[['','Predeterminado del motor']];
   }
@@ -567,7 +567,7 @@ async function loadPollinationsModels(kind,provider='pollinations'){
   const options=modelOptions(kind,provider);
   select.innerHTML=options.map(([value,label])=>'<option value="'+escapeHtml(value)+'">'+escapeHtml(label)+'</option>').join('');
   if(options.some(o=>o[0]===selected))select.value=selected;
-  if(provider!=='pollinations'||pollinationsModelCache[kind].length)return;
+  if(provider!=='pollinations'||centralConnectionState.providers.pollinations||pollinationsModelCache[kind].length)return;
   try{
     const response=await fetch('https://gen.pollinations.ai/'+kind+'/models');
     if(!response.ok)return;
