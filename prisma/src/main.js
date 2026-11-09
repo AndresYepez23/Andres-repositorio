@@ -1405,9 +1405,18 @@ $('#explore-subcategory')?.addEventListener('change',e=>{activeView='explore';ac
 $$('[data-quick-tool]').forEach(button=>button.addEventListener('click',()=>{const t=tools.find(tool=>tool.id===button.dataset.quickTool);if(t)openTool(t);}));
 
 const updateThemeLabel=()=>{const el=$('#theme-mode-label');if(el)el.textContent='Cambiar a tema '+(document.documentElement.dataset.theme==='dark'?'claro':'oscuro');};
-$('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;localStorage.setItem('prisma-theme',next);updateThemeLabel();});
-
-const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme)document.documentElement.dataset.theme=savedTheme;updateThemeLabel();
+function syncThemeChrome(theme=document.documentElement.dataset.theme){
+ const color=theme==='light'?'#f4f5f8':'#101218';
+ const themeMeta=$('meta[name="theme-color"]');if(themeMeta)themeMeta.content=color;
+ const statusMeta=$('meta[name="apple-mobile-web-app-status-bar-style"]');if(statusMeta)statusMeta.content=theme==='light'?'default':'black-translucent';
+}
+$('#theme-toggle').addEventListener('click',()=>{
+ const root=document.documentElement,next=root.dataset.theme==='dark'?'light':'dark';
+ root.dataset.theme=next;
+ try{localStorage.setItem('prisma-theme',next);}catch{}
+ syncThemeChrome(next);updateThemeLabel();
+});
+syncThemeChrome();updateThemeLabel();
 $('#explore-tools').addEventListener('click',()=>$('#tools-section').scrollIntoView({behavior:'smooth'}));
 $('#clear-search').addEventListener('click',()=>{$('#global-search').value='';searchTerm='';activeView='explore';activeCategory='all';render();scrollToCurrentView();});
 document.addEventListener('click',event=>{
@@ -1424,6 +1433,13 @@ $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herra
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
 safeStartup('Prisma Core',initPrismaCore);
 safeStartup('experiencia y PWA',initPrismaExperience);
+// Reveal the app only after the selected theme, Core history, sidebar slots and
+// initial conversation have been synchronously hydrated from this device.
+clearTimeout(window.__prismaBootFailsafe);
+$('#app-startup')?.classList.add('hidden');
+document.body.classList.remove('app-booting');
+document.body.classList.add('app-ready');
+document.dispatchEvent(new Event('prisma:app-ready'));
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
   if(event.key==='Escape'){closeProfileMenu();if(document.body.classList.contains('sidebar-search-open'))closeSidebarSearch();else if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar')?.classList.contains('open'))closeSidebar();}
