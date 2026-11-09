@@ -262,4 +262,22 @@ const topbarEnd = sidebarHtml.indexOf('</header>', topbarIndex);
 assert.ok(topbarIndex >= 0 && profileIndex > topbarIndex && profileIndex < topbarEnd,
   'profile menu must remain in its existing topbar position');
 
+// First-paint contract: static HTML must already match the default Core route.
+// This prevents the old tools dashboard from flashing before the module executes.
+assert.match(sidebarHtml, /<body class="is-core-view">/);
+assert.match(sidebarHtml, /class="nav-item active core-nav-item" data-view="core"/);
+assert.match(sidebarHtml, /id="breadcrumb-current">Prisma Core</);
+assert.match(sidebarHtml, /<section class="core-section" id="core-section">/);
+assert.match(sidebarHtml, /<div class="hero-section hidden">/);
+assert.match(sidebarHtml, /<div class="metric-strip hidden">/);
+assert.match(sidebarHtml, /<section class="home-dashboard hidden" id="home-dashboard">/);
+assert.match(sidebarHtml, /<section class="tools-section hidden" id="tools-section">/);
+assert.match(sidebarHtml, /<section class="ai-section hidden" id="ai-section">/);
+assert.match(sidebarHtml, /id="core-messages"[\\s\\S]*?class="core-welcome"/);
+assert.match(sidebarHtml, /id="category-nav"[^>]*class="category-nav hidden"/);
+assert.doesNotMatch(sidebarHtml, /class="core-sidebar-conversations hidden"/);
+assert.match(sidebarCore, /mainSidebarSlot\\.replaceChildren\\(integratedHistory\\)/);
+assert.match(sidebarCss, /body\\.is-core-view #core-workspace > \\.core-history/);
+assert.match(sidebarMain, /activeView='core'/);
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
