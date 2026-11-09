@@ -114,12 +114,16 @@ export function buildSmartLocalFlow(text,files=[],recentTexts=[]){
    const match=target.match(/\b(?:en|entre)\s+(dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d{1,2})\s+(?:partes|archivos|pdfs?)\b/);
    const words={dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10};
    const parts=match?(words[match[1]]||Number(match[1])):0;
+   const chunkMatch=target.match(/(?:cada|bloques? de|grupos? de)\s+(\d{1,3})\s+(?:paginas?|hojas?)/);
+   const chunkSize=chunkMatch?Number(chunkMatch[1]):0;
+   if(chunkSize>200)return result('Indica bloques de un máximo de 200 páginas.');
+   if(parts&&chunkSize)return result('¿Prefieres dividir por número de partes o cada cierto número de páginas?');
    if(parts===1)return result('Para dividir el PDF necesito al menos dos partes; también puedo entregar cada página por separado.');
    if(parts>20)return result('Por seguridad, puedes dividir el PDF en un máximo de 20 partes o separar cada página.');
    if(!parts&&/\b(?:en|entre)\s+(?:varias\s+)?partes\b/.test(target))
     return result('¿Quieres un PDF por página o dividirlo en un número concreto de partes? Por ejemplo, «en 2 partes».');
-   return result(parts?'Dividiré el PDF en '+parts+' partes consecutivas de tamaño similar, reunidas en un ZIP.':'Separaré todas las páginas del PDF en archivos individuales dentro de un ZIP.',
-    [step('pdf-split',parts?{parts}:{},parts?'Dividir el PDF en '+parts+' partes':'Separar cada página del PDF')]);
+   return result(parts?'Dividiré el PDF en '+parts+' partes consecutivas de tamaño similar, reunidas en un ZIP.':chunkSize?'Dividiré el PDF en bloques de '+chunkSize+' páginas dentro de un ZIP.':'Separaré todas las páginas del PDF en archivos individuales dentro de un ZIP.',
+    [step('pdf-split',parts?{parts}:chunkSize?{chunkSize}:{},parts?'Dividir el PDF en '+parts+' partes':chunkSize?'Dividir por bloques de páginas':'Separar cada página del PDF')]);
   }
   if(/(?:inspeccion|revisa|lista|muestra|consulta).{0,36}(?:campo|formulario)/.test(target))return ready([step('pdf-form-fields',{},'Inspeccionar los campos interactivos')],'PDF');
   if(/(?:aplana|aplanar|fija|fijar).{0,35}(?:formulario|pdf|campos)/.test(target))return ready([step('pdf-form-flatten',{},'Aplanar el formulario')],'PDF');
