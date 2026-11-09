@@ -214,7 +214,11 @@ function render(){
   $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Encuentra lo que necesitas':currentCategoryName();
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
-  $('#category-label').classList.remove('hidden');$('#category-nav').classList.remove('hidden');
+  document.body.classList.toggle('is-core-view',core);
+  $('#category-label').classList.remove('hidden');
+  $('#category-label').textContent=core?'TUS CONVERSACIONES':'EXPLORAR POR CATEGORÍA';
+  $('#category-nav').classList.toggle('hidden',core);
+  $('#core-sidebar-conversations')?.classList.toggle('hidden',!core);
   document.querySelectorAll('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
   $('#favorite-count').textContent=favorites.size;$('#recent-count').textContent=recentTools.length;
   $('#filter-chips').classList.toggle('hidden',activeView!=='explore');
@@ -1127,6 +1131,7 @@ function closeTool(){
 }
 function closeSidebar(){
   $('#sidebar').classList.remove('open');
+  $('#sidebar-backdrop')?.classList.remove('open');
   $('#mobile-menu').setAttribute('aria-expanded','false');
 }
 function scrollToCurrentView(){
@@ -1219,7 +1224,9 @@ document.addEventListener('click',event=>{
   if(event.target===$('#tool-modal'))closeTool();
 },true);
 $('#modal-run').addEventListener('click',executeCurrentTool);
-$('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#mobile-menu').setAttribute('aria-expanded',String(open));});
+$('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#sidebar-backdrop')?.classList.toggle('open',open);$('#mobile-menu').setAttribute('aria-expanded',String(open));});
+$('#sidebar-backdrop')?.addEventListener('click',closeSidebar);
+document.addEventListener('prisma:close-sidebar',closeSidebar);
 $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
 
 $$('[data-layout]').forEach(b=>b.addEventListener('click',()=>{layout=b.dataset.layout;$$('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));safeStartup('cambio de vista',render);}));
