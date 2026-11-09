@@ -828,6 +828,7 @@ function buildWorkflowFields(workflow){
   }
   if(workflow.id==='ai-creation'){
     return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['cloudflare','Cloudflare FLUX · central'],['pollinations','Pollinations · central o personal'],['huggingface','Hugging Face · créditos opcionales']],'auto','Se usan motores realmente habilitados en el backend.')+
+      selectField('Modelo de imagen (opcional)','model',[['','Automático · mejor disponible']],'')+
       selectField('Calidad de generación','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
       selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare'],['pollinations','Pollinations'],['huggingface','Hugging Face']],'auto')+      '<div class="tool-hint workflow-provider-notice" id="workflow-provider-notice"></div><div class="tool-hint workflow-provider-notice" id="workflow-text-notice"></div>'+
       '<div class="prompt-examples"><span>Ideas para empezar</span><button type="button" class="mini-button prompt-example" data-prompt-example="Fotografía publicitaria premium de un perfume minimalista sobre una superficie de piedra, iluminación de estudio suave y fondo elegante.">Producto premium</button><button type="button" class="mini-button prompt-example" data-prompt-example="Una ciudad futurista bajo la lluvia al anochecer, luces cinematográficas, reflejos detallados y atmósfera épica.">Escena cinematográfica</button><button type="button" class="mini-button prompt-example" data-prompt-example="Ilustración editorial moderna sobre creatividad e inteligencia artificial, composición limpia y colores armónicos.">Ilustración editorial</button><button type="button" class="mini-button prompt-example" data-prompt-example="Miniatura de YouTube con alto contraste, sujeto principal expresivo, composición clara y espacio visual para un título corto.">Miniatura YouTube</button></div>'+
@@ -859,7 +860,11 @@ function setupWorkflowAI(){
     const textNotice=$('#workflow-text-notice');
     if(textNotice)textNotice.textContent=providerNoticeText(textProvider?.value||'auto','balanced','text');
   };
-  provider?.addEventListener('change',update);quality?.addEventListener('change',update);textProvider?.addEventListener('change',update);
+  provider?.addEventListener('change',()=>{update();void loadPollinationsModels('image',provider.value);});quality?.addEventListener('change',update);textProvider?.addEventListener('change',update);
+  void getCentralProviderStatus().then(data=>{
+    Object.assign(centralConnectionState,{providers:data.providers,features:data.features,modelCatalog:data.modelCatalog,warnings:data.warnings,configured:data.configured});
+    void loadPollinationsModels('image',provider?.value||'auto');update();
+  }).catch(()=>update());
   $$('.prompt-example').forEach(button=>button.addEventListener('click',()=>{
     const prompt=$('#field-prompt');if(prompt){prompt.value=button.dataset.promptExample||'';prompt.focus();}
   }));
