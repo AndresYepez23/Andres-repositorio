@@ -3,6 +3,7 @@ import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
+import { planFileConversion } from './file-conversions.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -620,6 +621,22 @@ async function requestPlan(userText){
     status('Listo para ayudarte.','success');
     return;
   }
+  // Explicit conversions take priority over generic chat or PDF edit heuristics.
+  const previousTexts=messages.slice(-9,-1).filter(message=>message.role==='user').map(message=>message.content);
+  const fileConversion=planFileConversion(userText,attachments,previousTexts);
+  if(fileConversion){
+    if(fileConversion.type!=='ready'){
+      addMessage('assistant',fileConversion.message);
+      status('Convertidor preparado.','info');
+      return;
+    }
+    const plan={message:fileConversion.message,steps:fileConversion.steps,userRequest:userText,needs_clarification:false,combineFinalFiles:true,conversion:true};
+    const steps=validatePlan(plan);
+    pendingPlan={plan,steps};
+    addMessage('assistant',fileConversion.message);
+    await executePlan();
+    return;
+  }
   const pdfAction=buildPdfEditPlan(userText);
   if(pdfAction){
    if(pdfAction.type!=='execute'){addMessage('assistant',pdfAction.message);status('Edición de documentos lista.','info');return;}
@@ -838,7 +855,7 @@ async function executePlan(){
         addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
       }else{
         const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
-        const label=plan.combineFinalFiles?'PDF terminado. Incluye las páginas y modificaciones solicitadas; descarga el documento final.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
+        const label=plan.conversion?'Conversión preparada. Descarga el archivo resultante o sigue las instrucciones de impresión si aparecen.':plan.combineFinalFiles?'Proceso completado. Aquí tienes el archivo final con las modificaciones solicitadas.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
         addMessage('assistant',label,{results:visibleResults,partial:false});
       }
       successful=true;
@@ -881,6 +898,17 @@ function createExecutionResults(executed,partial){
       const copy=document.createElement('button');copy.type='button';copy.className='mini-button';copy.textContent='Copiar texto';
       copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});
       card.append(copy);
+    }
+    if(result.printHtml){
+      const button=document.createElement('button');button.type='button';button.className='mini-button';
+      button.textContent='Abrir vista y guardar como PDF';
+      button.addEventListener('click',()=>{
+        const win=window.open('','_blank');
+        if(!win){status('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes e inténtalo otra vez.','warning');return;}
+        win.document.open();win.document.write(String(result.printHtml));win.document.close();
+        win.addEventListener('load',()=>win.print(),{once:true});
+      });
+      card.append(button);
     }
     if(result.blob){
       const url=resultObjectUrl(result.blob);
