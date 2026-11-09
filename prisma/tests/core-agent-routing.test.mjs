@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
+import { redactSensitiveText, compareJsonDocuments, extractAcademicIdentifiers } from '../src/advanced-text-tools.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
@@ -151,7 +152,7 @@ assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3","r4"]'
 assert.equal(getCredentialSlots({GROQ_API_KEY:'q1',GROQ_API_KEY_BACKUP:'q2'},'groq').length,2,'legacy BACKUP aliases remain supported');
 
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
-const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','baidu','aihubmix']);
+const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','aihubmix']);
 const availableAll = name => allProviders.has(name);
 assert.deepEqual(rankProviders({task:'planner',available:availableAll}),ROUTE_ORDER.planner);
 assert.deepEqual(rankProviders({task:'coding',available:availableAll}),ROUTE_ORDER.coding);
@@ -175,7 +176,7 @@ assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableA
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
 assert.equal(ROUTE_ORDER.general.includes('kilo'),false,'Kilo free trial endpoints remain manual-only');
 assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial stays manual-only');
-assert.equal(ROUTE_ORDER.general.includes('baidu'),false,'Baidu remains manual until regional eligibility is confirmed');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial remains manual until quotas are adequate');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
@@ -404,20 +405,39 @@ assert.match(statusSource, /aihubmixLifetime/);
 assert.match(statusSource, /getKiloFreeModels/);
 assert.match(statusSource, /getAihubmixFreeModels/);
 assert.match(statusSource, /getProviderMinuteLimit/);
-assert.match(statusSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
+assert.doesNotMatch(statusSource, /BAIDU_FREE_QUOTA_CONFIRMED|QIANFAN|RADEON/i);
 const chatSource = readFileSync(new URL('../functions/api/ai/chat.js', import.meta.url), 'utf8');
-assert.match(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
+assert.doesNotMatch(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED|QIANFAN|RADEON/i);
 assert.doesNotMatch(chatSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from chat routing');
 assert.doesNotMatch(statusSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from provider status');
 const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
-for (const provider of ['kilo','requesty','sensenova','zai','baidu','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
+for (const provider of ['kilo','requesty','sensenova','zai','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
 assert.equal(CHAT_MODELS.requesty.length,13);
 assert.equal(CHAT_MODELS.aihubmix.length,0,'AIHubMix catalogue is loaded from its live API, not a stale hard-coded list');
 assert.equal(CHAT_MODELS.amd,undefined,'AMD is removed from the model catalog');
+assert.equal(CHAT_MODELS.baidu,undefined,'Baidu is removed from the model catalog');
+assert.equal(CREDENTIAL_ROOTS.baidu,undefined,'Baidu must not occupy a credential slot');
 assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/ling-3.1-flash'));
 assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/inclusionai/ling-3.0-tiny'));
 const aihubmixSource = readFileSync(new URL('../functions/_lib/aihubmix-models.js', import.meta.url), 'utf8');
 assert.match(aihubmixSource, /free_quota_config/);
 assert.match(aihubmixSource, /weight !== 1/);
 
+const redacted=redactSensitiveText('Contacto: usuario@ejemplo.com · https://ejemplo.com · +57 300 123 4567');
+assert.ok(redacted.text.includes('[CORREO_1]') && redacted.text.includes('[ENLACE_1]') && redacted.text.includes('[TELEFONO_1]'));
+assert.ok(!redacted.text.includes('usuario@ejemplo.com'));
+const jsonChanges=compareJsonDocuments('{"a":1,"b":[2]}','{"a":2,"b":[2,3]}');
+assert.ok(jsonChanges.text.includes('$.a') && jsonChanges.text.includes('$.b'));
+assert.equal(compareJsonDocuments('{"x":1}','{"x":1}').summary,'0 cambio(s) JSON encontrados. Comparación estructural local; no se enviaron datos a servidores.');
+const citations=extractAcademicIdentifiers('DOI: 10.1038/s41586-020-2649-2 · PMID: 32895569 · arXiv: 2401.12345');
+assert.ok(citations.text.includes('doi.org/10.1038/s41586-020-2649-2'));
+assert.ok(citations.text.includes('pubmed.ncbi.nlm.nih.gov/32895569'));
+assert.ok(citations.text.includes('arxiv.org/abs/2401.12345'));
+const advancedRegistry=readFileSync(new URL('../src/registry.js',import.meta.url),'utf8');
+for(const id of ['text-redact-local','json-compare-local','citation-ids-local','ai-compare-options','ai-action-plan','ai-text-review'])assert.ok(advancedRegistry.includes("id:'"+id+"'"),id+' must appear in the tools catalog');
+const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(coreSource,/normalizedTask/);
+assert.match(coreSource,/ai-compare-options/);
+assert.match(coreSource,/ai-action-plan/);
+assert.match(coreSource,/ai-text-review/);
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
