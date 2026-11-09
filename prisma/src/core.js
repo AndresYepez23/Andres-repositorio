@@ -661,7 +661,8 @@ async function requestPlan(userText){
       status('Entendí la operación: falta información para ejecutarla.','info');
       return;
     }
-    const guidedPlan={message:guidedFlow.message,steps:guidedFlow.steps,needs_clarification:false,userRequest:userText,combineFinalFiles:true};
+    const preserveMultiple=guidedFlow.steps.some(item=>['ai-transcribe','image-ocr','image-identify-local','csv-profile-local','ai-assistant'].includes(item.tool_id));
+    const guidedPlan={message:guidedFlow.message,steps:guidedFlow.steps,needs_clarification:false,userRequest:userText,combineFinalFiles:!preserveMultiple};
     const guidedSteps=validatePlan(guidedPlan);
     pendingPlan={plan:guidedPlan,steps:guidedSteps};
     const external=guidedSteps.some(({tool})=>!['local','browser'].includes(tool.mode));
