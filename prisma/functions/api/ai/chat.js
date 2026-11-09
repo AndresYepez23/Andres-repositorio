@@ -65,7 +65,7 @@ function normalizeMessages(input) {
 }
 
 async function callOpenAICompatibleProvider(env, provider, endpoint, model, messages, payload, extraHeaders = {}) {
-  if (!getCredentialSlots(env,provider).length) return json({error:"Falta configurar la clave de "+provider+" en los secretos de Cloudflare.",provider},503);
+  if (!getCredentialSlots(env,provider).length) return json({error:"Falta configurar el secreto JSON de credenciales o la variable de API key de "+provider+" en Cloudflare.",provider},503);
   let response;
   try {
     response = await requestWithCredentialPool(env, provider, credential => fetch(endpoint, {
