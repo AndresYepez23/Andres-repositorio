@@ -24,7 +24,7 @@ export async function onRequestPost({request,env}){
  }
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!env.HF_TOKEN))return json({error:"La transcripción de Hugging Face está desactivada para proteger los créditos gratuitos."},503);
  const limit=await checkLimits(env,request,provider==="groq"?"groq-audio":"huggingface-image");
- if(limit)return json({error:limit.error},limit.status);
+ if(limit)return json({error:limit.error,code:limit.code,retryAfter:limit.retryAfter},limit.status);
  let response;
  try{
   if(provider==="groq"){
