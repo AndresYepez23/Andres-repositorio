@@ -502,4 +502,11 @@ assert.equal(chooseCoreResponseLength('reasoning','Explica brevemente la compara
 assert.equal(chooseCoreResponseLength('songwriting','Crea una canción completa'),'long');
 assert.equal(chooseCoreReasoning('coding','¿Qué es HTML?'),'balanced');
 
+// Connection panel exposes independently tracked image quota, not only text usage.
+const connectionsSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+assert.match(connectionsSource,/central\.imageUsage\?\.\[provider\]/);
+assert.match(connectionsSource,/cloudflare-image-usage/);
+assert.match(connectionsSource,/pollinations-image-usage/);
+assert.match(connectionsSource,/const count=Object\.values\(central\.providers\|\|\{\}\)\.filter\(Boolean\)\.length/);
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
