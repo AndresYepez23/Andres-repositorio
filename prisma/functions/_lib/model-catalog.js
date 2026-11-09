@@ -17,10 +17,8 @@ export const CHAT_MODELS = {
     {id:"google/gemma-3-27b-it:cheapest",name:"Gemma 3 27B",specialty:"Chat e instrucciones"}
   ],
   groq: [
-    {id:"openai/gpt-oss-20b",name:"GPT-OSS 20B",specialty:"Rapidez"},
-    {id:"openai/gpt-oss-120b",name:"GPT-OSS 120B",specialty:"Razonamiento"},
-    {id:"llama-3.3-70b-versatile",name:"Llama 3.3 70B",specialty:"Redacción y análisis"},
-    {id:"llama-3.1-8b-instant",name:"Llama 3.1 8B Instant",specialty:"Respuestas rápidas"}
+    {id:"openai/gpt-oss-20b",name:"GPT-OSS 20B",specialty:"Chat y planificación rápida"},
+    {id:"openai/gpt-oss-120b",name:"GPT-OSS 120B",specialty:"Redacción creativa y razonamiento"}
   ],
   cloudflare: [
     {id:"@cf/google/gemma-4-26b-a4b-it",name:"Gemma 4 26B",specialty:"Chat y razonamiento"},
