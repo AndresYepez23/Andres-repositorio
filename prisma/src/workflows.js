@@ -5,6 +5,9 @@ export const workflows = [
   { id:'document-pipeline', name:'Preparar documentos PDF', description:'Combina archivos, numera páginas y extrae el texto disponible en un solo proceso.', icon:'files', tag:'PDF · Local', file:true, multiple:true, maxFiles:12, accept:'.pdf,application/pdf' },
   { id:'ai-creation', name:'Crear contenido con IA', description:'Convierte una idea en una imagen editada y un paquete de contenido listo para publicar.', icon:'sparkles', tag:'Motores intercambiables', file:false, multiple:false, accept:'*/*' },
   { id:'ai-task', name:'Resolver una tarea con IA', description:'Redacta, resume, explica, traduce o convierte una idea en un resultado útil. Prisma elige el motor conectado.', icon:'brain-circuit', tag:'Enrutamiento automático', file:false, multiple:false, accept:'*/*' },
+  { id:'media-studio', name:'Editar y analizar audio o vídeo', description:'Recorta, extrae audio, genera miniaturas, silencia o transcribe y resume con IA cuando lo solicites.', icon:'film', tag:'FFmpeg.wasm · Groq Whisper', file:true, multiple:false, accept:'video/*,audio/*,.mp4,.webm,.mov,.mp3,.wav,.m4a,.ogg' },
+  { id:'data-studio', name:'Preparar y auditar datos', description:'Revisa registros CSV, detecta duplicados y convierte entre CSV y JSON en el navegador.', icon:'database', tag:'Datos privados · Local', file:true, multiple:false, accept:'.csv,.json,text/csv,application/json,text/plain' },
+  { id:'privacy-studio', name:'Preparar archivo para compartir', description:'Retira metadatos habituales de una imagen o PDF y, opcionalmente, añade una marca de agua.', icon:'shield-check', tag:'Privacidad · Sin API', file:true, multiple:false, accept:'image/png,image/jpeg,image/webp,.pdf,application/pdf' },
   { id:'song-studio', name:'Estudio de composición musical', description:'Crea una letra original con estructura, género, ambiente e instrucciones de producción, lista para llevar a un generador musical.', icon:'music', tag:'Canciones originales · Texto', file:false, multiple:false, accept:'*/*' },
   { id:'creator-studio', name:'Estudio para YouTube y redes', description:'Prepara títulos, descripción, estructura del vídeo, hashtags y un concepto de miniatura. Generación de imagen opcional.', icon:'clapperboard', tag:'YouTube · Redes · Opcional imagen', file:false, multiple:false, accept:'*/*' },
   { id:'study-studio', name:'Guía de estudio inteligente', description:'Transforma tus apuntes o un tema en explicación, preguntas de práctica y tarjetas de repaso.', icon:'graduation-cap', tag:'Aprendizaje · Repaso', file:false, multiple:false, accept:'*/*' }
@@ -23,6 +26,7 @@ async function imagePipeline(files, params, callback) {
   const source = files[0];
   if (!source) throw new Error('Selecciona una imagen para comenzar.');
   const tasks = [];
+  if(params.stripMetadata)tasks.push({id:'image-strip-metadata',params:{},label:'Retirando metadatos de origen'});
   if (params.removeBg) tasks.push({ id:'image-bg', params:{}, label:'Eliminando el fondo' });
   if (params.resize) tasks.push({ id:'image-resize', params:{ width:params.width||1200, height:params.height||1200, keep:true, format:'image/png' }, label:'Ajustando dimensiones' });
   if (params.addWatermark) tasks.push({ id:'image-watermark', params:{ watermark:params.watermark||'Prisma Space', position:params.watermarkPosition||'bottom-right', size:30, opacity:42, color:'#ffffff' }, label:'Aplicando marca de agua' });
@@ -54,7 +58,7 @@ async function documentPipeline(files, params, callback) {
   if(!files.length)throw new Error('Selecciona al menos un PDF.');
   const shouldMerge=!!params.merge&&files.length>1,documents=[],warnings=[],artifacts=[];
   const documentCount=shouldMerge?1:files.length;
-  const plannedSteps=(shouldMerge?1:0)+documentCount*((params.numberPages?1:0)+(params.extractText?1:0));
+  const plannedSteps=(shouldMerge?1:0)+documentCount*((params.pages?.trim()?1:0)+(params.numberPages?1:0)+(params.watermark?.trim()?1:0)+(params.extractText?1:0));
   const totalSteps=Math.max(1,plannedSteps);let stepIndex=0;
   const step=async(id,inputFiles,stepParams,label)=>{
     const start=stepIndex/totalSteps,span=1/totalSteps;stepIndex++;
@@ -65,7 +69,15 @@ async function documentPipeline(files, params, callback) {
 
   for(let index=0;index<documents.length;index++){
     let currentFile=documents[index];const baseName=currentFile.name.replace(/\.pdf$/i,'')||'documento';
+    if(params.pages?.trim()){
+      const extracted=await step('pdf-extract',[currentFile],{pages:params.pages.trim()},'Seleccionando páginas');
+      currentFile=asFile(extracted,baseName+'-paginas.pdf');
+    }
     if(params.numberPages){const numbered=await step('pdf-page-numbers',[currentFile],{position:params.position||'bottom'},'Numerando páginas');currentFile=asFile(numbered,baseName+'-numerado.pdf');}
+    if(params.watermark?.trim()){
+      const marked=await step('pdf-watermark',[currentFile],{watermark:params.watermark.trim()},'Aplicando marca de agua');
+      currentFile=asFile(marked,baseName+'-marcado.pdf');
+    }
     artifacts.push({name:documents.length>1?'PDF '+(index+1):'Documento PDF',filename:currentFile.name,blob:currentFile,type:'application/pdf'});
     if(params.extractText){
       try{
@@ -78,7 +90,7 @@ async function documentPipeline(files, params, callback) {
     }
   }
   callback?.(1,'Documentos preparados.');
-  return { artifacts, summary:artifacts.filter(item=>item.type==='application/pdf').length+' PDF preparado(s).'+(artifacts.some(item=>item.type==='text/plain')?' También se generó texto extraído.':'')+(warnings.length?' '+warnings.join(' '):''), steps:[...(shouldMerge?['Documentos combinados']:[]),...(params.numberPages?['Páginas numeradas']:[]),...(params.extractText?['Extracción de texto intentada']:[])], warnings };
+  return { artifacts, summary:artifacts.filter(item=>item.type==='application/pdf').length+' PDF preparado(s).'+(artifacts.some(item=>item.type==='text/plain')?' También se generó texto extraído.':'')+(warnings.length?' '+warnings.join(' '):''), steps:[...(shouldMerge?['Documentos combinados']:[]),...(params.pages?.trim()?['Páginas específicas extraídas']:[]),...(params.numberPages?['Páginas numeradas']:[]),...(params.watermark?.trim()?['Marca de agua aplicada']:[]),...(params.extractText?['Extracción de texto intentada']:[])], warnings };
 }
 
 function localContentPack(prompt,style){
@@ -180,7 +192,7 @@ async function aiTask(params,callback){
     provider:params.provider||'auto',
     tone:params.tone||'professional',
     length:params.length||'medium',
-    task:'general'
+    task:params.task==='summarize'?'summary':params.task==='explain'?'reasoning':params.task==='ideas'?'creative':'general'
   },callback,.05,.9,'Resolviendo tu solicitud con el mejor motor disponible');
   const answer=String(result?.text||'').trim();
   if(!answer)throw new Error('El motor conectado no devolvió una respuesta. Prueba con otro proveedor.');
@@ -204,7 +216,7 @@ async function songStudio(params,callback){
   '\nIdioma: '+(params.language||'Español')+'; género: '+(params.genre||'libre')+
   '; emoción: '+(params.mood||'esperanza')+
   '. Incluye título, versos, precoro, coro memorable, puente, final y un prompt técnico breve de producción (instrumentación, tempo y tipo de voz). No copies canciones ni imites exactamente a un artista. No afirmes haber generado audio.';
- const result=await runStep('music-lyrics',[],{...params,prompt:briefing,provider:'auto',task:'songwriting',tone:'creative',reasoning:'balanced',length:'long'},callback,.05,.92,'Componiendo letra y dirección musical');
+ const result=await runStep('music-lyrics',[],{...params,prompt:briefing,provider:params.provider||'auto',task:'songwriting',tone:'creative',reasoning:'balanced',length:'long'},callback,.05,.92,'Componiendo letra y dirección musical');
  if(!result?.text?.trim())throw new Error('No se pudo componer la canción.');
  callback?.(1,'Composición preparada.');
  return {artifacts:[textArtifact('Letra y producción','prisma-cancion-original.md',result.text)],summary:'Canción original compuesta con '+(result.provider||'un motor de IA')+'. Se entrega letra y guía de producción; no se generó un archivo musical.',steps:['Idea y género definidos','Letra original escrita','Instrucciones musicales preparadas']};
@@ -215,7 +227,7 @@ async function creatorStudio(params,callback){
  const instruction='Actúa como productor editorial para YouTube y redes. Tema: '+topic+
   '\nPlataforma: '+(params.platform||'YouTube')+'; público: '+(params.audience||'general')+
   '. Entrega 5 títulos atractivos sin sensacionalismo engañoso; una descripción SEO legible; guion o escaleta de apertura, desarrollo y cierre; 7 hashtags pertinentes; propuesta de miniatura con máximo 4 palabras grandes; 3 ideas de clips cortos. No inventes métricas ni promesas de CTR.';
- const result=await runStep('ai-assistant',[],{...params,prompt:instruction,task:'creative',provider:'auto',tone:'creative',length:'long',reasoning:'balanced'},callback,.04,.65,'Preparando estrategia y contenido');
+ const result=await runStep('ai-assistant',[],{...params,prompt:instruction,task:'creative',provider:params.provider||'auto',tone:'creative',length:'long',reasoning:'balanced'},callback,.04,.65,'Preparando estrategia y contenido');
  if(!result?.text?.trim())throw new Error('No se pudo crear el paquete editorial.');
  const artifacts=[textArtifact('Plan para redes y YouTube','prisma-kit-creador.md',result.text)];
  const warnings=[];
@@ -234,14 +246,100 @@ async function studyStudio(params,callback){
  const instruction='Elabora una GUÍA DE ESTUDIO didáctica basada en el tema '+topic+
   (notes?'\nAPUNTES DEL USUARIO:\n'+notes.slice(0,12000):'')+
   '\nIncluye: explicación clara por secciones, términos esenciales, ejemplos, 8 preguntas de práctica con respuestas al final y 10 tarjetas tipo Pregunta — Respuesta para repasar. Distingue datos comprobados de suposiciones; no inventes bibliografía ni citas.';
- const result=await runStep('ai-assistant',[],{...params,prompt:instruction,task:'reasoning',provider:'auto',tone:'academic',length:'long',reasoning:'balanced'},callback,.05,.92,'Preparando guía, preguntas y tarjetas');
+ const result=await runStep('ai-assistant',[],{...params,prompt:instruction,task:'reasoning',provider:params.provider||'auto',tone:'academic',length:'long',reasoning:'balanced'},callback,.05,.92,'Preparando guía, preguntas y tarjetas');
  if(!result?.text?.trim())throw new Error('No se pudo preparar la guía de estudio.');
  callback?.(1,'Material de estudio listo.');
  return {artifacts:[textArtifact('Guía y preguntas de estudio','prisma-guia-estudio.md',result.text)],summary:'Material de estudio preparado. Revisa los datos importantes con tu docente o bibliografía de referencia.',steps:['Tema y apuntes organizados','Explicación elaborada','Preguntas y tarjetas de repaso generadas']};
 }
 
+async function mediaStudio(files,params,callback){
+ const file=files[0];if(!file)throw Error('Selecciona un archivo de audio o vídeo.');
+ const isVideo=file.type.startsWith('video/')||/\\.(mp4|webm|mov)$/i.test(file.name);
+ const mode=params.mode||'thumbnail',artifacts=[],steps=[],warnings=[];
+ let current=file;
+ const op=async(id,opts,label,start,span)=>{
+  const result=await runStep(id,[current],opts,callback,start,span,label);
+  steps.push(label);if(result?.blob)current=asFile(result,'prisma-medio-'+steps.length);
+  return result;
+ };
+ if(mode==='thumbnail'){
+  if(!isVideo)throw Error('Para obtener un fotograma necesitas un vídeo.');
+  const thumb=await op('video-thumbnail',{second:Math.max(0,Number(params.second)||1)},'Capturar fotograma',.03,.64);
+  let final=thumb;
+  if(params.addWatermark){
+   if(!String(params.watermark||'').trim())throw Error('Escribe el texto de la marca de agua.');
+   final=await op('image-watermark',{watermark:params.watermark,position:'bottom-right'},'Añadir marca de agua',.67,.3);
+  }
+  artifacts.push({name:'Miniatura del vídeo',filename:final.filename||'prisma-miniatura.jpg',blob:final.blob,type:final.blob.type,previewUrl:final.previewUrl});
+ }else if(mode==='trim'){
+  const start=Number(params.start),duration=Number(params.duration);
+  if(!Number.isFinite(start)||start<0||!Number.isFinite(duration)||duration<=0)throw Error('Indica el inicio y la duración válidos.');
+  const result=await op(isVideo?'video-trim':'audio-trim',{start,duration},'Extraer fragmento',.03,.94);
+  artifacts.push({name:'Fragmento preparado',filename:result.filename||current.name,blob:result.blob,type:result.blob.type});
+ }else if(mode==='mute'||mode==='extract'){
+  if(!isVideo)throw Error('Esta operación requiere un vídeo.');
+  const result=await op(mode==='mute'?'video-mute':'video-audio',{},mode==='mute'?'Quitar el sonido':'Extraer el audio',.03,.94);
+  artifacts.push({name:'Archivo procesado',filename:result.filename||current.name,blob:result.blob,type:result.blob.type});
+ }else if(mode==='transcribe-summary'){
+  if(isVideo)await op('video-audio',{},'Extraer audio del vídeo',.03,.28);
+  const transcript=await op('ai-transcribe',{...params,provider:params.provider==='auto'?'auto':params.provider||'auto',language:params.language||'auto'},'Transcribir audio',isVideo?.31:.03,isVideo?.36:.65);
+  if(!transcript?.text?.trim())throw Error('La transcripción no devolvió texto.');
+  const transcriptBlob=new Blob([transcript.text],{type:'text/plain;charset=utf-8'});
+  artifacts.push({name:'Transcripción completa',filename:'prisma-transcripcion.txt',blob:transcriptBlob,type:'text/plain',text:transcript.text});
+  try{
+   const summary=await runStep('ai-assistant',[],{...params,provider:params.textProvider||'auto',task:'summary',prompt:'Resume fielmente esta transcripción. Incluye ideas esenciales y acciones mencionadas. No inventes hechos.\\n\\n'+transcript.text.slice(0,15000),tone:'professional',length:'medium'},callback,.72,.25,'Preparando resumen');
+   if(summary?.text?.trim()){
+    artifacts.push({name:'Resumen de la transcripción',filename:'prisma-resumen.md',blob:new Blob([summary.text],{type:'text/markdown;charset=utf-8'}),type:'text/markdown',text:summary.text});
+    steps.push('Resumen preparado');
+   }
+  }catch(error){warnings.push('No se pudo preparar el resumen, pero se conserva la transcripción: '+(error?.message||'error'));}
+ }else throw Error('No se reconoce la operación de audio o vídeo.');
+ callback?.(1,'Resultado listo.');
+ return {artifacts,steps,warnings,summary:'Proceso multimedia completado. Los archivos de salida se entregan por separado.'+(warnings.length?' El resumen opcional no estuvo disponible.':'')};
+}
+async function dataStudio(files,params,callback){
+ const file=files[0];if(!file)throw Error('Selecciona un CSV o JSON.');
+ if(file.size>5*1024*1024)throw Error('Para esta función selecciona un archivo de hasta 5 MB.');
+ const input=await file.text(),mode=params.mode||'audit';
+ let result,label;
+ if(mode==='audit'){
+  if(!/\\.csv$/i.test(file.name)&&!file.type.includes('csv'))throw Error('La auditoría requiere un archivo CSV.');
+  result=await runStep('csv-profile-local',[file],{delimiter:params.delimiter||'auto'},callback,.02,.96,'Auditando el CSV');
+  label='Auditoría CSV';
+ }else if(mode==='csv-json'){
+  const delimiter=params.delimiter&&params.delimiter!=='auto'?params.delimiter:
+   [',',';','\t'].map(ch=>({ch,count:(input.split(/\r?\n/)[0]||'').split(ch).length-1})).sort((x,y)=>y.count-x.count)[0].ch;
+  result=await runStep('csv-json',[],{text:input,delimiter,format:'json'},callback,.02,.96,'Convirtiendo CSV a JSON');
+  label='Resultado JSON';
+ }else if(mode==='json-csv'){
+  result=await runStep('json-csv',[],{text:input},callback,.02,.96,'Convirtiendo JSON a CSV');
+  label='Resultado CSV';
+ }else throw Error('Operación de datos desconocida.');
+ const text=String(result?.text||'');
+ const mime=mode==='json-csv'?'text/csv':mode==='csv-json'?'application/json':'text/plain';
+ const blob=result.blob||new Blob([text],{type:mime+';charset=utf-8'});
+ callback?.(1,'Datos preparados.');
+ return {artifacts:[{name:label,filename:result.filename||'prisma-datos.'+(mode==='csv-json'?'json':mode==='json-csv'?'csv':'txt'),blob,type:mime,text}],summary:result.summary||'Archivo procesado localmente.',steps:[label]};
+}
+async function privacyStudio(files,params,callback){
+ const file=files[0];if(!file)throw Error('Selecciona un PDF o imagen.');
+ const isPdf=file.type==='application/pdf'||/\\.pdf$/i.test(file.name);
+ const clean=await runStep(isPdf?'pdf-metadata-clean':'image-strip-metadata',[file],{},callback,.03,.62,'Limpiando metadatos');
+ if(!clean?.blob)throw Error('No se pudo generar el archivo sin metadatos.');
+ const steps=['Metadatos habituales retirados'];let final=clean;
+ if(params.addWatermark){
+  if(!String(params.watermark||'').trim())throw Error('Escribe la marca de agua para el archivo.');
+  final=await runStep(isPdf?'pdf-watermark':'image-watermark',[asFile(clean,file.name)],{watermark:params.watermark.trim(),position:'bottom-right'},callback,.65,.33,'Añadiendo marca de agua');
+  steps.push('Marca de agua aplicada');
+ }
+ callback?.(1,'Archivo listo para compartir.');
+ return {artifacts:[{name:'Archivo para compartir',filename:final.filename||'prisma-compartir',blob:final.blob,type:final.blob.type,previewUrl:final.previewUrl}],summary:'Copia del archivo preparada localmente. Revisa su contenido antes de compartirlo; esta limpieza no garantiza la eliminación de todo dato sensible incrustado.',steps};
+}
 export async function runWorkflow(id,files=[],params={},callback){
   callback?.(.02,'Preparando flujo inteligente...');
+  if(id==='media-studio')return mediaStudio(files,params,callback);
+  if(id==='data-studio')return dataStudio(files,params,callback);
+  if(id==='privacy-studio')return privacyStudio(files,params,callback);
   if(id==='image-pipeline')return imagePipeline(files,params,callback);
   if(id==='document-pipeline')return documentPipeline(files,params,callback);
   if(id==='ai-creation')return aiCreation(files,params,callback);

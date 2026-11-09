@@ -82,7 +82,17 @@ function readStoredArray(key){
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
 let activeCategory='all',activeView='core',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
-const popularToolIds=['pdf-merge','image-bg','image-gen','docx-pdf','image-compress','qr'];
+const popularToolIds=['pdf-extract','image-bg','image-gen','ai-transcribe','pdf-merge','image-social-kit'];
+const toolFamilies=[
+ {id:'docs',name:'Documentos',icon:'file-text',categories:['pdf','office']},
+ {id:'visual',name:'Imagen y vídeo',icon:'image',categories:['image','media','creator']},
+ {id:'intelligence',name:'Inteligencia artificial',icon:'brain-circuit',categories:['ai','study']},
+ {id:'information',name:'Datos y texto',icon:'database',categories:['text','data','privacy']},
+ {id:'technical',name:'Web y utilidades',icon:'code',categories:['dev','web','utility']}
+];
+let expandedToolFamily='docs';
+const familyForCategory=id=>toolFamilies.find(group=>group.categories.includes(id));
+const currentCategoryName=()=>activeCategory.startsWith('family:')?toolFamilies.find(group=>group.id===activeCategory.slice(7))?.name||'Herramientas':categories.find(c=>c.id===activeCategory)?.name||'Herramientas';
 const searchAliases={
   'pdf-merge':'unir pdf juntar pdf combinar pdf fusionar documentos combinar archivos',
   'pdf-split':'separar pdf dividir pdf partir pdf separar paginas',
@@ -138,9 +148,24 @@ function normalizeSearch(value){
 }
 
 function renderCategories(){
-  const nav=$('#category-nav');
-  nav.innerHTML=categories.filter(c=>c.id!=='all').map(c=>'<button class="category-item" data-category="'+c.id+'"><span class="category-icon">'+icon(c.icon)+'</span><span>'+c.name+'</span></button>').join('');
-  document.querySelectorAll('#category-nav [data-category]').forEach(b=>b.addEventListener('click',()=>{activeView='explore';activeCategory=b.dataset.category;searchTerm='';$('#global-search').value='';render();closeSidebar();scrollToCurrentView();}));
+ const nav=$('#category-nav');if(!nav)return;
+ nav.innerHTML=toolFamilies.map(group=>{
+  const expanded=expandedToolFamily===group.id;
+  const children=group.categories.map(id=>categories.find(c=>c.id===id)).filter(Boolean);
+  const count=tools.filter(t=>group.categories.includes(t.category)).length;
+  return '<div class="category-family"><button type="button" class="category-family-toggle '+(expanded?'expanded':'')+'" data-family="'+group.id+'" aria-expanded="'+expanded+'"><span class="category-icon">'+icon(group.icon)+'</span><span>'+group.name+'</span><small>'+count+'</small><span class="category-chevron">'+icon('arrow-down')+'</span></button>'+
+   '<div class="category-family-children '+(expanded?'':'hidden')+'">'+children.map(c=>'<button type="button" class="category-item '+(activeCategory===c.id?'active':'')+'" data-category="'+c.id+'"><span>'+c.name+'</span></button>').join('')+'</div></div>';
+ }).join('');
+ nav.querySelectorAll('[data-family]').forEach(btn=>btn.addEventListener('click',()=>{
+  expandedToolFamily=expandedToolFamily===btn.dataset.family?'':btn.dataset.family;
+  activeView='explore';activeCategory='family:'+btn.dataset.family;searchTerm='';$('#global-search').value='';
+  renderCategories();render();scrollToCurrentView();
+ }));
+ nav.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{
+  activeView='explore';activeCategory=btn.dataset.category;searchTerm='';$('#global-search').value='';
+  expandedToolFamily=familyForCategory(btn.dataset.category)?.id||expandedToolFamily;
+  renderCategories();render();closeSidebar();scrollToCurrentView();
+ }));
 }
 function renderProviders(){
   $('#provider-grid').innerHTML=providers.map(p=>'<article class="provider-card"><div class="provider-card-top"><span class="provider-stage">'+p.stage+'</span><span class="nav-dot"></span></div><h4>'+p.name+'</h4><div class="provider-kind">'+p.kind+'</div><div class="provider-tags">'+p.capabilities.map(t=>'<span>'+t+'</span>').join('')+'</div><p class="provider-note">'+p.note+'</p></article>').join('');
@@ -149,7 +174,9 @@ function visibleTools(){
   let list=tools;
   if(activeView==='favorites')list=list.filter(tool=>favorites.has(tool.id));
   if(activeView==='recent')list=recentTools.map(item=>tools.find(tool=>tool.id===item.id)).filter(Boolean);
-  if(activeView==='explore'&&activeCategory!=='all')list=list.filter(tool=>tool.category===activeCategory);
+  if(activeView==='explore'&&activeCategory!=='all')list=list.filter(tool=>activeCategory.startsWith('family:')
+ ?toolFamilies.find(group=>group.id===activeCategory.slice(7))?.categories.includes(tool.category)
+ :tool.category===activeCategory);
   if(searchTerm){
     const query=normalizeSearch(searchTerm),terms=query.split(/\s+/).filter(Boolean),aliasIds=new Set();
     Object.entries(queryToolAliases).forEach(([phrase,ids])=>{if(query.includes(phrase))ids.forEach(id=>aliasIds.add(id));});
@@ -182,8 +209,8 @@ function render(){
   $('.hero-section').classList.toggle('hidden',core||ai);
   $('.metric-strip').classList.toggle('hidden',core||ai);
   $('#tools-section').classList.toggle('hidden',ai||core);$('#ai-section').classList.toggle('hidden',!ai);$('#core-section').classList.toggle('hidden',!core);
-  $('#breadcrumb-current').textContent=core?'Prisma Core':ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?(categories.find(c=>c.id===activeCategory)?.name||'Explorar'):searchTerm?'Resultados':'Explorar';
-  $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Explora las herramientas':categories.find(c=>c.id===activeCategory)?.name||'Explora las herramientas';
+  $('#breadcrumb-current').textContent=core?'Prisma Core':ai?'Laboratorio IA':activeView==='favorites'?'Favoritos':activeView==='recent'?'Recientes':activeCategory!=='all'?currentCategoryName():searchTerm?'Resultados':'Explorar';
+  $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Encuentra lo que necesitas':currentCategoryName();
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
   $('#category-label').classList.toggle('hidden',activeView==='ai');$('#category-nav').classList.toggle('hidden',activeView==='ai');
@@ -200,7 +227,16 @@ function render(){
   $('#empty-title').textContent=activeView==='favorites'?'Todavía no tienes favoritos':activeView==='recent'?'Todavía no hay herramientas recientes':'No encontramos herramientas';
   $('#empty-description').textContent=activeView==='favorites'?'Guarda una herramienta con la estrella para tenerla siempre a mano.':activeView==='recent'?'Cuando abras una herramienta, aparecerá aquí para que puedas retomarla.':'Prueba con otras palabras o busca por lo que quieres conseguir.';
   $('#result-count').textContent=list.length+' herramientas';
-  $('#filter-chips').innerHTML=categories.map(category=>'<button type="button" class="filter-chip '+(activeCategory===category.id?'active':'')+'" data-filter="'+category.id+'" aria-pressed="'+(activeCategory===category.id)+'">'+category.name+'</button>').join('');
+  $('#filter-chips').innerHTML=[{id:'all',name:'Todas'},...toolFamilies.map(g=>({id:'family:'+g.id,name:g.name}))].map(item=>{
+ const active=activeCategory===item.id||(activeCategory!=='all'&&familyForCategory(activeCategory)?.id===item.id.slice(7));
+ return '<button type="button" class="filter-chip '+(active?'active':'')+'" data-filter="'+item.id+'" aria-pressed="'+active+'">'+item.name+'</button>';
+ }).join('');
+ const smallSelect=$('#explore-subcategory');if(smallSelect){
+  const options=['<option value="all">Todas las especialidades</option>',...toolFamilies.flatMap(group=>group.categories.map(id=>{const c=categories.find(x=>x.id===id);return c?'<option value="'+id+'">'+c.name+'</option>':''}))];
+  smallSelect.innerHTML=options.join('');
+  smallSelect.value=activeCategory.startsWith('family:')?'all':activeCategory;
+ }
+ const searchInput=$('#explore-search');if(searchInput&&searchInput.value!==searchTerm)searchInput.value=searchTerm;
   $('#metric-tools').textContent=tools.length;$('#metric-local').textContent=tools.filter(tool=>tool.mode==='local'||tool.mode==='browser').length;
   renderMiniTools('home-popular',popularToolIds,'Estamos preparando recomendaciones.');renderHomeRecents();
   $$('#tool-grid [data-tool]').forEach(card=>{
@@ -213,7 +249,7 @@ function render(){
     card.addEventListener('click',open);
   });
   $$('#tool-grid [data-favorite]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();toggleFavorite(button.dataset.favorite);}));
-  $$('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;render();}));
+  $$('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;renderCategories();render();}));
 }
 
 function toggleFavorite(id){
@@ -295,6 +331,26 @@ function setupApiExplorer(){
 }
 function buildFields(t){
   switch(t.id){
+    case 'pdf-form-fields':return '<div class="tool-hint">Muestra únicamente el nombre y tipo de los campos del formulario. Por privacidad no extrae respuestas ni datos personales.</div>';
+    case 'pdf-form-flatten':return '<div class="tool-hint">Fija los campos existentes como contenido visual. Después de esta operación ya no se podrán editar como formulario. Guarda una copia del PDF original.</div>';
+    case 'pdf-add-blank':return field('Cuántas páginas añadir','count','number','1','Entre 1 y 10 páginas.','min="1" max="10"')+selectField('Ubicación','position',[['end','Al final'],['start','Al principio']],'end');
+    case 'image-identify-local':return '<div class="tool-hint">Modelo gratuito ViT ONNX de Hugging Face ejecutado en el dispositivo. La primera vez descarga un modelo de aproximadamente 50–90 MB. Puede tardar en móviles y sus etiquetas están en inglés. No identifica personas.</div>';
+    case 'csv-profile-local':return selectField('Separador CSV','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\t','Tabulación']],'auto')+'<div class="tool-hint">Revisa celdas vacías, cantidad de valores únicos, tipos probables y filas duplicadas sin enviar el archivo.</div>';
+    case 'json-schema-validate':return textareaField('Datos JSON','text','{"id":1,"nombre":"Prisma"}','Pega el contenido JSON que quieres validar.')+textareaField('JSON Schema','schema','{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}}','AJV comprueba los datos con las reglas de tu esquema. Todo ocurre en el navegador.');
+    case 'pdf-form-fields':return '<div class="tool-hint">Inspecciona los nombres y tipos de campos interactivos del PDF. No muestra datos privados introducidos por el usuario.</div>';
+    case 'pdf-form-flatten':return '<div class="tool-hint">Genera una copia que fija la apariencia de los campos de formulario para que dejen de ser editables. El original permanece intacto.</div>';
+    case 'pdf-add-blank':return '<div class="inline-fields">'+field('Cantidad de páginas','count','number','1','Entre 1 y 10.','min="1" max="10"')+
+      selectField('Insertarlas','position',[['end','Al final'],['start','Al principio']],'end')+'</div>';
+    case 'image-identify-local':return '<div class="tool-hint">Modelo visual ViT ONNX gratuito que funciona en el navegador. La primera ejecución descarga pesos; las etiquetas son estimaciones en inglés, no identificación de personas.</div>';
+    case 'csv-profile-local':return selectField('Separador del CSV','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\\t','Tabulación']],'auto')+
+      '<div class="tool-hint">Analiza duplicados, columnas y valores vacíos en tu dispositivo. No utiliza servicios externos.</div>';
+    case 'json-schema-validate':return textareaField('Datos JSON','text','{"nombre":"Prisma","activo":true}','Pega los datos para validar.')+
+      textareaField('JSON Schema','schema','{"type":"object","required":["nombre"],"properties":{"nombre":{"type":"string"}}}','Validación con AJV 8, biblioteca libre.');
+    case 'table-file-convert':return selectField('Formato de destino','output',[['auto','Automático según origen'],['csv','CSV'],['json','JSON'],['xlsx','Excel (.xlsx)']],'auto')+
+      selectField('Hoja de Excel','sheet',[['0','Primera hoja'],['all','Todas las hojas (solo JSON)']],'0')+
+      '<div class="tool-hint">Acepta CSV, JSON y Excel XLS/XLSX. Procesa los datos en el navegador y genera el archivo convertido.</div>';
+    case 'text-file-convert':return selectField('Formato de destino','output',[['pdf','PDF de texto'],['docx','Word editable (.docx)'],['txt','Texto (.txt)'],['html','Página HTML (.html)']],'pdf')+
+      '<div class="tool-hint">TXT, Markdown, HTML y Word DOCX. Conserva el texto; el diseño y las imágenes del original pueden simplificarse.</div>';
     case 'pdf-split':return '<div class="tool-hint">Divide el documento en un PDF por página y descarga todos los archivos en un ZIP. Se procesa en tu dispositivo, sin subir el documento ni necesitar una API.</div>';
     case 'pdf-compress':return '<div class="tool-hint">Optimiza la estructura interna del PDF sin convertir las páginas en imágenes. No necesita API y conserva el texto seleccionable. La reducción depende del documento; si el peso está en fotografías, esta técnica puede no reducirlo. La compresión avanzada de imágenes se incorporará por separado.</div>';
     case 'pdf-to-word':return '<div class="tool-hint">Convierte PDF digitales con texto seleccionable en un archivo DOCX editable. No requiere cuenta ni API: el procesamiento ocurre en tu navegador. Los PDFs escaneados necesitan OCR y la maquetación compleja puede requerir ajustes en Word.</div>';
@@ -323,7 +379,10 @@ function buildFields(t){
     case 'pdf-extract':return field('Páginas que deseas conservar','pages','text','1-3','Ejemplos: 1, 3, 5-8. La numeración comienza en 1.');
     case 'pdf-remove-pages':return field('Páginas que deseas eliminar','pages','text','2, 4-5','Ejemplos: 2, 4-5. Las páginas restantes se conservarán.');
     case 'pdf-page-numbers':return selectField('Ubicación de la numeración','position',[['bottom','Inferior'],['top','Superior']],'bottom');
-    case 'pdf-to-image':return field('Páginas (opcional)','pages','text','','Vacío = todas las páginas. Ejemplo: 1-3, 5.')+selectField('Resolución','scale',[['1','Estándar'],['1.5','Alta (recomendada)'],['2','Muy alta']],'1.5');
+    case 'pdf-to-image':return field('Páginas (opcional)','pages','text','','Vacío = todas las páginas. Ejemplo: 1-3, 5.')+
+      selectField('Formato','format',[['png','PNG · sin pérdida'],['jpeg','JPG · menor tamaño']],'png')+
+      selectField('Resolución','scale',[['1','Estándar'],['1.5','Alta (recomendada)'],['2','Muy alta']],'1.5')+
+      '<div class="tool-hint">Descarga un ZIP con una imagen por página.</div>';
     case 'pdf-text':return '<div class="tool-hint">Extrae texto de PDFs digitales. Si el documento es un escaneo o una fotografía, utiliza OCR en la categoría Imágenes.</div>';
     case 'pdf-rotate':return selectField('Rotación','degrees',[['90','90° a la derecha'],['180','180°'],['270','90° a la izquierda']],'90');
     case 'pdf-watermark':return field('Texto de la marca de agua','watermark','text','Prisma Space','Se aplicará en diagonal y con transparencia.');
@@ -344,15 +403,19 @@ function buildFields(t){
     case 'ai-youtube-kit':return textareaField('Tema de tu vídeo o publicación','prompt','','Describe tu idea, público objetivo y plataforma.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
       selectField('Detalle','reasoning',[['balanced','Equilibrado'],['smart','Avanzado']],'balanced')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-prompt-lab':return textareaField('Qué quieres conseguir con la IA','prompt','','Escribe una idea y para qué motor o formato quieres el prompt.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-study-notes':return textareaField('Tema o apuntes de estudio','prompt','','Pega tus apuntes o describe el tema para obtener guía y preguntas de repaso.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-code-helper':return textareaField('Código o tarea de programación','prompt','','Pega código, describe el error o explica qué función necesitas.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'music-lyrics':return textareaField('Idea, tema o historia de la canción','prompt','','Describe el mensaje, género musical, emoción, idioma y detalles que quieras incluir.')+
       selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['groq','Groq'],['huggingface','Hugging Face'],['pollinations','Pollinations · personal']],'auto')+
@@ -573,9 +636,9 @@ function modelOptions(kind,provider){
   const group=kind==='image'?'image':kind==='audio'?'audio':'chat';
   if(provider!=='pollinations'||centralConnectionState.providers.pollinations){
     const models=centralConnectionState.modelCatalog?.[group]?.[provider]||[];
-    return models.length?models.map(item=>[item.id,item.name+' · '+item.specialty]):[['','Predeterminado del motor']];
+    return [['','Automático · mejor modelo disponible'],...models.map(item=>[item.id,item.name+' · '+item.specialty])];
   }
-  return pollinationsModelCache[kind]?.length?pollinationsModelCache[kind]:fallbackModels[kind]||[['','Predeterminado']];
+  return [['','Automático · mejor modelo disponible'],...(pollinationsModelCache[kind]?.length?pollinationsModelCache[kind]:fallbackModels[kind]||[])];
 }
 async function loadPollinationsModels(kind,provider='pollinations'){
   const select=$('#field-model');if(!select)return;
@@ -615,7 +678,7 @@ function providerNoticeText(provider,quality,task='image'){
  const features=centralConnectionState.features||{};
  let selected=provider||'auto';
  if(selected==='auto'){
-   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','pollinations','huggingface']:['gemini','cloudflare','groq','huggingface','pollinations'];
+   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','pollinations','huggingface']:['groq','cloudflare','gemini','pollinations','huggingface'];
    selected=order.find(item=>(item==='groq'&&task==='audio'?features.groqAudio:connected[item])&&(task!=='image'||item!=='huggingface'||features.huggingfaceImages)&&(task!=='audio'||item!=='huggingface'||features.huggingfaceAudio))||'';
  }
  if(!selected)return 'No hay un motor activo para esta tarea. Revisa las conexiones del Laboratorio IA.';
@@ -641,6 +704,18 @@ function setupAIAuthorization(tool){
  const task=tool.id==='image-gen'?'image':tool.id==='ai-transcribe'?'audio':'text';
  const provider=$('#field-provider');
  const quality=$('#field-qualityProfile');
+ const model=$('#field-model');
+ if(provider&&model){
+  const field=model.closest('.form-field');
+  if(field&&!field.closest('.model-details')){
+   const details=document.createElement('details');
+   details.className='model-details';
+   const summary=document.createElement('summary');summary.textContent='Elegir un modelo específico (opcional)';
+   details.append(summary);field.before(details);details.append(field);
+   details.open=provider.value!=='auto';
+   provider.addEventListener('change',()=>{details.open=provider.value!=='auto';});
+  }
+ }
  const update=()=>{
    updateProviderNotice('#tool-provider-notice',task);
    if(provider&&$('#field-model'))void loadPollinationsModels(task,provider.value);
@@ -688,10 +763,38 @@ function openTool(t){
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
   $('#modal-close').focus({preventScroll:true});
 }
+function textStudioModelSettings(){
+ return selectField('Motor de texto','provider',[['auto','Automático · mejor disponible'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['pollinations','Pollinations'],['huggingface','Hugging Face (créditos limitados)']],'auto')+
+  selectField('Modelo específico (opcional)','model',[['','Automático · según tarea']],'')+
+  '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice">Prisma elegirá el modelo más adecuado según la tarea.</div>';
+}
 function buildWorkflowFields(workflow){
+  if(workflow.id==='media-studio'){
+    return selectField('Qué necesitas hacer','mode',[['thumbnail','Capturar fotograma de vídeo'],['trim','Recortar audio o vídeo'],['mute','Quitar sonido del vídeo'],['extract','Extraer audio del vídeo'],['transcribe-summary','Transcribir y resumir (IA)']],'thumbnail')+
+      '<div class="inline-fields">'+field('Segundo de miniatura / inicio','second','number','1','Para recortes utiliza los campos de abajo.','min="0" step=".1"')+
+      field('Inicio de recorte (segundos)','start','number','0','','min="0" step=".1"')+
+      field('Duración de recorte (segundos)','duration','number','10','','min=".1" step=".1"')+'</div>'+
+      '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Marca de agua en la miniatura</strong><small>Solo se aplica a fotogramas.</small></span></label>'+
+      field('Texto de marca (si se activa)','watermark','text','','')+
+      selectField('Motor de transcripción','provider',[['auto','Automático · Groq Whisper'],['groq','Groq'],['pollinations','Pollinations · cuenta autorizada'],['huggingface','Hugging Face · si está habilitado']],'auto')+
+      selectField('Idioma del audio','language',[['auto','Detectar'],['es','Español'],['en','Inglés']],'auto')+
+      selectField('Motor para el resumen','textProvider',[['auto','Automático'],['groq','Groq'],['gemini','Gemini'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      '<div class="tool-hint">Las conversiones usan FFmpeg.wasm en el navegador. La transcripción y el resumen recurren a IA externa, sujeta a cuotas; solo se ejecutan si eliges ese modo.</div>';
+  }
+  if(workflow.id==='data-studio'){
+    return selectField('Operación','mode',[['audit','Auditoría CSV (recomendada)'],['csv-json','Convertir CSV a JSON'],['json-csv','Convertir JSON a CSV']],'audit')+
+      selectField('Separador','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\t','Tabulación']],'auto')+
+      '<div class="tool-hint">Prisma procesa el archivo localmente y entrega un informe o una conversión. Límite de 5 MB para proteger la memoria del navegador.</div>';
+  }
+  if(workflow.id==='privacy-studio'){
+    return '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Añadir marca de agua al resultado</strong><small>Opcional, para PDF o imagen.</small></span></label>'+
+      field('Texto de la marca (opcional)','watermark','text','','')+
+      '<div class="tool-hint">Se genera una copia reexportada y se limpian metadatos habituales. No equivale a anonimizar el contenido visible ni garantiza borrar todos los datos incrustados.</div>';
+  }
   if(workflow.id==='image-pipeline'){
     return '<div class="workflow-options">'+
-      '<label class="workflow-check"><input type="checkbox" name="removeBg" checked><span><strong>Quitar fondo</strong><small>Usa el motor local de IA cuando está disponible.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="removeBg"><span><strong>Quitar fondo con IA</strong><small>Opcional: descarga un modelo grande al utilizarlo.</small></span></label>'+
+      '<label class="workflow-check"><input type="checkbox" name="stripMetadata"><span><strong>Retirar metadatos</strong><small>Reexporta los píxeles para evitar compartir EXIF.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="resize" checked><span><strong>Ajustar dimensiones</strong><small>Mantiene la proporción de la imagen original.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="compress" checked><span><strong>Comprimir resultado</strong><small>WebP conserva transparencia y reduce el peso.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="addWatermark"><span><strong>Añadir marca de agua</strong><small>Opcional: identifica tu creación.</small></span></label>'+
@@ -708,7 +811,9 @@ function buildWorkflowFields(workflow){
       '<label class="workflow-check"><input type="checkbox" name="merge" checked><span><strong>Combinar varios PDF</strong><small>Si seleccionas más de uno, los une en un único documento.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="numberPages" checked><span><strong>Numerar páginas</strong><small>Agrega numeración consecutiva al PDF final.</small></span></label>'+
       '<label class="workflow-check"><input type="checkbox" name="extractText" checked><span><strong>Extraer texto disponible</strong><small>Genera un TXT adicional cuando el PDF permite seleccionar texto.</small></span></label>'+
-    '</div>'+selectField('Ubicación de la numeración','position',[['bottom','Parte inferior'],['top','Parte superior']],'bottom')+
+    '</div>'+field('Páginas a conservar (opcional)','pages','text','','Ejemplo: 2-4, 7. Vacío conserva todas las páginas.')+
+      field('Marca de agua (opcional)','watermark','text','','Vacío no añade marca de agua.')+
+      selectField('Ubicación de la numeración','position',[['bottom','Parte inferior'],['top','Parte superior']],'bottom')+
       '<div class="tool-hint">Los PDF se procesan localmente. Los documentos escaneados necesitan OCR; si no contienen texto seleccionable, se conserva el PDF y se informa.</div>';
   }
   if(workflow.id==='ai-task'){
@@ -717,29 +822,30 @@ function buildWorkflowFields(workflow){
       textareaField('Contexto o contenido (opcional)','context','','Pega el texto, añade contexto o indica el público al que va dirigido.')+
       selectField('Estilo de respuesta','tone',[['professional','Profesional'],['friendly','Cercano'],['creative','Creativo'],['academic','Académico'],['concise','Breve y directo']],'professional')+
       selectField('Nivel de detalle','length',[['short','Breve'],['medium','Equilibrado'],['long','Detallado']],'medium')+
-      '<div class="tool-hint">Prisma seleccionará automáticamente un motor conectado. Tus credenciales se configuran una sola vez en el Laboratorio IA.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Prisma seleccionará automáticamente un motor conectado. También puedes elegir otro modelo en opciones avanzadas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='song-studio'){
     return textareaField('Tema y mensaje de la canción','prompt','','Describe el tema y a quién va dirigida.')+
       selectField('Género musical','genre',[['worship','Worship / adoración'],['pop','Pop'],['balada','Balada'],['urbano','Urbano'],['rock','Rock'],['acustica','Acústica'],['libre','Libre']],'worship')+
       selectField('Emoción','mood',[['esperanza','Esperanza'],['fe','Fe'],['alegria','Alegría'],['fortaleza','Fortaleza'],['reflexion','Reflexión']],'esperanza')+
       selectField('Idioma','language',[['Español','Español'],['English','Inglés']],'Español')+
-      '<div class="tool-hint">Genera letra original y guía musical en Markdown. No produce audio. Utiliza un motor de texto disponible con respaldo automático.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Genera letra original y guía musical en Markdown, no audio. El modelo es intercambiable.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='creator-studio'){
     return textareaField('Tema del vídeo o publicación','prompt','','Escribe la idea, tema y el objetivo de tu contenido.')+
       selectField('Plataforma','platform',[['YouTube','YouTube'],['TikTok','TikTok'],['Instagram','Instagram'],['Facebook','Facebook']],'YouTube')+
       field('Público objetivo','audience','text','Público general')+
       '<label class="workflow-check"><input type="checkbox" name="includeImage"><span><strong>Crear también imagen de miniatura</strong><small>Opcional: consume una solicitud de IA de imagen.</small></span></label>'+
-      '<div class="tool-hint">Prepara títulos, guion, descripción y hashtags. La miniatura solo se genera si la seleccionas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Prepara títulos, guion, descripción y hashtags. La imagen solo se genera si la seleccionas.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='study-studio'){
     return textareaField('Tema de estudio','prompt','','Qué quieres estudiar o repasar.')+
       textareaField('Apuntes o contexto (opcional)','notes','','Pega tus apuntes para personalizar preguntas y tarjetas.')+
-      '<div class="tool-hint">Prepara una guía, cuestionario con respuestas y tarjetas de repaso. Verifica datos importantes con tus fuentes de estudio.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
+      textStudioModelSettings()+'<div class="tool-hint">Prepara una guía, cuestionario y tarjetas. Verifica datos importantes con tus fuentes.</div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
   }
   if(workflow.id==='ai-creation'){
     return selectField('Motor para imágenes','provider',[['auto','Automático · recomendado'],['cloudflare','Cloudflare FLUX · central'],['pollinations','Pollinations · central o personal'],['huggingface','Hugging Face · créditos opcionales']],'auto','Se usan motores realmente habilitados en el backend.')+
+      selectField('Modelo de imagen (opcional)','model',[['','Automático · mejor disponible']],'')+
       selectField('Calidad de generación','qualityProfile',[['fast','Más rápido'],['balanced','Equilibrado'],['high','Mayor detalle']],'balanced')+
       selectField('Motor para el texto','textProvider',[['auto','Automático · recomendado'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare'],['pollinations','Pollinations'],['huggingface','Hugging Face']],'auto')+      '<div class="tool-hint workflow-provider-notice" id="workflow-provider-notice"></div><div class="tool-hint workflow-provider-notice" id="workflow-text-notice"></div>'+
       '<div class="prompt-examples"><span>Ideas para empezar</span><button type="button" class="mini-button prompt-example" data-prompt-example="Fotografía publicitaria premium de un perfume minimalista sobre una superficie de piedra, iluminación de estudio suave y fondo elegante.">Producto premium</button><button type="button" class="mini-button prompt-example" data-prompt-example="Una ciudad futurista bajo la lluvia al anochecer, luces cinematográficas, reflejos detallados y atmósfera épica.">Escena cinematográfica</button><button type="button" class="mini-button prompt-example" data-prompt-example="Ilustración editorial moderna sobre creatividad e inteligencia artificial, composición limpia y colores armónicos.">Ilustración editorial</button><button type="button" class="mini-button prompt-example" data-prompt-example="Miniatura de YouTube con alto contraste, sujeto principal expresivo, composición clara y espacio visual para un título corto.">Miniatura YouTube</button></div>'+
@@ -771,7 +877,11 @@ function setupWorkflowAI(){
     const textNotice=$('#workflow-text-notice');
     if(textNotice)textNotice.textContent=providerNoticeText(textProvider?.value||'auto','balanced','text');
   };
-  provider?.addEventListener('change',update);quality?.addEventListener('change',update);textProvider?.addEventListener('change',update);
+  provider?.addEventListener('change',()=>{update();void loadPollinationsModels('image',provider.value);});quality?.addEventListener('change',update);textProvider?.addEventListener('change',update);
+  void getCentralProviderStatus().then(data=>{
+    Object.assign(centralConnectionState,{providers:data.providers,features:data.features,modelCatalog:data.modelCatalog,warnings:data.warnings,configured:data.configured});
+    void loadPollinationsModels('image',provider?.value||'auto');update();
+  }).catch(()=>update());
   $$('.prompt-example').forEach(button=>button.addEventListener('click',()=>{
     const prompt=$('#field-prompt');if(prompt){prompt.value=button.dataset.promptExample||'';prompt.focus();}
   }));
@@ -809,6 +919,7 @@ function openWorkflow(workflow){
   }
   if(workflow.id==='ai-creation')setupWorkflowAI();
   else if(['ai-task','song-studio','creator-studio','study-studio'].includes(workflow.id)){
+    setupAIAuthorization({id:'ai-assistant'});
     $('#open-ai-settings')?.addEventListener('click',()=>{closeTool();showView('ai');$('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});});
   }
   $('#modal-close').focus({preventScroll:true});
@@ -1059,6 +1170,10 @@ $('#open-ai-assistant')?.addEventListener('click',()=>{const tool=tools.find(t=>
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 $$('[data-view-jump]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewJump)));
 $('#global-search').addEventListener('input',e=>{const wasEmpty=!searchTerm.trim();searchTerm=e.target.value;activeView='explore';activeCategory='all';render();if((wasEmpty&&searchTerm.trim())||!searchTerm.trim())scrollToCurrentView();});
+$('#explore-search')?.addEventListener('input',e=>{searchTerm=e.target.value;activeView='explore';activeCategory='all';$('#global-search').value=searchTerm;render();});
+$('#explore-subcategory')?.addEventListener('change',e=>{activeView='explore';activeCategory=e.target.value;expandedToolFamily=familyForCategory(activeCategory)?.id||expandedToolFamily;renderCategories();render();});
+$$('[data-quick-tool]').forEach(button=>button.addEventListener('click',()=>{const t=tools.find(tool=>tool.id===button.dataset.quickTool);if(t)openTool(t);}));
+
 $('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;$('#theme-toggle').innerHTML=icon(next==='dark'?'sun':'moon');localStorage.setItem('prisma-theme',next);});
 const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme){document.documentElement.dataset.theme=savedTheme;$('#theme-toggle').innerHTML=icon(savedTheme==='dark'?'sun':'moon');}
 $('#explore-tools').addEventListener('click',()=>$('#tools-section').scrollIntoView({behavior:'smooth'}));

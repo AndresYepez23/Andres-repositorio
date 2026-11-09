@@ -135,7 +135,7 @@
           <div class="workflow-hub" aria-labelledby="workflow-hub-title">
             <div class="workflow-hub-heading">
               <div><div class="eyebrow">FLUJOS INTELIGENTES</div><h3 id="workflow-hub-title">De la tarea al resultado, en un solo recorrido.</h3><p>Prisma coordina los pasos y las herramientas por ti. Tú solo eliges qué necesitas.</p></div>
-              <span class="workflow-hub-note"><span class="status-led"></span> 7 flujos disponibles</span>
+              <span class="workflow-hub-note"><span class="status-led"></span> 10 flujos disponibles</span>
             </div>
             <div class="workflow-grid">
               <button type="button" class="workflow-card" data-workflow="image-pipeline"><span class="workflow-card-icon" data-icon="image"></span><span class="workflow-card-copy"><strong>Optimizar una imagen</strong><small>Fondo · tamaño · compresión</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
@@ -145,6 +145,9 @@
               <button type="button" class="workflow-card" data-workflow="song-studio"><span class="workflow-card-icon" data-icon="music"></span><span class="workflow-card-copy"><strong>Componer una canción</strong><small>Letra original · producción · descarga</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
               <button type="button" class="workflow-card" data-workflow="creator-studio"><span class="workflow-card-icon" data-icon="clapperboard"></span><span class="workflow-card-copy"><strong>Estudio para creadores</strong><small>Títulos · guion · miniatura opcional</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
               <button type="button" class="workflow-card" data-workflow="study-studio"><span class="workflow-card-icon" data-icon="graduation-cap"></span><span class="workflow-card-copy"><strong>Preparar una guía de estudio</strong><small>Explicaciones · preguntas · repaso</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+              <button type="button" class="workflow-card" data-workflow="media-studio"><span class="workflow-card-icon" data-icon="film"></span><span class="workflow-card-copy"><strong>Audio y vídeo inteligente</strong><small>Recortar · miniatura · transcribir</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+              <button type="button" class="workflow-card" data-workflow="data-studio"><span class="workflow-card-icon" data-icon="database"></span><span class="workflow-card-copy"><strong>Preparar datos</strong><small>CSV · JSON · auditoría</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
+              <button type="button" class="workflow-card" data-workflow="privacy-studio"><span class="workflow-card-icon" data-icon="shield-check"></span><span class="workflow-card-copy"><strong>Compartir sin metadatos</strong><small>PDF · imágenes · marca opcional</small></span><span class="workflow-card-arrow" data-icon="arrow-right"></span></button>
             </div>
           </div>
           <div class="home-goals" id="home-goals">
@@ -165,6 +168,17 @@
           <div class="section-heading">
             <div><div class="eyebrow">CATÁLOGO</div><h2 id="section-title">Explora las herramientas</h2><p id="section-description">Elige una herramienta y empieza a trabajar al instante.</p></div>
             <div class="heading-actions"><button type="button" class="button button-quiet hidden" id="clear-recent">Borrar historial</button><div class="view-switch"><button class="view-button active" data-layout="grid" aria-label="Vista de cuadrícula" data-icon="grid"></button><button class="view-button" data-layout="list" aria-label="Vista de lista" data-icon="list"></button></div></div>
+          </div>
+          <div class="explore-finder">
+            <label class="explore-query-wrap" for="explore-search"><span data-icon="search"></span><input id="explore-search" type="search" placeholder="¿Qué quieres hacer? Ej.: quitar fondo, transcribir audio, editar PDF" autocomplete="off" aria-label="Buscar herramientas por tarea"></label>
+            <label class="explore-specialty" for="explore-subcategory"><span>Especialidad</span><select id="explore-subcategory" aria-label="Filtrar por especialidad"><option value="all">Todas las especialidades</option></select></label>
+          </div>
+          <div class="quick-tool-actions" aria-label="Herramientas frecuentes">
+            <button type="button" data-quick-tool="pdf-extract">Extraer páginas PDF</button>
+            <button type="button" data-quick-tool="image-bg">Quitar fondo</button>
+            <button type="button" data-quick-tool="ai-transcribe">Transcribir audio</button>
+            <button type="button" data-quick-tool="image-social-kit">Tamaños para redes</button>
+            <button type="button" data-quick-tool="image-identify-local">IA visual local</button>
           </div>
           <div class="filter-row"><div class="filter-chips" id="filter-chips"></div><span class="result-count" id="result-count"></span></div>
           <div class="tool-grid" id="tool-grid"></div>

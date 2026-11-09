@@ -30,6 +30,28 @@ async function pdfTool(id,files,p,cb){
   return download(makeBlob(await out.save(),'application/pdf'),'prisma-documento-unido.pdf');
  }
  const src=await PDFDocument.load(await bytes(files[0]));const out=await PDFDocument.create();const total=src.getPageCount();
+ if(id==='pdf-form-fields'){
+  const fields=src.getForm().getFields();
+  const lines=['CAMPOS INTERACTIVOS DEL PDF','Archivo: '+files[0].name,'Páginas: '+total,'Campos encontrados: '+fields.length,''];
+  if(!fields.length)lines.push('Este PDF no contiene campos interactivos AcroForm.');
+  fields.forEach((item,i)=>lines.push((i+1)+'. '+item.getName()+' · '+(item.constructor?.name||'Campo')));
+  progress(cb,1,'Inspección de formulario completada.');
+  return {text:lines.join('\\n'),summary:fields.length+' campos identificados. Por privacidad solo se muestran nombres y tipos, nunca valores.'};
+ }
+ if(id==='pdf-form-flatten'){
+  const form=src.getForm(),fields=form.getFields();
+  if(!fields.length)throw Error('El PDF no contiene formularios editables.');
+  form.flatten();
+  progress(cb,1,'Formulario fijado.');
+  return {...download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-formulario-fijo.pdf'),summary:fields.length+' campos fijados en un PDF no editable como formulario.'};
+ }
+ if(id==='pdf-add-blank'){
+  const count=Math.max(1,Math.min(10,Math.round(Number(p.count)||1)));
+  const first=src.getPage(0),size=[first.getWidth(),first.getHeight()];
+  for(let i=0;i<count;i++)if(p.position==='start')src.insertPage(i,size);else src.addPage(size);
+  progress(cb,1,'Páginas insertadas.');
+  return {...download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-mas-paginas.pdf'),summary:count+' páginas en blanco añadidas '+(p.position==='start'?'al principio':'al final')+'.'};
+ }
  if(id==='pdf-metadata'){
   const info={titulo:src.getTitle()||'No indicado',autor:src.getAuthor()||'No indicado',asunto:src.getSubject()||'No indicado',palabrasClave:src.getKeywords()||'No indicadas',creador:src.getCreator()||'No indicado',productor:src.getProducer()||'No indicado',fechaCreacion:src.getCreationDate()?.toISOString()||'No indicada',fechaModificacion:src.getModificationDate()?.toISOString()||'No indicada',paginas:total};
   return {text:JSON.stringify(info,null,2),summary:'Metadatos leídos localmente. No se modificó el PDF.'};
@@ -462,12 +484,14 @@ async function pdfToImages(file,p,cb){
   const page=await pdf.getPage(ids[n]+1),viewport=page.getViewport({scale});
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
   await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-  zip.file('pagina-'+String(ids[n]+1).padStart(3,'0')+'.png',await blob.arrayBuffer());
+  const jpg=String(p.format||'png').toLowerCase()==='jpeg';
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,jpg?'image/jpeg':'image/png',jpg?.9:undefined));
+  if(!blob)throw Error('No se pudo exportar la página '+(ids[n]+1)+'.');
+  zip.file('pagina-'+String(ids[n]+1).padStart(3,'0')+(jpg?'.jpg':'.png'),await blob.arrayBuffer());
   progress(cb,(n+1)/ids.length*.85,'Exportando página '+(n+1)+' de '+ids.length+'...');
  }
  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
- return {...download(blob,'prisma-paginas-png.zip'),summary:ids.length+' páginas exportadas como PNG.'};
+ return {...download(blob,'prisma-paginas-'+(p.format==='jpeg'?'jpg':'png')+'.zip'),summary:ids.length+' páginas exportadas como '+(p.format==='jpeg'?'JPG':'PNG')+' en ZIP.'};
 }
 async function pdfToWord(file,cb){
  const pdfjs=await getPdfJs();
@@ -510,7 +534,8 @@ async function pdfToText(file,cb){
   parts.push('--- Página '+i+' ---\n'+data.items.map(x=>x.str).join(' '));
   progress(cb,i/pdf.numPages*.9,'Leyendo página '+i+' de '+pdf.numPages+'...');
  }
- return {text:parts.join('\n\n'),summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
+ const text=parts.join('\n\n');
+ return {...download(new Blob([text],{type:'text/plain;charset=utf-8'}),fileName(file)+'-texto.txt'),text,summary:pdf.numPages+' páginas procesadas. Los documentos escaneados necesitan OCR.'};
 }
 function imageModelFor(provider,quality){
  const profiles={
@@ -933,6 +958,179 @@ async function imageAdvanced(id,files,p,cb){
  }
  throw Error('Operación de imagen no disponible.');
 }
+async function convertTextFile(files,p,cb){
+ const file=files?.[0];if(!file)throw Error('Adjunta un documento de texto o Word.');
+ const ext=String(file.name||'').split('.').pop().toLowerCase();
+ let text='';
+ if(ext==='docx'){
+  const mammoth=await load(MAMMOTH);
+  const res=await mammoth.extractRawText({arrayBuffer:await bytes(file)});
+  text=String(res.value||'');
+ }else if(['html','htm'].includes(ext)){
+  const html=await file.text();text=new DOMParser().parseFromString(html,'text/html').body.textContent||'';
+ }else if(['txt','md','markdown'].includes(ext)||file.type.startsWith('text/'))text=await file.text();
+ else throw Error('Este conversor solo admite TXT, Markdown, HTML o DOCX.');
+ if(!text.trim())throw Error('El documento no contiene texto legible.');
+ if(text.length>1000000)throw Error('El límite para esta conversión es un millón de caracteres.');
+ const output=String(p.output||'pdf').toLowerCase();
+ const base=file.name.replace(/\\.[^.]+$/,'').slice(0,75)||'prisma-documento';
+ progress(cb,.25,'Preparando el contenido del documento…');
+ if(output==='txt'){
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  return {...download(blob,base+'.txt'),text:text.slice(0,12000),summary:'Texto exportado a TXT. Las imágenes y el formato complejo no se conservan.'};
+ }
+ if(output==='html'){
+  const escape=value=>String(value).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+escape(base)+'</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:850px;margin:45px auto;padding:0 20px;white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body>'+escape(text)+'</body></html>';
+  return {...download(new Blob([html],{type:'text/html;charset=utf-8'}),base+'.html'),summary:'HTML descargable con texto legible. No se ejecuta el código del archivo original.'};
+ }
+ if(output==='docx'){
+  const {Document,Packer,Paragraph,TextRun}=await load('https://esm.sh/docx@9.5.1');
+  const paragraphs=text.split(/\\r?\\n/).slice(0,12000).map(line=>new Paragraph({children:[new TextRun(line||' ')]}));
+  const document=new Document({sections:[{properties:{},children:paragraphs}]});
+  const blob=await Packer.toBlob(document);
+  return {...download(blob,base+'.docx'),summary:'Word editable generado con párrafos de texto. Los estilos del original pueden cambiar.'};
+ }
+ if(output==='pdf'){
+  const {PDFDocument,StandardFonts,rgb}=await load(PDF_LIB);
+  const document=await PDFDocument.create(),font=await document.embedFont(StandardFonts.Helvetica);
+  const width=595.28,height=841.89,margin=48,size=11,lineHeight=16,limit=width-margin*2;
+  const safe=text.replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g,'')
+   .replace(/[\\u2010-\\u2015]/g,'-').replace(/[\\u2018\\u2019]/g,"'").replace(/[\\u201C\\u201D]/g,'"')
+   .replace(/[^\\u000A\\u000D\\u0020-\\u00FF]/g,'?');
+  let page=document.addPage([width,height]),y=height-margin,lineCount=0;
+  const newLine=()=>{y-=lineHeight;if(y<margin){page=document.addPage([width,height]);y=height-margin;}};
+  const draw=line=>{page.drawText(line||' ',{x:margin,y,size,font,color:rgb(.1,.13,.19)});newLine();lineCount++;};
+  for(const original of safe.split(/\\r?\\n/)){
+   let line='';
+   for(const word of original.split(/\\s+/)){
+    const candidate=line?line+' '+word:word;
+    if(font.widthOfTextAtSize(candidate,size)<=limit){line=candidate;continue;}
+    if(line){draw(line);line='';}
+    let chunk='';
+    for(const ch of word){
+     if(font.widthOfTextAtSize(chunk+ch,size)>limit){draw(chunk);chunk='';}
+     chunk+=ch;
+    }
+    line=chunk;
+   }
+   draw(line);
+   if(lineCount>75000)throw Error('El archivo de texto es demasiado largo para exportarlo en este navegador.');
+  }
+  const blob=makeBlob(await document.save(),'application/pdf');
+  progress(cb,1,'PDF generado.');
+  return {...download(blob,base+'.pdf'),summary:document.getPageCount()+' página(s) de texto exportadas a PDF. Formato básico sin ilustraciones ni diseño complejo.'};
+ }
+ throw Error('Formato de salida no compatible. Usa PDF, DOCX, TXT o HTML.');
+}
+async function convertTabularFile(files,p,cb){
+ const source=files?.[0];
+ if(!source)throw Error('Selecciona un archivo CSV, JSON, XLS o XLSX.');
+ const ext=String(source.name||'').split('.').pop().toLowerCase();
+ const kind=ext==='csv'?'csv':ext==='json'?'json':['xlsx','xls'].includes(ext)?'excel':'';
+ if(!kind)throw Error('Formato de origen incompatible. Usa un CSV, JSON o Excel (XLS/XLSX).');
+ const requested=String(p.output||'auto').toLowerCase();
+ const dest=requested==='auto'?kind==='excel'?'csv':kind==='csv'?'json':'csv':requested;
+ if(!['csv','json','xlsx'].includes(dest))throw Error('El formato solicitado no está disponible. Selecciona CSV, JSON o XLSX.');
+ if((kind==='excel'&&dest==='xlsx')||(kind===dest))throw Error('El archivo ya tiene ese formato. Elige un formato de destino diferente.');
+ progress(cb,.08,'Leyendo los datos sin enviarlos a un servidor…');
+ const stem=source.name.replace(/\\.[^.]+$/,'').replace(/[^a-z0-9áéíóúñ._-]/gi,'-').slice(0,75)||'prisma-datos';
+ if(kind==='excel'){
+  const result=await excelToJson(source,{sheet:p.sheet||'0',format:dest},cb);
+  if(result?.blob)result.filename=stem+'.'+(dest==='csv'?'csv':'json');
+  return {...result,summary:(result.summary||'')+' Conversión local; se conserva la primera hoja salvo que selecciones todas para JSON.'};
+ }
+ let rows;
+ if(kind==='csv'){
+  const content=await source.text();
+  if(content.length>10000000)throw Error('Para proteger la memoria del dispositivo, el CSV debe tener menos de 10 MB de texto.');
+  const header=content.split(/\\r?\\n/)[0]||'';
+  const delimiter=p.delimiter&&p.delimiter!=='auto'?p.delimiter:[',',';','\\t'].map(ch=>({ch,c:header.split(ch).length-1})).sort((a,b)=>b.c-a.c)[0].ch;
+  const parsed=parseCsv(content.replace(/^\\uFEFF/,''),delimiter);
+  if(!parsed.length)throw Error('El CSV está vacío.');
+  const names=parsed.shift().map((name,i)=>String(name||'Columna '+(i+1)).trim()||'Columna '+(i+1));
+  rows=parsed.filter(line=>line.some(cell=>String(cell||'').trim())).map(line=>Object.fromEntries(names.map((name,i)=>[name,String(line[i]??'')])));
+ }else{
+  let raw;
+  try{raw=JSON.parse(await source.text());}catch{throw Error('El archivo JSON no es válido.');}
+  if(Array.isArray(raw))rows=raw;
+  else if(raw&&typeof raw==='object'&&Object.values(raw).length===1&&Array.isArray(Object.values(raw)[0]))rows=Object.values(raw)[0];
+  else throw Error('El JSON debe ser una lista de objetos (o contener una única lista dentro de un objeto).');
+  if(rows.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw Error('Para convertir a CSV o Excel, el JSON debe contener una lista de objetos.');
+ }
+ if(rows.length>50000)throw Error('El archivo supera el máximo de 50.000 registros.');
+ if(dest==='xlsx'){
+  if(!rows.length)throw Error('No hay registros para crear un Excel.');
+  const result=await jsonToExcel({text:JSON.stringify(rows)});
+  progress(cb,1,'Excel generado.');
+  return {...result,filename:stem+'.xlsx',summary:rows.length+' filas convertidas a Excel en el navegador.'};
+ }
+ if(dest==='json'){
+  const content=JSON.stringify(rows,null,2);
+  progress(cb,1,'JSON generado.');
+  return {...download(new Blob([content],{type:'application/json;charset=utf-8'}),stem+'.json'),text:content,summary:rows.length+' registros exportados a JSON.'};
+ }
+ const keys=[...new Set(rows.flatMap(row=>Object.keys(row)))];
+ const lines=[keys.map(csvCell).join(','),...rows.map(row=>keys.map(key=>csvCell(row[key]??'')).join(','))];
+ const content='\\uFEFF'+lines.join('\\r\\n');
+ progress(cb,1,'CSV generado.');
+ return {...download(new Blob([content],{type:'text/csv;charset=utf-8'}),stem+'.csv'),text:content.slice(1),summary:rows.length+' registros exportados a CSV.'};
+}
+async function profileCsvLocally(files,p,cb){
+ if(!files[0])throw Error('Selecciona un archivo CSV.');
+ const raw=await files[0].text();
+ if(raw.length>5000000)throw Error('Este analizador admite CSV de hasta 5 MB de texto.');
+ const header=(raw.split(/\\r?\\n/)[0]||'');
+ const delimiter=p.delimiter&&p.delimiter!=='auto'?p.delimiter:[',',';','\\t'].map(ch=>({ch,count:header.split(ch).length-1})).sort((a,b)=>b.count-a.count)[0].ch;
+ const rows=parseCsv(raw,delimiter);
+ if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila de datos.');
+ const labels=rows[0].map((name,i)=>String(name||'Columna '+(i+1)).trim()||'Columna '+(i+1));
+ const records=rows.slice(1).filter(row=>row.some(value=>String(value??'').trim()));
+ const duplicateCount=records.length-new Set(records.map(row=>JSON.stringify(row))).size;
+ const details=labels.map((name,index)=>{
+  const cells=records.map(row=>String(row[index]??'').trim()),notEmpty=cells.filter(Boolean);
+  const numeric=notEmpty.filter(x=>Number.isFinite(Number(x.replace(',','.')))).length;
+  const date=notEmpty.filter(x=>/^\\d{4}-\\d{2}-\\d{2}/.test(x)).length;
+  const guess=notEmpty.length&&numeric/notEmpty.length>.95?'Número':notEmpty.length&&date/notEmpty.length>.95?'Fecha':'Texto';
+  return {name,empty:cells.length-notEmpty.length,unique:new Set(notEmpty).size,type:guess,examples:notEmpty.slice(0,2)};
+ });
+ const result={file:files[0].name,records:records.length,columns:labels.length,duplicateRows:duplicateCount,delimiter:delimiter==='\\t'?'Tabulación':delimiter,details};
+ const text='AUDITORÍA CSV · GRATIS Y LOCAL\\n'+JSON.stringify(result,null,2);
+ progress(cb,1,'Auditoría lista.');
+ return {text,blob:new Blob([text],{type:'text/plain;charset=utf-8'}),filename:'prisma-auditoria-csv.txt',summary:records.length+' registros, '+labels.length+' columnas, '+duplicateCount+' filas duplicadas.'};
+}
+async function validateJsonSchema(p,cb){
+ let data,schema;
+ try{data=JSON.parse(String(p.text||''));}catch{throw Error('El JSON de datos no es válido.');}
+ try{schema=JSON.parse(String(p.schema||''));}catch{throw Error('El esquema de validación no es un JSON válido.');}
+ const {default:Ajv}=await load('https://esm.sh/ajv@8.17.1');
+ if(typeof Ajv!=='function')throw Error('No se pudo cargar el validador AJV.');
+ const ajv=new Ajv({allErrors:true,strict:false});
+ let valid;
+ try{valid=ajv.validate(schema,data);}catch(error){throw Error('Error al compilar JSON Schema: '+(error.message||error));}
+ const errors=(ajv.errors||[]).map(e=>(e.instancePath||'/')+' · '+(e.message||'Error')+(e.params?': '+JSON.stringify(e.params):''));
+ progress(cb,1,'Validación finalizada.');
+ return {text:valid?'JSON válido: el documento cumple el esquema.':'El JSON no cumple el esquema.\\n'+errors.join('\\n'),summary:valid?'Datos válidos según JSON Schema.':errors.length+' errores detectados por AJV.'};
+}
+let localVisionPromise=null;
+async function classifyImageLocally(files,p,cb){
+ if(!files[0])throw Error('Selecciona una imagen JPG, PNG o WebP.');
+ progress(cb,.06,'Preparando ViT ONNX. La primera ejecución descarga el modelo gratuito al navegador…');
+ if(!localVisionPromise)localVisionPromise=(async()=>{
+   const {pipeline}=await load('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2');
+   return pipeline('image-classification','Xenova/vit-base-patch16-224',{device:'wasm',dtype:'q4'});
+ })().catch(e=>{localVisionPromise=null;throw e;});
+ const model=await localVisionPromise,url=URL.createObjectURL(files[0]);
+ try{
+  progress(cb,.72,'Reconociendo categorías visuales localmente…');
+  const predictions=await model(url,{top_k:5});
+  const rows=Array.isArray(predictions)?predictions:[predictions];
+  const report=['CLASIFICACIÓN VISUAL · ViT ONNX','Etiquetas aproximadas en inglés:','',
+   ...rows.map((x,i)=>(i+1)+'. '+x.label+' · '+Math.round(Number(x.score||0)*1000)/10+'%')].join('\\n');
+  progress(cb,1,'Clasificación local completada.');
+  return {text:report,summary:'Modelo ONNX en el navegador, sin API. Predicciones aproximadas de ImageNet; no identifica personas.',model:'Xenova/vit-base-patch16-224'};
+ }finally{URL.revokeObjectURL(url);}
+}
 async function mediaAdvanced(id,files,p,cb){
  if(id==='video-thumbnail'){
   const url=URL.createObjectURL(files[0]),video=document.createElement('video');
@@ -1120,6 +1318,11 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(id==='text-file-convert')return convertTextFile(files,p,cb);
+ if(id==='table-file-convert')return convertTabularFile(files,p,cb);
+ if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
+ if(id==='json-schema-validate')return validateJsonSchema(p,cb);
+ if(id==='image-identify-local')return classifyImageLocally(files,p,cb);
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
  if(id==='pdf-to-word')return pdfToWord(files[0],cb);
  if(id==='pdf-text')return pdfToText(files[0],cb);

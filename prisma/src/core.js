@@ -2,6 +2,8 @@ import { tools } from './registry.js';
 import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
+import { buildSmartLocalFlow } from './smart-flows.js';
+import { planFileConversion } from './file-conversions.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -313,14 +315,29 @@ function validatePlan(plan){
   if(!plan||typeof plan!=='object'||!Array.isArray(plan.steps))throw new Error('El plan no tiene el formato esperado.');
   if(plan.steps.length>MAX_STEPS)throw new Error('El plan supera el máximo seguro de '+MAX_STEPS+' operaciones.');
   const ready=new Map(tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>[tool.id,tool]));
-  const steps=plan.steps.map((step,index)=>{
-    const tool=ready.get(String(step.tool_id||''));
-    if(!tool)throw new Error('El plan solicitó una herramienta no disponible: '+String(step.tool_id||'desconocida'));
-    if(tool.file&&!attachments.length)throw new Error('Para usar '+tool.name+' necesitas adjuntar un archivo compatible.');
-    if(tool.file&&!compatibleFiles(tool,attachments).length)throw new Error('El archivo adjunto no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'formato compatible')+'.');
-    return {tool,policy:toolPolicy(tool),reason:String(step.reason||'Paso '+(index+1)),params:step.params&&typeof step.params==='object'?step.params:{}};
+  let inputs=attachments.map(file=>({name:file.name,type:file.type||''}));
+  const changes={
+   'video-thumbnail':['fotograma.jpg','image/jpeg'],
+   'video-audio':['audio.wav','audio/wav'],
+   'video-trim':['video.mp4','video/mp4'],
+   'video-mute':['video.mp4','video/mp4'],
+   'audio-trim':['audio.wav','audio/wav'],
+   'image-pdf':['documento.pdf','application/pdf'],
+   'pdf-to-word':['documento.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+   'pdf-to-image':['imagenes.zip','application/zip'],
+   'pdf-split':['paginas.zip','application/zip']
+  };
+  return plan.steps.map((item,index)=>{
+    const tool=ready.get(String(item.tool_id||''));
+    if(!tool)throw new Error('La herramienta no está disponible: '+String(item.tool_id||'desconocida'));
+    if(tool.file&&!inputs.length)throw new Error('Adjunta un archivo compatible con '+tool.name+'.');
+    if(tool.file&&!compatibleFiles(tool,inputs).length)throw new Error('La salida del paso anterior no es compatible con '+tool.name+'. Formatos esperados: '+(tool.accept||'archivos compatibles')+'.');
+    const changed=changes[tool.id];
+    if(changed)inputs=[{name:changed[0],type:changed[1]}];
+    else if(tool.id.startsWith('pdf-')&&!['pdf-text','pdf-metadata','pdf-form-fields'].includes(tool.id))inputs=[{name:'documento.pdf',type:'application/pdf'}];
+    else if(tool.id.startsWith('image-')&&!['image-ocr','image-palette','image-identify-local','image-metadata'].includes(tool.id))inputs=[{name:'imagen.png',type:'image/png'}];
+    return {tool,policy:toolPolicy(tool),reason:String(item.reason||'Paso '+(index+1)),params:item.params&&typeof item.params==='object'?item.params:{}};
   });
-  return steps;
 }
 function showPlan(plan,steps){
   pendingPlan={plan,steps};
@@ -604,6 +621,22 @@ async function requestPlan(userText){
     status('Listo para ayudarte.','success');
     return;
   }
+  // Explicit conversions take priority over generic chat or PDF edit heuristics.
+  const previousTexts=messages.slice(-9,-1).filter(message=>message.role==='user').map(message=>message.content);
+  const fileConversion=planFileConversion(userText,attachments,previousTexts);
+  if(fileConversion){
+    if(fileConversion.type!=='ready'){
+      addMessage('assistant',fileConversion.message);
+      status('Convertidor preparado.','info');
+      return;
+    }
+    const plan={message:fileConversion.message,steps:fileConversion.steps,userRequest:userText,needs_clarification:false,combineFinalFiles:true,conversion:true};
+    const steps=validatePlan(plan);
+    pendingPlan={plan,steps};
+    addMessage('assistant',fileConversion.message);
+    await executePlan();
+    return;
+  }
   const pdfAction=buildPdfEditPlan(userText);
   if(pdfAction){
    if(pdfAction.type!=='execute'){addMessage('assistant',pdfAction.message);status('Edición de documentos lista.','info');return;}
@@ -619,6 +652,23 @@ async function requestPlan(userText){
    addMessage('assistant',localCapability);
    status('Herramienta disponible. Adjunta un archivo para continuar.','info');
    return;
+  }
+  const previousUserTexts=messages.slice(-9,-1).filter(m=>m.role==='user').map(m=>m.content);
+  const guidedFlow=buildSmartLocalFlow(userText,attachments,previousUserTexts);
+  if(guidedFlow){
+    if(guidedFlow.type!=='ready'){
+      addMessage('assistant',guidedFlow.message);
+      status('Entendí la operación: falta información para ejecutarla.','info');
+      return;
+    }
+    const preserveMultiple=guidedFlow.steps.some(item=>['ai-transcribe','image-ocr','image-identify-local','csv-profile-local','ai-assistant'].includes(item.tool_id));
+    const guidedPlan={message:guidedFlow.message,steps:guidedFlow.steps,needs_clarification:false,userRequest:userText,combineFinalFiles:!preserveMultiple};
+    const guidedSteps=validatePlan(guidedPlan);
+    pendingPlan={plan:guidedPlan,steps:guidedSteps};
+    const external=guidedSteps.some(({tool})=>!['local','browser'].includes(tool.mode));
+    if(external){showPlan(guidedPlan,guidedSteps);status('Este flujo usa un servicio externo; revisa y autoriza.','warning');}
+    else{addMessage('assistant',guidedPlan.message);await executePlan();}
+    return;
   }
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
@@ -806,7 +856,7 @@ async function executePlan(){
         addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
       }else{
         const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
-        const label=plan.combineFinalFiles?'PDF terminado. Incluye las páginas y modificaciones solicitadas; descarga el documento final.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
+        const label=plan.conversion?'Conversión preparada. Descarga el archivo resultante o sigue las instrucciones de impresión si aparecen.':plan.combineFinalFiles?'Proceso completado. Aquí tienes el archivo final con las modificaciones solicitadas.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
         addMessage('assistant',label,{results:visibleResults,partial:false});
       }
       successful=true;
@@ -850,6 +900,17 @@ function createExecutionResults(executed,partial){
       copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});
       card.append(copy);
     }
+    if(result.printHtml){
+      const button=document.createElement('button');button.type='button';button.className='mini-button';
+      button.textContent='Abrir vista y guardar como PDF';
+      button.addEventListener('click',()=>{
+        const win=window.open('','_blank');
+        if(!win){status('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes e inténtalo otra vez.','warning');return;}
+        win.document.open();win.document.write(String(result.printHtml));win.document.close();
+        win.addEventListener('load',()=>win.print(),{once:true});
+      });
+      card.append(button);
+    }
     if(result.blob){
       const url=resultObjectUrl(result.blob);
       if(String(result.blob.type||'').startsWith('image/')){
@@ -883,7 +944,8 @@ async function sendMessage(){
   // instead of launching an unrelated AI analysis of the uploaded document.
   const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
     messages.slice(-9,-1).some(item=>item.role==='user'&&isPdfEditIntent(item.content));
-  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
+  const priorRequest=messages.slice(-9,-1).reverse().find(m=>m.role==='user'&&String(m.content||'').trim())?.content||'';
+  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':priorRequest?'Aquí está el archivo para la tarea anterior.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
   try{await requestPlan(requestText);}
   catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
