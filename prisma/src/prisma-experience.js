@@ -58,6 +58,8 @@ function initCoreMenu(){
   $('#core-history-search')?.focus();
  });
  $('#core-more-export')?.addEventListener('click',()=>{closeMore();document.dispatchEvent(new Event('prisma:core-export-request'));});
+ $('#core-more-rename')?.addEventListener('click',()=>{closeMore();document.dispatchEvent(new Event('prisma:core-rename-request'));});
+ $('#core-more-delete')?.addEventListener('click',()=>{closeMore();document.dispatchEvent(new Event('prisma:core-delete-request'));});
  $('#core-more-voice')?.addEventListener('click',()=>{closeMore();$('#core-talk')?.click();});
  document.addEventListener('click',event=>{if(!event.target.closest?.('#core-top-more,#core-more-menu'))closeMore();});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMore();});
