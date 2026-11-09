@@ -9,7 +9,7 @@ function info(message,kind='info'){
 function showAuth(show){
  $('#auth-modal')?.classList.toggle('hidden',!show);
  document.body.classList.toggle('prisma-auth-open',show);
- if(show)$('#auth-email')?.focus();
+ // Mantener el teclado cerrado hasta que el usuario toque un campo.
 }
 export function openPrismaAuth(){
  if(user){showAuth(true);info('Ya has iniciado sesión con '+(user.email||'tu cuenta')+'. Puedes sincronizar tu historial desde Tu espacio.');return;}
