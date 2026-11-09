@@ -43,7 +43,8 @@ export function resolvePrismaProductQuestion(text,history=[],providers={}){
  return null;
 }
 export function localQuotaExplanation(scope='GLOBAL_LIMIT'){
+ if(scope==='PROVIDER_MINUTE_LIMIT')return 'OpenRouter alcanzó su límite de solicitudes por minuto. Prisma esperará a que se renueve esa ventana antes de volver a utilizarlo; las herramientas locales siguen disponibles.';
  return scope==='PROVIDER_LIMIT'
- ? 'Ese proveedor alcanzó su cuota temporal. Prisma puede intentar otro motor autorizado, siempre respetando los límites compartidos. Las herramientas locales continúan disponibles.'
- : 'La capacidad gratuita compartida de Prisma está temporalmente agotada. No es un fallo de tu pregunta ni significa que Gemini, Groq y Cloudflare estén caídos a la vez. Para proteger el servicio no repetiré llamadas que vuelvan a consumir cuota. Puedes seguir utilizando las herramientas locales y reintentar cuando se renueve el límite.';
+ ? 'Ese proveedor alcanzó su cuota temporal. Prisma ya intentó los motores alternativos disponibles, incluido OpenRouter cuando estaba configurado. Las herramientas locales continúan disponibles.'
+ : 'La capacidad compartida de los motores de IA está temporalmente agotada, incluso después de probar OpenRouter cuando estaba configurado. No es un fallo de tu pregunta ni significa que todos los proveedores estén caídos a la vez. Para proteger el servicio no repetiré llamadas que vuelvan a consumir cuota. Puedes seguir utilizando las herramientas locales y reintentar cuando se renueven los límites.';
 }
