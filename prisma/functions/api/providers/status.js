@@ -43,7 +43,7 @@ export async function onRequestGet({ env }) {
   const available = Object.fromEntries(poolProviders.map(provider =>
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
       dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
-      !(provider === "amd" && amdModels.length === 0) && !(provider === "kilo" && kiloModels.length === 0) &&
+      !(provider === "kilo" && kiloModels.length === 0) &&
       !(provider === "aihubmix" && aihubmixModels.length === 0) &&
       !(provider === "baidu" && env.BAIDU_FREE_QUOTA_CONFIRMED !== "1")]
   ));
