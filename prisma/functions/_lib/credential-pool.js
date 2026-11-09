@@ -14,7 +14,6 @@ export const CREDENTIAL_ROOTS = Object.freeze({
   requesty: "REQUESTY_API_KEY",
   sensenova: "SENSENOVA_API_KEY",
   zai: "ZAI_API_KEY",
-  baidu: "QIANFAN_API_KEY",
   aihubmix: "AIHUBMIX_API_KEY",
 });
 
@@ -31,7 +30,6 @@ export const CREDENTIAL_POOL_VARIABLES = Object.freeze({
   requesty: "REQUESTY_API_KEYS_JSON",
   sensenova: "SENSENOVA_API_KEYS_JSON",
   zai: "ZAI_API_KEYS_JSON",
-  baidu: "QIANFAN_API_KEYS_JSON",
   aihubmix: "AIHUBMIX_API_KEYS_JSON",
 });
 
