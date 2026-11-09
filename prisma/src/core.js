@@ -941,6 +941,10 @@ function inlineSpeechText(command){
  if(separator)return separator[1].trim();
  const natural=full.match(/^(?:convierte|convertir|pasa|pasame|pásame|hazme|genera|graba|narra|léeme|leeme)\s+(?:(?:este|el|mi|un)\s+)?(?:(?:texto|mensaje|frase)\s+)?(?:a|en)\s+(?:audio|voz|mp3)\s*[,;:\-]?\s+([\s\S]{2,})$/i);
  if(natural&&!/^(?:este texto|el texto|el archivo|un documento|mi documento|el documento)\s*$/i.test(natural[1].trim()))return natural[1].trim();
+ const casual=full.match(/^(?:hazme|genera(?:me)?|crea(?:me)?|graba(?:me)?|quiero|necesito|dame|prepara(?:me)?|pon|dilo|di|narra|leeme|léeme)\s+(?:un\s+)?(?:audio|mp3|voz|locucion|locución)?\s*(?:que\s+(?:diga|suene|lea)|con\s+(?:la\s+)?frase|de\s+)?\s*[:,-]?\s*([\s\S]{3,})$/i);
+ if(casual&&casual[1]&&!/^(?:este|el|mi)\s+(?:texto|archivo|documento|pdf|word)\s*$/i.test(casual[1].trim()))return casual[1].trim();
+ const spoken=full.match(/(?:que\s+diga|para\s+decir)\s*[:,-]?\s*([\s\S]{3,})$/i);
+ if(spoken)return spoken[1].trim();
  const colon=full.match(/[:：]\s*([^\n]{2,}(?:\n[\s\S]*)?)$/);
  if(colon)return colon[1].trim();
  const newlines=full.split(/\n+/).slice(1).join('\n').trim();
