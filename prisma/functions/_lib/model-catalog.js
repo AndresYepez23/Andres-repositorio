@@ -1,4 +1,30 @@
 // Curated, server-controlled model allowlists. Never trust client supplied model IDs.
+// Current AIHubMix free chat catalogue. Image/video-output models are deliberately
+// excluded here; those require their dedicated media endpoints and response handling.
+const AIHUBMIX_FREE_CHAT_IDS = [
+ "agents-a1-free","coding-glm-4.6-free","coding-glm-4.7-free","coding-glm-5-free",
+ "coding-glm-5-turbo-free","coding-glm-5.1-free","coding-glm-5.2-free","coding-glm-5.3-flash-free",
+ "coding-glm-5.3-free","coding-kimi-k3-free","coding-minimax-m2-free","coding-minimax-m2.1-free",
+ "coding-minimax-m2.5-free","coding-minimax-m2.7-free","coding-minimax-m3-free","crouton-alpha-free",
+ "dots-3-note-preview-free","flint-v1.0-free","gemma-4-26b-a4b-it-free","gemma-4-31b-it-free",
+ "glm-4.7-flash-free","intern-s2-free","k2.6-code-preview-free","kimi-for-coding-free",
+ "lfm-2.5-2.6b-free","mimo-v2-flash-free","nemotron-3-nano-omni-30b-a3b-reasoning-free",
+ "nemotron-3-ultra-550b-a55b-free","nemotron-3.5-content-safety-free","nemotron-3.5-lightning-free",
+ "nemotron-3.5-super-vl-free","north-mini-code-free","qwen3.6-plus-preview-free",
+ "xiaomi-mimo-v2.6-flash-free","xiaomi-mimo-v2.6-pro-free","xing4.0-29b-a4b-free",
+ "gemini-3-flash-preview-free","gemini-3.5-flash-lite-free","gemini-3.6-flash-free",
+ "gemini-3.7-flash-free","gemini-3.8-flash-free","gpt-4.1-free","gpt-4.1-mini-free",
+ "gpt-4.1-nano-free","gpt-4o-free","gpt-5.5-free","gpt-oss-20b-free","hy3-free",
+ "laguna-s-2.1-free","laguna-xs-2.1-free","ling-3.0-flash-free","ling-3.0-tiny-free",
+ "minimax-m2.7-free","nemotron-3-nano-30b-a3b-free","nemotron-3-super-120b-a12b-free",
+ "nemotron-nano-12b-v2-vl-free","nemotron-nano-9b-v2-free","qwen3.8-flash-free",
+ "qwen3.8-max-free","union-alpha-free","xiaomi-mimo-v2-omni-free","xiaomi-mimo-v2-pro-free",
+ "xiaomi-mimo-v2.5-free","xiaomi-mimo-v2.5-pro-free"
+];
+const AIHUBMIX_FREE_CHAT_MODELS = AIHUBMIX_FREE_CHAT_IDS.map(id => ({
+ id,name:id,specialty:"Chat gratuito AIHubMix · cuotas compartidas de cuenta"
+}));
+
 export const CHAT_MODELS = {
   pollinations: [
     {id:"openai/gpt-5.4-nano",name:"GPT-5.4 Nano",specialty:"Texto rápido y tareas creativas"},
@@ -38,9 +64,19 @@ export const CHAT_MODELS = {
     {id:"minimax/minimax-m2.1:free",name:"MiniMax M2.1 Free",specialty:"Conversación y escritura · acceso anónimo"}
   ],
   requesty: [
-    {id:"nemotron-3.5-lightning-30b-a3b",name:"Nemotron 3.5 Lightning 30B",specialty:"Agentes, razonamiento y código · gratuito"},
-    {id:"muse-glimmer-30b",name:"Muse Glimmer 30B",specialty:"Razonamiento y tareas agentic · gratuito"},
-    {id:"novita/ling-3.1-flash",name:"Ling 3.1 Flash",specialty:"Razonamiento híbrido · endpoint gratuito Novita"}
+    {id:"novita/ling-3.1-flash",name:"Ling 3.1 Flash",specialty:"Razonamiento híbrido · Novita · endpoint gratuito con ZDR"},
+    {id:"ling-3.0-tiny",name:"Ling 3.0 Tiny",specialty:"Agentes y conversación · Novita · gratuito con ZDR"},
+    {id:"nemotron-3.5-lightning-30b-a3b",name:"Nemotron 3.5 Lightning 30B",specialty:"Agentes y razonamiento · gratis; endpoint NVIDIA, no enviar datos confidenciales"},
+    {id:"muse-glimmer-30b",name:"Muse Glimmer 30B",specialty:"Razonamiento y herramientas · gratis en NVIDIA; endpoint alternativo de pago"},
+    {id:"nemotron-3.5-content-safety",name:"Nemotron 3.5 Content Safety",specialty:"Clasificación de seguridad · gratuito"},
+    {id:"nemotron-3-nano-omni-30b-a3b-reasoning",name:"Nemotron 3 Nano Omni",specialty:"Razonamiento multimodal · gratuito"},
+    {id:"laguna-m.1",name:"Poolside Laguna M.1",specialty:"Programación · gratuito"},
+    {id:"laguna-xs.2",name:"Poolside Laguna XS.2",specialty:"Código ligero · gratuito"},
+    {id:"nemotron-3-ultra-550b-a55b",name:"Nemotron 3 Ultra 550B",specialty:"Razonamiento · gratuito"},
+    {id:"leanstral-1-5",name:"Mistral Leanstral 1.5",specialty:"Pruebas formales y programación · gratuito, endpoint EU"},
+    {id:"gemma-4-31b-it",name:"Gemma 4 31B IT",specialty:"Chat y razonamiento · gratuito"},
+    {id:"nemotron-3-super-120b-a12b",name:"Nemotron 3 Super 120B",specialty:"Razonamiento y agentes · gratuito"},
+    {id:"nemotron-3-nano-30b-a3b",name:"Nemotron 3 Nano 30B",specialty:"Chat rápido · gratuito"}
   ],
   sensenova: [{id:"sensenova-6.8-flash-lite",name:"SenseNova 6.8 Flash Lite",specialty:"Razonamiento, agentes y multimodalidad · beta gratuita"}],
   zai: [
@@ -53,13 +89,7 @@ export const CHAT_MODELS = {
     {id:"ernie-lite-128k",name:"ERNIE-Lite-128K",specialty:"Conversación ligera · cuota gratuita regional"},
     {id:"ernie-tiny-8k",name:"ERNIE-Tiny-8K",specialty:"Respuestas rápidas · cuota gratuita regional"}
   ],
-  aihubmix: [
-    {id:"coding-glm-5.3-free",name:"Coding GLM-5.3 Free",specialty:"Programación · 10 llamadas de prueba totales"},
-    {id:"coding-glm-5.3-flash-free",name:"Coding GLM-5.3 Flash Free",specialty:"Programación rápida · 10 llamadas de prueba totales"},
-    {id:"coding-kimi-k3-free",name:"Coding Kimi K3 Free",specialty:"Programación y razonamiento · 10 llamadas de prueba totales"},
-    {id:"xiaomi-mimo-v2.6-pro-free",name:"Xiaomi MiMo V2.6 Pro Free",specialty:"Razonamiento · 10 llamadas de prueba totales"},
-    {id:"coding-minimax-m3-free",name:"Coding MiniMax M3 Free",specialty:"Programación · 10 llamadas de prueba totales"}
-  ],
+  aihubmix: AIHUBMIX_FREE_CHAT_MODELS,
   amd: [
     {id:"DeepSeek-V4-Flash",name:"DeepSeek V4 Flash",specialty:"Razonamiento · Token Factory de evaluación"},
     {id:"DeepSeek-V4.1-Flash",name:"DeepSeek V4.1 Flash",specialty:"Razonamiento · Token Factory de evaluación"},
