@@ -12,9 +12,14 @@ function showAuth(show){
  // Mantener el teclado cerrado hasta que el usuario toque un campo.
 }
 export function openPrismaAuth(){
- if(user){showAuth(true);info('Ya has iniciado sesión con '+(user.email||'tu cuenta')+'. Puedes sincronizar tu historial desde Tu espacio.');return;}
+ const signed=!!user;
+ $('#auth-title').textContent=signed?'Tu cuenta de Prisma Space':'Bienvenido a Prisma Space';
+ for(const selector of ['.auth-provider-grid','.auth-divider','.auth-tabs','#auth-form','#auth-reset']){
+  const element=$(selector);if(element)element.classList.toggle('hidden',signed);
+ }
  showAuth(true);
- if(!config.enabled)info('La creación de cuentas necesita conectar el proyecto Supabase exclusivo de Prisma. Puedes continuar gratis sin cuenta.');
+ if(signed)info('Sesión iniciada con '+(user.email||'tu cuenta')+'. Puedes sincronizar tus conversaciones desde el panel Tu espacio.','success');
+ else if(!config.enabled)info('El registro se habilitará con un proyecto Supabase independiente. Prisma sigue siendo gratuito sin cuenta.');
 }
 function updateTabs(){
  const login=authMode==='login';
@@ -118,12 +123,12 @@ function bindForms(){
  });
  $('#account-signout')?.addEventListener('click',async()=>{
   if(!api)return;
+  const synced=selectedSync();
+  if(synced&&!window.confirm('Se cerrará sesión y se quitará el historial sincronizado de este dispositivo. Confirma que tus conversaciones estén guardadas en la nube. ¿Continuar?'))return;
   const {error}=await api.auth.signOut();
   if(error){info(error.message,'error');return;}
   document.dispatchEvent(new Event('prisma:close-profile'));
-  // Prevent a different guest on this device from seeing the signed-in cache.
-  localStorage.removeItem(STORAGE);
-  localStorage.removeItem(SYNC_KEY);
+  if(synced){localStorage.removeItem(STORAGE);localStorage.removeItem(SYNC_KEY);}
   location.reload();
  });
  $('#account-sync')?.addEventListener('click',async()=>{
