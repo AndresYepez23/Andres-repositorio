@@ -337,6 +337,11 @@ function setupApiExplorer(){
 }
 function buildFields(t){
   switch(t.id){
+    case 'json-compare-local':return textareaField('JSON original','textA','{"estado":"borrador","version":1}','Pega el documento original.')+textareaField('JSON actualizado','textB','{"estado":"publicado","version":2}','Pega la segunda versión. El análisis se hace localmente.');
+    case 'citation-ids-local':return textareaField('Texto científico o bibliografía','text','','Extrae DOI, PMID y arXiv y construye enlaces para consultarlos, sin comprobarlos en internet.');
+    case 'ai-compare-options':return textareaField('Opciones y criterios a comparar','prompt','','Describe alternativas, prioridades y los datos con los que cuentas.')+textStudioModelSettings();
+    case 'ai-action-plan':return textareaField('Objetivo, recursos y restricciones','prompt','','Describe qué quieres conseguir, tus recursos y condiciones.')+textStudioModelSettings();
+    case 'ai-text-review':return textareaField('Texto para revisar','prompt','','Pega el borrador e indica si buscas revisión crítica o reescritura.')+textStudioModelSettings();
     case 'pdf-form-fields':return '<div class="tool-hint">Muestra únicamente el nombre y tipo de los campos del formulario. Por privacidad no extrae respuestas ni datos personales.</div>';
     case 'pdf-form-flatten':return '<div class="tool-hint">Fija los campos existentes como contenido visual. Después de esta operación ya no se podrán editar como formulario. Guarda una copia del PDF original.</div>';
     case 'pdf-add-blank':return field('Cuántas páginas añadir','count','number','1','Entre 1 y 10 páginas.','min="1" max="10"')+selectField('Ubicación','position',[['end','Al final'],['start','Al principio']],'end');
@@ -879,7 +884,7 @@ function openTool(t){
     drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');addSelectedFiles([...e.dataTransfer.files],t);});
     $('#file-list').addEventListener('click',e=>{const remove=e.target.closest('[data-remove-file]');if(remove){selectedFiles.splice(Number(remove.dataset.removeFile),1);renderFileList();return;}if(e.target.closest('[data-clear-files]')){selectedFiles=[];renderFileList();}});
   }
-  if(['image-gen','ai-assistant','music-lyrics','ai-voice','ai-transcribe','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(t.id))setupAIAuthorization(t);
+  if(['image-gen','ai-assistant','music-lyrics','ai-voice','ai-transcribe','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper','ai-compare-options','ai-action-plan','ai-text-review'].includes(t.id))setupAIAuthorization(t);
   if(t.id==='api-explorer')setupApiExplorer();
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
