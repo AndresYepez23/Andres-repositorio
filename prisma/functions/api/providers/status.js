@@ -42,6 +42,7 @@ export async function onRequestGet({ env }) {
       huggingface: "openai/gpt-oss-20b:cheapest",
       cloudflare: "@cf/google/gemma-4-26b-a4b-it",
       groq: "openai/gpt-oss-20b",
+      openrouter: "openrouter/free",
     },
   }), { status: 200, headers });
 }
