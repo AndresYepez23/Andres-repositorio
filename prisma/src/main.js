@@ -632,7 +632,7 @@ async function refreshProviderConnectionStatuses(){
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
-      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
+      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
     if(provider==='pollinations-connect'){
