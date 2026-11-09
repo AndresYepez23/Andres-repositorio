@@ -72,7 +72,14 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     try {
       const response = await send(slot.value, slot.number);
       lastResponse = response;
-      if (response.ok || !retryable.has(response.status)) return response;
+      if (response.ok) return response;
+      if (response.status === 402) {
+        // Never cascade paid or exhausted-credit operations within a request.
+        await setProviderHold(env, healthKey, "quota_exhausted",
+          "Este espacio no dispone de saldo autorizado.", 3600);
+        return response;
+      }
+      if (!retryable.has(response.status)) return response;
       await setProviderHold(env, healthKey,
         response.status === 429 ? "rate_limited" : response.status === 401 || response.status === 403 ? "auth_error" : "provider_error",
         "La credencial de respaldo requiere una pausa temporal.", retryHoldSeconds(response.status, response.headers));
