@@ -1242,8 +1242,13 @@ async function requestPlan(userText){
   const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500),miniShortlist);
   let plan,steps;
   // Provider/network errors must not trigger a second costly inference request.
+  // Deterministic tools already ran without consuming inference; plan only
+  // unresolved tasks, using inexpensive models for routine selections.
+  const complexPlanning=attachments.length>2||userText.length>340||
+    /(?:primero|despues|luego|ademas|finalmente|por separado|varios formatos|combina.*y.*convierte|compar.*y.*resum)/i.test(userText);
   const result=await runTool('ai-assistant',[],{
-    prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',task:'planner',...creds
+    prompt:plannerPrompt,provider:'auto',reasoning:complexPlanning?'balanced':'fast',
+    tone:'professional',length:complexPlanning?'long':'medium',task:'planner',...creds
   },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
   try{
     plan=parsePlan(result.text);
