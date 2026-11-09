@@ -84,7 +84,7 @@ export async function onRequestGet({ env }) {
       max: credentialSlots[provider].max,
       available: available[provider],
       paused: Boolean(holds[provider]),
-      state: holds[provider]?.state || (configured[provider] ? "configured" : "missing"),
+      state: holds[provider]?.state || (usage[provider]?.daily?.remaining === 0 ? "daily_limit" : configured[provider] ? "configured" : "missing"),
       reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 ? warnings[provider] : null),
       retryAt: holds[provider]?.valid_until || null,
       dailyUsage: usage[provider]?.daily || null,
