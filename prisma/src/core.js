@@ -498,6 +498,9 @@ function toolParamsHint(id){
     'image-metadata':'Requiere imagen, no parámetros.',
     'image-palette':'Requiere imagen, no parámetros.',
     'audio-waveform':'Requiere audio, no parámetros.',
+    'text-redact-sensitive':'Usa params.text con el texto literal que quieres limpiar. Oculta datos sensibles sin conexión; advierte que puede requerir revisión manual.',
+    'utm-builder':'Usa params.url (URL HTTPS), params.source, params.medium y params.campaign; content y term son opcionales. Si faltan datos obligatorios, pregunta.',
+    'subtitle-srt-local':'Usa params.text con el guion real y params.secondsPerCue opcional (1-12). Exporta un archivo SRT con tiempos estimados, no sincronizados.',
     'audio-normalize':'Requiere audio, no parámetros.'
   };
   return hints[id]||'Usa únicamente parámetros que estén descritos por la herramienta; si no requiere opciones, deja params como {}.';
