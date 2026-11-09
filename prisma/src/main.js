@@ -386,15 +386,19 @@ function buildFields(t){
     case 'ai-youtube-kit':return textareaField('Tema de tu vídeo o publicación','prompt','','Describe tu idea, público objetivo y plataforma.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
       selectField('Detalle','reasoning',[['balanced','Equilibrado'],['smart','Avanzado']],'balanced')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-prompt-lab':return textareaField('Qué quieres conseguir con la IA','prompt','','Escribe una idea y para qué motor o formato quieres el prompt.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-study-notes':return textareaField('Tema o apuntes de estudio','prompt','','Pega tus apuntes o describe el tema para obtener guía y preguntas de repaso.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'ai-code-helper':return textareaField('Código o tarea de programación','prompt','','Pega código, describe el error o explica qué función necesitas.')+
       selectField('Motor de texto','provider',[['auto','Automático'],['gemini','Gemini'],['groq','Groq'],['cloudflare','Cloudflare'],['pollinations','Pollinations']],'auto')+
+      selectField('Modelo específico (opcional)','model',[['','Automático · recomendado']],'')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
     case 'music-lyrics':return textareaField('Idea, tema o historia de la canción','prompt','','Describe el mensaje, género musical, emoción, idioma y detalles que quieras incluir.')+
       selectField('Motor de texto','provider',[['auto','Automático · recomendado'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['groq','Groq'],['huggingface','Hugging Face'],['pollinations','Pollinations · personal']],'auto')+
@@ -615,9 +619,9 @@ function modelOptions(kind,provider){
   const group=kind==='image'?'image':kind==='audio'?'audio':'chat';
   if(provider!=='pollinations'||centralConnectionState.providers.pollinations){
     const models=centralConnectionState.modelCatalog?.[group]?.[provider]||[];
-    return models.length?models.map(item=>[item.id,item.name+' · '+item.specialty]):[['','Predeterminado del motor']];
+    return [['','Automático · mejor modelo disponible'],...models.map(item=>[item.id,item.name+' · '+item.specialty])];
   }
-  return pollinationsModelCache[kind]?.length?pollinationsModelCache[kind]:fallbackModels[kind]||[['','Predeterminado']];
+  return [['','Automático · mejor modelo disponible'],...(pollinationsModelCache[kind]?.length?pollinationsModelCache[kind]:fallbackModels[kind]||[])];
 }
 async function loadPollinationsModels(kind,provider='pollinations'){
   const select=$('#field-model');if(!select)return;
@@ -657,7 +661,7 @@ function providerNoticeText(provider,quality,task='image'){
  const features=centralConnectionState.features||{};
  let selected=provider||'auto';
  if(selected==='auto'){
-   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','pollinations','huggingface']:['gemini','cloudflare','groq','huggingface','pollinations'];
+   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','pollinations','huggingface']:['groq','cloudflare','gemini','pollinations','huggingface'];
    selected=order.find(item=>(item==='groq'&&task==='audio'?features.groqAudio:connected[item])&&(task!=='image'||item!=='huggingface'||features.huggingfaceImages)&&(task!=='audio'||item!=='huggingface'||features.huggingfaceAudio))||'';
  }
  if(!selected)return 'No hay un motor activo para esta tarea. Revisa las conexiones del Laboratorio IA.';
@@ -683,6 +687,18 @@ function setupAIAuthorization(tool){
  const task=tool.id==='image-gen'?'image':tool.id==='ai-transcribe'?'audio':'text';
  const provider=$('#field-provider');
  const quality=$('#field-qualityProfile');
+ const model=$('#field-model');
+ if(provider&&model){
+  const field=model.closest('.form-field');
+  if(field&&!field.closest('.model-details')){
+   const details=document.createElement('details');
+   details.className='model-details';
+   const summary=document.createElement('summary');summary.textContent='Elegir un modelo específico (opcional)';
+   details.append(summary);field.before(details);details.append(field);
+   details.open=provider.value!=='auto';
+   provider.addEventListener('change',()=>{details.open=provider.value!=='auto';});
+  }
+ }
  const update=()=>{
    updateProviderNotice('#tool-provider-notice',task);
    if(provider&&$('#field-model'))void loadPollinationsModels(task,provider.value);
