@@ -31,6 +31,7 @@ El JSON es el método recomendado porque Cloudflare Workers tiene un límite de 
 
 - Las variables individuales antiguas siguen funcionando; no es necesario migrarlas para conservar la conexión actual.
 - Si se define el secreto JSON y también una variable individual para el mismo número, **la variable individual tiene prioridad en ese espacio**.
+- Para consolidar una instalación que ya usa muchas variables individuales, copia las seis claves en el arreglo JSON, valida que Conexiones muestre el número correcto y solo entonces elimina las variables individuales antiguas. Así evitas contar dos veces las mismas claves y ahorras bindings de Cloudflare.
 - Los valores repetidos se deduplican; no cuentan como claves independientes.
 - El alias histórico `GEMINI_API_KEY_BACKUP` y `GROQ_API_KEY_BACKUP` se reconoce como espacio 2 cuando falta la variable `_2`.
 - El JSON debe ser un arreglo de hasta seis cadenas. Si el formato es inválido, Prisma lo informa en Conexiones y no interpreta el contenido como una clave.
