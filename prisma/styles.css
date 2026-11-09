@@ -1425,3 +1425,49 @@ body.is-core-view .profile-chip:hover{
   body.is-core-view .core-composer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
   body.is-core-view.is-keyboard-open .core-composer{padding-bottom:5px!important}
 }
+
+
+/* Voice feedback and restrained accents */
+body.is-core-view .core-voice-feedback:not(.hidden){
+ display:block;
+ padding:5px 11px 6px;
+ margin:0 7px 5px;
+ color:var(--accent);
+ font-size:11px;
+ line-height:1.5;
+ background:linear-gradient(90deg,color-mix(in srgb,#87ded5 10%,var(--panel)),transparent 86%);
+ border-radius:10px;
+}
+body.is-core-view #core-dictate[aria-pressed="true"]{
+ color:#0e282b;
+ background:linear-gradient(135deg,#8addd3,#b0aeed)!important;
+ animation:prisma-voice-pulse 1.5s ease-in-out infinite;
+}
+@keyframes prisma-voice-pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 12%,transparent)}}
+@media(prefers-reduced-motion:reduce){body.is-core-view #core-dictate[aria-pressed="true"]{animation:none}}
+.voice-panel #voice-play-reply{
+ border-color:color-mix(in srgb,var(--accent) 38%,var(--line));
+ background:color-mix(in srgb,#9acfcf 13%,var(--panel));
+ color:var(--accent);
+}
+body.is-core-view .core-message.assistant .core-message-label{
+ color:color-mix(in srgb,var(--accent) 72%,#b5a8f3);
+}
+body.is-core-view .core-message.user{
+ border-color:color-mix(in srgb,#a6a4f0 18%,var(--line-strong));
+}
+body.is-core-view #core-top-more[aria-expanded="true"]{
+ border-color:color-mix(in srgb,#a9a1f0 42%,var(--line));
+}
+body.is-core-view .core-history-entry.active{
+ border-left:2px solid color-mix(in srgb,#a1d7db 55%,#b9a3ef);
+}
+@media(display-mode:standalone){
+ body:not(.is-core-view) .topbar{
+  min-height:calc(76px + env(safe-area-inset-top));
+  height:calc(76px + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);
+ }
+ .sidebar{padding-top:env(safe-area-inset-top)}
+ .profile-menu{padding-bottom:max(6px,env(safe-area-inset-bottom))}
+}
