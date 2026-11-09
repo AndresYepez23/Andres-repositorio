@@ -65,6 +65,7 @@ export async function onRequestGet({ env }) {
     return [provider, {
       ...info,
       dailyUsage: usage[provider]?.daily || null,
+      minuteUsage: usage[provider]?.minute || null,
       providerPaused: Boolean(hold),
       pauseState: hold?.state || null,
       pauseReason: hold?.reason || null,
@@ -110,6 +111,7 @@ export async function onRequestGet({ env }) {
       reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 || usage[provider]?.minute?.remaining === 0 ? warnings[provider] : null),
       retryAt: holds[provider]?.valid_until || null,
       dailyUsage: usage[provider]?.daily || null,
+      minuteUsage: usage[provider]?.minute || null,
       lifetimeUsage: provider === "aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? aihubmixLifetime : null,
     }])),
     providers: {
