@@ -4,6 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101218">
+  <script>
+    (() => {
+      let theme = 'dark';
+      try {
+        const saved = localStorage.getItem('prisma-theme');
+        if (saved === 'light' || saved === 'dark') theme = saved;
+      } catch {}
+      document.documentElement.dataset.theme = theme;
+      const color = theme === 'light' ? '#f4f5f8' : '#101218';
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) themeMeta.content = color;
+      const statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (statusMeta) statusMeta.content = theme === 'light' ? 'default' : 'black-translucent';
+    })();
+  </script>
   <meta name="description" content="Prisma Space reúne herramientas digitales, procesamiento local e inteligencia artificial para crear, convertir, optimizar y experimentar en un solo lugar.">
   <meta name="application-name" content="Prisma Space">
   <meta property="og:type" content="website">
@@ -24,7 +39,27 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Prisma Space">
 </head>
-<body class="is-core-view">
+<body class="is-core-view app-booting">
+  <div class="app-startup" id="app-startup" role="status" aria-live="polite">
+    <div class="app-startup-card">
+      <span class="app-startup-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 36 31H4L20 3Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m20 3 0 28M4 31l16-10 16 10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+      <strong>Prisma Space</strong>
+      <span class="app-startup-status" id="app-startup-status">Restaurando tu espacio de trabajo…</span>
+      <span class="app-startup-spinner" aria-hidden="true"></span>
+      <button type="button" class="button button-quiet hidden" id="app-startup-retry">Recargar Prisma</button>
+    </div>
+  </div>
+  <script>
+    window.__prismaBootFailsafe = window.setTimeout(() => {
+      const body = document.body;
+      if (!body?.classList.contains('app-booting')) return;
+      const status = document.getElementById('app-startup-status');
+      const retry = document.getElementById('app-startup-retry');
+      if (status) status.textContent = 'Prisma está tardando más de lo esperado en iniciar.';
+      retry?.classList.remove('hidden');
+    }, 12000);
+    document.getElementById('app-startup-retry')?.addEventListener('click', () => location.reload());
+  </script>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
@@ -124,7 +159,7 @@
   <button type="button" class="core-history-toggle" id="core-history-toggle" aria-label="Abrir historial de chats" title="Historial">☰</button>
   <div><strong id="core-conversation-name">Nueva conversación</strong><small>Prisma Core · asistente multimodelo</small></div></div>
   <div class="core-toolbar-actions"><button type="button" class="mini-button core-mini-button" id="core-mini-toggle" title="Motor local opcional para descubrir herramientas">Prisma Mini</button><button type="button" class="mini-button core-new-button" id="core-clear">＋ <span>Nuevo chat</span></button></div></div>
-              <div class="core-connect-banner" id="core-connect-banner"><span class="core-connect-mark" data-icon="plug"></span><div><strong>Activa tu asistente</strong><p>Conecta un motor de IA gratuito o usa una clave propia para que Prisma pueda entender tus instrucciones y coordinar herramientas.</p></div><button type="button" class="button button-quiet" id="core-connect-now">Conectar motor</button></div>
+              <div class="core-connect-banner hidden" id="core-connect-banner"><span class="core-connect-mark" data-icon="plug"></span><div><strong>Activa tu asistente</strong><p>Conecta un motor de IA gratuito o usa una clave propia para que Prisma pueda entender tus instrucciones y coordinar herramientas.</p></div><button type="button" class="button button-quiet" id="core-connect-now">Conectar motor</button></div>
               <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"><div class="core-welcome"><span class="eyebrow core-welcome-eyebrow">PRISMA CORE · TU ASISTENTE</span><h2>¿Qué necesitas hacer?<span class="core-welcome-gradient">Déjaselo a Prisma.</span></h2><p>No necesitas saber qué herramienta usar. Escríbeme en lenguaje natural o adjunta un archivo y me encargo de organizar el trabajo.</p><div class="core-examples"><button type="button" data-example="0">Divide este PDF y guarda cada página por separado</button><button type="button" data-example="1">Convierte este PDF en un Word editable</button><button type="button" data-example="2">Analiza este documento y resume lo importante</button><button type="button" data-example="3">Prepara esta imagen para Instagram</button><button type="button" data-example="4">Crea una página web para mi negocio</button></div></div></div>
               <div class="core-plan hidden" id="core-plan"></div>
               <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
