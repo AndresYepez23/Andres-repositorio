@@ -1188,9 +1188,68 @@ function closeTool(){
   requestAnimationFrame(()=>target?.focus?.({preventScroll:true}));
 }
 function closeSidebar(){
-  $('#sidebar').classList.remove('open');
+  $('#sidebar')?.classList.remove('open');
   $('#sidebar-backdrop')?.classList.remove('open');
-  $('#mobile-menu').setAttribute('aria-expanded','false');
+  $('#mobile-menu')?.setAttribute('aria-expanded','false');
+  $('#mobile-menu')?.setAttribute('aria-label',document.body.classList.contains('sidebar-collapsed')?'Mostrar barra lateral':'Abrir menú');
+}
+function closeSidebarSearch(){
+  document.body.classList.remove('sidebar-search-open');
+  $('#sidebar-search-toggle')?.setAttribute('aria-expanded','false');
+  const input=$('#core-history-search');
+  if(input&&input.value){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));}
+}
+function setupSidebarControls(){
+  const body=document.body,sidebar=$('#sidebar'),backdrop=$('#sidebar-backdrop'),menu=$('#mobile-menu');
+  const narrow=()=>window.matchMedia('(max-width: 850px)').matches;
+  if(!narrow()&&localStorage.getItem('prisma-sidebar-collapsed')==='1')body.classList.add('sidebar-collapsed');
+
+  $('#sidebar-collapse-toggle')?.addEventListener('click',()=>{
+    if(narrow()){closeSidebar();return;}
+    body.classList.add('sidebar-collapsed');
+    localStorage.setItem('prisma-sidebar-collapsed','1');
+    menu?.setAttribute('aria-expanded','false');
+    menu?.setAttribute('aria-label','Mostrar barra lateral');
+  });
+
+  $('#sidebar-search-toggle')?.addEventListener('click',()=>{
+    if(body.classList.contains('sidebar-search-open')){closeSidebarSearch();return;}
+    if(activeView!=='core'){
+      activeView='core';activeCategory='all';searchTerm='';
+      const toolsSearch=$('#global-search');if(toolsSearch)toolsSearch.value='';
+      render();scrollToCurrentView();
+    }
+    body.classList.add('sidebar-search-open');
+    $('#sidebar-search-toggle')?.setAttribute('aria-expanded','true');
+    requestAnimationFrame(()=>$('#core-history-search')?.focus({preventScroll:true}));
+  });
+
+  menu?.addEventListener('click',()=>{
+    if(narrow()){
+      const open=!sidebar?.classList.contains('open');
+      sidebar?.classList.toggle('open',open);
+      backdrop?.classList.toggle('open',open);
+      menu.setAttribute('aria-expanded',String(open));
+      menu.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');
+      return;
+    }
+    if(body.classList.contains('sidebar-collapsed')){
+      body.classList.remove('sidebar-collapsed');
+      localStorage.removeItem('prisma-sidebar-collapsed');
+      menu.setAttribute('aria-expanded','false');
+      menu.setAttribute('aria-label','Ocultar barra lateral');
+    }
+  });
+
+  document.addEventListener('click',event=>{
+    if(!event.target.closest?.('#core-history-new'))return;
+    if(activeView!=='core'){
+      activeView='core';activeCategory='all';searchTerm='';
+      const toolsSearch=$('#global-search');if(toolsSearch)toolsSearch.value='';
+      render();scrollToCurrentView();
+    }
+    closeSidebar();
+  });
 }
 function scrollToCurrentView(){
   // Prisma Core is a viewport-sized chat. Never scroll its outer page.
@@ -1357,7 +1416,7 @@ document.addEventListener('click',event=>{
   if(event.target===$('#tool-modal'))closeTool();
 },true);
 $('#modal-run').addEventListener('click',executeCurrentTool);
-$('#mobile-menu').addEventListener('click',()=>{const open=$('#sidebar').classList.toggle('open');$('#sidebar-backdrop')?.classList.toggle('open',open);$('#mobile-menu').setAttribute('aria-expanded',String(open));});
+safeStartup('barra lateral compacta',setupSidebarControls);
 $('#sidebar-backdrop')?.addEventListener('click',closeSidebar);
 document.addEventListener('prisma:close-sidebar',closeSidebar);
 $('#about-button').addEventListener('click',()=>toast('Prisma Space 1.0 · Herramientas locales y motores IA intercambiables.','info'));
@@ -1367,7 +1426,7 @@ safeStartup('Prisma Core',initPrismaCore);
 safeStartup('experiencia y PWA',initPrismaExperience);
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#global-search').focus();}
-  if(event.key==='Escape'){closeProfileMenu();if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar').classList.contains('open'))closeSidebar();}
+  if(event.key==='Escape'){closeProfileMenu();if(document.body.classList.contains('sidebar-search-open'))closeSidebarSearch();else if(!$('#tool-modal').classList.contains('hidden'))closeTool();else if($('#sidebar')?.classList.contains('open'))closeSidebar();}
   if(event.key==='Tab'&&!$('#tool-modal').classList.contains('hidden')){
     const focusable=Array.from($('#tool-modal').querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href]')).filter(element=>!element.classList.contains('hidden')&&element.getAttribute('aria-hidden')!=='true'&&element.offsetParent!==null);
     if(!focusable.length)return;
