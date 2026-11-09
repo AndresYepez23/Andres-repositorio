@@ -488,12 +488,20 @@ function buildPdfEditPlan(userText){
  const number=/(numer|enumer|foliar|numero de pagina|numeros de pagina)/.test(q);
  const watermark=/marca de agua/.test(q);
  if(!(select||number||watermark))return null;
- const pages=pdfPagesFromText(userText)||pdfPagesFromText(request);
- const directMark=pdfWatermarkFromText(userText);
- const standaloneMark=/^[\p{L}][\p{L}\s-]{1,45}$/u.test(String(userText||'').trim())&&!/\b(pdf|pagina|archivo|documento|marca|numero|numerar)\b/.test(normalizeCoreIntent(userText))
-   ?String(userText).trim():'';
- const labelled=String(userText||'').match(/^(?:el texto es|que diga|quiero que diga)\s+(.{2,45})$/i)?.[1]?.trim()||'';
- const mark=directMark||pdfWatermarkFromText(request)||(watermark&&(standaloneMark||labelled)?standaloneMark||labelled:'');
+ // Collect parameters from short follow-ups so that "2-4, 7" and then
+ // "CONFIDENCIAL" work without asking the same question twice.
+ const history=messages.slice(-9).filter(item=>item.role==='user').map(item=>String(item.content||''));
+ const lastRoot=history.findLastIndex(item=>isPdfEditIntent(item));
+ const replies=lastRoot>=0?history.slice(lastRoot+1):[];
+ const pages=pdfPagesFromText(userText)||pdfPagesFromText(request)||replies.map(pdfPagesFromText).find(Boolean)||'';
+ const labelFromReply=text=>{
+  const label=String(text||'').trim();
+  const assigned=label.match(/^(?:el texto es|que diga|quiero que diga)\s+(.{2,45})$/i)?.[1]?.trim();
+  if(assigned)return assigned;
+  return /^[\p{Lu}][\p{Lu}\s-]{2,45}$/u.test(label)?label:'';
+ };
+ const mark=pdfWatermarkFromText(userText)||pdfWatermarkFromText(request)||
+  (watermark?replies.map(item=>pdfWatermarkFromText(item)||labelFromReply(item)).filter(Boolean).at(-1)||'':'');
  const lacking=[];
  if(!pdfAttached) {
   return {type:'missing-file',message:'Sí. Prisma tiene herramientas locales para extraer páginas específicas, numerarlas y añadir una marca de agua; también puede aplicar las tres operaciones y entregarte un único PDF. Sube el archivo PDF'+(select&&!pages?', dime qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' e indica qué texto llevará la marca de agua':'')+'. No hace falta conectar ningún modelo para editar el documento.'};
