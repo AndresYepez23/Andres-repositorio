@@ -44,8 +44,7 @@ export async function onRequestGet({ env }) {
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
       dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
       !(provider === "kilo" && kiloModels.length === 0) &&
-      !(provider === "aihubmix" && aihubmixModels.length === 0) &&
-      !(provider === "baidu" && env.BAIDU_FREE_QUOTA_CONFIRMED !== "1")]
+      !(provider === "aihubmix" && aihubmixModels.length === 0)]
   ));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
@@ -80,7 +79,6 @@ export async function onRequestGet({ env }) {
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
-    else if (provider === "baidu" && configured[provider] > 0 && env.BAIDU_FREE_QUOTA_CONFIRMED !== "1") warnings[provider] = "Baidu está bloqueado para evitar consumo facturable. Confirma en Qianfan que ERNIE-Speed/Lite/Tiny tienen cuota gratuita en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
@@ -124,7 +122,6 @@ export async function onRequestGet({ env }) {
       requesty: Boolean(available.requesty),
       sensenova: Boolean(available.sensenova),
       zai: Boolean(available.zai),
-      baidu: Boolean(available.baidu),
       aihubmix: Boolean(available.aihubmix),
     },
     configured: {
@@ -138,7 +135,6 @@ export async function onRequestGet({ env }) {
       requesty: configured.requesty > 0,
       sensenova: configured.sensenova > 0,
       zai: configured.zai > 0,
-      baidu: configured.baidu > 0,
       aihubmix: configured.aihubmix > 0,
     },
     warnings,
@@ -172,7 +168,6 @@ export async function onRequestGet({ env }) {
       requesty: "novita/ling-3.1-flash",
       sensenova: "sensenova-6.8-flash-lite",
       zai: "glm-4.7-flash",
-      baidu: "ernie-speed-128k",
       aihubmix: "coding-glm-5.3-free",
     },
   }), { status: 200, headers });
