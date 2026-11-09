@@ -215,6 +215,7 @@ function toolParamsHint(id){
     'ai-assistant':'Usa params.prompt con la instrucción completa, params.context opcional, params.tone y params.length.',
     'music-lyrics':'Usa params.prompt con la idea, tema, idioma, género y ambiente. Entrega letra original completa y un prompt de producción; no afirmes que se generó audio.',
     'image-gen':'Usa params.prompt con una descripción visual completa y params.ratio/style si aplica.',
+    'ai-voice':'Usa params.prompt con el texto real para sintetizar (máximo 1.500 caracteres), params.model="openai/tts-1", params.voice="nova", params.format="mp3". Entrega audio binario descargable; nunca simules la voz con texto.',
     'image-bg':'No requiere parámetros; elimina el fondo de una imagen.',
     'image-ocr':'No requiere parámetros; extrae texto de imágenes.',
     'excel-json':'Usa params.sheet y params.format: "json" o "csv".',
@@ -616,6 +617,7 @@ function speechIntent(message){
  if(/(?:audio|voz)\s+a\s+texto|transcrib|subtitul/.test(q))return false;
  if(/(?:cancion|musica|melodia|instrumental|banda sonora)/.test(q)&&!/(?:letra|texto).*\b(?:voz|narrac|habla)/.test(q))return false;
  if(/^[¿?\s]*(?:que es|como funciona|para que sirve|cuanto cuesta|es posible|puedes explicar)\b/.test(q))return false;
+ if(/^[¿?\s]*(?:por que|por qué|no me|me falla|error|fallo|problema)\b/.test(q))return false;
  const narration=/(?:leeme|\blee\b|lectura en voz alta|\bnarra\b|narrame|ponle voz|hablalo|dilo en voz alta|escuchar.*(?:texto|respuesta|mensaje))/.test(q);
  const generation=/(?:pas(?:a|ar|ame|alo|ala)|conviert|convert|transform|genera|generar|crea|crear|haz(?:me)?|graba|produce|quiero|necesito|guardar|guarda).{0,85}(?:audio|mp3|voz|narracion|hablado)/.test(q);
  const reverse=/(?:texto|archivo|documento|respuesta|mensaje|frase).{0,65}(?:a\s+audio|a\s+voz|en\s+audio|en\s+mp3)/.test(q);
@@ -675,6 +677,7 @@ async function fulfillSpeechRequest(userText){
   addMessage('assistant','Encontré '+content.length+' caracteres en '+origin+'. Para proteger tu presupuesto, cada audio admite hasta 1.500 caracteres. Indica un fragmento concreto o pega el párrafo que quieres escuchar; no voy a recortar el documento sin avisarte.');
   status('Texto demasiado largo para la cuota de voz.','info');return;
  }
+ if(attachments.length)addMessage('assistant','Preparé el texto de '+origin+'. Para generar el MP3, ese texto se enviará al proveedor de voz conectado; los archivos originales no se enviarán.');
  status('Generando una voz real con el texto solicitado…');
  const result=await runTool('ai-voice',[],{
   ...credentials(),prompt:content,provider:'auto',
