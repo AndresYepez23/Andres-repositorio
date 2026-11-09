@@ -7,11 +7,9 @@ self.addEventListener("fetch",event=>{
  if(req.method!=="GET"||url.origin!==self.location.origin)return;
  if(url.pathname.startsWith("/api/")||url.pathname.startsWith("/auth/")||url.pathname.startsWith("/functions/")||url.pathname.startsWith("/.well-known/"))return;
  if(req.mode==="navigate"){
-  const fresh=new Request(req,{cache:"no-store"});
-  event.respondWith(fetch(fresh).catch(async()=>await caches.match("/index.html")||Response.error()));
+  event.respondWith(fetch(req,{cache:"no-store"}).catch(async()=>await caches.match("/index.html")||Response.error()));
   return;
  }
  if(!/\.(?:js|css|svg|png|webp|ico|webmanifest)$/.test(url.pathname))return;
- const fresh=new Request(req,{cache:"no-store"});
- event.respondWith(fetch(fresh).then(resp=>{if(resp.ok){const copy=resp.clone();caches.open(CACHE).then(cache=>cache.put(req,copy)).catch(()=>{});}return resp;}).catch(async()=>await caches.match(req)||Response.error()));
+ event.respondWith(fetch(req,{cache:"no-store"}).then(resp=>{if(resp.ok){const copy=resp.clone();caches.open(CACHE).then(cache=>cache.put(req,copy)).catch(()=>{});}return resp;}).catch(async()=>await caches.match(req)||Response.error()));
 });
