@@ -991,6 +991,7 @@ async function answerConversation(text,creds,task='conversation'){
    .map(m=>({role:m.role,content:String(m.content).slice(0,1800)}));
   const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
+  if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
   const providerContext=connected.length
     ?'Motores de texto configurados en el servidor: '+connected.join(', ')+'. Configurado no significa disponibilidad garantizada: respeta sus cuotas y no inventes cuál respondió.'
     :'No se ha confirmado ningún motor compartido conectado en este momento. No afirmes que un proveedor está disponible.';
