@@ -10,6 +10,7 @@ import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
+import { buildConversationContext, chooseCoreReasoning } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -25,7 +26,7 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
-let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, baidu:false, aihubmix:false, amd:false };
+let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false };
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
@@ -340,7 +341,7 @@ function renderMessages({forceBottom=false}={}){
     else body.textContent=message.content;
     bubble.append(label,body);
     if(message.role==='assistant'&&message.engine){
-      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face',kilo:'Kilo',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',baidu:'Baidu ERNIE',aihubmix:'AIHubMix',amd:'AMD Token Factory'};
+      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face',kilo:'Kilo',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
       const source=document.createElement('small');source.className='core-message-engine';
       source.textContent='Respondió '+(names[message.engine]||message.engine)+(message.model?' · '+String(message.model).slice(0,60):'')+(message.fallbackFrom?' · Respaldo después de '+(names[message.fallbackFrom]||message.fallbackFrom):'');
       if(message.fallbackReason)source.title=String(message.fallbackReason).slice(0,240);
@@ -497,6 +498,9 @@ function toolParamsHint(id){
     'image-metadata':'Requiere imagen, no parámetros.',
     'image-palette':'Requiere imagen, no parámetros.',
     'audio-waveform':'Requiere audio, no parámetros.',
+    'text-redact-sensitive':'Usa params.text con el texto literal que quieres limpiar. Oculta datos sensibles sin conexión; advierte que puede requerir revisión manual.',
+    'utm-builder':'Usa params.url (URL HTTPS), params.source, params.medium y params.campaign; content y term son opcionales. Si faltan datos obligatorios, pregunta.',
+    'subtitle-srt-local':'Usa params.text con el guion real y params.secondsPerCue opcional (1-12). Exporta un archivo SRT con tiempos estimados, no sincronizados.',
     'audio-normalize':'Requiere audio, no parámetros.'
   };
   return hints[id]||'Usa únicamente parámetros que estén descritos por la herramienta; si no requiere opciones, deja params como {}.';
@@ -993,9 +997,10 @@ async function answerConversation(text,creds,task='conversation'){
    task==='coding'?'ai-code-helper':
    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
-  const contextMessages=messages.slice(-13,-1).filter(m=>['user','assistant'].includes(m.role)&&String(m.content||'').trim())
-   .map(m=>({role:m.role,content:String(m.content).slice(0,1800)}));
-  const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',baidu:'Baidu Qianfan',aihubmix:'AIHubMix',amd:'AMD Token Factory'};
+  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,{
+   maxMessages:13,maxChars:14000
+  });
+  const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
   if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
   const providerContext=connected.length
@@ -1004,7 +1009,7 @@ async function answerConversation(text,creds,task='conversation'){
   const assistantContext=[instruction,coreCapabilityContext(),providerContext].join('\n\n').slice(0,1950);
   const response=await runTool(toolId,[],{
     prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
-    reasoning:task==='reasoning'?'smart':'balanced',
+    reasoning:chooseCoreReasoning(task,taskText),
     tone:task==='songwriting'||task==='creative'?'creative':'friendly',
     length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
     task,...creds
@@ -1225,7 +1230,7 @@ async function requestPlan(userText){
     return;
   }
   const centralStatus=await getCentralProviderStatus();
-  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,baidu:false,aihubmix:false,amd:false};
+  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
@@ -1670,7 +1675,7 @@ export function initPrismaCore(){
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,baidu:false,aihubmix:false,amd:false};
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();

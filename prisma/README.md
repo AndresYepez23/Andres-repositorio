@@ -4,8 +4,8 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 
 ## Catálogo
 
-- **116 herramientas registradas** organizadas en 13 categorías: 79 listas, 34 beta y 3 en preparación. Estos estados describen el registro del catálogo; no equivalen a 110 pruebas funcionales independientes.
-- Categorías: PDF y documentos (14), imágenes (18), audio y vídeo (13), texto y datos (29), utilidades (14), IA y creación (4), desarrollo (7), hojas de cálculo (1), diseño y desarrollo web (6), datos y análisis (3), privacidad y archivos (4), creación de contenido (1), estudio e investigación (2).
+- **143 herramientas registradas** en 13 categorías: 93 listas, 48 beta y 2 en preparación. Los estados del catálogo indican disponibilidad prevista, no sustituyen las pruebas funcionales de cada herramienta.
+- Categorías: PDF, imágenes, audio y vídeo, texto, utilidades, IA y creación, desarrollo, hojas de cálculo, diseño web, datos, privacidad, creadores y estudio. Los totales de cada área se calculan dinámicamente en la aplicación.
 - Generación de imágenes y laboratorio IA con proveedores seleccionables.
 - Herramientas que procesan archivos localmente siempre que el navegador lo permite.
 - Se añadieron doce utilidades locales sin API ni clave: quitar tildes, invertir texto, extraer correos, extraer enlaces, minificar JSON, extraer texto de HTML, eliminar líneas vacías, añadir prefijos y sufijos, buscar y reemplazar, extraer hashtags, extraer teléfonos y aplanar JSON.
@@ -93,3 +93,11 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - **Hugging Face Image** requiere `HF_MEDIA_ENABLED=1` y `HF_TOKEN` para evitar gastos no consentidos.
 - **Gemini Image** requiere `GEMINI_IMAGE_ENABLED=1` y `GEMINI_API_KEY`. Es un motor de pago; no se activa en esta actualización ni consume créditos sin esa habilitación explícita.
 - El generador conserva los límites de uso diario y nunca garantiza que una API de terceros siempre esté disponible.
+
+
+## Inteligencia contextual y nuevas herramientas
+
+- Prisma Core prioriza los turnos recientes y recupera mensajes anteriores relevantes dentro de la conversación actual, con un límite de caracteres para ahorrar tokens y proteger la latencia.
+- El enrutamiento automático selecciona motores por tipo de trabajo y salud reciente. Kilo participa únicamente con modelos de precio cero que no sean endpoints de prueba NVIDIA. AIHubMix permanece manual hasta confirmar la recarga requerida en `AIHUBMIX_DAILY_QUOTA_ACTIVE=1`.
+- Tres herramientas sin API: ocultar claves, correos y teléfonos potencialmente sensibles; construir enlaces UTM sin perder parámetros; generar subtítulos SRT con tiempos aproximados y archivo descargable.
+- El detector de datos sensibles no sustituye una revisión humana ni garantiza anonimización. Los subtítulos SRT generados desde texto requieren ajuste temporal según el audio.

@@ -42,6 +42,9 @@ const ALIASES = {
   'table-file-convert':['excel a csv','json a excel','datos a xlsx'],
   'csv-profile-local':['audita csv','revisa duplicados csv','calidad de datos csv'],
   'text-analyzer-local':['analizar texto','estadisticas del texto'],
+  'text-redact-sensitive':['ocultar datos sensibles','oculta claves api','anonimizar texto','borra datos personales','censura correos','oculta telefonos'],
+  'utm-builder':['crea url utm','enlaces de campana','enlace rastreable','utm para marketing'],
+  'subtitle-srt-local':['crear subtitulos srt','generar srt','subtitulos capcut','guion a subtitulos'],
   'text-extract-emails':['extrae correos','lista emails'],
   'text-extract-urls':['extrae enlaces','lista links'],
   'word-frequency':['palabras frecuentes','terminos repetidos'],
@@ -279,6 +282,8 @@ export function planCoreOfflineAction(query,files=[],history=[]){
  const payload=(code||labelled||quoted).trim();
  if(payload){
   const actions=[
+   [/(?:ocult|anonimiz|censur|enmascar).{0,35}(?:datos sensibles|claves|correos|telefonos|datos personales)|(?:borra|elimina).{0,24}(?:claves api|datos personales)/,'text-redact-sensitive',{}],
+   [/(?:crea|generar|prepara|convertir|convierte).{0,36}(?:subtitulos|archivo srt|srt)/,'subtitle-srt-local',{secondsPerCue:4}],
    [/cuenta.{0,12}(?:palabras|caracteres)/,'word-count',{}],
    [/quita.{0,14}(?:tildes|acentos)/,'text-remove-accents',{}],
    [/ordena.{0,12}(?:lineas|lista|alfabet)/,'text-sort',{}],
@@ -296,6 +301,15 @@ export function planCoreOfflineAction(query,files=[],history=[]){
   ];
   const choices=actions.filter(([pattern])=>pattern.test(q));
   if(choices.length===1){const [,id,params]=choices[0];return ok([step(id,{text:payload,...params},'Transformar el contenido proporcionado')]);}
+ }
+ if(/\b(?:utm|enlace rastreable|url de campana|enlace de campaña)\b/.test(q)){
+  const url=String(query).match(/https?:\/\/[^\s"'<>]+/i)?.[0]||'';
+  const source=String(query).match(/(?:fuente|origen|utm_source)\s*[:=]\s*([\w-]+)/i)?.[1]||'';
+  const medium=String(query).match(/(?:medio|utm_medium)\s*[:=]\s*([\w-]+)/i)?.[1]||'';
+  const campaign=String(query).match(/(?:campana|campaña|utm_campaign)\s*[:=]\s*([\w-]+)/i)?.[1]||'';
+  if(url&&source&&medium&&campaign)
+   return ok([step('utm-builder',{url,source,medium,campaign},'Preparar un enlace de campaña rastreable')]);
+  return flow('Puedo generar tu enlace UTM sin usar IA. Indícame la URL completa, origen, medio y campaña (por ejemplo: URL: https://ejemplo.com; origen: instagram; medio: social; campaña: lanzamiento).');
  }
  const qrMatch=String(query).match(/(?:codigo\s+qr|c[oó]digo\s+qr|\bqr\b).{0,45}?(https?:\/\/[^\s]+|www\.[^\s]+)/i);
  if(qrMatch&&/(?:crea|crear|genera|generar|haz|quiero|necesito)/.test(q))

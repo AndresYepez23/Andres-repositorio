@@ -2,15 +2,15 @@
 // Routing is sequential: one model is used on the healthy path; alternatives
 // are contacted only after a real failure. OpenRouter remains the final reserve.
 export const ROUTE_ORDER = Object.freeze({
-  planner: ["groq","cloudflare","sensenova","zai","gemini","requesty","pollinations","huggingface","openrouter"],
-  quick: ["groq","cloudflare","requesty","sensenova","zai","gemini","pollinations","huggingface","openrouter"],
-  conversation: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","openrouter"],
-  general: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","openrouter"],
-  summary: ["cloudflare","groq","gemini","requesty","sensenova","zai","pollinations","huggingface","openrouter"],
-  coding: ["cloudflare","groq","zai","requesty","sensenova","gemini","pollinations","huggingface","openrouter"],
-  reasoning: ["gemini","sensenova","zai","requesty","cloudflare","groq","pollinations","huggingface","openrouter"],
-  creative: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","openrouter"],
-  songwriting: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","openrouter"],
+  planner: ["groq","cloudflare","sensenova","zai","gemini","requesty","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  quick: ["groq","cloudflare","requesty","sensenova","zai","gemini","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  conversation: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  general: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  summary: ["cloudflare","groq","gemini","requesty","sensenova","zai","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  coding: ["cloudflare","groq","zai","requesty","sensenova","gemini","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  reasoning: ["gemini","sensenova","zai","requesty","cloudflare","groq","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  creative: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","kilo","aihubmix","openrouter"],
+  songwriting: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","kilo","aihubmix","openrouter"],
 });
 
 const MODEL_BY_TASK = Object.freeze({
@@ -25,7 +25,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
   quick: {
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-20b",smart:"openai/gpt-oss-20b"},
@@ -38,7 +37,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
   summary: {
     cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/google/gemma-4-26b-a4b-it",smart:"@cf/meta/llama-3.3-70b-instruct-fp8-fast"},
@@ -51,7 +49,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
   coding: {
     cloudflare: {fast:"@cf/qwen/qwen3.8-27b",balanced:"@cf/qwen/qwen3.8-27b",smart:"@cf/qwen/qwen3.8-27b"},
@@ -64,7 +61,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
   reasoning: {
     gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.8-flash",smart:"gemini-3.8-flash"},
@@ -77,7 +73,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
   creative: {
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
@@ -90,7 +85,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
   songwriting: {
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
@@ -103,7 +97,6 @@ const MODEL_BY_TASK = Object.freeze({
     zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-    baidu: {fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   },
 });
 const DEFAULT_MODELS = {
@@ -117,9 +110,7 @@ const DEFAULT_MODELS = {
   zai:{fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
   requesty:{fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
   kilo:{fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
-  baidu:{fast:"ernie-tiny-8k",balanced:"ernie-speed-128k",smart:"ernie-speed-128k"},
   aihubmix:{fast:"coding-glm-5.3-flash-free",balanced:"coding-glm-5.3-free",smart:"coding-kimi-k3-free"},
-  amd:{fast:"Qwen3.8-Flash-Next",balanced:"DeepSeek-V4-Flash",smart:"DeepSeek-V4.1-Flash"},
 };
 
 export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},now=Date.now()}={}) {
