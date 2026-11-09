@@ -100,19 +100,19 @@ export async function onRequestPost({ request, env }) {
   if (requestedModel && !allowedModel(provider, "chat", requestedModel)) {
     return json({error:"Modelo no permitido para el proveedor seleccionado."},400);
   }
-  if(provider==="pollinations"){
+  if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
     if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
   }
-  if(provider==="huggingface"){
+  if(provider==="huggingface"&&getCredentialSlots(env,"huggingface").length<=1){
     const hold=await getProviderHold(env,"huggingface");
     if(hold)return json({error:hold.reason,provider:"huggingface",status:402},402);
   }
-  if(provider==="groq"){
+  if(provider==="groq"&&getCredentialSlots(env,"groq").length<=1){
     const hold=await getProviderHold(env,"groq");
     if(hold)return json({error:hold.reason,provider:"groq",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
   }
-  if(provider==="openrouter"){
+  if(provider==="openrouter"&&getCredentialSlots(env,"openrouter").length<=1){
     const hold=await getProviderHold(env,"openrouter");
     if(hold)return json({error:hold.reason,provider:"openrouter",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
   }
