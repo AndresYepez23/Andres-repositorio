@@ -4,6 +4,7 @@ import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
 import { planFileConversion } from './file-conversions.js';
+import { openImageEditor, initImageEditor } from './core-image-editor.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -24,6 +25,8 @@ let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggin
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
 let localBrainEnabled = false;
+let voiceReading = false;
+let voiceUtterance = 0;
 const resultObjectUrls = new Map();
 
 function readPollinationsToken(){
@@ -198,6 +201,106 @@ function addMessage(role,content,extra={}){
   messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
   messages=messages.slice(-60);save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
 }
+function speechSynthesisStop(){
+ voiceUtterance++;
+ voiceReading=false;
+ try{window.speechSynthesis?.cancel();}catch{}
+ document.querySelectorAll('[data-core-action="listen"]').forEach(button=>button.setAttribute('aria-pressed','false'));
+}
+function speakInBrowser(text,button){
+ if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){
+  status('Este navegador no permite reproducir lectura de voz. Puedes generar MP3 con Texto a voz IA.','warning');
+  return;
+ }
+ if(voiceReading){speechSynthesisStop();status('Lectura detenida.','info');return;}
+ const clean=String(text||'').replace(/\s+/g,' ').trim();
+ if(!clean){status('No hay texto para reproducir.','warning');return;}
+ speechSynthesisStop();
+ voiceReading=true;const token=voiceUtterance;
+ button?.setAttribute('aria-pressed','true');
+ const all=window.speechSynthesis.getVoices()||[];
+ const spanish=all.filter(v=>/^es(?:-|_)/i.test(v.lang));
+ const rank=voice=>{
+  const name=String(voice.name||'').toLowerCase();
+  return (/premium|enhanced|natural|neural/.test(name)?20:0)+
+   (/google|mónica|monica|paulina|siri|helena|luciana/.test(name)?14:0)+
+   (/es-(co|mx|es)/i.test(voice.lang)?5:0)+(voice.default?2:0);
+ };
+ const voice=spanish.sort((a,b)=>rank(b)-rank(a))[0]||all.find(v=>v.default)||null;
+ const chunks=clean.match(/.{1,420}(?:[.!?]\s|$)|.{1,420}/g)||[clean];
+ let index=0;
+ const next=()=>{
+  if(token!==voiceUtterance||!voiceReading)return;
+  if(index>=chunks.length){voiceReading=false;button?.setAttribute('aria-pressed','false');status('Lectura terminada.','success');return;}
+  const utterance=new SpeechSynthesisUtterance(chunks[index++]);
+  utterance.lang=voice?.lang||'es-ES';if(voice)utterance.voice=voice;
+  utterance.rate=1;utterance.pitch=1;utterance.volume=1;
+  utterance.onend=next;
+  utterance.onerror=event=>{if(event.error==='interrupted'||event.error==='canceled')return;speechSynthesisStop();status('El navegador no pudo reproducir esa voz. Prueba otra disponible en tu dispositivo.','warning');};
+  window.speechSynthesis.speak(utterance);
+ };
+ status('Leyendo con la voz del navegador. No consume créditos de Prisma.','info');
+ next();
+}
+function coreActionIcon(name){
+ const paths={
+  listen:'<path d="m11 5-5 4H3v6h3l5 4V5Z"/><path d="M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/>',
+  copy:'<rect width="13" height="13" x="8" y="8" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  share:'<path d="M12 16V3m-5 5 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+  like:'<path d="M7 10v11H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3Zm0 0 5-8a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 8a2 2 0 0 1-2 2H7"/>',
+  dislike:'<path d="M7 14V3H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3Zm0 0 5 8a3 3 0 0 0 3-3v-4h5a2 2 0 0 0 2-2l-1-8a2 2 0 0 0-2-2H7"/>',
+  more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+ };
+ return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+(paths[name]||paths.more)+'</svg>';
+}
+function renderMessageActions(message){
+ const actions=document.createElement('div');actions.className='core-message-actions';
+ const button=(name,title,handler)=>{
+  const el=document.createElement('button');el.type='button';el.className='core-message-action';
+  el.title=title;el.setAttribute('aria-label',title);el.innerHTML=coreActionIcon(name);
+  el.addEventListener('click',()=>handler(el));actions.append(el);return el;
+ };
+ button('listen','Escuchar respuesta con la voz del navegador',el=>speakInBrowser(message.content,el));
+ button('copy','Copiar respuesta',async()=>{
+  try{await navigator.clipboard.writeText(message.content);status('Respuesta copiada.','success');}
+  catch{status('No fue posible copiar al portapapeles.','warning');}
+ });
+ button('share','Compartir respuesta',async()=>{
+  if(navigator.share){try{await navigator.share({title:'Respuesta de Prisma',text:message.content});}catch(error){if(error.name!=='AbortError')status('No se pudo compartir.','warning');}}
+  else{try{await navigator.clipboard.writeText(message.content);status('Respuesta copiada para compartir.','success');}catch{status('Compartir no está disponible en este navegador.','warning');}}
+ });
+ for(const [key,title] of [['like','Me gustó'],['dislike','No me gustó']]){
+  const el=button(key,title,()=>{
+   message.feedback=message.feedback===key?'':key;
+   save();renderMessages();status('Valoración guardada solo en este navegador.','success');
+  });
+  el.setAttribute('aria-pressed',message.feedback===key?'true':'false');
+ }
+ const more=button('more','Más opciones',()=>{
+  const current=actions.querySelector('.core-action-menu');
+  if(current){current.remove();return;}
+  document.querySelectorAll('.core-action-menu').forEach(menu=>menu.remove());
+  const menu=document.createElement('div');menu.className='core-action-menu';
+  const option=(label,handler)=>{
+   const b=document.createElement('button');b.type='button';b.textContent=label;
+   b.addEventListener('click',()=>{menu.remove();handler();});menu.append(b);
+  };
+  option('Preparar un MP3 de esta respuesta',()=>{
+   const text=String(message.content).slice(0,1450);
+   const input=$('#core-input');input.value='Convierte a audio: '+text;input.dispatchEvent(new Event('input'));input.focus();
+   status('Preparé la solicitud. Enviar consumirá una generación de voz si el proveedor tiene cuota.','info');
+  });
+  option('Pedir otra versión',()=>{
+   const previous=messages.slice(0,messages.indexOf(message)).reverse().find(entry=>entry.role==='user');
+   const input=$('#core-input');input.value=previous?'Dame otra versión de tu respuesta a: '+previous.content:'Dame otra versión de esta respuesta.';
+   input.dispatchEvent(new Event('input'));input.focus();
+   status('Solicitud preparada. Envíala cuando quieras generar otra respuesta.','info');
+  });
+  option('Copiar como texto',()=>{navigator.clipboard?.writeText(message.content).then(()=>status('Copiado.','success')).catch(()=>status('No se pudo copiar.','warning'));});
+  more.parentNode?.append(menu);
+ });
+ return actions;
+}
 function isNearBottom(list,threshold=120){
   return list.scrollHeight-list.scrollTop-list.clientHeight<threshold;
 }
@@ -228,6 +331,7 @@ function renderMessages({forceBottom=false}={}){
     }
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
+    if(message.role==='assistant'&&message.content?.trim())bubble.append(renderMessageActions(message));
     list.append(bubble);
   }
   if(shouldStick){
@@ -756,6 +860,8 @@ function inlineSpeechText(command){
  if(quoted)return quoted[1].trim();
  const separator=full.match(/(?:texto|frase|mensaje|contenido|que diga|lo siguiente)\s*[:：]\s*([\s\S]{2,})$/i);
  if(separator)return separator[1].trim();
+ const natural=full.match(/^(?:convierte|convertir|pasa|pasame|pásame|hazme|genera|graba|narra|léeme|leeme)\s+(?:(?:este|el|mi|un)\s+)?(?:(?:texto|mensaje|frase)\s+)?(?:a|en)\s+(?:audio|voz|mp3)\s*[,;:\-]?\s+([\s\S]{2,})$/i);
+ if(natural&&!/^(?:este texto|el texto|el archivo|un documento|mi documento|el documento)\s*$/i.test(natural[1].trim()))return natural[1].trim();
  const colon=full.match(/[:：]\s*([^\n]{2,}(?:\n[\s\S]*)?)$/);
  if(colon)return colon[1].trim();
  const newlines=full.split(/\n+/).slice(1).join('\n').trim();
@@ -1133,6 +1239,18 @@ function createExecutionResults(executed,partial){
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
       button.addEventListener('click',()=>{const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';a.click();});
       row.append(label,button);
+      if(String(result.blob.type||'').startsWith('image/')){
+       const edit=document.createElement('button');edit.type='button';edit.className='mini-button core-edit-thumb';edit.textContent='Añadir texto / Editar';
+       edit.addEventListener('click',async()=>{
+        try{await openImageEditor({blob:result.blob,filename:result.filename,onSave:async output=>{
+         addMessage('assistant','Miniatura editada en tu dispositivo, sin gastar otra generación de IA.',{
+          results:[{name:'Miniatura con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
+         });
+         status('Miniatura editada y lista para descargar.','success');
+        }});}catch(error){status(error?.message||'No pude abrir el editor.','warning');}
+       });
+       row.append(edit);
+      }
       if(result.blob.size<=200*1024*1024&&!/\\.zip$/i.test(result.filename||'')){
         const reuse=document.createElement('button');reuse.type='button';reuse.className='mini-button';
         reuse.textContent='Usar en otra tarea';
@@ -1173,6 +1291,7 @@ async function sendMessage(){
 }
 export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
+  initImageEditor();
   loadChatHistory();
   renderMessages({forceBottom:true});updateChatScreen();
   $('#core-history-search')?.addEventListener('input',event=>{conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();renderConversationList();});
