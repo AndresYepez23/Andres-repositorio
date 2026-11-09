@@ -2,7 +2,6 @@ import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js"
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
-import { getAmdFreeModels } from "../../_lib/amd-models.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 const headers = {
@@ -113,7 +112,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "baidu", "aihubmix", "amd"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "baidu", "aihubmix"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
@@ -129,22 +128,18 @@ export async function onRequestPost({ request, env }) {
   }
 
   const requestedModel = String(payload.model || "");
-  const amdModels = provider === "amd" ? await getAmdFreeModels(env) : null;
   const kiloModels = provider === "kilo" ? await getKiloFreeModels(env) : null;
   const aihubmixModels = provider === "aihubmix" ? await getAihubmixFreeModels(env) : null;
-  const requestedModelAllowed = provider === "amd"
-    ? Boolean(requestedModel && amdModels.some(model => model.id === requestedModel))
-    : provider === "kilo"
-      ? Boolean(requestedModel && kiloModels.some(model => model.id === requestedModel))
-      : provider === "aihubmix"
-        ? Boolean(requestedModel && aihubmixModels.some(model => model.id === requestedModel))
-        : !requestedModel || allowedModel(provider, "chat", requestedModel);
+  const requestedModelAllowed = provider === "kilo"
+    ? Boolean(requestedModel && kiloModels.some(model => model.id === requestedModel))
+    : provider === "aihubmix"
+      ? Boolean(requestedModel && aihubmixModels.some(model => model.id === requestedModel))
+      : !requestedModel || allowedModel(provider, "chat", requestedModel);
   if (requestedModel && !requestedModelAllowed) {
-    const message=provider==="amd"?"AMD no publica ese modelo como gratuito y compatible con texto en este momento.":provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":provider==="aihubmix"?"AIHubMix ya no publica ese modelo como gratuito de texto con peso de cuota 1; actualiza el catálogo.":"Modelo no permitido para el proveedor seleccionado.";
+    const message=provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":provider==="aihubmix"?"AIHubMix ya no publica ese modelo como gratuito de texto con peso de cuota 1; actualiza el catálogo.":"Modelo no permitido para el proveedor seleccionado.";
     return json({error:message},400);
   }
   if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
-  if(provider==="amd"&&!amdModels?.length)return json({error:"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave.",provider},503);
   if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
   if(provider==="baidu"&&env.BAIDU_FREE_QUOTA_CONFIRMED!=="1")return json({error:"Baidu Qianfan está desactivado para evitar consumo facturable. Confirma primero la cuota gratuita de ERNIE-Speed/Lite/Tiny en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.",provider},403);
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
@@ -398,9 +393,9 @@ export async function onRequestPost({ request, env }) {
   };
   if(compatibleProviders[provider]){
     const config=compatibleProviders[provider];
-    const model=requestedModel||(provider==="amd"?amdModels?.[0]?.id:provider==="aihubmix"?(aihubmixModels?.find(item=>item.id==="coding-glm-5.3-free")?.id||aihubmixModels?.[0]?.id):config.model);
+    const model=requestedModel||(provider==="aihubmix"?(aihubmixModels?.find(item=>item.id==="coding-glm-5.3-free")?.id||aihubmixModels?.[0]?.id):config.model);
     if(!model){
-      const message=provider==="amd"?"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave. Revisa la cuenta y su aprobación regional.":"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.";
+      const message="AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.";
       return json({error:message,provider},503);
     }
     const extraHeaders=provider==="requesty"?{"HTTP-Referer":"https://prismaspace.pages.dev","X-Title":"Prisma Space"}:{};
