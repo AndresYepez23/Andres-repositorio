@@ -783,7 +783,7 @@ async function generateText(p,cb){
  const outputTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
  const preferred=p.provider||'auto';
  const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
- const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',baidu:'Baidu Qianfan',aihubmix:'AIHubMix',amd:'AMD Token Factory'};
+ const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
  const errors=[],attempted=[];
  let lastLimitError=null;
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>
@@ -806,7 +806,7 @@ async function generateText(p,cb){
   const remaining=totalDeadline-(Date.now()-startedAt);
   if(remaining<=2500){errors.push('La búsqueda de un motor superó el tiempo total de espera.');break;}
   let requestDeadline=Math.min(individualDeadline,remaining);
-  if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter','kilo','requesty','sensenova','zai','baidu','aihubmix','amd'].includes(provider))continue;
+  if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter','kilo','requesty','sensenova','zai','aihubmix'].includes(provider))continue;
   if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
    if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
