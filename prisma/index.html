@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101218">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Prisma Space">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/prisma-app-180.png">
   <meta name="description" content="Prisma Space reúne herramientas digitales, procesamiento local e inteligencia artificial para crear, convertir, optimizar y experimentar en un solo lugar.">
   <meta name="application-name" content="Prisma Space">
   <meta property="og:type" content="website">
@@ -37,6 +42,7 @@
       <nav class="category-nav" id="category-nav" aria-label="Categorías"></nav>
       <div class="core-sidebar-conversations hidden" id="core-sidebar-conversations" aria-label="Historial de Prisma Core"></div>
       <div class="sidebar-bottom">
+        <button type="button" class="sidebar-account-trigger" id="sidebar-account-trigger"><span class="sidebar-account-avatar">I</span><span class="sidebar-account-text"><strong>Tu espacio</strong><small id="sidebar-account-label">Modo invitado</small></span><span class="sidebar-account-dots">•••</span></button>
         <div class="privacy-card">
           <span class="privacy-icon" data-icon="shield-check"></span>
           <div><strong>Privacidad primero</strong><p>Tus archivos se procesan en tu dispositivo siempre que es posible.</p></div>
@@ -47,13 +53,54 @@
     <button type="button" class="sidebar-backdrop" id="sidebar-backdrop" aria-label="Cerrar menú lateral"></button>
 
     <main class="main-area">
+      <div class="prisma-install-banner hidden" id="prisma-install-banner" role="region" aria-label="Instalar Prisma Space">
+        <img src="./assets/prisma-app-192.png" width="36" height="36" alt="">
+        <div><strong>Prisma Space</strong><span id="prisma-install-copy">Prisma como aplicación</span></div>
+        <button type="button" id="prisma-install-button" class="prisma-install-cta">Instalar</button>
+        <button type="button" id="prisma-install-dismiss" class="prisma-install-dismiss" aria-label="Cerrar invitación de instalación">×</button>
+      </div>
       <header class="topbar">
         <button class="icon-button mobile-menu" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false" data-icon="menu"></button>
         <div class="breadcrumb"><span>PRISMA SPACE</span><span class="crumb-sep">/</span><strong id="breadcrumb-current">Explorar</strong></div>
         <div class="topbar-actions">
+          <div class="core-header-actions">
+            <button type="button" class="icon-button core-header-new" id="core-header-new" aria-label="Nuevo chat" title="Nuevo chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-9"/><path d="M15 4h6m-3-3v6m-8 8 8-8"/></svg></button>
+            <div class="core-more-wrap">
+              <button type="button" class="icon-button core-more-toggle" id="core-more-toggle" aria-label="Más opciones del chat" aria-haspopup="menu" aria-expanded="false">•••</button>
+              <div class="core-more-menu hidden" id="core-more-menu" role="menu" aria-label="Opciones del chat">
+                <button type="button" role="menuitem" data-chat-action="rename">Renombrar conversación</button>
+                <button type="button" role="menuitem" data-chat-action="pin">Anclar o desanclar</button>
+                <button type="button" role="menuitem" data-chat-action="export">Exportar conversación</button>
+                <button type="button" role="menuitem" data-chat-action="delete" class="danger">Eliminar conversación</button>
+              </div>
+            </div>
+          </div>
           <label class="global-search"><span data-icon="search" aria-hidden="true"></span><input id="global-search" type="search" aria-label="Buscar herramientas" placeholder="Buscar una herramienta..." autocomplete="off"><kbd>Ctrl K</kbd></label>
           <button class="icon-button" id="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema" data-icon="sun"></button>
-          <div class="profile-wrap"><button type="button" class="profile-chip" id="profile-toggle" aria-label="Abrir espacio personal" aria-haspopup="true" aria-expanded="false"><span>I</span></button><div class="profile-menu hidden" id="profile-menu" role="menu" aria-label="Espacio personal"><div class="profile-menu-heading"><strong>Tu espacio</strong><span>Modo invitado</span></div><p>Favoritos, tema e historial se guardan solo en este navegador. No necesitas crear una cuenta.</p><a href="./privacy.html#privacidad" role="menuitem">Privacidad y uso</a><button type="button" id="clear-local-data" role="menuitem">Borrar mis datos locales</button></div></div>
+          <div class="profile-wrap">
+            <button type="button" class="profile-chip" id="profile-toggle" aria-label="Abrir perfil y preferencias" aria-haspopup="true" aria-expanded="false"><span>I</span></button>
+            <div class="profile-menu hidden" id="profile-menu" role="dialog" aria-label="Tu espacio">
+              <div class="profile-menu-heading">
+                <strong>Tu espacio</strong><span class="profile-mode-label" id="profile-mode-label">INVITADO</span>
+              </div>
+              <div id="profile-guest" class="profile-state">
+                <div class="profile-guest-intro"><strong>Un espacio para tus ideas</strong><p>Usa Prisma gratis sin registrarte. Con una cuenta podrás recuperar tus conversaciones en otros dispositivos.</p></div>
+                <button type="button" id="profile-signin" class="profile-primary-action">Iniciar sesión o registrarse</button>
+              </div>
+              <div id="profile-member" class="profile-state hidden">
+                <div class="profile-user-row"><span class="profile-avatar" id="profile-avatar">P</span><div><strong id="profile-name">Usuario</strong><small id="profile-email"></small></div></div>
+                <p>Chats sincronizados en tu cuenta de Prisma.</p>
+              </div>
+              <div class="profile-action-group">
+                <button type="button" id="profile-theme-toggle" class="profile-action"><span data-icon="palette"></span> Cambiar apariencia <small id="profile-theme-label">Oscuro</small></button>
+                <button type="button" id="profile-install-app" class="profile-action"><span data-icon="download"></span> Instalar Prisma Space</button>
+                <a class="profile-action" href="./privacy.html#privacidad"><span data-icon="shield-check"></span> Privacidad y uso</a>
+                <a class="profile-action" href="mailto:soporte@prismaspace.pages.dev?subject=Ayuda%20con%20Prisma%20Space" id="profile-help-link"><span data-icon="info"></span> Ayuda y soporte</a>
+                <button type="button" id="clear-local-data" class="profile-action"><span data-icon="refresh-cw"></span> Borrar datos de este navegador</button>
+                <button type="button" id="profile-logout" class="profile-action danger hidden"><span data-icon="arrow-down"></span> Cerrar sesión</button>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -79,6 +126,7 @@
               <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
               <div class="core-composer" id="core-composer">
                 <div class="core-attachments" id="core-attachments"></div>
+                <div class="core-voice-status" id="core-voice-status" role="status" aria-live="polite"></div>
                 <textarea id="core-input" rows="1" placeholder="Pregunta o describe lo que necesitas…" aria-label="Mensaje para Prisma Core"></textarea>
                 <div class="core-composer-footer">
                   <div class="core-composer-tools"><button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
@@ -95,7 +143,11 @@
                       <small>El motor automático intenta los respaldos autorizados si falla el principal. Adjunta hasta 8 archivos (100 MB en total).</small>
                     </div>
                   </details></div>
-                  <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
+                  <div class="core-voice-actions">
+                    <button type="button" class="core-voice-icon" id="core-mic" title="Dictar un mensaje" aria-label="Dictar un mensaje" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg></button>
+                    <button type="button" class="core-voice-icon core-voice-call" id="core-voice-mode" title="Conversación por voz (experimental)" aria-label="Iniciar conversación por voz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M3 10v4m4-8v12m4-15v18m4-14v10m4-13v16m4-10v4"/></svg></button>
+                    <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
+                  </div>
                 </div>
 
 
@@ -253,6 +305,56 @@
       <div class="modal-footer"><span class="modal-privacy"><span data-icon="shield-check"></span> Procesamiento local cuando está disponible</span><button type="button" class="button button-quiet" id="modal-cancel">Cerrar</button><button class="button button-primary" id="modal-run"><span data-icon="play"></span> Ejecutar herramienta</button></div>
     </section>
   </div>
+
+  <div class="prisma-modal-backdrop hidden" id="prisma-install-guide" role="dialog" aria-modal="true" aria-label="Instalar Prisma">
+    <div class="prisma-small-sheet"><button type="button" class="prisma-sheet-close" id="prisma-install-guide-close" aria-label="Cerrar">×</button>
+      <img src="./assets/prisma-app-192.png" width="60" height="60" alt="Prisma Space">
+      <h2>Prisma Space como aplicación</h2>
+      <p id="prisma-install-steps"></p>
+      <small>La instalación es gratuita y no requiere una cuenta.</small>
+    </div>
+  </div>
+  <div class="prisma-modal-backdrop hidden" id="prisma-auth-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="prisma-auth-title">
+    <div class="prisma-auth-sheet">
+      <button type="button" class="prisma-sheet-close" id="prisma-auth-close" aria-label="Cerrar">×</button>
+      <div class="prisma-auth-mark">✦</div>
+      <h2 id="prisma-auth-title">Bienvenido a Prisma</h2>
+      <p class="prisma-auth-subtitle">Gratis para todos. Una cuenta te permite sincronizar y recuperar tus conversaciones.</p>
+      <div class="prisma-social-actions">
+        <button type="button" class="prisma-provider-button" id="prisma-auth-google" disabled><span class="prisma-provider-initial">G</span> Continuar con Google <small>Por activar</small></button>
+        <button type="button" class="prisma-provider-button" id="prisma-auth-apple" disabled><span class="prisma-provider-initial">●</span> Continuar con Apple <small>Por activar</small></button>
+        <button type="button" class="prisma-provider-button" id="prisma-auth-phone" disabled><span class="prisma-provider-initial">☎</span> Continuar con teléfono <small>Por activar</small></button>
+      </div>
+      <div class="prisma-phone-form hidden" id="prisma-auth-phone-form">
+        <input id="prisma-auth-phone-number" type="tel" inputmode="tel" placeholder="+57 300 000 0000" autocomplete="tel">
+        <button type="button" id="prisma-auth-phone-send">Enviar código</button>
+        <div id="prisma-auth-phone-verify" class="hidden"><input id="prisma-auth-phone-code" inputmode="numeric" placeholder="Código SMS"><button type="button" id="prisma-auth-phone-confirm">Verificar</button></div>
+      </div>
+      <div class="prisma-auth-separator"><span>o continúa con correo</span></div>
+      <form id="prisma-auth-form" data-mode="signin">
+        <label for="prisma-auth-email">Correo electrónico</label>
+        <input type="email" id="prisma-auth-email" autocomplete="email" required placeholder="tu@correo.com">
+        <label for="prisma-auth-password">Contraseña</label>
+        <input type="password" id="prisma-auth-password" autocomplete="current-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+        <button type="submit" class="prisma-auth-submit" id="prisma-auth-submit">Iniciar sesión</button>
+      </form>
+      <button type="button" class="prisma-auth-link" id="prisma-auth-mode-toggle">¿No tienes cuenta? Regístrate</button>
+      <button type="button" class="prisma-auth-link" id="prisma-auth-reset">Recuperar contraseña</button>
+      <p class="prisma-auth-message" id="prisma-auth-message" aria-live="polite">Puedes seguir usando Prisma sin una cuenta.</p>
+      <p class="prisma-auth-footnote">La creación de cuenta no es obligatoria. Las imágenes y archivos generados siguen siendo responsabilidad de descargarlos y conservarlos.</p>
+    </div>
+  </div>
+  <div class="prisma-modal-backdrop hidden" id="core-call-panel" role="dialog" aria-modal="true" aria-label="Conversación por voz con Prisma">
+    <div class="prisma-call-sheet">
+      <button class="prisma-sheet-close" type="button" id="core-call-close" aria-label="Cerrar conversación de voz">×</button>
+      <div class="prisma-call-orb" aria-hidden="true"><span>✦</span></div>
+      <h2>Conversación con Prisma</h2>
+      <p id="core-call-state" role="status">Preparando micrófono…</p>
+      <small>Versión experimental por turnos. El dictado del navegador puede usar servicios externos y la voz depende del dispositivo.</small>
+      <div class="prisma-call-controls"><button type="button" id="core-call-mic">Escuchar / detener</button><button type="button" id="core-call-done">Finalizar</button></div>
+    </div>
+  </div>
+
   <div class="toast-region" id="toast-region" aria-live="polite"></div>
   <script type="module" src="./src/main.js"></script>
 </body>
