@@ -955,6 +955,59 @@ async function imageAdvanced(id,files,p,cb){
  }
  throw Error('Operación de imagen no disponible.');
 }
+async function convertTabularFile(files,p,cb){
+ const source=files?.[0];
+ if(!source)throw Error('Selecciona un archivo CSV, JSON, XLS o XLSX.');
+ const ext=String(source.name||'').split('.').pop().toLowerCase();
+ const kind=ext==='csv'?'csv':ext==='json'?'json':['xlsx','xls'].includes(ext)?'excel':'';
+ if(!kind)throw Error('Formato de origen incompatible. Usa un CSV, JSON o Excel (XLS/XLSX).');
+ const requested=String(p.output||'auto').toLowerCase();
+ const dest=requested==='auto'?kind==='excel'?'csv':kind==='csv'?'json':'csv':requested;
+ if(!['csv','json','xlsx'].includes(dest))throw Error('El formato solicitado no está disponible. Selecciona CSV, JSON o XLSX.');
+ if((kind==='excel'&&dest==='xlsx')||(kind===dest))throw Error('El archivo ya tiene ese formato. Elige un formato de destino diferente.');
+ progress(cb,.08,'Leyendo los datos sin enviarlos a un servidor…');
+ const stem=source.name.replace(/\\.[^.]+$/,'').replace(/[^a-z0-9áéíóúñ._-]/gi,'-').slice(0,75)||'prisma-datos';
+ if(kind==='excel'){
+  const result=await excelToJson(source,{sheet:p.sheet||'0',format:dest},cb);
+  if(result?.blob)result.filename=stem+'.'+(dest==='csv'?'csv':'json');
+  return {...result,summary:(result.summary||'')+' Conversión local; se conserva la primera hoja salvo que selecciones todas para JSON.'};
+ }
+ let rows;
+ if(kind==='csv'){
+  const content=await source.text();
+  if(content.length>10000000)throw Error('Para proteger la memoria del dispositivo, el CSV debe tener menos de 10 MB de texto.');
+  const header=content.split(/\\r?\\n/)[0]||'';
+  const delimiter=p.delimiter&&p.delimiter!=='auto'?p.delimiter:[',',';','\\t'].map(ch=>({ch,c:header.split(ch).length-1})).sort((a,b)=>b.c-a.c)[0].ch;
+  const parsed=parseCsv(content.replace(/^\\uFEFF/,''),delimiter);
+  if(!parsed.length)throw Error('El CSV está vacío.');
+  const names=parsed.shift().map((name,i)=>String(name||'Columna '+(i+1)).trim()||'Columna '+(i+1));
+  rows=parsed.filter(line=>line.some(cell=>String(cell||'').trim())).map(line=>Object.fromEntries(names.map((name,i)=>[name,String(line[i]??'')])));
+ }else{
+  let raw;
+  try{raw=JSON.parse(await source.text());}catch{throw Error('El archivo JSON no es válido.');}
+  if(Array.isArray(raw))rows=raw;
+  else if(raw&&typeof raw==='object'&&Object.values(raw).length===1&&Array.isArray(Object.values(raw)[0]))rows=Object.values(raw)[0];
+  else throw Error('El JSON debe ser una lista de objetos (o contener una única lista dentro de un objeto).');
+  if(rows.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw Error('Para convertir a CSV o Excel, el JSON debe contener una lista de objetos.');
+ }
+ if(rows.length>50000)throw Error('El archivo supera el máximo de 50.000 registros.');
+ if(dest==='xlsx'){
+  if(!rows.length)throw Error('No hay registros para crear un Excel.');
+  const result=await jsonToExcel({text:JSON.stringify(rows)});
+  progress(cb,1,'Excel generado.');
+  return {...result,filename:stem+'.xlsx',summary:rows.length+' filas convertidas a Excel en el navegador.'};
+ }
+ if(dest==='json'){
+  const content=JSON.stringify(rows,null,2);
+  progress(cb,1,'JSON generado.');
+  return {...download(new Blob([content],{type:'application/json;charset=utf-8'}),stem+'.json'),text:content,summary:rows.length+' registros exportados a JSON.'};
+ }
+ const keys=[...new Set(rows.flatMap(row=>Object.keys(row)))];
+ const lines=[keys.map(csvCell).join(','),...rows.map(row=>keys.map(key=>csvCell(row[key]??'')).join(','))];
+ const content='\\uFEFF'+lines.join('\\r\\n');
+ progress(cb,1,'CSV generado.');
+ return {...download(new Blob([content],{type:'text/csv;charset=utf-8'}),stem+'.csv'),text:content.slice(1),summary:rows.length+' registros exportados a CSV.'};
+}
 async function profileCsvLocally(files,p,cb){
  if(!files[0])throw Error('Selecciona un archivo CSV.');
  const raw=await files[0].text();
@@ -1197,6 +1250,7 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
  if(id==='json-schema-validate')return validateJsonSchema(p,cb);
  if(id==='image-identify-local')return classifyImageLocally(files,p,cb);
