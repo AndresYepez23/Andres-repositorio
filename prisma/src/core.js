@@ -826,7 +826,7 @@ function visualContextEnough(text){
 function visualHeadline(text){
  const raw=String(text||'');
  const found=raw.match(/(?:que\s+diga|y\s+diga|diga|texto(?:\s+principal)?|frase|t[ií]tulo(?:\s+grande)?|que\s+escriba)\s*(?:[:：=-]\s*|\s+)["“'«]?(.{2,110})/i)?.[1]||'';
- return found.split(/\s+y\s+(?:(?:se\s+)?(?:vea|aparezca|muestre|tenga)|con|que\s+se\s+vea)\b|[,;]|\n|[.!?]/i)[0]
+ return found.split(/\s+(?:de\s+estilo|con\s+(?:estilo|colores)|en\s+(?:color|estilo))\b|\s+y\s+(?:(?:se\s+)?(?:vea|aparezca|muestre|tenga)|con|que\s+se\s+vea)\b|[,;]|\n|[.!?]/i)[0]
   .replace(/["”'»]+$/,'').trim().slice(0,68);
 }
 function visualRatio(text,kind){
@@ -1373,8 +1373,8 @@ function createExecutionResults(executed,partial){
        const edit=document.createElement('button');edit.type='button';edit.className='mini-button core-edit-thumb';edit.textContent='Añadir texto / Editar';
        edit.addEventListener('click',async()=>{
         try{await openImageEditor({blob:result.blob,filename:result.filename,initialText:result.suggestedText||'',onSave:async output=>{
-         addMessage('assistant','Miniatura editada en tu dispositivo, sin gastar otra generación de IA.',{
-          results:[{name:'Miniatura con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
+         addMessage('assistant','Imagen editada en tu dispositivo, sin gastar otra generación de IA.',{
+          results:[{name:'Imagen con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
          });
          status('Miniatura editada y lista para descargar.','success');
         }});}catch(error){status(error?.message||'No pude abrir el editor.','warning');}
@@ -1384,7 +1384,7 @@ function createExecutionResults(executed,partial){
        variation.textContent='Otra versión';
        variation.addEventListener('click',()=>{
          const last=messages.slice().reverse().find(entry=>entry.role==='user'&&/(?:miniatura|imagen|foto|diseñ|gener)/i.test(entry.content));
-         const input=$('#core-input');input.value=(last?.content||'Genera una miniatura de YouTube')+'; crea otra versión con composición diferente, calidad profesional y un sujeto más claro.';
+         const input=$('#core-input');input.value=(last?.content||'Genera una imagen atractiva')+'; crea otra versión con una composición distinta, más detalles y mejor calidad visual.';
          input.dispatchEvent(new Event('input'));input.focus();
          status('Petición preparada. Enviar generará otra imagen y utilizará cuota del modelo seleccionado.','info');
        });
