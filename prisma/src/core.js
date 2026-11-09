@@ -477,7 +477,7 @@ function buildPdfEditPlan(userText){
   const previous=messages.slice(-8,-1).reverse().find(message=>message.role==='user'&&isPdfEditIntent(message.content));
   const shortReply=normalizeCoreIntent(userText).trim();
   const attachmentReply=/^(?:aqui|ahi|adjunto|te envio|ya|este|listo|ese|el archivo|el pdf|subi|cargue|por favor|\d|marca de agua|paginas?\s*\d)/.test(shortReply);
-  const labelReply=/^[\p{L}][\p{L}\s-]{1,45}$/u.test(String(userText).trim())&&!/^(?:resume|explica|analiza|convierte|traduce)/.test(shortReply);
+  const labelReply=/^[\p{Lu}][\p{Lu}\s-]{2,45}$/u.test(String(userText).trim())||/^(?:el texto es|que diga|quiero que diga)\s+.{2,45}$/i.test(String(userText).trim());
   if(previous&&(attachmentReply||labelReply)&&previous.content!==userText){
    request=previous.content+'\n'+userText;
   }
@@ -492,7 +492,8 @@ function buildPdfEditPlan(userText){
  const directMark=pdfWatermarkFromText(userText);
  const standaloneMark=/^[\p{L}][\p{L}\s-]{1,45}$/u.test(String(userText||'').trim())&&!/\b(pdf|pagina|archivo|documento|marca|numero|numerar)\b/.test(normalizeCoreIntent(userText))
    ?String(userText).trim():'';
- const mark=directMark||pdfWatermarkFromText(request)||(watermark&&standaloneMark?standaloneMark:'');
+ const labelled=String(userText||'').match(/^(?:el texto es|que diga|quiero que diga)\s+(.{2,45})$/i)?.[1]?.trim()||'';
+ const mark=directMark||pdfWatermarkFromText(request)||(watermark&&(standaloneMark||labelled)?standaloneMark||labelled:'');
  const lacking=[];
  if(!pdfAttached) {
   return {type:'missing-file',message:'Sí. Prisma tiene herramientas locales para extraer páginas específicas, numerarlas y añadir una marca de agua; también puede aplicar las tres operaciones y entregarte un único PDF. Sube el archivo PDF'+(select&&!pages?', dime qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' e indica qué texto llevará la marca de agua':'')+'. No hace falta conectar ningún modelo para editar el documento.'};
