@@ -3,6 +3,7 @@ import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
 import { getAmdFreeModels } from "../../_lib/amd-models.js";
+import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -128,11 +129,15 @@ export async function onRequestPost({ request, env }) {
 
   const requestedModel = String(payload.model || "");
   const amdModels = provider === "amd" ? await getAmdFreeModels(env) : null;
+  const kiloModels = provider === "kilo" ? await getKiloFreeModels(env) : null;
   const requestedModelAllowed = provider === "amd"
     ? Boolean(requestedModel && amdModels.some(model => model.id === requestedModel))
-    : !requestedModel || allowedModel(provider, "chat", requestedModel);
+    : provider === "kilo"
+      ? Boolean(requestedModel && kiloModels.some(model => model.id === requestedModel))
+      : !requestedModel || allowedModel(provider, "chat", requestedModel);
   if (requestedModel && !requestedModelAllowed) {
-    return json({error:provider === "amd" ? "AMD no publica ese modelo como gratuito y compatible con texto en este momento." : "Modelo no permitido para el proveedor seleccionado."},400);
+    const message=provider==="amd"?"AMD no publica ese modelo como gratuito y compatible con texto en este momento.":provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":"Modelo no permitido para el proveedor seleccionado.";
+    return json({error:message},400);
   }
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
@@ -342,7 +347,8 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "kilo") {
-    const model=requestedModel||"z-ai/glm-5:free";
+    const model=requestedModel||kiloModels?.find(item=>!item.id.toLowerCase().startsWith("nvidia/"))?.id||kiloModels?.[0]?.id;
+    if(!model)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider:"kilo"},503);
     const key=getCredentialSlots(env,"kilo")[0]?.value||"";
     const hold=await getProviderHold(env,"kilo");
     if(hold)return json({error:hold.reason,provider:"kilo",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
