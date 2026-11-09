@@ -955,6 +955,42 @@ async function imageAdvanced(id,files,p,cb){
  }
  throw Error('Operación de imagen no disponible.');
 }
+async function profileCsvLocally(files,p,cb){
+ if(!files[0])throw Error('Selecciona un archivo CSV.');
+ const raw=await files[0].text();
+ if(raw.length>5000000)throw Error('Este analizador admite CSV de hasta 5 MB de texto.');
+ const header=(raw.split(/\\r?\\n/)[0]||'');
+ const delimiter=p.delimiter&&p.delimiter!=='auto'?p.delimiter:[',',';','\\t'].map(ch=>({ch,count:header.split(ch).length-1})).sort((a,b)=>b.count-a.count)[0].ch;
+ const rows=parseCsv(raw,delimiter);
+ if(rows.length<2)throw Error('El CSV necesita encabezados y al menos una fila de datos.');
+ const labels=rows[0].map((name,i)=>String(name||'Columna '+(i+1)).trim()||'Columna '+(i+1));
+ const records=rows.slice(1).filter(row=>row.some(value=>String(value??'').trim()));
+ const duplicateCount=records.length-new Set(records.map(row=>JSON.stringify(row))).size;
+ const details=labels.map((name,index)=>{
+  const cells=records.map(row=>String(row[index]??'').trim()),notEmpty=cells.filter(Boolean);
+  const numeric=notEmpty.filter(x=>Number.isFinite(Number(x.replace(',','.')))).length;
+  const date=notEmpty.filter(x=>/^\\d{4}-\\d{2}-\\d{2}/.test(x)).length;
+  const guess=notEmpty.length&&numeric/notEmpty.length>.95?'Número':notEmpty.length&&date/notEmpty.length>.95?'Fecha':'Texto';
+  return {name,empty:cells.length-notEmpty.length,unique:new Set(notEmpty).size,type:guess,examples:notEmpty.slice(0,2)};
+ });
+ const result={file:files[0].name,records:records.length,columns:labels.length,duplicateRows:duplicateCount,delimiter:delimiter==='\\t'?'Tabulación':delimiter,details};
+ const text='AUDITORÍA CSV · GRATIS Y LOCAL\\n'+JSON.stringify(result,null,2);
+ progress(cb,1,'Auditoría lista.');
+ return {text,blob:new Blob([text],{type:'text/plain;charset=utf-8'}),filename:'prisma-auditoria-csv.txt',summary:records.length+' registros, '+labels.length+' columnas, '+duplicateCount+' filas duplicadas.'};
+}
+async function validateJsonSchema(p,cb){
+ let data,schema;
+ try{data=JSON.parse(String(p.text||''));}catch{throw Error('El JSON de datos no es válido.');}
+ try{schema=JSON.parse(String(p.schema||''));}catch{throw Error('El esquema de validación no es un JSON válido.');}
+ const {default:Ajv}=await load('https://esm.sh/ajv@8.17.1');
+ if(typeof Ajv!=='function')throw Error('No se pudo cargar el validador AJV.');
+ const ajv=new Ajv({allErrors:true,strict:false});
+ let valid;
+ try{valid=ajv.validate(schema,data);}catch(error){throw Error('Error al compilar JSON Schema: '+(error.message||error));}
+ const errors=(ajv.errors||[]).map(e=>(e.instancePath||'/')+' · '+(e.message||'Error')+(e.params?': '+JSON.stringify(e.params):''));
+ progress(cb,1,'Validación finalizada.');
+ return {text:valid?'JSON válido: el documento cumple el esquema.':'El JSON no cumple el esquema.\\n'+errors.join('\\n'),summary:valid?'Datos válidos según JSON Schema.':errors.length+' errores detectados por AJV.'};
+}
 let localVisionPromise=null;
 async function classifyImageLocally(files,p,cb){
  if(!files[0])throw Error('Selecciona una imagen JPG, PNG o WebP.');
@@ -1161,6 +1197,8 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
+ if(id==='json-schema-validate')return validateJsonSchema(p,cb);
  if(id==='image-identify-local')return classifyImageLocally(files,p,cb);
  if(id==='pdf-to-image')return pdfToImages(files[0],p,cb);
  if(id==='pdf-to-word')return pdfToWord(files[0],cb);
