@@ -279,8 +279,13 @@ export function planCoreOfflineAction(query,files=[],history=[]){
  }
  // No-file commands must carry a real value. Never send the user's instruction
  // itself to a text transformation as if it were the supplied content.
+ // To compare JSON, the user must provide both versions explicitly.
+ const jsonBlocks=[...String(query).matchAll(/```(?:json)?\s*\n([\s\S]*?)\n```/gi)].map(match=>match[1].trim());
+ if(/\b(?:compara|comparar|diferencias)\b/.test(q)&&/\bjson\b/.test(q)&&jsonBlocks.length===2){
+  return ok([step('json-compare-local',{textA:jsonBlocks[0],textB:jsonBlocks[1]},'Comparar las dos estructuras JSON proporcionadas')]);
+ }
  const code=String(query).match(/```(?:[a-z]+)?\s*\n([\s\S]*?)\n```/i)?.[1]||'';
- const labelled=String(query).match(/(?:texto|contenido|datos|lista)\s*[:：]\s*([\s\S]{3,})$/i)?.[1]||'';
+ const labelled=String(query).match(/(?:texto|contenido|datos(?:\s+personales)?|lista)\s*[:：]\s*([\s\S]{3,})$/i)?.[1]||'';
  const quoted=String(query).match(/[“«"]([^”»"]{4,})[”»"]/)?.[1]||'';
  const payload=(code||labelled||quoted).trim();
  if(payload){
