@@ -1,4 +1,5 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
+import { LOCAL_CREATOR_TOOL_IDS, runLocalCreatorTool } from './local-creator-tools.js';
 const PDF_LIB='https://esm.sh/pdf-lib@1.17.1';
 const QR='https://esm.sh/qrcode@1.5.4';
 const MAMMOTH='https://esm.sh/mammoth@1.9.1';
@@ -1404,6 +1405,7 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(LOCAL_CREATOR_TOOL_IDS.includes(id))return runLocalCreatorTool(id,p);
  if(id==='text-file-convert')return convertTextFile(files,p,cb);
  if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
