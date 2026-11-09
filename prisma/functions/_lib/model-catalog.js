@@ -29,6 +29,9 @@ export const CHAT_MODELS = {
   gemini: [
     {id:"gemini-3.5-flash-lite",name:"Gemini Flash-Lite",specialty:"Respuestas breves"},
     {id:"gemini-3.8-flash",name:"Gemini Flash",specialty:"Tareas complejas"}
+  ],
+  openrouter: [
+    {id:"openrouter/free",name:"OpenRouter Free Router",specialty:"Respaldo automático · selecciona modelos gratuitos disponibles"}
   ]
 };
 export const IMAGE_MODELS = {
