@@ -2,14 +2,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
+import { renderMarkdownSafe } from '../src/core-markdown.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
 const registrySource = readFileSync(new URL('../src/registry.js', import.meta.url), 'utf8');
-const registered = new Function(registrySource.replace(/^export /gm, '') + ';return tools;')();
+const registry = new Function(registrySource.replace(/^export /gm, '') + ';return {tools,categories};')();
+const registered = registry.tools;
 const routerSource = readFileSync(new URL('../src/core-tool-intelligence.js', import.meta.url), 'utf8');
-const router = new Function('tools', routerSource.replace(/^import .*;$/gm, '').replace(/^export /gm, '') +
-  ';return { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools };')(registered);
+const router = new Function('tools','categories', routerSource.replace(/^import .*;$/gm, '').replace(/^export /gm, '') +
+  ';return { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools, isToolDiscoveryQuestion, coreCapabilityContext };')(registered,registry.categories);
 const available = registered.filter(item => ['ready', 'beta'].includes(item.status));
 assert.equal(router.coreToolCatalog().length, available.length);
 assert.ok(available.length >= 130, 'Core registry has lost tools unexpectedly');
@@ -185,6 +187,44 @@ const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',
 assert.equal(transientResult.status,200);
 assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
 
+
+// Provider-independent Markdown rendering and real capability discovery.
+const sampleTable = renderMarkdownSafe([
+  '| Área | Funciones disponibles |',
+  '|------|-----------------------|',
+  '| **Procesamiento de texto** | Contar palabras, cambiar mayúsculas/minúsculas, buscar y reemplazar. |',
+  '| **Trabajo con imágenes** | Convertir formatos, comprimir, recortar y ajustar. |'
+].join('\n'));
+assert.match(sampleTable, /<table class="core-markdown-table">/);
+assert.match(sampleTable, /<th class="align-left" scope="col">Área<\/th>/);
+assert.match(sampleTable, /<strong>Procesamiento de texto<\/strong>/);
+assert.match(sampleTable, /<tbody>/);
+assert.doesNotMatch(sampleTable, /\|------/);
+const richMarkdown = renderMarkdownSafe([
+  '## Resumen',
+  '',
+  '- **Primero:** revisar el archivo.',
+  '- Segundo: ejecutar el cambio.',
+  '',
+  '\`\`\`js',
+  'const ready = true;',
+  '\`\`\`',
+  '',
+  '<img src=x onerror=alert(1)>'
+].join('\n'));
+assert.match(richMarkdown, /<h3>Resumen<\/h3>/);
+assert.match(richMarkdown, /<ul><li><strong>Primero:<\/strong>/);
+assert.match(richMarkdown, /<pre><code>const ready = true;<\/code><\/pre>/);
+assert.match(richMarkdown, /&lt;img src=x onerror=alert\(1\)&gt;/);
+assert.doesNotMatch(richMarkdown, /<img src=/);
+
+assert.equal(router.isToolDiscoveryQuestion('Hola, ¿qué habilidades tienes?'), true);
+assert.equal(router.isToolDiscoveryQuestion('¿Qué sabes hacer?'), true);
+const capabilityAnswer = router.describeCoreTools('Hola, ¿qué habilidades tienes?');
+assert.match(capabilityAnswer, /\*\*Mis áreas principales\*\*/);
+assert.match(capabilityAnswer, /herramientas activas/);
+assert.match(router.coreCapabilityContext(), /CAPACIDADES REALES DE PRISMA SPACE/);
+assert.match(router.coreCapabilityContext(), /No inventes funciones/);
 
 // Sidebar UI contract: compact brand, persistent chat search, new-chat row,
 // desktop collapse/reopen, and profile kept in the main top bar.
