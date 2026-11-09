@@ -7,9 +7,16 @@ function info(message,kind='info'){
  const el=$('#auth-message');if(!el)return;el.textContent=message;el.dataset.kind=kind;
 }
 function showAuth(show){
- $('#auth-modal')?.classList.toggle('hidden',!show);
+ const modal=$('#auth-modal');if(!modal)return;
+ if(!show){
+  if(modal.contains(document.activeElement))document.activeElement?.blur?.();
+  modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');
+ }else{
+  modal.removeAttribute('aria-hidden');
+  modal.classList.remove('hidden');
+  const panel=modal.querySelector('.auth-panel');if(panel)panel.scrollTop=0;
+ }
  document.body.classList.toggle('prisma-auth-open',show);
- // Mantener el teclado cerrado hasta que el usuario toque un campo.
 }
 export function openPrismaAuth(){
  const signed=!!user;
@@ -76,8 +83,11 @@ function scheduleSync(){
  clearTimeout(syncTimer);syncTimer=setTimeout(()=>doSync().catch(err=>console.warn('Prisma sincronización:',err?.message||err)),1400);
 }
 function bindForms(){
- $('#auth-close')?.addEventListener('click',()=>showAuth(false));
- $('#auth-guest')?.addEventListener('click',()=>showAuth(false));
+ $('#auth-close')?.addEventListener('click',event=>{event.preventDefault();showAuth(false);});
+ $('#auth-guest')?.addEventListener('click',event=>{event.preventDefault();showAuth(false);});
+ $('#auth-modal')?.addEventListener('pointerup',event=>{
+  if(event.target?.closest?.('#auth-close,#auth-guest')){event.preventDefault();showAuth(false);}
+ },{passive:false});
  $('#auth-modal')?.addEventListener('click',e=>{if(e.target===$('#auth-modal'))showAuth(false)});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#auth-modal')?.classList.contains('hidden'))showAuth(false)});
  $('#auth-tab-login')?.addEventListener('click',()=>{authMode='login';updateTabs();});
