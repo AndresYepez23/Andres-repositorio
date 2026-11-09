@@ -664,7 +664,7 @@ async function refreshProviderConnectionStatuses(){
   const summary=$('#connections-summary');
   if(summary){
     const capacity=central.capacity||{};
-    summary.textContent=count+' motores disponibles · '+Number(capacity.configuredCredentials||0)+' credenciales · hasta '+Number(capacity.dailyBudget||0)+' solicitudes internas/día';
+    summary.textContent=count+' motores disponibles · '+Number(capacity.configuredCredentials||0)+' credenciales · presupuesto compartido '+Number(capacity.dailyBudget||0)+'/día';
   }
 }
 async function connectPollinations(){
