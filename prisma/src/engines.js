@@ -561,6 +561,29 @@ function imageModelFor(provider,quality){
  };
  return profiles[provider]?.[quality||'balanced']||profiles[provider]?.balanced;
 }
+// FLUX.1 Schnell does not accept a requested aspect ratio. Correct the
+// exported canvas locally, without a second AI request or distortion.
+async function fitImageAspect(blob, ratio){
+ const dimensions={square:[1024,1024],landscape:[1024,768],portrait:[768,1024],wide:[1280,720]};
+ const target=dimensions[ratio];
+ if(!target||typeof createImageBitmap!=='function')return {blob,changed:false};
+ const bitmap=await createImageBitmap(blob);
+ try{
+  const actual=bitmap.width/bitmap.height,desired=target[0]/target[1];
+  if(Math.abs(actual-desired)<.025)return {blob,changed:false};
+  const canvas=document.createElement('canvas');
+  canvas.width=target[0];canvas.height=target[1];
+  const ctx=canvas.getContext('2d');
+  if(!ctx)return {blob,changed:false};
+  const sourceWidth=Math.min(bitmap.width,bitmap.height*desired);
+  const sourceHeight=Math.min(bitmap.height,bitmap.width/desired);
+  ctx.drawImage(bitmap,(bitmap.width-sourceWidth)/2,(bitmap.height-sourceHeight)/2,
+    sourceWidth,sourceHeight,0,0,canvas.width,canvas.height);
+  const mime=blob.type==='image/jpeg'?'image/jpeg':'image/png';
+  const converted=await new Promise(resolve=>canvas.toBlob(resolve,mime,.92));
+  return converted?{blob:converted,changed:true}:{blob,changed:false};
+ }finally{bitmap.close?.();}
+}
 async function generateImage(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<8)throw Error('Describe la imagen con un poco más de detalle.');
@@ -608,12 +631,15 @@ async function generateImage(p,cb){
      const detail=data.error||'No fue posible generar la imagen ('+response.status+').';
      throw Object.assign(Error(detail),{status:response.status,code:data.code||'',scope:data.scope||''});
     }
-    const blob=await response.blob();
-    if(!blob.type.startsWith('image/'))throw Error('El motor no devolvió una imagen válida.');
+    const original=await response.blob();
+    if(!original.type.startsWith('image/'))throw Error('El motor no devolvió una imagen válida.');
+    const fitted=await fitImageAspect(original,p.ratio).catch(()=>({blob:original,changed:false}));
+    const blob=fitted.blob;
     progress(cb,1,'Imagen generada.');
     return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':blob.type.includes('webp')?'webp':'png')),
      previewUrl:URL.createObjectURL(blob),provider:selected,model:chosenModel,
-     summary:'Imagen generada con '+({cloudflare:'Cloudflare FLUX',pollinations:'Pollinations',huggingface:'Hugging Face',gemini:'Gemini Image'}[selected]||selected)+(errors.length?' · se utilizó respaldo automático.':'.')};
+     summary:'Imagen generada con '+({cloudflare:'Cloudflare FLUX',pollinations:'Pollinations',huggingface:'Hugging Face',gemini:'Gemini Image'}[selected]||selected)+(errors.length?' · se utilizó respaldo automático.':'.')+
+      (fitted.changed?' · Formato adaptado con recorte local sin gastar otra generación.':'')};
    }catch(error){
     const decision=imageFailureDecision(error);
     if(decision.blockProvider)blocked.add(selected);
