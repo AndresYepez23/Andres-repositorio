@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Prisma Space">
 </head>
-<body>
+<body class="is-core-view">
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
@@ -51,9 +51,9 @@
         <button class="nav-item" data-view="favorites"><span class="nav-icon" data-icon="star"></span><span>Favoritos</span><span class="nav-count" id="favorite-count">0</span></button>
         <button class="nav-item" data-view="recent"><span class="nav-icon" data-icon="history"></span><span>Recientes</span><span class="nav-count" id="recent-count">0</span></button>
       </nav>
-      <div class="side-label side-label-spaced" id="category-label">EXPLORAR POR CATEGORÍA</div>
-      <nav class="category-nav" id="category-nav" aria-label="Categorías"></nav>
-      <div class="core-sidebar-conversations hidden" id="core-sidebar-conversations" aria-label="Historial de Prisma Core"></div>
+      <div class="side-label side-label-spaced" id="category-label">TUS CONVERSACIONES</div>
+      <nav class="category-nav hidden" id="category-nav" aria-label="Categorías"></nav>
+      <div class="core-sidebar-conversations" id="core-sidebar-conversations" aria-label="Historial de Prisma Core"><p class="core-sidebar-loading">Preparando conversaciones…</p></div>
       <div class="sidebar-bottom">
         <div class="privacy-card">
           <span class="privacy-icon" data-icon="shield-check"></span>
@@ -72,7 +72,7 @@
       </div>
       <header class="topbar">
         <button class="icon-button mobile-menu" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false" data-icon="menu"></button>
-        <div class="breadcrumb"><span>PRISMA SPACE</span><span class="crumb-sep">/</span><strong id="breadcrumb-current">Explorar</strong></div>
+        <div class="breadcrumb"><span>PRISMA SPACE</span><span class="crumb-sep">/</span><strong id="breadcrumb-current">Prisma Core</strong></div>
         <div class="topbar-actions">
           <label class="global-search"><span data-icon="search" aria-hidden="true"></span><input id="global-search" type="search" aria-label="Buscar herramientas" placeholder="Buscar una herramienta..." autocomplete="off"><kbd>Ctrl K</kbd></label>
           <div class="core-top-actions" id="core-top-actions">
@@ -109,7 +109,7 @@
       </header>
 
       <section class="page-content" id="page-content">
-        <section class="core-section hidden" id="core-section">
+        <section class="core-section" id="core-section">
           <div class="core-workspace" id="core-workspace">
             <div class="core-history-backdrop" id="core-history-backdrop" aria-hidden="true"></div>
             <nav class="core-history" id="core-history" aria-label="Historial de conversaciones">
@@ -125,7 +125,7 @@
   <div><strong id="core-conversation-name">Nueva conversación</strong><small>Prisma Core · asistente multimodelo</small></div></div>
   <div class="core-toolbar-actions"><button type="button" class="mini-button core-mini-button" id="core-mini-toggle" title="Motor local opcional para descubrir herramientas">Prisma Mini</button><button type="button" class="mini-button core-new-button" id="core-clear">＋ <span>Nuevo chat</span></button></div></div>
               <div class="core-connect-banner" id="core-connect-banner"><span class="core-connect-mark" data-icon="plug"></span><div><strong>Activa tu asistente</strong><p>Conecta un motor de IA gratuito o usa una clave propia para que Prisma pueda entender tus instrucciones y coordinar herramientas.</p></div><button type="button" class="button button-quiet" id="core-connect-now">Conectar motor</button></div>
-              <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+              <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"><div class="core-welcome"><span class="eyebrow core-welcome-eyebrow">PRISMA CORE · TU ASISTENTE</span><h2>¿Qué necesitas hacer?<span class="core-welcome-gradient">Déjaselo a Prisma.</span></h2><p>No necesitas saber qué herramienta usar. Escríbeme en lenguaje natural o adjunta un archivo y me encargo de organizar el trabajo.</p><div class="core-examples"><button type="button" data-example="0">Divide este PDF y guarda cada página por separado</button><button type="button" data-example="1">Convierte este PDF en un Word editable</button><button type="button" data-example="2">Analiza este documento y resume lo importante</button><button type="button" data-example="3">Prepara esta imagen para Instagram</button><button type="button" data-example="4">Crea una página web para mi negocio</button></div></div></div>
               <div class="core-plan hidden" id="core-plan"></div>
               <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
               <div class="core-composer" id="core-composer">
@@ -163,7 +163,7 @@
             </aside>
           </div>
         </section>
-        <div class="hero-section">
+        <div class="hero-section hidden">
           <div class="hero-copy">
             <div class="eyebrow"><span class="eyebrow-line"></span> TU ESPACIO PARA CREAR Y RESOLVER.</div>
             <h1>Crea, convierte,<br><em>optimiza y experimenta</em><br>con IA en un solo lugar.</h1>
@@ -193,7 +193,7 @@
           </div>
         </div>
 
-        <div class="metric-strip">
+        <div class="metric-strip hidden">
           <div class="metric"><strong id="metric-tools">116</strong><span>herramientas en el catálogo</span></div>
           <div class="metric-divider"></div>
           <div class="metric"><strong id="metric-local">18</strong><span>operaciones locales o en navegador</span></div>
@@ -202,7 +202,7 @@
           <div class="metric-note"><span class="status-led"></span> Plataforma en evolución</div>
         </div>
 
-        <section class="home-dashboard" id="home-dashboard">
+        <section class="home-dashboard hidden" id="home-dashboard">
           <div class="home-dashboard-heading">
             <div><div class="eyebrow">EMPIEZA POR TU OBJETIVO</div><h2>¿Qué quieres resolver hoy?</h2><p>Elige una tarea y encuentra la herramienta adecuada.</p></div>
             <span class="home-local-pill"><span class="status-led"></span> Sin registro para empezar</span>
@@ -239,7 +239,7 @@
           </div>
         </section>
 
-        <section class="tools-section" id="tools-section">
+        <section class="tools-section hidden" id="tools-section">
           <div class="section-heading">
             <div><div class="eyebrow">CATÁLOGO</div><h2 id="section-title">Explora las herramientas</h2><p id="section-description">Elige una herramienta y empieza a trabajar al instante.</p></div>
             <div class="heading-actions"><button type="button" class="button button-quiet hidden" id="clear-recent">Borrar historial</button><div class="view-switch"><button class="view-button active" data-layout="grid" aria-label="Vista de cuadrícula" data-icon="grid"></button><button class="view-button" data-layout="list" aria-label="Vista de lista" data-icon="list"></button></div></div>
