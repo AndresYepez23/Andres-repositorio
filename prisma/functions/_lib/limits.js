@@ -20,7 +20,9 @@ SET request_count=request_count+1 WHERE request_count<? RETURNING request_count`
   try{
     for(const [scope,windowStart,max] of scopes){
       const result=await db.prepare(sql).bind(scope,windowStart,max).first();
-      if(!result)return {status:429,error:"Prisma alcanzó su límite temporal gratuito. Vuelve a intentarlo más tarde."};
+      if(!result)return scope.startsWith('provider-day:')
+       ? {status:429,code:'PROVIDER_LIMIT',error:'Este motor alcanzó su cuota gratuita diaria. Prisma puede probar otro motor disponible.'}
+       : {status:429,code:'GLOBAL_LIMIT',error:'Prisma alcanzó su límite temporal gratuito global. Vuelve a intentarlo más tarde.'};
     }
     if(Math.random()<0.01)await db.prepare("DELETE FROM ai_rate_limits WHERE window_start<?").bind(minute-4320).run().catch(()=>{});
     return null;
