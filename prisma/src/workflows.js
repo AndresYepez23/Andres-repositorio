@@ -30,16 +30,24 @@ async function imagePipeline(files, params, callback) {
   if (!tasks.length) return { artifacts:[{ name:source.name, filename:source.name, blob:source, previewUrl:URL.createObjectURL(source), type:source.type }], summary:'No seleccionaste transformaciones. Se preparó una copia del archivo original.', steps:['Archivo original preparado'] };
 
   let currentFile=source,lastResult=null;
-  const completed=[];
+  const completed=[],warnings=[];
   for(let index=0;index<tasks.length;index++){
     const task=tasks[index],start=index/tasks.length,span=1/tasks.length;
-    const result=await runStep(task.id,[currentFile],task.params,callback,start,span,task.label);
-    if(!result?.blob)throw new Error('No se pudo completar: '+task.label.toLowerCase()+'.');
-    if(lastResult?.previewUrl?.startsWith('blob:'))URL.revokeObjectURL(lastResult.previewUrl);
-    currentFile=asFile(result,'prisma-imagen-'+(index+1)+'.png');lastResult=result;completed.push(task.label);
+    try{
+      const result=await runStep(task.id,[currentFile],task.params,callback,start,span,task.label);
+      if(!result?.blob)throw new Error('La herramienta no devolvió un archivo válido.');
+      if(lastResult?.previewUrl?.startsWith('blob:'))URL.revokeObjectURL(lastResult.previewUrl);
+      currentFile=asFile(result,'prisma-imagen-'+(index+1)+'.png');lastResult=result;completed.push(task.label);
+    }catch(error){
+      // Background removal downloads a large browser model; its failure must
+      // not destroy safe local resize/compression work on a low-memory phone.
+      if(task.id!=='image-bg')throw new Error('No se pudo completar '+task.label.toLowerCase()+': '+(error?.message||'error')+'.');
+      warnings.push('No fue posible eliminar el fondo en este dispositivo: '+(error?.message||'modelo local no disponible')+'. Se conservará la imagen y continuarán las demás operaciones.');
+    }
   }
   callback?.(1,'Imagen optimizada. Preparando descarga...');
-  return { artifacts:[{ name:'Imagen optimizada', filename:lastResult.filename||'prisma-imagen-optimizada.webp', blob:lastResult.blob, previewUrl:lastResult.previewUrl, type:lastResult.blob.type }], summary:completed.join(' · ')+'. El archivo final está listo para descargar.', steps:completed };
+  const final=lastResult||{blob:source,filename:source.name,type:source.type};
+  return {artifacts:[{name:'Imagen optimizada',filename:final.filename||'prisma-imagen-optimizada.webp',blob:final.blob,previewUrl:final.previewUrl,type:final.blob.type}],summary:(completed.length?completed.join(' · '):'Archivo original conservado')+'. El archivo final está listo para descargar.'+(warnings.length?' Algunas tareas no se pudieron completar; revisa los avisos.':''),steps:completed,warnings};
 }
 
 async function documentPipeline(files, params, callback) {
