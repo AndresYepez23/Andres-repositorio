@@ -1199,38 +1199,63 @@ function safeStartup(label,callback){
 // Safari iOS can shrink the visual viewport when the software keyboard opens.
 // Resize the chat shell while leaving scrolling exclusively inside the messages.
 function setupPrismaCoreViewport(){
-  let raf=0;
-  const textInput=()=>document.querySelector('#core-input');
+  // iOS Safari and installed iOS PWAs do NOT share viewport geometry:
+  // Safari pans the visual viewport during keyboard focus, while some
+  // standalone WKWebViews report a height smaller than the actual screen.
+  const root=document.documentElement;
+  const input=document.querySelector('#core-input');
+  const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true;
+  let raf=0,lastUnfocusedHeight=0,wasKeyboardOpen=false;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
     raf=requestAnimationFrame(()=>{
-      const viewport=window.visualViewport;
-      const visible=Math.max(260,Math.round(viewport?.height||window.innerHeight));
-      const offset=Math.max(0,Math.round(viewport?.offsetTop||0));
-      const full=Math.max(visible,Math.round(window.innerHeight||visible));
-      document.documentElement.style.setProperty('--prisma-core-viewport',visible+'px');
-      document.documentElement.style.setProperty('--prisma-vp-top',offset+'px');
-      const keyboardOpen=!!(document.activeElement===textInput()&&full-visible>110);
+      const vv=window.visualViewport;
+      const visible=Math.max(240,Math.round(vv?.height||window.innerHeight||0));
+      const layoutHeight=Math.max(visible,Math.round(window.innerHeight||0),Math.round(root.clientHeight||0));
+      const standalone=isStandalone();
+      const screenHeight=standalone?Math.round(window.screen?.height||0):0;
+      const focused=document.activeElement===input;
+      const fullHeight=Math.max(layoutHeight,screenHeight);
+      // Track the unoccluded height instead of comparing against innerHeight,
+      // which can shrink alongside visualViewport in an installed PWA.
+      if(!focused&&!(wasKeyboardOpen&&visible<lastUnfocusedHeight-100)){
+        lastUnfocusedHeight=Math.max(visible,fullHeight);
+      }
+      if(!lastUnfocusedHeight)lastUnfocusedHeight=fullHeight;
+      const keyboardGap=lastUnfocusedHeight-visible;
+      const keyboardOpen=keyboardGap>110&&(focused||wasKeyboardOpen);
+      wasKeyboardOpen=keyboardOpen;
+      const height=standalone&&!keyboardOpen?Math.max(fullHeight,lastUnfocusedHeight):visible;
+      // pageTop is measured in document coordinates. Unlike offsetTop alone
+      // it also follows Safari's implicit focus scrolling on WebKit.
+      const pageTop=Number.isFinite(vv?.pageTop)?vv.pageTop:
+        ((window.scrollY||0)+(vv?.offsetTop||0));
+      const top=standalone&&!keyboardOpen?0:Math.max(0,Math.round(pageTop));
+      root.style.setProperty('--prisma-core-viewport',Math.round(height)+'px');
+      root.style.setProperty('--prisma-vp-top',top+'px');
+      document.body.classList.toggle('is-prisma-standalone',standalone);
       document.body.classList.toggle('is-keyboard-open',keyboardOpen);
-      if(keyboardOpen){
+      if(keyboardOpen&&focused){
         const list=document.querySelector('#core-messages');
         if(list?.scrollHeight>list?.clientHeight)list.scrollTop=list.scrollHeight;
       }
     });
   };
-  const afterFocus=()=>{
+  const settle=()=>{
     sync();
-    // Safari completa la animación del teclado después de disparar focusin.
-    setTimeout(sync,120);setTimeout(sync,380);
+    // iOS animates the keyboard after the focus event. Recheck both edges.
+    setTimeout(sync,100);
+    setTimeout(sync,300);
+    setTimeout(sync,600);
   };
-  const focusTarget=event=>event.target===textInput();
-  document.addEventListener('focusin',event=>{if(focusTarget(event))afterFocus();});
-  document.addEventListener('focusout',event=>{if(focusTarget(event)){sync();setTimeout(sync,360);}});
+  document.addEventListener('focusin',event=>{if(event.target===input)settle();});
+  document.addEventListener('focusout',event=>{if(event.target===input)settle();});
   window.visualViewport?.addEventListener('resize',sync,{passive:true});
   window.visualViewport?.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
-  window.addEventListener('orientationchange',afterFocus,{passive:true});
-  window.addEventListener('pageshow',sync,{passive:true});
+  window.addEventListener('scroll',sync,{passive:true});
+  window.addEventListener('orientationchange',settle,{passive:true});
+  window.addEventListener('pageshow',settle,{passive:true});
   sync();
 }
 safeStartup('ventana del chat',setupPrismaCoreViewport);
