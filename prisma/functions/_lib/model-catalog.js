@@ -58,11 +58,6 @@ export const CHAT_MODELS = {
     {id:"glm-4.5-flash",name:"GLM-4.5 Flash",specialty:"Conversación rápida · gratuito"},
     {id:"glm-4.6v-flash",name:"GLM-4.6V Flash",specialty:"Modelo visual gratuito; este flujo usa solo texto"}
   ],
-  baidu: [
-    {id:"ernie-speed-128k",name:"ERNIE-Speed-128K",specialty:"Conversación y contexto largo · cuota gratuita regional"},
-    {id:"ernie-lite-128k",name:"ERNIE-Lite-128K",specialty:"Conversación ligera · cuota gratuita regional"},
-    {id:"ernie-tiny-8k",name:"ERNIE-Tiny-8K",specialty:"Respuestas rápidas · cuota gratuita regional"}
-  ],
   // Filled from the live AIHubMix free catalogue after validating its request weights.
   aihubmix: [],
 };
