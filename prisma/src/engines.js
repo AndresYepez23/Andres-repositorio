@@ -530,11 +530,11 @@ async function generateImage(p,cb){
  let fullPrompt=(styles[p.style]||'')+prompt;
  if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
  let provider=p.provider||'auto';
- if(provider==='auto')provider=p.centralProviders?.cloudflare?'cloudflare':p.polliToken?'pollinations':p.centralFeatures?.huggingfaceImages?'huggingface':'';
+ if(provider==='auto')provider=p.centralProviders?.cloudflare?'cloudflare':p.centralFeatures?.pollinationsImages?'pollinations':p.polliToken?'pollinations':p.centralFeatures?.huggingfaceImages?'huggingface':'';
  if(!provider)throw Error('No hay un motor de imágenes habilitado. Cloudflare Workers AI debe estar activo o autoriza Pollinations.');
  const model=p.model||imageModelFor(provider,p.qualityProfile);
- if(provider==='cloudflare'||provider==='huggingface'&&p.centralFeatures?.huggingfaceImages){
-  const chosenModel=p.model||(provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers');
+ if(provider==='cloudflare'||provider==='pollinations'&&p.centralFeatures?.pollinationsImages||provider==='huggingface'&&p.centralFeatures?.huggingfaceImages){
+  const chosenModel=p.model||(provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':provider==='pollinations'?'black-forest-labs/flux.1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers');
   progress(cb,.15,'Procesando la imagen en el backend protegido de Prisma…');
   const response=await fetch('/api/ai/image',{
    method:'POST',headers:{'Content-Type':'application/json','Accept':'image/jpeg,image/png'},
@@ -549,7 +549,7 @@ async function generateImage(p,cb){
   progress(cb,1,'Imagen generada.');
   return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':'png')),
    previewUrl:URL.createObjectURL(blob),provider,model:chosenModel,
-   summary:'Imagen generada con '+(provider==='cloudflare'?'Cloudflare FLUX':'Hugging Face')+' · resolución determinada por el modelo.'};
+   summary:'Imagen generada con '+(provider==='cloudflare'?'Cloudflare FLUX':provider==='pollinations'?'Pollinations':'Hugging Face')+' · resolución determinada por el modelo.'};
  }
  if(provider==='huggingface'&&!p.centralFeatures?.huggingfaceImages)
   throw Error('Las imágenes de Hugging Face están desactivadas para proteger tus créditos. Utiliza Cloudflare FLUX.');
@@ -646,15 +646,15 @@ async function generateText(p,cb){
   gemini:{fast:'gemini-3.5-flash-lite',balanced:'gemini-3.5-flash-lite',smart:'gemini-3.8-flash'}
  };
  const priorities={
-  songwriting:['groq','gemini','cloudflare','huggingface'],
-  creative:['groq','gemini','cloudflare','huggingface'],
-  coding:['groq','gemini','huggingface','cloudflare'],
-  reasoning:['gemini','groq','huggingface','cloudflare'],
-  summary:['gemini','cloudflare','groq','huggingface'],
-  quick:['gemini','cloudflare','groq','huggingface'],
-  general:['gemini','groq','cloudflare','huggingface'],
-  planner:['gemini','groq','cloudflare','huggingface'],
-  conversation:['gemini','cloudflare','groq','huggingface']
+  songwriting:['groq','gemini','cloudflare','huggingface','pollinations'],
+  creative:['groq','gemini','cloudflare','huggingface','pollinations'],
+  coding:['groq','gemini','huggingface','cloudflare','pollinations'],
+  reasoning:['gemini','groq','huggingface','cloudflare','pollinations'],
+  summary:['gemini','cloudflare','groq','huggingface','pollinations'],
+  quick:['gemini','cloudflare','groq','huggingface','pollinations'],
+  general:['gemini','groq','cloudflare','huggingface','pollinations'],
+  planner:['gemini','groq','cloudflare','huggingface','pollinations'],
+  conversation:['gemini','cloudflare','groq','huggingface','pollinations']
  };
  const preferred=p.provider||'auto';
  const baseOrder=priorities[task]||priorities.general;
@@ -663,7 +663,7 @@ async function generateText(p,cb){
   : preferred==='pollinations'
     ? ['pollinations',...baseOrder]
     : [preferred,...baseOrder.filter(item=>item!==preferred)];
- if(p.polliToken&&!providerOrder.includes('pollinations'))providerOrder.push('pollinations');
+ if((p.polliToken||p.centralProviders?.pollinations)&&!providerOrder.includes('pollinations'))providerOrder.push('pollinations');
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI'};
  const errors=[],attempted=[];
  const modelFor=provider=>{
@@ -674,7 +674,7 @@ async function generateText(p,cb){
  };
  for(const provider of [...new Set(providerOrder)]){
   if(!['gemini','huggingface','groq','cloudflare','pollinations'].includes(provider))continue;
-  if(provider==='pollinations'&&!String(p.polliToken||'').trim())continue;
+  if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
    if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
    continue;
@@ -684,7 +684,7 @@ async function generateText(p,cb){
   else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
   try{
    let text='',model='';
-   if(provider==='pollinations'){
+   if(provider==='pollinations'&&!p.centralProviders?.pollinations){
     model=p.model||modelProfiles.pollinations[tier];
     const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{
      method:'POST',
