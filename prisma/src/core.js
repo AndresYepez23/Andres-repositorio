@@ -879,7 +879,11 @@ async function sendMessage(){
   const filesNow=[...attachments];
   addMessage('user',text||'Procesa los archivos adjuntos.',{files:filesNow.map(file=>file.name)});
   input.value='';input.style.height='auto';
-  const requestText=text||'Analiza los archivos adjuntos y recomienda operaciones útiles.';
+  // An attachment-only reply should continue a pending PDF editing request,
+  // instead of launching an unrelated AI analysis of the uploaded document.
+  const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
+    messages.slice(-9,-1).some(item=>item.role==='user'&&isPdfEditIntent(item.content));
+  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
   try{await requestPlan(requestText);}
   catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
