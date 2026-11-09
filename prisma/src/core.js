@@ -471,9 +471,14 @@ function pdfWatermarkFromText(text){
 function buildPdfEditPlan(userText){
  const pdfAttached=attachments.some(file=>file.type==='application/pdf'||/\.pdf$/i.test(file.name));
  let request=userText;
- if(pdfAttached&&(!isPdfEditIntent(userText)||!pdfPagesFromText(userText))){
-  const previous=messages.slice(0,-1).reverse().find(message=>message.role==='user'&&isPdfEditIntent(message.content));
-  if(previous&&/^(?:aqui|ahi|adjunto|te envio|ya|este|listo|ese|el archivo|el pdf|subi|cargue|por favor|\d|marca de agua)/i.test(normalizeCoreIntent(userText).trim())){
+ if(pdfAttached){
+  // The last request may contain instructions while the next turn only
+  // attaches a file, supplies page numbers, or supplies a watermark label.
+  const previous=messages.slice(-8,-1).reverse().find(message=>message.role==='user'&&isPdfEditIntent(message.content));
+  const shortReply=normalizeCoreIntent(userText).trim();
+  const attachmentReply=/^(?:aqui|ahi|adjunto|te envio|ya|este|listo|ese|el archivo|el pdf|subi|cargue|por favor|\d|marca de agua|paginas?\s*\d)/.test(shortReply);
+  const labelReply=/^[\p{L}][\p{L}\s-]{1,45}$/u.test(String(userText).trim())&&!/^(?:resume|explica|analiza|convierte|traduce)/.test(shortReply);
+  if(previous&&(attachmentReply||labelReply)&&previous.content!==userText){
    request=previous.content+'\n'+userText;
   }
  }
