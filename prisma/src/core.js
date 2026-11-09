@@ -814,6 +814,12 @@ function thumbnailTopic(text){
  for(const pattern of candidates){const value=clean.match(pattern)?.[1]?.replace(/[,;]\s*(?:texto|frase|titulo|título|estilo|colores)\s*[:：].*$/i,'').replace(/[?.!]+$/,'').trim();if(value&&!/^(?:youtube|un video|mi video|el video|algo|lo que sea)$/i.test(value))return value;}
  return '';
 }
+function cleanThumbnailTopic(value){
+ return String(value||'')
+  .replace(/^\s*(?:tema|asunto)\s*[:：=-]\s*/i,'')
+  .replace(/(?:[;,.]\s*|\s+)(?:texto|frase|título|titulo|estilo|colores?|rostro|logo|letra)\s*[:：=][\s\S]*$/i,'')
+  .trim();
+}
 function extractThumbnailText(value){
  return String(value||'').match(/(?:texto|frase|título|titulo)\s*(?:principal|grande|de portada)?\s*[:：=]\s*["“']?([^"”'\n]{2,65})/i)?.[1]?.split(/[,;]|\s+y\s+(?:estilo|colores|rostro)/i)[0]?.trim()||'';
 }
@@ -855,7 +861,7 @@ async function handleThumbnailRequest(text){
   chat.thumbnailBrief=null;persistChatHistory();
   addMessage('assistant','Perfecto. Cancelé la miniatura pendiente. ¿Qué quieres hacer ahora?');return true;
  }
- const topic=pending?String(text||'').trim():thumbnailTopic(text);
+ const topic=cleanThumbnailTopic(pending?String(text||'').trim():thumbnailTopic(text));
  if(!topic||topic.length<7||/^(?:si|sí|vale|ok|claro|hazlo|como quieras)$/i.test(topic)){
   chat.thumbnailBrief={original:pending?.original||text,started:Date.now()};
   persistChatHistory();
