@@ -23,7 +23,7 @@ export async function onRequestGet({ env }) {
 
   const limits = await getOpenRouterLimits(env);
   const usage = await getProviderUsage(env, "openrouter", limits.dailyLimit, limits.perMinuteLimit);
-  const hold = getCredentialSlots(env,"openrouter").length<=1 ? await getProviderHold(env, "openrouter") : null;
+  const hold = await getProviderHold(env, "openrouter");
   const account = limits.account;
   return new Response(JSON.stringify({
     ok: true,
