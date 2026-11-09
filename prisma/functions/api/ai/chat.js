@@ -146,6 +146,7 @@ export async function onRequestPost({ request, env }) {
   if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
   if(provider==="amd"&&!amdModels?.length)return json({error:"AMD Token Factory no devolvió modelos gratuitos de texto para esta clave.",provider},503);
   if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
+  if(provider==="baidu"&&env.BAIDU_FREE_QUOTA_CONFIRMED!=="1")return json({error:"Baidu Qianfan está desactivado para evitar consumo facturable. Confirma primero la cuota gratuita de ERNIE-Speed/Lite/Tiny en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.",provider},403);
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
     if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
