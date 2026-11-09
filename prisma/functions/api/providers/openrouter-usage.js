@@ -17,7 +17,7 @@ export async function onRequestGet({ env }) {
       configured: false,
       available: false,
       model: "openrouter/free",
-      warning: "Falta OPENROUTER_API_KEY en los secretos de Cloudflare.",
+      warning: "Falta OPENROUTER_API_KEYS_JSON o OPENROUTER_API_KEY en los secretos de Cloudflare.",
     }), { status: 200, headers });
   }
 
@@ -28,6 +28,8 @@ export async function onRequestGet({ env }) {
   return new Response(JSON.stringify({
     ok: true,
     configured: true,
+    credentialCount: getCredentialSlots(env,"openrouter").length,
+    credentialLimit: 6,
     available: !hold && Boolean(env.PRISMA_RATE_DB?.prepare),
     model: "openrouter/free",
     dailyLimit: limits.dailyLimit,

@@ -2,6 +2,8 @@ import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js"
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
+import { getKiloFreeModels } from "../../_lib/kilo-models.js";
+import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -61,6 +63,35 @@ function normalizeMessages(input) {
   return { system, contents, openaiMessages };
 }
 
+async function callOpenAICompatibleProvider(env, provider, endpoint, model, messages, payload, extraHeaders = {}) {
+  if (!getCredentialSlots(env,provider).length) return json({error:"Falta configurar el secreto JSON de credenciales o la variable de API key de "+provider+" en Cloudflare.",provider},503);
+  let response;
+  try {
+    response = await requestWithCredentialPool(env, provider, credential => fetch(endpoint, {
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential,...extraHeaders},
+      body:JSON.stringify({model,messages,temperature:0.65,max_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false}),
+    }));
+  } catch (error) {
+    const status=Number(error?.status)||502;
+    return json({error:error?.message||"No fue posible conectar con "+provider+".",provider,status,retryAfter:error?.retryAfter||null},status===429?429:status===402?402:502);
+  }
+  const data=await response.json().catch(()=>({}));
+  if (!response.ok) {
+    const status=response.status;
+    const detail=String(data.error?.message||data.error?.code||data.message||"").slice(0,180);
+    const message=status===429?provider+" alcanzó su límite temporal. Prisma probará otro motor."
+      :status===402?provider+" no tiene crédito gratuito disponible."
+      :status===401||status===403?provider+" rechazó la clave configurada. Revisa su secreto en Cloudflare."
+      :provider+" respondió con un error ("+status+")."+(detail?" "+detail:"");
+    return json({error:message,provider,status,code:status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":"PROVIDER_ERROR"},status===429||status===402?status:status===400?400:502);
+  }
+  const content=data.choices?.[0]?.message?.content;
+  const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
+  if(!text)return json({error:provider+" no devolvió texto.",provider},502);
+  return json({ok:true,provider,model:data.model||model,text,usage:data.usage||null});
+}
+
 export async function onRequestPost({ request, env }) {
   const requestUrl = new URL(request.url);
   const origin = request.headers.get("Origin");
@@ -81,12 +112,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "baidu", "aihubmix"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
   if (provider === "openrouter" && !getCredentialSlots(env,"openrouter").length) {
-    return json({ error: "OpenRouter no está configurado. Añade OPENROUTER_API_KEY como secreto de Cloudflare.", provider: "openrouter" }, 503);
+    return json({ error: "OpenRouter no está configurado. Añade OPENROUTER_API_KEYS_JSON o OPENROUTER_API_KEY como secreto de Cloudflare.", provider: "openrouter" }, 503);
   }
 
   let normalized;
@@ -97,9 +128,20 @@ export async function onRequestPost({ request, env }) {
   }
 
   const requestedModel = String(payload.model || "");
-  if (requestedModel && !allowedModel(provider, "chat", requestedModel)) {
-    return json({error:"Modelo no permitido para el proveedor seleccionado."},400);
+  const kiloModels = provider === "kilo" ? await getKiloFreeModels(env) : null;
+  const aihubmixModels = provider === "aihubmix" ? await getAihubmixFreeModels(env) : null;
+  const requestedModelAllowed = provider === "kilo"
+    ? Boolean(requestedModel && kiloModels.some(model => model.id === requestedModel))
+    : provider === "aihubmix"
+      ? Boolean(requestedModel && aihubmixModels.some(model => model.id === requestedModel))
+      : !requestedModel || allowedModel(provider, "chat", requestedModel);
+  if (requestedModel && !requestedModelAllowed) {
+    const message=provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":provider==="aihubmix"?"AIHubMix ya no publica ese modelo como gratuito de texto con peso de cuota 1; actualiza el catálogo.":"Modelo no permitido para el proveedor seleccionado.";
+    return json({error:message},400);
   }
+  if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
+  if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
+  if(provider==="baidu"&&env.BAIDU_FREE_QUOTA_CONFIRMED!=="1")return json({error:"Baidu Qianfan está desactivado para evitar consumo facturable. Confirma primero la cuota gratuita de ERNIE-Speed/Lite/Tiny en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.",provider},403);
   if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
     const hold=await getProviderHold(env,"pollinations");
     if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
@@ -177,7 +219,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "pollinations") {
-    if (!getCredentialSlots(env,"pollinations").length) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
+    if (!getCredentialSlots(env,"pollinations").length) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEYS_JSON o POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
     const model=requestedModel||"openai/gpt-5.4-nano";
     let response;
     try {
@@ -203,7 +245,7 @@ export async function onRequestPost({ request, env }) {
 
   if (provider === "huggingface") {
     if (!getCredentialSlots(env,"huggingface").length) {
-      return json({ error: "Hugging Face todavía no está configurado en los secretos de Cloudflare." }, 503);
+      return json({ error: "Hugging Face todavía no está configurado. Añade HF_API_KEYS_JSON o HF_TOKEN como secreto de Cloudflare." }, 503);
     }
 
     const model = requestedModel || "openai/gpt-oss-20b:cheapest";
@@ -258,7 +300,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (provider === "groq") {
-    if (!getCredentialSlots(env,"groq").length) return json({error:"Groq aún no tiene GROQ_API_KEY configurado en Cloudflare."},503);
+    if (!getCredentialSlots(env,"groq").length) return json({error:"Groq aún no tiene GROQ_API_KEYS_JSON ni GROQ_API_KEY configurado en Cloudflare."},503);
     const model=requestedModel||"openai/gpt-oss-20b";
     let response;
     const askGroq=key=>fetch("https://api.groq.com/openai/v1/chat/completions",{
@@ -307,8 +349,60 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
+  if (provider === "kilo") {
+    const model=requestedModel||kiloModels?.find(item=>!item.id.toLowerCase().startsWith("nvidia/"))?.id||kiloModels?.[0]?.id;
+    if(!model)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider:"kilo"},503);
+    const slots=getCredentialSlots(env,"kilo");
+    const hold=slots.length?null:await getProviderHold(env,"kilo");
+    if(hold)return json({error:hold.reason,provider:"kilo",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
+    const send=key=>fetch("https://ai-gateway.kilo.ai/api/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",...(key?{Authorization:"Bearer "+key}:{})},
+      body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
+    });
+    let response;
+    try{
+      response=slots.length
+        ? await requestWithCredentialPool(env,"kilo",key=>send(key))
+        : await send("");
+    }catch(error){
+      const status=Number(error?.status)||502;
+      return json({error:error?.message||"No fue posible conectar con Kilo Gateway.",provider:"kilo",status,retryAfter:error?.retryAfter||null},status===429?429:status===402?402:502);
+    }
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      if(!slots.length&&response.status===429)await setProviderHold(env,"kilo","rate_limited","Kilo Gateway alcanzó el límite anónimo; Prisma probará otro motor.",Math.max(30,Math.min(600,Number(response.headers.get("retry-after")||90))));
+      else if(!slots.length&&(response.status===401||response.status===403))await setProviderHold(env,"kilo","auth_error","Kilo rechazó el acceso anónimo.",3600);
+      else if(!slots.length&&response.status===402)await setProviderHold(env,"kilo","quota_exhausted","Kilo Gateway agotó la cuota disponible.",21600);
+      const message=response.status===429?"Kilo Gateway alcanzó su límite temporal.":response.status===401||response.status===403?"Kilo rechazó la clave opcional.":"Kilo Gateway respondió con un error ("+response.status+").";
+      return json({error:message,provider:"kilo",status:response.status},response.status===429?429:502);
+    }
+    const content=data.choices?.[0]?.message?.content;
+    const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
+    if(!text)return json({error:"Kilo Gateway no devolvió texto.",provider:"kilo"},502);
+    return json({ok:true,provider:"kilo",model:data.model||model,text,usage:data.usage||null});
+  }
+
+  const compatibleProviders={
+    sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
+    zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
+    requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
+    baidu:{url:"https://qianfan.baidubce.com/v2/chat/completions",model:"ernie-speed-128k"},
+    aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
+  };
+  if(compatibleProviders[provider]){
+    const config=compatibleProviders[provider];
+    const model=requestedModel||(provider==="aihubmix"?(aihubmixModels?.find(item=>item.id==="coding-glm-5.3-free")?.id||aihubmixModels?.[0]?.id):config.model);
+    if(!model){
+      const message="AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.";
+      return json({error:message,provider},503);
+    }
+    const extraHeaders=provider==="requesty"?{"HTTP-Referer":"https://prismaspace.pages.dev","X-Title":"Prisma Space"}:{};
+    return callOpenAICompatibleProvider(env,provider,config.url,model,normalized.openaiMessages,payload,extraHeaders);
+  }
+
   if (!getCredentialSlots(env,"gemini").length) {
-    return json({ error: "Gemini todavía no está configurado en los secretos de Cloudflare." }, 503);
+    return json({ error: "Gemini todavía no está configurado. Añade GEMINI_API_KEYS_JSON o GEMINI_API_KEY como secreto de Cloudflare." }, 503);
   }
 
   const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.8-flash");

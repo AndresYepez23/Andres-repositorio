@@ -32,7 +32,39 @@ export const CHAT_MODELS = {
   ],
   openrouter: [
     {id:"openrouter/free",name:"OpenRouter Free Router",specialty:"Respaldo automático · selecciona modelos gratuitos disponibles"}
-  ]
+  ],
+  kilo: [
+    {id:"z-ai/glm-5:free",name:"GLM-5 Free",specialty:"Razonamiento y conversación · acceso anónimo"},
+    {id:"minimax/minimax-m2.1:free",name:"MiniMax M2.1 Free",specialty:"Conversación y escritura · acceso anónimo"}
+  ],
+  requesty: [
+    {id:"nvidia/nemotron-3-ultra-550b-a55b",name:"Nemotron 3 Ultra 550B",specialty:"Razonamiento · gratuito"},
+    {id:"nvidia/nemotron-3-super-120b-a12b",name:"Nemotron 3 Super 120B",specialty:"Razonamiento y agentes · gratuito"},
+    {id:"nvidia/nemotron-3-nano-30b-a3b",name:"Nemotron 3 Nano 30B",specialty:"Chat rápido · gratuito"},
+    {id:"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",name:"Nemotron 3 Nano Omni",specialty:"Razonamiento multimodal · gratuito"},
+    {id:"poolside/laguna-xs.2",name:"Poolside Laguna XS.2",specialty:"Código ligero · gratuito"},
+    {id:"poolside/laguna-m.1",name:"Poolside Laguna M.1",specialty:"Programación · gratuito"},
+    {id:"google/gemma-4-31b-it",name:"Gemma 4 31B IT",specialty:"Chat y razonamiento · gratuito"},
+    {id:"mistral/leanstral-1-5",name:"Mistral Leanstral 1.5",specialty:"Pruebas formales y programación · gratuito"},
+    {id:"nvidia/nemotron-3.5-content-safety",name:"Nemotron 3.5 Content Safety",specialty:"Clasificación de seguridad · gratuito"},
+    {id:"nvidia/nemotron-3.5-lightning-30b-a3b",name:"Nemotron 3.5 Lightning 30B",specialty:"Agentes y razonamiento · gratuito"},
+    {id:"nvidia/muse-glimmer-30b",name:"Muse Glimmer 30B",specialty:"Razonamiento y herramientas · gratuito"},
+    {id:"novita/ling-3.1-flash",name:"Ling 3.1 Flash",specialty:"Razonamiento híbrido · Novita · gratuito"},
+    {id:"novita/inclusionai/ling-3.0-tiny",name:"Ling 3.0 Tiny",specialty:"Agentes y conversación · Novita · gratuito"}
+  ],
+  sensenova: [{id:"sensenova-6.8-flash-lite",name:"SenseNova 6.8 Flash Lite",specialty:"Razonamiento, agentes y multimodalidad · beta gratuita"}],
+  zai: [
+    {id:"glm-4.7-flash",name:"GLM-4.7 Flash",specialty:"Razonamiento y programación · gratuito"},
+    {id:"glm-4.5-flash",name:"GLM-4.5 Flash",specialty:"Conversación rápida · gratuito"},
+    {id:"glm-4.6v-flash",name:"GLM-4.6V Flash",specialty:"Modelo visual gratuito; este flujo usa solo texto"}
+  ],
+  baidu: [
+    {id:"ernie-speed-128k",name:"ERNIE-Speed-128K",specialty:"Conversación y contexto largo · cuota gratuita regional"},
+    {id:"ernie-lite-128k",name:"ERNIE-Lite-128K",specialty:"Conversación ligera · cuota gratuita regional"},
+    {id:"ernie-tiny-8k",name:"ERNIE-Tiny-8K",specialty:"Respuestas rápidas · cuota gratuita regional"}
+  ],
+  // Filled from the live AIHubMix free catalogue after validating its request weights.
+  aihubmix: [],
 };
 export const IMAGE_MODELS = {
   pollinations: [

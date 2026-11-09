@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
-import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
+import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
-import { getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
+import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
+import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -79,9 +80,8 @@ assert.doesNotThrow(()=>validate(picture)({
  steps:webEditing.steps.map(step=>({tool_id:step.tool_id,params:step.params}))
 }));
 
-// Provider-specific credential pools: six for Gemini/OpenRouter/HF/Pollinations,
-// but Groq deliberately remains capped at five.
-
+// Providers support up to six slots, except Requesty which is currently capped at three. Compact JSON pools
+// keep the binding count below Cloudflare's per-Worker environment limit.
 const fakeKeys = {
  GEMINI_API_KEY:'g1', GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GEMINI_API_KEY_4:'g4', GEMINI_API_KEY_5:'g5', GEMINI_API_KEY_6:'g6',
@@ -90,20 +90,45 @@ const fakeKeys = {
  OPENROUTER_API_KEY:'o1', OPENROUTER_API_KEY_2:'o2', OPENROUTER_API_KEY_3:'o3',
  OPENROUTER_API_KEY_4:'o4', OPENROUTER_API_KEY_5:'o5', OPENROUTER_API_KEY_6:'o6',
 };
-for (const provider of ['gemini','openrouter','huggingface','pollinations']) {
- assert.equal(maxCredentialSlots(provider),6,provider+' must support six slots');
+for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
+ assert.equal(maxCredentialSlots(provider),provider==='requesty'?3:6,provider+' credential slot cap');
 }
-assert.equal(maxCredentialSlots('groq'),5);
+assert.equal(maxCredentialSlots('cloudflare'),0,'Workers AI uses a Cloudflare binding, not API keys');
 assert.equal(getCredentialSlots(fakeKeys,'gemini').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'gemini').max,6);
 assert.equal(getCredentialSlots(fakeKeys,'openrouter').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'openrouter').slots.length,6);
-assert.equal(getCredentialSlots(fakeKeys,'groq').length,5);
-assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,5);
+assert.equal(getCredentialSlots(fakeKeys,'groq').length,6);
+assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,6);
 
+const compactPools = Object.fromEntries(Object.entries(CREDENTIAL_POOL_VARIABLES).map(([provider,variable]) =>
+ [variable,JSON.stringify(Array.from({length:maxCredentialSlots(provider)},(_,index)=>provider+'-key-'+(index+1)))]
+));
+for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
+ const slots=getCredentialSlots(compactPools,provider);
+ assert.equal(slots.length,maxCredentialSlots(provider),provider+' JSON pool must expose its configured maximum');
+ assert.equal(slots.at(-1).number,maxCredentialSlots(provider),provider+' JSON pool must map its final key');
+ const status=getCredentialStatus(compactPools,provider);
+ assert.equal(status.poolValid,true);
+ assert.ok(status.slots[0].variable.endsWith('[1]'));
+ assert.doesNotMatch(JSON.stringify(status),new RegExp(provider+'-key-1'),'credential values must never appear in status metadata');
+}
+const mixedPool={REQUESTY_API_KEYS_JSON:'["json-key-1","json-key-2"]',REQUESTY_API_KEY_2:'manual-key-2'};
+assert.equal(getCredentialSlots(mixedPool,'requesty')[0].value,'json-key-1');
+assert.equal(getCredentialSlots(mixedPool,'requesty')[1].value,'manual-key-2','individual slot variables override the same JSON position');
+const duplicatePool={ZAI_API_KEYS_JSON:'["same-key","same-key","third-key"]'};
+assert.deepEqual(getCredentialSlots(duplicatePool,'zai').map(slot=>slot.number),[1,3],'duplicate secrets are not counted as separate credentials');
+const blankPool={ZAI_API_KEYS_JSON:'["first-key","","third-key"]'};
+assert.deepEqual(getCredentialSlots(blankPool,'zai').map(slot=>slot.number),[1,3],'blank JSON entries preserve the remaining slot positions');
+assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'{"not":"an array"}'},'requesty').poolValid,false);
+assert.equal(getCredentialStatus({ZAI_API_KEYS_JSON:JSON.stringify(Array.from({length:7},(_,i)=>'key-'+i))},'zai').poolValid,false,'JSON pools cannot exceed six credentials');
+assert.equal(maxCredentialSlots('requesty'),3,'Requesty is currently limited to three keys');
+assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3"]'},'requesty').count,3);
+assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3","r4"]'},'requesty').poolValid,false,'Requesty JSON cannot exceed three credentials');
+assert.equal(getCredentialSlots({GROQ_API_KEY:'q1',GROQ_API_KEY_BACKUP:'q2'},'groq').length,2,'legacy BACKUP aliases remain supported');
 
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
-const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter']);
+const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','baidu','aihubmix']);
 const availableAll = name => allProviders.has(name);
 assert.deepEqual(rankProviders({task:'planner',available:availableAll}),ROUTE_ORDER.planner);
 assert.deepEqual(rankProviders({task:'coding',available:availableAll}),ROUTE_ORDER.coding);
@@ -118,6 +143,16 @@ assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwe
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
 assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
 assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
+assert.equal(selectTaskModel('sensenova','general','balanced',[{id:'sensenova-6.8-flash-lite'}]),'sensenova-6.8-flash-lite');
+assert.equal(selectTaskModel('zai','reasoning','smart',[{id:'glm-4.7-flash'}]),'glm-4.7-flash');
+assert.equal(selectTaskModel('requesty','coding','balanced',[{id:'novita/ling-3.1-flash'}]),'novita/ling-3.1-flash');
+assert.equal(selectTaskModel('requesty','general','fast',CHAT_MODELS.requesty),'novita/inclusionai/ling-3.0-tiny');
+assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra:free'}]),'nvidia/nemotron-3-ultra:free');
+assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableAll})[0],'kilo');
+assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
+assert.equal(ROUTE_ORDER.general.includes('kilo'),false,'Kilo free trial endpoints remain manual-only');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial stays manual-only');
+assert.equal(ROUTE_ORDER.general.includes('baidu'),false,'Baidu remains manual until regional eligibility is confirmed');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
@@ -152,7 +187,7 @@ const authSlots=[];
 const authResult=await requestWithCredentialPool(authEnv,'gemini',async(key,slot)=>{
  authSlots.push(slot);
  return new Response(slot===1?'unauthorized':'ok',{status:slot===1?401:200});
-});
+},{startIndex:0});
 assert.equal(authResult.status,200);
 assert.deepEqual(authSlots,[1,2],'only a key-specific auth failure may try one alternate credential');
 
@@ -184,9 +219,20 @@ const transientSlots=[];
 const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',async(key,slot)=>{
  transientSlots.push(slot);
  return new Response(slot===1?'upstream error':'ok',{status:slot===1?503:200});
-});
+},{startIndex:0});
 assert.equal(transientResult.status,200);
 assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
+
+const requestyThreeSlotEnv=mockCredentialEnv({
+ REQUESTY_API_KEYS_JSON:JSON.stringify(['r1','r2','r3'])
+});
+let selectedSlot=0;
+const selectedResult=await requestWithCredentialPool(requestyThreeSlotEnv,'requesty',async(key,slot)=>{
+ selectedSlot=slot;
+ return new Response('ok',{status:200});
+},{startIndex:2});
+assert.equal(selectedResult.status,200);
+assert.equal(selectedSlot,3,'Requesty must be able to select its third configured key');
 
 
 // Provider-independent Markdown rendering and real capability discovery.
@@ -316,14 +362,39 @@ const capacityWithMoreKeys = {
 };
 assert.equal(getProviderDailyLimit(capacityEnv,'groq'),30);
 assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
-assert.equal(getSharedDailyBudget(capacityEnv),130);
-assert.equal(getVisitorDailyLimit(capacityEnv),65);
+assert.equal(getSharedDailyBudget(capacityEnv),150);
+assert.equal(getVisitorDailyLimit(capacityEnv),75);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
+assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),15);
+assert.equal(getProviderMinuteLimit('aihubmix'),10);
+assert.equal(getProviderMinuteLimit('requesty'),10);
+assert.equal(getProviderMinuteLimit('sensenova'),5);
+assert.equal(getProviderMinuteLimit('zai'),3);
+assert.equal(getProviderMinuteLimit('kilo'),3);
 assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}),60);
 assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
 const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
 assert.match(statusSource, /dailyUsage: usage/);
 assert.match(statusSource, /dailyAvailable/);
 assert.match(statusSource, /perMinutePerVisitor: 20/);
+assert.match(statusSource, /aihubmixLifetime/);
+assert.match(statusSource, /getKiloFreeModels/);
+assert.match(statusSource, /getAihubmixFreeModels/);
+assert.match(statusSource, /getProviderMinuteLimit/);
+assert.match(statusSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
+const chatSource = readFileSync(new URL('../functions/api/ai/chat.js', import.meta.url), 'utf8');
+assert.match(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
+assert.doesNotMatch(chatSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from chat routing');
+assert.doesNotMatch(statusSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from provider status');
+const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
+for (const provider of ['kilo','requesty','sensenova','zai','baidu','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
+assert.equal(CHAT_MODELS.requesty.length,13);
+assert.equal(CHAT_MODELS.aihubmix.length,0,'AIHubMix catalogue is loaded from its live API, not a stale hard-coded list');
+assert.equal(CHAT_MODELS.amd,undefined,'AMD is removed from the model catalog');
+assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/ling-3.1-flash'));
+assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/inclusionai/ling-3.0-tiny'));
+const aihubmixSource = readFileSync(new URL('../functions/_lib/aihubmix-models.js', import.meta.url), 'utf8');
+assert.match(aihubmixSource, /free_quota_config/);
+assert.match(aihubmixSource, /weight !== 1/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
