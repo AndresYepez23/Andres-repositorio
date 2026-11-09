@@ -21,7 +21,7 @@ export async function onRequestPost({request,env}){
  if(!["cloudflare","huggingface","pollinations","gemini"].includes(provider))return errorResponse("Motor de imagen no permitido.",400);
  const model=String(payload.model|| (provider==="cloudflare"?"@cf/black-forest-labs/flux-1-schnell":provider==="pollinations"?"black-forest-labs/flux.1-schnell":provider==="gemini"?"gemini-3.1-flash-image":"stabilityai/stable-diffusion-3-medium-diffusers"));
  if(!allowedModel(provider,"image",model))return errorResponse("Modelo de imagen no disponible en Prisma.",400);
- if(provider==="pollinations"&&!getCredentialSlots(env,"pollinations").length)return errorResponse("Pollinations compartido aún no está habilitado. Configura POLLINATIONS_API_KEY como secreto de Cloudflare.",503);
+ if(provider==="pollinations"&&!getCredentialSlots(env,"pollinations").length)return errorResponse("Pollinations compartido aún no está habilitado. Configura POLLINATIONS_API_KEYS_JSON o POLLINATIONS_API_KEY como secreto de Cloudflare.",503);
  if(provider==="cloudflare"&&!env.AI?.run)return errorResponse("Workers AI no está conectado en Cloudflare.",503);
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!getCredentialSlots(env,"huggingface").length))
   return errorResponse("Las imágenes de Hugging Face requieren activar explícitamente HF_MEDIA_ENABLED=1; no consumiremos tus créditos sin autorización.",503);
