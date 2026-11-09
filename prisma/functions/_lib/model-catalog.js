@@ -5,7 +5,8 @@ export const CHAT_MODELS = {
     {id:"openai/gpt-oss-20b",name:"GPT-OSS 20B",specialty:"Instrucciones y escritura"},
     {id:"mistralai/mistral-small-3.2",name:"Mistral Small 3.2",specialty:"Redacción y conversación"},
     {id:"qwen/qwen3-coder-30b-a3b-instruct",name:"Qwen 3 Coder",specialty:"Programación y explicación de código"},
-    {id:"google/gemma-4-26b-a4b-it",name:"Gemma 4 26B",specialty:"Tareas generales y análisis"}
+    {id:"google/gemma-4-26b-a4b-it",name:"Gemma 4 26B",specialty:"Tareas generales y análisis"},
+    {id:"deepseek/deepseek-v4-flash",name:"DeepSeek V4 Flash",specialty:"Análisis y programación · selección opcional"}
   ],
   huggingface: [
     {id:"openai/gpt-oss-20b:cheapest",name:"GPT-OSS 20B",specialty:"Chat rápido y económico"},
