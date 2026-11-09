@@ -48,6 +48,8 @@ export async function onRequestGet({ env }) {
     controls: {
       dailyVariable: "OPENROUTER_DAILY_LIMIT",
       perMinuteVariable: "OPENROUTER_PER_MINUTE_LIMIT",
+      perIpMinuteLimit: 10,
+      perIpDailyLimit: 30,
       note: "Los topes internos pueden reducir, nunca superar, el límite gratuito real de la cuenta.",
     },
   }), { status: 200, headers });
