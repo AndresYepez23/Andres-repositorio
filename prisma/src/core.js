@@ -421,8 +421,8 @@ async function answerConversation(text,creds){
   status('Prisma está respondiendo…');
   const context=messages.slice(-5,-1).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,400)).join('\n');
   const response=await runTool('ai-assistant',[],{
-    prompt:'Responde a este mensaje como Prisma Core, en español, con naturalidad y brevedad. No prepares planes, no devuelvas JSON, no afirmes haber realizado acciones. Explica con precisión qué herramientas están disponibles: puedes redactar letras originales, pero no generar audio musical si no existe un motor musical conectado; ai-voice solo convierte texto en voz. Si te piden una canción original, no respondas con una negativa genérica: ofrece crear letra y concepto musical.\n'+(context?'Contexto reciente:\n'+context+'\n':'')+'Usuario: '+text,
-    provider:'auto',reasoning:'fast',tone:'friendly',length:'short',...creds
+    prompt:'Responde a este mensaje como Prisma Core, en español, con naturalidad y brevedad. No prepares planes, no devuelvas JSON, no afirmes haber realizado acciones. Explica con precisión qué herramientas están disponibles: puedes redactar letras originales, pero no generar audio musical si no existe un motor musical conectado; ai-voice solo convierte texto en voz. Si te preguntan por una canción, distingue letra original de audio musical.\n'+(context?'Contexto reciente:\n'+context+'\n':'')+'Usuario: '+text,
+    provider:'auto',reasoning:'fast',tone:'friendly',length:'short',task:'conversation',...creds
   },(p,msg)=>status(msg||'Redactando respuesta…'));
   addMessage('assistant',response.text||'¡Hola! Soy Prisma Core. ¿En qué puedo ayudarte?');
   status('Listo.','success');
@@ -509,7 +509,7 @@ async function requestPlan(userText){
   let plan,steps;
   // Provider/network errors must not trigger a second costly inference request.
   const result=await runTool('ai-assistant',[],{
-    prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
+    prompt:plannerPrompt,provider:'auto',reasoning:'smart',tone:'professional',length:'long',task:'planner',...creds
   },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
   try{
     plan=parsePlan(result.text);
@@ -518,7 +518,7 @@ async function requestPlan(userText){
     status('Revisando el formato y la compatibilidad del plan…');setProgress(.17,'Corrigiendo el plan…');
     const repair=await runTool('ai-assistant',[],{
       prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\n\nSOLICITUD Y CATÁLOGO ORIGINAL:\n'+plannerPrompt,
-      provider:'auto',reasoning:'smart',tone:'professional',length:'long',...creds
+      provider:'auto',reasoning:'smart',tone:'professional',length:'long',task:'planner',...creds
     },(p,msg)=>{status(msg||'Corrigiendo el plan…');setProgress(.17+Math.max(0,Math.min(1,Number(p)||0))*.08,msg||'Corrigiendo el plan…');});
     plan=parsePlan(repair.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
@@ -553,7 +553,7 @@ async function executePlan(){
           original&&!base.includes(original)?'Contexto del usuario: '+original.slice(0,12000):'',
           lastText?'Material del paso anterior: '+lastText.slice(0,12000):''
         ].filter(Boolean).join('\n\n');
-        params.provider='auto';params.reasoning='smart';params.tone='creative';params.length='long';
+        params.provider='auto';params.reasoning='smart';params.tone='creative';params.length='long';params.task='songwriting';
       }
       if(!params.text&&lastText&&['text-sort','word-frequency','text-remove-accents','text-reverse','text-extract-emails','text-extract-urls','text-remove-empty-lines','text-prefix-lines','text-replace','text-extract-hashtags','text-extract-phones','json-minify','json-flatten','html-to-text','word-count','clean-text','text-case'].includes(tool.id))params.text=lastText;
       let inputFiles=[];

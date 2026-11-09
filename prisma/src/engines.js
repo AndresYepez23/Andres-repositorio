@@ -630,7 +630,7 @@ async function generateText(p,cb){
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
  const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const tier=p.reasoning||'balanced';
- const task=classifyTextTask(prompt,tier);
+ const task=p.task||classifyTextTask(prompt,tier);
  const songInstruction=task==='songwriting'
   ? 'La tarea es composición musical original. Si el usuario pide una canción, crea una letra completa, cantable y coherente con título, versos, pre-coro, coro, puente y cierre; añade una breve dirección musical y un prompt de producción. No respondas con una negativa genérica ante una petición creativa segura. No copies letras existentes ni imites exactamente a un artista. Si solicita un archivo de audio, aclara que este motor entrega texto y no ha renderizado música.'
   : 'Ayuda a resolver la petición con precisión. Si el usuario solicita una acción que requiere una herramienta, no afirmes que la ejecutaste si no se ejecutó.';
@@ -652,7 +652,9 @@ async function generateText(p,cb){
   reasoning:['gemini','groq','huggingface','cloudflare'],
   summary:['gemini','cloudflare','groq','huggingface'],
   quick:['gemini','cloudflare','groq','huggingface'],
-  general:['gemini','groq','cloudflare','huggingface']
+  general:['gemini','groq','cloudflare','huggingface'],
+  planner:['gemini','groq','cloudflare','huggingface'],
+  conversation:['gemini','cloudflare','groq','huggingface']
  };
  const preferred=p.provider||'auto';
  const baseOrder=priorities[task]||priorities.general;
@@ -1024,7 +1026,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
  if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
- if(id==='music-lyrics')return generateText({...p,prompt:'Compón una canción completamente original. Entrega título, concepto, género, tempo aproximado, versos, pre-coro, coro, puente y un prompt de producción musical. No copies letras existentes ni imites exactamente a un artista. No afirmes que has generado audio.\n\nIdea del usuario: '+String(p.prompt||p.text||'') ,tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);
+ if(id==='music-lyrics')return generateText({...p,task:'songwriting',prompt:'Compón una canción completamente original. Entrega título, concepto, género, tempo aproximado, versos, pre-coro, coro, puente y un prompt de producción musical. No copies letras existentes ni imites exactamente a un artista. No afirmes que has generado audio.\n\nIdea del usuario: '+String(p.prompt||p.text||'') ,tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);
  if(id==='ai-voice')return generateSpeech(p,cb);
  if(id==='ai-transcribe')return transcribeAudio(files,p,cb);
  if(id==='barcode')return makeBarcode(p);
