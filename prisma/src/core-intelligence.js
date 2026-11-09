@@ -1,7 +1,7 @@
 // Respuestas factuales del producto, no atribuibles falsamente a GPT/Gemini.
 // Soporte básico local cuando el presupuesto de modelos compartidos está agotado.
 const fold = value => String(value||'').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-const PROVIDERS={gemini:'Google Gemini',groq:'Groq',cloudflare:'Cloudflare Workers AI',pollinations:'Pollinations',huggingface:'Hugging Face',openrouter:'OpenRouter'};
+const PROVIDERS={gemini:'Google Gemini',groq:'Groq',cloudflare:'Cloudflare Workers AI',pollinations:'Pollinations',huggingface:'Hugging Face',openrouter:'OpenRouter',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',kilo:'Kilo Gateway',aihubmix:'AIHubMix'};
 function modelLine(history=[]){
  const last=[...history].reverse().find(entry=>entry.role==='assistant'&&entry.engine);
  if(!last)return 'Todavía no hay una respuesta identificada de un modelo en esta conversación.';

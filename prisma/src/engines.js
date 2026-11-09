@@ -1,4 +1,5 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
+import { selectImageCandidates, imageFailureDecision } from './image-routing.js';
 import { runAdvancedTextTool } from './advanced-text-tools.js';
 import { LOCAL_CREATOR_TOOL_IDS, runLocalCreatorTool } from './local-creator-tools.js';
 const PDF_LIB='https://esm.sh/pdf-lib@1.17.1';
@@ -560,6 +561,29 @@ function imageModelFor(provider,quality){
  };
  return profiles[provider]?.[quality||'balanced']||profiles[provider]?.balanced;
 }
+// FLUX.1 Schnell does not accept a requested aspect ratio. Correct the
+// exported canvas locally, without a second AI request or distortion.
+async function fitImageAspect(blob, ratio){
+ const dimensions={square:[1024,1024],landscape:[1024,768],portrait:[768,1024],wide:[1280,720]};
+ const target=dimensions[ratio];
+ if(!target||typeof createImageBitmap!=='function')return {blob,changed:false};
+ const bitmap=await createImageBitmap(blob);
+ try{
+  const actual=bitmap.width/bitmap.height,desired=target[0]/target[1];
+  if(Math.abs(actual-desired)<.025)return {blob,changed:false};
+  const canvas=document.createElement('canvas');
+  canvas.width=target[0];canvas.height=target[1];
+  const ctx=canvas.getContext('2d');
+  if(!ctx)return {blob,changed:false};
+  const sourceWidth=Math.min(bitmap.width,bitmap.height*desired);
+  const sourceHeight=Math.min(bitmap.height,bitmap.width/desired);
+  ctx.drawImage(bitmap,(bitmap.width-sourceWidth)/2,(bitmap.height-sourceHeight)/2,
+    sourceWidth,sourceHeight,0,0,canvas.width,canvas.height);
+  const mime=blob.type==='image/jpeg'?'image/jpeg':'image/png';
+  const converted=await new Promise(resolve=>canvas.toBlob(resolve,mime,.92));
+  return converted?{blob:converted,changed:true}:{blob,changed:false};
+ }finally{bitmap.close?.();}
+}
 async function generateImage(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<8)throw Error('Describe la imagen con un poco más de detalle.');
@@ -577,32 +601,19 @@ async function generateImage(p,cb){
  if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
  let provider=p.provider||'auto';
  const automatic=provider==='auto';
- const canCloudflare=!!(p.centralFeatures?.cloudflareImages||p.centralProviders?.cloudflare);
- const canPollinations=!!p.centralFeatures?.pollinationsImages;
  const canHuggingface=!!p.centralFeatures?.huggingfaceImages;
- const canGemini=!!p.centralFeatures?.geminiImages; // paid, opt-in only
- if(automatic)provider=canCloudflare?'cloudflare':canPollinations?'pollinations':canHuggingface?'huggingface':canGemini?'gemini':p.polliToken?'pollinations':'';
- if(!provider)throw Error('No hay un motor de imágenes habilitado. Revisa las conexiones del Laboratorio IA.');
+ const canGemini=!!p.centralFeatures?.geminiImages;
+ // Explicit backend entitlement and image quota checks are performed in the
+ // status endpoint. Automatic generation never spends a visitor's personal key.
+ const candidates=selectImageCandidates({
+  provider,features:p.centralFeatures||{},model:p.model||''
+ });
+ if(automatic&&!candidates.length)
+  throw Error('Los motores de imagen compartidos están agotados o deshabilitados. No utilizaré claves personales sin que selecciones ese motor expresamente.');
  const model=p.model||imageModelFor(provider,p.qualityProfile);
- const candidates=[];
- if(automatic){
-  if(canCloudflare)candidates.push({provider:'cloudflare',model:'@cf/black-forest-labs/flux-1-schnell'});
-  if(canPollinations){
-   candidates.push({provider:'pollinations',model:'black-forest-labs/flux.1-schnell'});
-   candidates.push({provider:'pollinations',model:'tongyi-mai/z-image-turbo'});
-  }
-  if(canHuggingface)candidates.push({provider:'huggingface',model:'stabilityai/stable-diffusion-3-medium-diffusers'});
-  if(canGemini)candidates.push({provider:'gemini',model:'gemini-3.1-flash-image'});
- }else if(provider==='cloudflare'||provider==='pollinations'&&canPollinations||provider==='huggingface'&&canHuggingface||provider==='gemini'&&canGemini){
-  candidates.push({provider,model:p.model||(
-   provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':
-   provider==='pollinations'?'black-forest-labs/flux.1-schnell':
-   provider==='huggingface'?'stabilityai/stable-diffusion-3-medium-diffusers':'gemini-3.1-flash-image'
-  )});
- }
  if(candidates.length){
   const errors=[],blocked=new Set();
-  let globalLimit=false;
+  let stopAttempts=false;
   for(const item of candidates){
    const selected=item.provider,chosenModel=item.model;
    if(blocked.has(selected))continue;
@@ -618,24 +629,28 @@ async function generateImage(p,cb){
     if(!response.ok){
      const data=await response.json().catch(()=>({}));
      const detail=data.error||'No fue posible generar la imagen ('+response.status+').';
-     if(data.code==='PROVIDER_LIMIT')blocked.add(selected);
-     if(data.code==='GLOBAL_LIMIT'){globalLimit=true;throw Error(detail);}
-     throw Error(detail);
+     throw Object.assign(Error(detail),{status:response.status,code:data.code||'',scope:data.scope||''});
     }
-    const blob=await response.blob();
-    if(!blob.type.startsWith('image/'))throw Error('El motor no devolvió una imagen válida.');
+    const original=await response.blob();
+    if(!original.type.startsWith('image/'))throw Error('El motor no devolvió una imagen válida.');
+    const fitted=await fitImageAspect(original,p.ratio).catch(()=>({blob:original,changed:false}));
+    const blob=fitted.blob;
     progress(cb,1,'Imagen generada.');
     return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':blob.type.includes('webp')?'webp':'png')),
      previewUrl:URL.createObjectURL(blob),provider:selected,model:chosenModel,
-     summary:'Imagen generada con '+({cloudflare:'Cloudflare FLUX',pollinations:'Pollinations',huggingface:'Hugging Face',gemini:'Gemini Image'}[selected]||selected)+(errors.length?' · se utilizó respaldo automático.':'.')};
+     summary:'Imagen generada con '+({cloudflare:'Cloudflare FLUX',pollinations:'Pollinations',huggingface:'Hugging Face',gemini:'Gemini Image'}[selected]||selected)+(errors.length?' · se utilizó respaldo automático.':'.')+
+      (fitted.changed?' · Formato adaptado con recorte local sin gastar otra generación.':'')};
    }catch(error){
+    const decision=imageFailureDecision(error);
+    if(decision.blockProvider)blocked.add(selected);
+    if(decision.stop)stopAttempts=true;
     errors.push(selected+': '+(error?.name==='AbortError'?'se agotó el tiempo de espera':error?.message||'error'));
-    if(globalLimit)break;
+    if(stopAttempts)break;
    }finally{clearTimeout(timeout);}
   }
-  if(!automatic||globalLimit||!p.polliToken)
-   throw Error('No fue posible generar la imagen. '+errors.join(' | '));
-  provider='pollinations';
+  // No hidden retries with a personal Pollinations key after shared quota
+  // failure: the visitor must select personal mode explicitly.
+  throw Error('No fue posible generar la imagen. '+errors.join(' | '));
  }
  if(provider==='huggingface'&&!canHuggingface)
   throw Error('Hugging Face para imágenes aún no está habilitado. No se usarán créditos sin autorización.');

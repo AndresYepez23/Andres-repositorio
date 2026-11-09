@@ -6,7 +6,8 @@ import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
-import { buildConversationContext, chooseCoreReasoning } from '../src/core-context.js';
+import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength } from '../src/core-context.js';
+import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
 import { compareJsonDocuments, extractAcademicIdentifiers, redactSensitiveText } from '../src/advanced-text-tools.js';
 
@@ -474,5 +475,31 @@ for(const id of ['ai-compare-options','ai-action-plan','ai-text-review']){
 }
 assert.ok(enhancedEngine.includes('runAdvancedTextTool'));
 assert.ok(readFileSync(new URL('../src/provider-connections.js',import.meta.url),'utf8').includes('cachedCentralStatus'));
+
+
+/* Images are generated only on explicitly enabled backend providers. No
+ * hidden personal-key fallback, costly multi-model probes or invalid retries. */
+const imageFeatures={cloudflareImages:true,pollinationsImages:true,huggingfaceImages:false,geminiImages:false};
+assert.deepEqual(selectImageCandidates({features:imageFeatures}).map(item=>item.provider),['cloudflare','pollinations']);
+assert.deepEqual(selectImageCandidates({features:{}}),[]);
+assert.deepEqual(selectImageCandidates({provider:'gemini',features:imageFeatures}),[]);
+assert.equal(selectImageCandidates({provider:'pollinations',features:imageFeatures,model:'tongyi-mai/z-image-turbo'})[0].model,'tongyi-mai/z-image-turbo');
+assert.equal(imageFailureDecision({status:429}).blockProvider,true);
+assert.equal(imageFailureDecision({status:402}).stop,false);
+assert.equal(imageFailureDecision({code:'GLOBAL_LIMIT'}).stop,true);
+assert.equal(imageFailureDecision({status:400}).stop,true);
+assert.equal(imageFailureDecision({status:503}).stop,false);
+const imageEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(imageEngineSource,/selectImageCandidates\(/);
+assert.match(imageEngineSource,/imageFailureDecision\(/);
+assert.match(imageEngineSource,/No hidden retries with a personal Pollinations key/);
+assert.match(statusSource,/const imageUsage =/);
+assert.match(statusSource,/imageReady\("cloudflare"\)/);
+assert.match(statusSource,/imageReady\("pollinations"\)/);
+assert.match(statusSource,/imageUsage,/);
+assert.equal(chooseCoreResponseLength('conversation','Hola'),'short');
+assert.equal(chooseCoreResponseLength('reasoning','Explica brevemente la comparación'),'short');
+assert.equal(chooseCoreResponseLength('songwriting','Crea una canción completa'),'long');
+assert.equal(chooseCoreReasoning('coding','¿Qué es HTML?'),'balanced');
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');

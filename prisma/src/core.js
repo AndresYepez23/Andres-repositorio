@@ -10,7 +10,7 @@ import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
-import { buildConversationContext, chooseCoreReasoning } from './core-context.js';
+import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -1016,7 +1016,7 @@ async function answerConversation(text,creds,task='conversation'){
     prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
     reasoning:chooseCoreReasoning(task,taskText),
     tone:task==='songwriting'||task==='creative'?'creative':'friendly',
-    length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
+    length:chooseCoreResponseLength(task,taskText),
     task,...creds
   },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
   const answer=String(response?.text||'').trim();
