@@ -5,6 +5,7 @@ import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
 import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor } from './core-image-editor.js';
+import { renderMarkdownSafe } from './core-markdown.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -320,7 +321,9 @@ function renderMessages({forceBottom=false}={}){
   for(const message of messages){
     const bubble=document.createElement('article');bubble.className='core-message '+(message.role==='user'?'user':'assistant');
     const label=document.createElement('span');label.className='core-message-label';label.textContent=message.role==='user'?'TÚ':'PRISMA CORE';
-    const body=document.createElement('div');body.className='core-message-body';body.textContent=message.content;
+    const body=document.createElement('div');body.className='core-message-body';
+    if(message.role==='assistant')body.innerHTML=renderMarkdownSafe(message.content);
+    else body.textContent=message.content;
     bubble.append(label,body);
     if(message.role==='assistant'&&message.engine){
       const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'};
