@@ -170,7 +170,7 @@ export async function onRequestGet({ env }) {
       groq: "openai/gpt-oss-20b",
       openrouter: "openrouter/free",
       kilo: "z-ai/glm-5:free",
-      requesty: "nemotron-3.5-lightning-30b-a3b",
+      requesty: "novita/ling-3.1-flash",
       sensenova: "sensenova-6.8-flash-lite",
       zai: "glm-4.7-flash",
       baidu: "ernie-speed-128k",
