@@ -9,12 +9,12 @@ const headers = {
 
 export async function onRequestGet({ env }) {
   const limited = Boolean(env.PRISMA_RATE_DB?.prepare);
-  const blockedHF=limited ? await getProviderHold(env,"huggingface") : null;
-  const blockedPollinations=limited ? await getProviderHold(env,"pollinations") : null;
-  const blockedSpeech=limited ? await getProviderHold(env,"pollinations-audio") : null;
-  const blockedGroq=limited ? await getProviderHold(env,"groq") : null;
-  const blockedGroqAudio=limited ? await getProviderHold(env,"groq-audio") : null;
-  const blockedOpenRouter=limited ? await getProviderHold(env,"openrouter") : null;
+  const blockedHF=limited && getCredentialSlots(env,"huggingface").length<=1 ? await getProviderHold(env,"huggingface") : null;
+  const blockedPollinations=limited && getCredentialSlots(env,"pollinations").length<=1 ? await getProviderHold(env,"pollinations") : null;
+  const blockedSpeech=limited && getCredentialSlots(env,"pollinations").length<=1 ? await getProviderHold(env,"pollinations-audio") : null;
+  const blockedGroq=limited && getCredentialSlots(env,"groq").length<=1 ? await getProviderHold(env,"groq") : null;
+  const blockedGroqAudio=limited && getCredentialSlots(env,"groq").length<=1 ? await getProviderHold(env,"groq-audio") : null;
+  const blockedOpenRouter=limited && getCredentialSlots(env,"openrouter").length<=1 ? await getProviderHold(env,"openrouter") : null;
   const huggingfaceReady=limited && Boolean(getCredentialSlots(env,"huggingface").length) && !blockedHF;
   const pollinationsReady=limited && Boolean(getCredentialSlots(env,"pollinations").length) && !blockedPollinations;
   const speechReady=limited && Boolean(getCredentialSlots(env,"pollinations").length) && !blockedSpeech;
