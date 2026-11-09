@@ -73,7 +73,7 @@ export async function checkLimits(env,request,provider){
  // with Prisma's main providers. Neither allowance is unlimited.
  const isBackup=provider==="openrouter";
  const scopes=[
-  [isBackup?"ip-minute:openrouter:"+key:"ip-minute:"+key,minute,isBackup?5:10,isBackup?"PROVIDER_MINUTE_LIMIT":"GLOBAL_LIMIT"],
+  [isBackup?"ip-minute:openrouter:"+key:"ip-minute:"+key,minute,isBackup?5:20,isBackup?"PROVIDER_MINUTE_LIMIT":"GLOBAL_LIMIT"],
   [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?20:getVisitorDailyLimit(env),isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
   ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
