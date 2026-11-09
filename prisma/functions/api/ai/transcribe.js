@@ -20,7 +20,7 @@ export async function onRequestPost({request,env}){
  if(file.size<=0||file.size>10*1024*1024)return json({error:"Audio vacío o superior a 10 MB."},413);
  if(provider==="groq"&&!getCredentialSlots(env,"groq").length)return json({error:"Groq todavía no está conectado."},503);
  if(provider==="groq"){
-  const hold=await getProviderHold(env,"groq-audio");
+  const hold=getCredentialSlots(env,"groq").length<=1?await getProviderHold(env,"groq-audio"):null;
   if(hold)return json({error:hold.reason,provider:"groq",status:429},429);
  }
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!getCredentialSlots(env,"huggingface").length))return json({error:"La transcripción de Hugging Face está desactivada para proteger los créditos gratuitos."},503);
