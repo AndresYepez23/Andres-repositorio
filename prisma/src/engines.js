@@ -733,8 +733,12 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   const all=getRouteMemory(),key=provider+':'+task;
   const previous=all[key]||{},stamp=Date.now();
   const status=Number(error?.status)||0;
-  const delay=success?0:status===401||status===403?15*60000:status===402?10*60000:
-   status===429?90000:error?.name==='AbortError'?120000:60000;
+  const retryAfterMs=Math.max(0,Number(error?.retryAfter)||0)*1000;
+  const delay=success?0:
+   (['ip-day','ip-minute','total-day'].includes(error?.scope)&&retryAfterMs
+    ?Math.min(24*60*60*1000,Math.max(30000,retryAfterMs))
+    :status===401||status===403?15*60000:status===402?10*60000:
+     status===429?Math.min(24*60*60*1000,Math.max(90000,retryAfterMs)):error?.name==='AbortError'?120000:60000);
   all[key]={
    at:stamp,
    successes:success?Math.min(12,(previous.successes||0)+1):0,
@@ -742,6 +746,15 @@ function reportModelAttempt(provider,task,success,elapsed,error){
    averageMs:Math.round(success?(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed):(previous.averageMs||elapsed)),
    coolingUntil:success?0:stamp+delay
   };
+  // A visitor quota applies to all primary engines on this device/network.
+  // Cool them together and let the separately limited OpenRouter reserve respond.
+  if(!success&&provider!=='openrouter'&&error?.code==='GLOBAL_LIMIT'&&['ip-day','ip-minute','total-day'].includes(error?.scope)){
+   for(const name of ['groq','cloudflare','gemini','pollinations','huggingface']){
+    if(name===provider)continue;
+    const prior=all[name+':'+task]||{};
+    all[name+':'+task]={...prior,at:stamp,failures:Math.max(1,Number(prior.failures)||0),averageMs:Number(prior.averageMs)||elapsed,coolingUntil:stamp+delay};
+   }
+  }
   // Expire stale health observations to avoid keeping old failures indefinitely.
   for(const [name,entry] of Object.entries(all))if(stamp-Number(entry.at||0)>86400000)delete all[name];
   sessionStorage.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
