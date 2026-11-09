@@ -249,7 +249,7 @@ function render(){
     card.addEventListener('click',open);
   });
   $$('#tool-grid [data-favorite]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();toggleFavorite(button.dataset.favorite);}));
-  $('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;renderCategories();render();}));
+  $$('#filter-chips [data-filter]').forEach(button=>button.addEventListener('click',()=>{activeView='explore';activeCategory=button.dataset.filter;renderCategories();render();}));
 }
 
 function toggleFavorite(id){
@@ -1172,7 +1172,7 @@ $$('[data-view-jump]').forEach(b=>b.addEventListener('click',()=>showView(b.data
 $('#global-search').addEventListener('input',e=>{const wasEmpty=!searchTerm.trim();searchTerm=e.target.value;activeView='explore';activeCategory='all';render();if((wasEmpty&&searchTerm.trim())||!searchTerm.trim())scrollToCurrentView();});
 $('#explore-search')?.addEventListener('input',e=>{searchTerm=e.target.value;activeView='explore';activeCategory='all';$('#global-search').value=searchTerm;render();});
 $('#explore-subcategory')?.addEventListener('change',e=>{activeView='explore';activeCategory=e.target.value;expandedToolFamily=familyForCategory(activeCategory)?.id||expandedToolFamily;renderCategories();render();});
-$('[data-quick-tool]').forEach(button=>button.addEventListener('click',()=>{const t=tools.find(tool=>tool.id===button.dataset.quickTool);if(t)openTool(t);}));
+$$('[data-quick-tool]').forEach(button=>button.addEventListener('click',()=>{const t=tools.find(tool=>tool.id===button.dataset.quickTool);if(t)openTool(t);}));
 
 $('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;$('#theme-toggle').innerHTML=icon(next==='dark'?'sun':'moon');localStorage.setItem('prisma-theme',next);});
 const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme){document.documentElement.dataset.theme=savedTheme;$('#theme-toggle').innerHTML=icon(savedTheme==='dark'?'sun':'moon');}
