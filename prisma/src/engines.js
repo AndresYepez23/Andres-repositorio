@@ -69,13 +69,21 @@ async function pdfTool(id,files,p,cb){
  }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
-  const pages=src.getPageIndices();
-  for(let i=0;i<pages.length;i++){
-   const single=await PDFDocument.create(),copied=await single.copyPages(src,[pages[i]]);
-   single.addPage(copied[0]);zip.file('pagina-'+String(i+1).padStart(3,'0')+'.pdf',await single.save());
-   progress(cb,(i+1)/pages.length*.85,'Separando página '+(i+1)+' de '+pages.length+'...');
+  const pages=src.getPageIndices(),requested=Number(p.parts||0);
+  if(requested&&(!Number.isInteger(requested)||requested<2||requested>20||requested>pages.length))
+   throw Error('La cantidad de partes debe estar entre 2 y 20 y no puede superar el número de páginas.');
+  const groups=requested
+   ? Array.from({length:requested},(_,i)=>pages.slice(Math.floor(i*pages.length/requested),Math.floor((i+1)*pages.length/requested)))
+   : pages.map(page=>[page]);
+  for(let i=0;i<groups.length;i++){
+   const single=await PDFDocument.create(),copied=await single.copyPages(src,groups[i]);
+   copied.forEach(page=>single.addPage(page));
+   const label=requested?'parte-':'pagina-';
+   zip.file(label+String(i+1).padStart(3,'0')+'.pdf',await single.save());
+   progress(cb,(i+1)/groups.length*.85,'Preparando '+(i+1)+' de '+groups.length+'...');
   }
-  const blob=await zip.generateAsync({type:'blob'});return download(blob,fileName(files[0])+'-paginas.zip');
+  const blob=await zip.generateAsync({type:'blob'});
+  return download(blob,fileName(files[0])+(requested?'-partes.zip':'-paginas.zip'));
  }
 
  if(id==='pdf-extract'){
