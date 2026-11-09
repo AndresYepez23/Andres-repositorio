@@ -159,7 +159,7 @@ function renderCategories(){
  nav.querySelectorAll('[data-family]').forEach(btn=>btn.addEventListener('click',()=>{
   expandedToolFamily=expandedToolFamily===btn.dataset.family?'':btn.dataset.family;
   activeView='explore';activeCategory='family:'+btn.dataset.family;searchTerm='';$('#global-search').value='';
-  renderCategories();render();closeSidebar();scrollToCurrentView();
+  renderCategories();render();scrollToCurrentView();
  }));
  nav.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{
   activeView='explore';activeCategory=btn.dataset.category;searchTerm='';$('#global-search').value='';
