@@ -16,7 +16,6 @@ export const CREDENTIAL_ROOTS = Object.freeze({
   zai: "ZAI_API_KEY",
   baidu: "QIANFAN_API_KEY",
   aihubmix: "AIHUBMIX_API_KEY",
-  amd: "RADEON_API_KEY",
 });
 
 // One encrypted Cloudflare secret per provider can contain a JSON array of up
@@ -34,11 +33,10 @@ export const CREDENTIAL_POOL_VARIABLES = Object.freeze({
   zai: "ZAI_API_KEYS_JSON",
   baidu: "QIANFAN_API_KEYS_JSON",
   aihubmix: "AIHUBMIX_API_KEYS_JSON",
-  amd: "RADEON_API_KEYS_JSON",
 });
 
 export const CREDENTIAL_SLOT_LIMITS = Object.freeze(
-  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [provider, 6]))
+  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [provider, provider === "requesty" ? 3 : 6]))
 );
 export const MAX_CREDENTIAL_SLOTS = 6;
 
