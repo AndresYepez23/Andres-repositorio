@@ -337,6 +337,20 @@ function buildFields(t){
     case 'image-identify-local':return '<div class="tool-hint">Modelo gratuito ViT ONNX de Hugging Face ejecutado en el dispositivo. La primera vez descarga un modelo de aproximadamente 50–90 MB. Puede tardar en móviles y sus etiquetas están en inglés. No identifica personas.</div>';
     case 'csv-profile-local':return selectField('Separador CSV','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\t','Tabulación']],'auto')+'<div class="tool-hint">Revisa celdas vacías, cantidad de valores únicos, tipos probables y filas duplicadas sin enviar el archivo.</div>';
     case 'json-schema-validate':return textareaField('Datos JSON','text','{"id":1,"nombre":"Prisma"}','Pega el contenido JSON que quieres validar.')+textareaField('JSON Schema','schema','{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}}','AJV comprueba los datos con las reglas de tu esquema. Todo ocurre en el navegador.');
+    case 'pdf-form-fields':return '<div class="tool-hint">Inspecciona los nombres y tipos de campos interactivos del PDF. No muestra datos privados introducidos por el usuario.</div>';
+    case 'pdf-form-flatten':return '<div class="tool-hint">Genera una copia que fija la apariencia de los campos de formulario para que dejen de ser editables. El original permanece intacto.</div>';
+    case 'pdf-add-blank':return '<div class="inline-fields">'+field('Cantidad de páginas','count','number','1','Entre 1 y 10.','min="1" max="10"')+
+      selectField('Insertarlas','position',[['end','Al final'],['start','Al principio']],'end')+'</div>';
+    case 'image-identify-local':return '<div class="tool-hint">Modelo visual ViT ONNX gratuito que funciona en el navegador. La primera ejecución descarga pesos; las etiquetas son estimaciones en inglés, no identificación de personas.</div>';
+    case 'csv-profile-local':return selectField('Separador del CSV','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\\t','Tabulación']],'auto')+
+      '<div class="tool-hint">Analiza duplicados, columnas y valores vacíos en tu dispositivo. No utiliza servicios externos.</div>';
+    case 'json-schema-validate':return textareaField('Datos JSON','text','{"nombre":"Prisma","activo":true}','Pega los datos para validar.')+
+      textareaField('JSON Schema','schema','{"type":"object","required":["nombre"],"properties":{"nombre":{"type":"string"}}}','Validación con AJV 8, biblioteca libre.');
+    case 'table-file-convert':return selectField('Formato de destino','output',[['auto','Automático según origen'],['csv','CSV'],['json','JSON'],['xlsx','Excel (.xlsx)']],'auto')+
+      selectField('Hoja de Excel','sheet',[['0','Primera hoja'],['all','Todas las hojas (solo JSON)']],'0')+
+      '<div class="tool-hint">Acepta CSV, JSON y Excel XLS/XLSX. Procesa los datos en el navegador y genera el archivo convertido.</div>';
+    case 'text-file-convert':return selectField('Formato de destino','output',[['pdf','PDF de texto'],['docx','Word editable (.docx)'],['txt','Texto (.txt)'],['html','Página HTML (.html)']],'pdf')+
+      '<div class="tool-hint">TXT, Markdown, HTML y Word DOCX. Conserva el texto; el diseño y las imágenes del original pueden simplificarse.</div>';
     case 'pdf-split':return '<div class="tool-hint">Divide el documento en un PDF por página y descarga todos los archivos en un ZIP. Se procesa en tu dispositivo, sin subir el documento ni necesitar una API.</div>';
     case 'pdf-compress':return '<div class="tool-hint">Optimiza la estructura interna del PDF sin convertir las páginas en imágenes. No necesita API y conserva el texto seleccionable. La reducción depende del documento; si el peso está en fotografías, esta técnica puede no reducirlo. La compresión avanzada de imágenes se incorporará por separado.</div>';
     case 'pdf-to-word':return '<div class="tool-hint">Convierte PDF digitales con texto seleccionable en un archivo DOCX editable. No requiere cuenta ni API: el procesamiento ocurre en tu navegador. Los PDFs escaneados necesitan OCR y la maquetación compleja puede requerir ajustes en Word.</div>';
@@ -365,7 +379,10 @@ function buildFields(t){
     case 'pdf-extract':return field('Páginas que deseas conservar','pages','text','1-3','Ejemplos: 1, 3, 5-8. La numeración comienza en 1.');
     case 'pdf-remove-pages':return field('Páginas que deseas eliminar','pages','text','2, 4-5','Ejemplos: 2, 4-5. Las páginas restantes se conservarán.');
     case 'pdf-page-numbers':return selectField('Ubicación de la numeración','position',[['bottom','Inferior'],['top','Superior']],'bottom');
-    case 'pdf-to-image':return field('Páginas (opcional)','pages','text','','Vacío = todas las páginas. Ejemplo: 1-3, 5.')+selectField('Resolución','scale',[['1','Estándar'],['1.5','Alta (recomendada)'],['2','Muy alta']],'1.5');
+    case 'pdf-to-image':return field('Páginas (opcional)','pages','text','','Vacío = todas las páginas. Ejemplo: 1-3, 5.')+
+      selectField('Formato','format',[['png','PNG · sin pérdida'],['jpeg','JPG · menor tamaño']],'png')+
+      selectField('Resolución','scale',[['1','Estándar'],['1.5','Alta (recomendada)'],['2','Muy alta']],'1.5')+
+      '<div class="tool-hint">Descarga un ZIP con una imagen por página.</div>';
     case 'pdf-text':return '<div class="tool-hint">Extrae texto de PDFs digitales. Si el documento es un escaneo o una fotografía, utiliza OCR en la categoría Imágenes.</div>';
     case 'pdf-rotate':return selectField('Rotación','degrees',[['90','90° a la derecha'],['180','180°'],['270','90° a la izquierda']],'90');
     case 'pdf-watermark':return field('Texto de la marca de agua','watermark','text','Prisma Space','Se aplicará en diagonal y con transparencia.');
