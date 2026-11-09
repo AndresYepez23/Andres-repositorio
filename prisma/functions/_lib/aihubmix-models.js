@@ -1,4 +1,4 @@
-import { getCredentialSlots } from "./credential-pool.js";
+import { getCredentialSlots, requestWithCredentialPool } from "./credential-pool.js";
 
 let cache = { keyTag: "", expiresAt: 0, models: [] };
 const NON_CHAT_OUTPUTS = new Set([
@@ -12,16 +12,18 @@ const NON_CHAT_OUTPUTS = new Set([
 // We fail closed if either source is unavailable, and only expose zero-cost
 // text-output models whose request weight is exactly one.
 export async function getAihubmixFreeModels(env, { force = false } = {}) {
-  const key = getCredentialSlots(env, "aihubmix")[0]?.value || "";
-  if (!key) return [];
-  const keyTag = key.slice(-8);
+  const slots = getCredentialSlots(env, "aihubmix");
+  if (!slots.length) return [];
+  const keyTag = slots.map(slot => slot.value.slice(-8)).join(":");
   if (!force && cache.keyTag === keyTag && Date.now() < cache.expiresAt) return cache.models;
 
   try {
     const [modelsResponse, quotaResponse] = await Promise.all([
-      fetch("https://aihubmix.com/v1/models", {
-        headers: { Authorization: "Bearer " + key, Accept: "application/json" },
-      }),
+      requestWithCredentialPool(env, "aihubmix", key =>
+        fetch("https://aihubmix.com/v1/models", {
+          headers: { Authorization: "Bearer " + key, Accept: "application/json" },
+        })
+      ),
       fetch("https://aihubmix.com/call/free_quota_config", {
         headers: { Accept: "application/json" },
       }),
