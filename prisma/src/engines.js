@@ -561,19 +561,38 @@ async function generateImage(p,cb){
  let fullPrompt=(styles[p.style]||'')+prompt;
  if(String(p.negativePrompt||'').trim())fullPrompt+=' Avoid these elements: '+String(p.negativePrompt).trim();
  let provider=p.provider||'auto';
- if(provider==='auto')provider=p.centralProviders?.cloudflare?'cloudflare':p.centralFeatures?.pollinationsImages?'pollinations':p.polliToken?'pollinations':p.centralFeatures?.huggingfaceImages?'huggingface':'';
- if(!provider)throw Error('No hay un motor de imágenes habilitado. Cloudflare Workers AI debe estar activo o autoriza Pollinations.');
+ const automatic=provider==='auto';
+ const canCloudflare=!!(p.centralFeatures?.cloudflareImages||p.centralProviders?.cloudflare);
+ const canPollinations=!!p.centralFeatures?.pollinationsImages;
+ const canHuggingface=!!p.centralFeatures?.huggingfaceImages;
+ const canGemini=!!p.centralFeatures?.geminiImages; // paid, opt-in only
+ if(automatic)provider=canCloudflare?'cloudflare':canPollinations?'pollinations':canHuggingface?'huggingface':canGemini?'gemini':p.polliToken?'pollinations':'';
+ if(!provider)throw Error('No hay un motor de imágenes habilitado. Revisa las conexiones del Laboratorio IA.');
  const model=p.model||imageModelFor(provider,p.qualityProfile);
- if(provider==='cloudflare'||provider==='pollinations'&&p.centralFeatures?.pollinationsImages||provider==='huggingface'&&p.centralFeatures?.huggingfaceImages){
-  const candidates=p.provider==='auto'&&provider==='cloudflare'&&p.centralFeatures?.pollinationsImages
-   ? ['cloudflare','pollinations']: [provider];
-  const errors=[];
-  for(const selected of candidates){
-   const chosenModel=(selected===provider&&p.provider!=='auto'&&p.model)?p.model:
-    selected==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':
-    selected==='pollinations'?'black-forest-labs/flux.1-schnell':'stabilityai/stable-diffusion-3-medium-diffusers';
+ const candidates=[];
+ if(automatic){
+  if(canCloudflare)candidates.push({provider:'cloudflare',model:'@cf/black-forest-labs/flux-1-schnell'});
+  if(canPollinations){
+   candidates.push({provider:'pollinations',model:'black-forest-labs/flux.1-schnell'});
+   candidates.push({provider:'pollinations',model:'tongyi-mai/z-image-turbo'});
+  }
+  if(canHuggingface)candidates.push({provider:'huggingface',model:'stabilityai/stable-diffusion-3-medium-diffusers'});
+  if(canGemini)candidates.push({provider:'gemini',model:'gemini-3.1-flash-image'});
+ }else if(provider==='cloudflare'||provider==='pollinations'&&canPollinations||provider==='huggingface'&&canHuggingface||provider==='gemini'&&canGemini){
+  candidates.push({provider,model:p.model||(
+   provider==='cloudflare'?'@cf/black-forest-labs/flux-1-schnell':
+   provider==='pollinations'?'black-forest-labs/flux.1-schnell':
+   provider==='huggingface'?'stabilityai/stable-diffusion-3-medium-diffusers':'gemini-3.1-flash-image'
+  )});
+ }
+ if(candidates.length){
+  const errors=[],blocked=new Set();
+  let globalLimit=false;
+  for(const item of candidates){
+   const selected=item.provider,chosenModel=item.model;
+   if(blocked.has(selected))continue;
    const controller=new AbortController();
-   const timeout=setTimeout(()=>controller.abort(),45000);
+   const timeout=setTimeout(()=>controller.abort(),60000);
    try{
     progress(cb,.15,'Generando imagen con '+selected+'…');
     const response=await fetch('/api/ai/image',{
@@ -584,8 +603,8 @@ async function generateImage(p,cb){
     if(!response.ok){
      const data=await response.json().catch(()=>({}));
      const detail=data.error||'No fue posible generar la imagen ('+response.status+').';
-     // Global visitor quotas do not improve by switching vendors.
-     if(response.status===429&&/Prisma alcanzó su límite temporal gratuito/i.test(detail))throw Object.assign(Error(detail),{stopFallback:true});
+     if(data.code==='PROVIDER_LIMIT')blocked.add(selected);
+     if(data.code==='GLOBAL_LIMIT'){globalLimit=true;throw Error(detail);}
      throw Error(detail);
     }
     const blob=await response.blob();
@@ -593,16 +612,18 @@ async function generateImage(p,cb){
     progress(cb,1,'Imagen generada.');
     return {...download(blob,'prisma-imagen-'+Date.now()+'.'+(blob.type.includes('jpeg')?'jpg':blob.type.includes('webp')?'webp':'png')),
      previewUrl:URL.createObjectURL(blob),provider:selected,model:chosenModel,
-     summary:'Imagen generada con '+(selected==='cloudflare'?'Cloudflare FLUX':selected==='pollinations'?'Pollinations':'Hugging Face')+(errors.length?' · se utilizó respaldo automático.':'.')};
+     summary:'Imagen generada con '+({cloudflare:'Cloudflare FLUX',pollinations:'Pollinations',huggingface:'Hugging Face',gemini:'Gemini Image'}[selected]||selected)+(errors.length?' · se utilizó respaldo automático.':'.')};
    }catch(error){
     errors.push(selected+': '+(error?.name==='AbortError'?'se agotó el tiempo de espera':error?.message||'error'));
-    if(error?.stopFallback)break;
+    if(globalLimit)break;
    }finally{clearTimeout(timeout);}
   }
-  throw Error('No fue posible generar la imagen. '+errors.join(' | '));
+  if(!automatic||globalLimit||!p.polliToken)
+   throw Error('No fue posible generar la imagen. '+errors.join(' | '));
+  provider='pollinations';
  }
- if(provider==='huggingface'&&!p.centralFeatures?.huggingfaceImages)
-  throw Error('Las imágenes de Hugging Face están desactivadas para proteger tus créditos. Utiliza Cloudflare FLUX.');
+ if(provider==='huggingface'&&!canHuggingface)
+  throw Error('Hugging Face para imágenes aún no está habilitado. No se usarán créditos sin autorización.');
  if(provider==='gemini'&&!p.geminiKey)
   throw Error('La generación de imágenes con Gemini aún no está habilitada en el backend central. Usa Cloudflare FLUX.');
  if(provider==='pollinations'){

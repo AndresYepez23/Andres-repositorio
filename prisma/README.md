@@ -81,3 +81,15 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - Las funciones beta y los módulos marcados como próximamente no deben presentarse como funciones garantizadas.
 - No hay analítica, cuenta de usuario ni almacenamiento de archivos en servidor en esta primera versión.
 - No introducir claves API privadas en el frontend.
+
+
+## Prisma Core 3 · navegación y generación visual
+
+- En la vista **Prisma Core**, el menú principal de Prisma Space presenta **Nuevo chat**, búsqueda y las conversaciones locales (renombrar, anclar y eliminar). En otras vistas mantiene **Explorar por categoría**.
+- En móvil, pulsar fuera del menú principal cierra el panel. La conversación ya no tiene una segunda cabecera ni menú redundante y utiliza el ancho disponible.
+- El enrutador visual entiende imágenes de propósito general, miniaturas, portadas, logos, ilustraciones, flyers y publicaciones. Una petición suficientemente contextualizada se ejecuta; una petición vaga solicita una sola aclaración útil.
+- Cuando se solicita texto en el resultado, Prisma puede componerlo sobre el fondo generado usando Canvas local y el editor permite ajustar texto sin gastar otra generación IA.
+- La secuencia automática de generación visual intenta Cloudflare FLUX, Pollinations FLUX.1 Schnell, Pollinations Z-Image Turbo y, **solo si están autorizados**, Hugging Face y Gemini Image. Las cuotas globales de Prisma prevalecen sobre los respaldos.
+- **Hugging Face Image** requiere `HF_MEDIA_ENABLED=1` y `HF_TOKEN` para evitar gastos no consentidos.
+- **Gemini Image** requiere `GEMINI_IMAGE_ENABLED=1` y `GEMINI_API_KEY`. Es un motor de pago; no se activa en esta actualización ni consume créditos sin esa habilitación explícita.
+- El generador conserva los límites de uso diario y nunca garantiza que una API de terceros siempre esté disponible.

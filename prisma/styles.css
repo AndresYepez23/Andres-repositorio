@@ -733,6 +733,43 @@ body.core-editor-open{overflow:hidden}
  .core-section:not(.has-conversation) .core-messages{height:clamp(275px,calc(100dvh - 455px),490px);min-height:275px}
 }
 
+/* Prisma Core 3 · un solo menú lateral y chat a ancho completo */
+.sidebar-backdrop{display:none}
+.core-sidebar-conversations{min-height:0;flex:0 0 auto;margin:0 0 16px}
+#core-sidebar-conversations .core-history{
+ position:static!important;inset:auto!important;z-index:auto;
+ display:flex;transform:none!important;transition:none!important;box-shadow:none;
+ width:100%;max-width:100%;height:auto;max-height:none;min-height:0;
+ padding:0;border:0;border-radius:0;background:transparent;overflow:visible
+}
+#core-sidebar-conversations .core-history-head,
+#core-sidebar-conversations .core-history-close{display:none!important}
+#core-sidebar-conversations .core-history-new{min-height:40px}
+#core-sidebar-conversations .core-conversation-list{max-height:none;overflow:visible}
+#core-sidebar-conversations .core-history-footnote{margin-top:15px}
+#core-section .core-history-backdrop{display:none!important}
+body.is-core-view .sidebar-bottom{margin-top:20px}
+body.is-core-view .page-content{max-width:none;padding-left:clamp(12px,2vw,28px);padding-right:clamp(12px,2vw,28px)}
+body.is-core-view .core-section{max-width:none;padding-bottom:0}
+body.is-core-view .core-workspace{grid-template-columns:minmax(0,1fr)!important;margin-top:0;gap:0}
+body.is-core-view .core-chat-toolbar{display:none!important}
+body.is-core-view .core-chat-column{
+ border:0;box-shadow:none;background:transparent;border-radius:0;overflow:visible;
+ min-height:calc(100dvh - 100px)
+}
+body.is-core-view .core-messages{width:100%;padding-inline:clamp(8px,2.6vw,36px);height:clamp(390px,calc(100dvh - 280px),1100px);min-height:390px}
+body.is-core-view .core-composer{border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+@media(max-width:850px){
+ .sidebar-backdrop.open{display:block;position:fixed;inset:0;z-index:19;background:rgba(4,6,11,.62);border:0;padding:0;cursor:default}
+ body.is-core-view .core-chat-column{min-height:calc(100dvh - 80px)}
+ body.is-core-view .core-messages{height:clamp(340px,calc(100dvh - 272px),1000px);min-height:340px}
+}
+@media(max-width:620px){
+ body.is-core-view .page-content{padding-left:10px;padding-right:10px}
+ body.is-core-view .core-messages{padding:12px 4px;height:clamp(330px,calc(100dvh - 265px),900px);min-height:330px}
+ body.is-core-view .core-composer{border-radius:12px}
+}
+
 /* Readable markdown output with no injected raw HTML */
 .core-message-body p{margin:0 0 10px;line-height:1.68}
 .core-message-body p:last-child{margin-bottom:0}

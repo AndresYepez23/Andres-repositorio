@@ -1,5 +1,5 @@
 // Atomic counters in Cloudflare D1. Fail closed if bindings/storage are missing.
-const LIMITS = {gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,"pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,"groq-audio":3,"pollinations-audio":2};
+const LIMITS = {gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,"pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,"groq-audio":3,"pollinations-audio":2,"gemini-image":2};
 export async function checkLimits(env,request,provider) {
   const db=env.PRISMA_RATE_DB;
   if(!db?.prepare)return {status:503,error:"Prisma no puede comprobar sus límites de consumo."};
@@ -20,7 +20,9 @@ SET request_count=request_count+1 WHERE request_count<? RETURNING request_count`
   try{
     for(const [scope,windowStart,max] of scopes){
       const result=await db.prepare(sql).bind(scope,windowStart,max).first();
-      if(!result)return {status:429,error:"Prisma alcanzó su límite temporal gratuito. Vuelve a intentarlo más tarde."};
+      if(!result)return scope.startsWith('provider-day:')
+       ? {status:429,code:'PROVIDER_LIMIT',error:'Este motor alcanzó su cuota gratuita diaria. Prisma puede probar otro motor disponible.'}
+       : {status:429,code:'GLOBAL_LIMIT',error:'Prisma alcanzó su límite temporal gratuito global. Vuelve a intentarlo más tarde.'};
     }
     if(Math.random()<0.01)await db.prepare("DELETE FROM ai_rate_limits WHERE window_start<?").bind(minute-4320).run().catch(()=>{});
     return null;

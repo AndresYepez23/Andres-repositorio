@@ -39,7 +39,7 @@ function redraw(){
  const where=$('#core-editor-position')?.value||'left';
  const color=$('#core-editor-color')?.value||'#ffffff';
  const useShade=$('#core-editor-shade')?.checked;
- const boxWidth=where==='center'?1060:850;
+ const boxWidth=Math.max(260,Math.min(w-110,where==='center'?1060:850));
  const x=where==='right'?w-66:where==='center'?w/2:66;
  const alignment=where==='right'?'right':where==='center'?'center':'left';
  const baseline=h*.51;
@@ -76,11 +76,49 @@ export async function openImageEditor({blob,filename,initialText='',onSave}){
  const img=new Image();
  img.decoding='async';img.src=sourceUrl;await img.decode();
  sourceImage=img;saveCallback=onSave;
+ const canvas=$('#core-editor-canvas');
+ const imageRatio=img.naturalWidth/img.naturalHeight;
+ if(imageRatio>=1){canvas.width=1280;canvas.height=Math.round(1280/imageRatio);}
+ else{canvas.height=1280;canvas.width=Math.round(1280*imageRatio);}
  $('#core-editor-main-text').value=String(initialText||'').slice(0,68);$('#core-editor-sub-text').value='';
  $('#core-editor-position').value='left';$('#core-editor-color').value='#ffffff';
  $('#core-editor-size').value='82';$('#core-editor-shade').checked=true;
  imageEditor().classList.remove('hidden');document.body.classList.add('core-editor-open');
  redraw();$('#core-editor-main-text')?.focus();
+}
+// Compose requested text directly onto generated imagery without another AI request.
+export async function applyImageText(blob,title,ratio='square'){
+ if(!blob||!String(blob.type||'').startsWith('image/'))throw Error('Se requiere una imagen válida.');
+ const url=URL.createObjectURL(blob),img=new Image();
+ try{
+  img.src=url;await img.decode();
+  const sizes={wide:[1280,720],square:[1024,1024],portrait:[768,1024],landscape:[1024,768]};
+  const [w,h]=sizes[ratio]||sizes.square;
+  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Canvas no disponible.');
+  cover(ctx,img,w,h);
+  const shade=ctx.createLinearGradient(0,0,w,0);
+  shade.addColorStop(0,'rgba(4,8,20,.85)');shade.addColorStop(.57,'rgba(4,8,20,.42)');shade.addColorStop(1,'rgba(4,8,20,0)');
+  ctx.fillStyle=shade;ctx.fillRect(0,0,w,h);
+  const phrase=stopWords(title).slice(0,68);
+  const maxWidth=w*.75;let size=Math.round(Math.min(92,w*.084));
+  ctx.font='900 '+size+'px system-ui,-apple-system,sans-serif';
+  let lines=wrapLines(ctx,phrase,maxWidth,3);
+  while(lines.some(line=>ctx.measureText(line).width>maxWidth)&&size>30){
+   size-=4;ctx.font='900 '+size+'px system-ui,-apple-system,sans-serif';
+   lines=wrapLines(ctx,phrase,maxWidth,3);
+  }
+  ctx.textBaseline='middle';ctx.textAlign='left';ctx.lineJoin='round';
+  ctx.strokeStyle='rgba(0,0,0,.92)';ctx.lineWidth=Math.max(5,size*.12);
+  ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=13;ctx.fillStyle='#fff';
+  const rowHeight=size*1.17;
+  const start=Math.max(size,Math.min(h-(lines.length+.3)*rowHeight,(h-lines.length*rowHeight)/2));
+  for(let i=0;i<lines.length;i++){
+   const y=start+i*rowHeight;ctx.strokeText(lines[i],w*.065,y,maxWidth);ctx.fillText(lines[i],w*.065,y,maxWidth);
+  }
+  const composed=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('No se pudo exportar el PNG.')),'image/png'));
+  return composed;
+ }finally{URL.revokeObjectURL(url);}
 }
 export function initImageEditor(){
  if(!imageEditor()||imageEditor().dataset.ready)return;
@@ -101,7 +139,7 @@ export function initImageEditor(){
   try{
    redraw();
    const blob=await new Promise((resolve,reject)=>$('#core-editor-canvas').toBlob(result=>result?resolve(result):reject(Error('No se pudo exportar el PNG.')),'image/png'));
-   await saveCallback({blob,filename:'prisma-miniatura-editada-'+Date.now()+'.png',summary:'Miniatura de 1280 × 720 con textos aplicados localmente, sin gastar créditos de IA.'});
+   await saveCallback({blob,filename:'prisma-imagen-editada-'+Date.now()+'.png',summary:'Imagen con texto editada y exportada localmente sin consumir créditos de IA.'});
    close();
   }catch(error){window.alert(error?.message||'No se pudo guardar la imagen.');}
   finally{button.disabled=false;button.textContent='Guardar imagen en el chat';}

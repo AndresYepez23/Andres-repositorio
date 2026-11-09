@@ -35,6 +35,7 @@
       </nav>
       <div class="side-label side-label-spaced" id="category-label">EXPLORAR POR CATEGORÍA</div>
       <nav class="category-nav" id="category-nav" aria-label="Categorías"></nav>
+      <div class="core-sidebar-conversations hidden" id="core-sidebar-conversations" aria-label="Historial de Prisma Core"></div>
       <div class="sidebar-bottom">
         <div class="privacy-card">
           <span class="privacy-icon" data-icon="shield-check"></span>
@@ -43,6 +44,7 @@
         <div class="sidebar-foot"><span class="status-led"></span> PRISMA SPACE 1.0 · BETA <span class="foot-spacer"></span><button id="about-button" class="icon-button subtle" aria-label="Acerca de Prisma Space" title="Acerca de Prisma Space" data-icon="info"></button></div>
       </div>
     </aside>
+    <button type="button" class="sidebar-backdrop" id="sidebar-backdrop" aria-label="Cerrar menú lateral"></button>
 
     <main class="main-area">
       <header class="topbar">
@@ -92,7 +94,7 @@
                 </div>
                 <details class="core-model-settings"><summary>Imagen: motor automático <span aria-hidden="true">⌄</span></summary>
 <label>Modelo de generación visual
-<select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option></select></label>
+<select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option><option value="huggingface">Hugging Face · requiere autorización</option><option value="gemini">Gemini Image · pago opcional</option></select></label>
 <small>Elegir un motor concreto no garantiza su disponibilidad. La edición de texto de miniaturas es local y gratuita.</small>
 </details>
 <small class="core-composer-note">Hasta 8 archivos · 100 MB. Se procesan localmente cuando es posible; el texto enviado a una IA externa se indica en cada operación.</small>
@@ -228,9 +230,9 @@
 
   <div class="core-editor-backdrop hidden" id="core-image-editor" role="dialog" aria-modal="true" aria-labelledby="core-editor-heading">
     <section class="core-editor-panel">
-      <header><div><span class="eyebrow">EDITOR GRATUITO · EN TU DISPOSITIVO</span><h2 id="core-editor-heading">Editar miniatura</h2><p>Añade texto legible y mejora la composición sin gastar otra generación de IA.</p></div><button type="button" id="core-editor-close" class="core-editor-close" aria-label="Cerrar editor">×</button></header>
+      <header><div><span class="eyebrow">EDITOR GRATUITO · EN TU DISPOSITIVO</span><h2 id="core-editor-heading">Editar imagen</h2><p>Añade texto legible y mejora la composición sin gastar otra generación de IA.</p></div><button type="button" id="core-editor-close" class="core-editor-close" aria-label="Cerrar editor">×</button></header>
       <div class="core-editor-layout">
-        <div class="core-editor-preview"><canvas id="core-editor-canvas" width="1280" height="720" aria-label="Vista previa de la miniatura"></canvas><small>La imagen original permanece intacta.</small></div>
+        <div class="core-editor-preview"><canvas id="core-editor-canvas" width="1280" height="720" aria-label="Vista previa de la imagen"></canvas><small>La imagen original permanece intacta.</small></div>
         <div class="core-editor-controls">
           <label>Texto principal<input id="core-editor-main-text" maxlength="68" placeholder="Ej.: DIOS PELEA POR TI"></label>
           <label>Texto secundario<input id="core-editor-sub-text" maxlength="90" placeholder="Opcional: breve subtítulo"></label>

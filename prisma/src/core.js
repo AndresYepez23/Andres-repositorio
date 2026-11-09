@@ -4,7 +4,7 @@ import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
 import { planFileConversion } from './file-conversions.js';
-import { openImageEditor, initImageEditor } from './core-image-editor.js';
+import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
@@ -180,7 +180,7 @@ function renderConversationList(){
   row.append(select,more);list.append(row);
  }
 }
-function closeConversationDrawer(){document.querySelector('#core-workspace')?.classList.remove('history-open');}
+function closeConversationDrawer(){document.querySelector('#core-workspace')?.classList.remove('history-open');document.dispatchEvent(new Event('prisma:close-sidebar'));}
 function openConversation(id){
  if(busy||executionActive)return;
  const chat=conversations.find(item=>item.id===id);if(!chat)return;
@@ -797,108 +797,141 @@ function describeUnattachedToolRequest(userText){
 }
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
-function thumbnailIntent(text){
+// Generic visual creation: thumbnails are one kind of image, not a separate hard-coded assistant.
+function imageCreationType(text){
+ if(attachments.length)return '';
  const q=normalizeCoreIntent(text);
- if(/\b(prompt|ideas?|guion|descripcion|descripción)\b/.test(q)&&/\b(?:para|de)\b.{0,24}\bminiatura\b/.test(q))return false;
- const name=/\b(miniatura|thumbnail)\b|\bportada\b.{0,30}\b(youtube|video)\b/.test(q);
- const action=/(?:crea|crear|gener|diseñ|disen|haz|hacer|puedes|quiero|necesito|prepara|preparar|fabricar|editar|mejorar)/.test(q);
- return name&&action;
+ if(/^(?:como|por que|explica|ensename|tutorial|dime como|sabes como)\b/.test(q))return '';
+ if(/\b(?:prompt|guion|ideas|consejos)\s+(?:para|de)\b.{0,65}\b(?:imagen|miniatura|logo|portada|poster)\b/.test(q))return '';
+ const action=/(?:\b(?:crea|crear|creame|genera|generar|generame|haz|hazme|hacer|disena|disenar|dibujame|dibuja|ilustra|ilustrame|renderiza|prepara|necesito|quiero|construye)\b)/.test(q);
+ const visual=/\b(?:imagen|imagenes|foto|fotografia|miniatura|thumbnail|portada|poster|afiche|flyer|banner|logotipo|logo|ilustracion|dibujo|wallpaper|fondo de pantalla|arte digital|publicidad visual|anuncio grafico|post|publicacion)\b/.test(q);
+ if(!action||!visual)return '';
+ if(/\b(?:miniatura|thumbnail)\b/.test(q))return 'thumbnail';
+ if(/\b(?:logo|logotipo)\b/.test(q))return 'logo';
+ if(/\b(?:flyer|afiche|poster|anuncio grafico|publicidad visual)\b/.test(q))return 'flyer';
+ if(/\b(?:banner)\b/.test(q))return 'banner';
+ if(/\b(?:portada)\b/.test(q))return 'cover';
+ if(/\b(?:post|publicacion|instagram|facebook)\b/.test(q))return 'social';
+ if(/\b(?:ilustracion|dibujo|arte digital)\b/.test(q))return 'illustration';
+ return 'image';
 }
-function thumbnailTopic(text){
- const clean=String(text||'').trim();
- const candidates=[
-  /(?:miniatura|thumbnail|portada)(?:\s+para\s+(?:(?:mi|un|el)\s+)?(?:video|youtube))?\s+(?:de|sobre|acerca de|con|para)\s+(.{7,})/i,
-  /(?:video|vídeo)\s+(?:sobre|de|que trata de)\s+(.{7,})/i,
-  /(?:tema|asunto)\s*[:：-]\s*(.{5,})/i
- ];
- for(const pattern of candidates){const value=clean.match(pattern)?.[1]?.replace(/[,;]\s*(?:texto|frase|titulo|título|estilo|colores)\s*[:：].*$/i,'').replace(/[?.!]+$/,'').trim();if(value&&!/^(?:youtube|un video|mi video|el video|algo|lo que sea)$/i.test(value))return value;}
- return '';
+function visualContextEnough(text){
+ const q=normalizeCoreIntent(text)
+  .replace(/\b(?:crea|crear|creame|genera|generar|generame|haz|hazme|hacer|disena|disenar|dibuja|dibujame|ilustra|ilustrame|renderiza|prepara|quiero|necesito|una|un|el|la|para|de|del|con|que|sea|mi|en|por|y|al)\b/g,' ')
+  .replace(/\b(?:imagen|imagenes|foto|fotografia|miniatura|thumbnail|portada|flyer|banner|poster|afiche|logo|logotipo|ilustracion|dibujo|post|publicacion|youtube|instagram|facebook|tiktok|redes|sociales|video|reel|historia)\b/g,' ')
+  .replace(/\s+/g,' ').trim();
+ const words=q.split(' ').filter(Boolean);
+ return (words.length>=2 && q.length>=7)||(words.length===1&&q.length>=11);
 }
-function cleanThumbnailTopic(value){
- return String(value||'')
-  .replace(/^\s*(?:tema|asunto)\s*[:：=-]\s*/i,'')
-  .replace(/(?:[;,.]\s*|\s+)(?:texto|frase|título|titulo|estilo|colores?|rostro|logo|letra)\s*[:：=][\s\S]*$/i,'')
-  .trim();
+function visualHeadline(text){
+ const raw=String(text||'');
+ const found=raw.match(/(?:que\s+diga|y\s+diga|diga|texto(?:\s+principal)?|frase|t[ií]tulo(?:\s+grande)?|que\s+escriba)\s*(?:[:：=-]\s*|\s+)["“'«]?(.{2,110})/i)?.[1]||'';
+ return found.split(/\s+(?:de\s+estilo|con\s+(?:estilo|colores)|en\s+(?:color|estilo))\b|\s+y\s+(?:(?:se\s+)?(?:vea|aparezca|muestre|tenga)|con|que\s+se\s+vea)\b|[,;]|\n|[.!?]/i)[0]
+  .replace(/["”'»]+$/,'').trim().slice(0,68);
 }
-function extractThumbnailText(value){
- return String(value||'').match(/(?:texto|frase|título|titulo)\s*(?:principal|grande|de portada)?\s*[:：=]\s*["“']?([^"”'\n]{2,65})/i)?.[1]?.split(/[,;]|\s+y\s+(?:estilo|colores|rostro)/i)[0]?.trim()||'';
+function visualRatio(text,kind){
+ const q=normalizeCoreIntent(text);
+ if(kind==='thumbnail'||/\b(?:16:9|youtube|horizontal|panoramica|apaisada|widescreen)\b/.test(q))return 'wide';
+ if(/\b(?:9:16|historia|story|reel|tiktok|vertical|fondo de pantalla)\b/.test(q))return 'portrait';
+ if(/\b(?:4:3|paisaje)\b/.test(q))return 'landscape';
+ return 'square';
 }
-async function generateThumbnail(text,creds,topic){
- const chosen=$('#core-image-provider')?.value||'auto';
- const headline=extractThumbnailText(text);
- const imagePrompt='Professional cinematic YouTube thumbnail image, 16:9 aspect ratio, visually striking detailed composition, clear central subject, dramatic contrast, impactful lighting, premium commercial art direction, optimized at small sizes, coherent relevant subject for this video: '+topic+'. Leave an uncluttered darker area on the left for optional typography overlay. Do not render letters, words, watermarks, brands or logos. This is a video thumbnail background, not a travel poster or wallpaper.';
- status('Diseñando una miniatura de YouTube 16:9…');
+function visualStyle(text,kind){
+ const q=normalizeCoreIntent(text);
+ if(/\b(?:foto|fotografico|fotorealista|realista)\b/.test(q))return 'photo';
+ if(/\b(?:3d|tridimensional)\b/.test(q))return '3d';
+ if(/\b(?:anime|manga)\b/.test(q))return 'anime';
+ if(/\b(?:ilustracion|dibujo|acuarela|vectorial)\b/.test(q))return 'illustration';
+ if(kind==='logo')return 'illustration';
+ return 'cinematic';
+}
+function visualQuestion(kind){
+ if(kind==='thumbnail')return 'Claro. ¿De qué trata la miniatura de YouTube? Puedes indicar el texto grande, el ambiente y si llevará un rostro o elemento principal.';
+ if(kind==='logo')return 'Claro. ¿Qué nombre o marca representará el logo y qué estilo buscas?';
+ if(kind==='flyer'||kind==='banner')return 'Claro. ¿Qué vas a anunciar y qué texto o elementos debe llevar el diseño?';
+ if(kind==='cover')return 'Claro. ¿De qué trata la portada y para dónde la usarás?';
+ if(kind==='social')return 'Claro. ¿Qué quieres comunicar con la publicación? Si necesitas un formato específico, indícame si es post o historia.';
+ return 'Claro. ¿Qué tipo de imagen quieres crear y qué debería aparecer en ella? Puedes describir el tema, el estilo y cualquier texto.';
+}
+async function generateVisualRequest(text,creds,kind){
+ const headline=visualHeadline(text);
+ const ratio=visualRatio(text,kind);
+ const style=visualStyle(text,kind);
+ const label={thumbnail:'miniatura de YouTube',logo:'logo',flyer:'flyer',banner:'banner',cover:'portada',social:'imagen para redes',illustration:'ilustración',image:'imagen'}[kind]||'imagen';
+ const artDirection={
+  thumbnail:'Create a premium YouTube thumbnail background, strong focal subject and 16:9 video composition, compelling clear lighting, readable at small sizes.',
+  logo:'Create a clean, distinctive, scalable visual identity concept, balanced geometry and simple recognizable forms.',
+  flyer:'Create a polished advertising flyer composition with professional visual hierarchy, clear main subject.',
+  banner:'Create a professional promotional banner with excellent hierarchy and ample negative space.',
+  cover:'Create a sophisticated cover image with an expressive central visual and polished art direction.',
+  social:'Create a refined compelling social media artwork with strong visual clarity.',
+  illustration:'Create a coherent creative illustration with skilled composition.',
+  image:'Create a high quality image faithful to the exact request, clear subject and professional visual composition.'
+ }[kind]||'Create a high quality image.';
+ const prompt=artDirection+' Subject, scene, mood and user requirements: '+text+'. '+
+  (headline?'Reserve a clean area for a precise typography overlay to be applied locally. Do not draw any letters or text in the generated background.':'Avoid unwanted watermarks and illegible small lettering.');
+ status('Generando '+label+' con respaldo automático si el motor principal no está disponible…');
  const result=await runTool('image-gen',[],{
-  ...creds,prompt:imagePrompt,provider:chosen,style:'cinematic',ratio:'wide',
-  negativePrompt:'random scenery, unrelated abstract artwork, accidental text, small illegible writing, distorted faces, logos'
- },(p,message)=>{status(message||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),message||'Generando miniatura…');});
+  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',ratio,style
+ },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),msg||'Generando '+label+'…');});
  if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
- result.originTopic=topic;result.suggestedText=headline;
- addMessage('assistant','Aquí tienes la base visual de la miniatura. Para que destaque en YouTube, pulsa «Añadir texto / Editar» bajo la imagen: puedes poner el título, cambiar su tamaño, color y posición sin gastar otra generación de IA.',{
-  results:[{name:'Miniatura base para YouTube',reason:'Fondo 16:9 preparado para añadir tipografía',result}]
+ if(headline){
+  try{
+   const typed=await applyImageText(result.blob,headline,ratio);
+   result.blob=typed;
+   result.filename='prisma-'+kind+'-'+Date.now()+'.png';
+   result.previewUrl=URL.createObjectURL(typed);
+   result.summary=(result.summary||'Imagen creada')+' · Texto aplicado gratis en el navegador.';
+  }catch(error){console.warn('No se pudo componer texto localmente:',error);}
+ }
+ result.originTopic=text;result.suggestedText=headline;result.visualRatio=ratio;
+ addMessage('assistant','Aquí tienes tu '+label+'. Puedes descargarla, editar el texto gratis o solicitar otra versión.'+(headline?' El texto solicitado se añadió localmente cuando el navegador lo permitió.':''),{
+  results:[{name:'Resultado: '+label,reason:'Generación visual solicitada',result}]
  });
- status('Miniatura lista. Puedes editarla gratis dentro de Prisma.','success');
+ status('Imagen lista para descargar y editar.','success');
 }
-async function handleThumbnailRequest(text){
+async function handleImageCreationRequest(text){
  const chat=conversations.find(item=>item.id===activeConversationId);
  if(!chat)return false;
  const pending=chat.thumbnailBrief;
- const isThumbnail=thumbnailIntent(text);
+ const kind=pending?.kind||imageCreationType(text);
  const uploadedImage=attachments.find(file=>String(file.type||'').startsWith('image/'));
- const wantsText=/(?:anade|añade|agrega|escribe|pon|coloca|editar|edita).{0,45}(?:texto|titulo|título|frase|miniatura)/i.test(normalizeCoreIntent(text));
+ const wantsText=/(?:anade|anadir|agrega|escribe|pon|coloca|editar|edita).{0,45}(?:texto|titulo|frase|imagen|miniatura)/i.test(normalizeCoreIntent(text));
  if(uploadedImage&&wantsText){
-   const title=extractThumbnailText(text)||'';
-   await openImageEditor({blob:uploadedImage,filename:uploadedImage.name,initialText:title,onSave:async output=>{
-     addMessage('assistant','Edité la miniatura con texto localmente. Aquí puedes descargarla.',{
-      results:[{name:'Imagen editada',reason:'Texto añadido sin enviar la imagen a IA',result:output}]
-     });
-     attachments=[];renderAttachments();
-   }});
-   status('Editor de miniaturas abierto. No consume créditos de imagen.','success');return true;
+  await openImageEditor({blob:uploadedImage,filename:uploadedImage.name,initialText:visualHeadline(text),onSave:async output=>{
+   addMessage('assistant','Imagen editada localmente. Ya puedes descargar el resultado.',{
+    results:[{name:'Imagen editada',reason:'Edición gratuita y local',result:output}]
+   });
+   attachments=[];renderAttachments();
+  }});
+  status('Editor de imágenes abierto, sin consumir créditos.','success');return true;
  }
- if(!pending&&!isThumbnail)return false;
- if(pending&&/^(?:cancelar|cancela|olvida|no quiero|salir|deja eso)\b/i.test(text.trim())){
+ if(!pending&&!kind)return false;
+ if(pending&&/^(?:cancelar|cancela|olvida|no quiero|salir|deja eso)\b/i.test(normalizeCoreIntent(text))){
   chat.thumbnailBrief=null;persistChatHistory();
-  addMessage('assistant','Perfecto. Cancelé la miniatura pendiente. ¿Qué quieres hacer ahora?');return true;
+  addMessage('assistant','Cancelé el diseño pendiente. ¿Qué necesitas ahora?');return true;
  }
- const topic=cleanThumbnailTopic(pending?String(text||'').trim():thumbnailTopic(text));
- if(!topic||topic.length<7||/^(?:si|sí|vale|ok|claro|hazlo|como quieras)$/i.test(topic)){
-  chat.thumbnailBrief={original:pending?.original||text,started:Date.now()};
+ const description=pending?String(pending.original||'')+'\n'+String(text||''):String(text||'');
+ if(!visualContextEnough(pending?text:description)){
+  chat.thumbnailBrief={kind:kind||'image',original:pending?.original||text,started:Date.now()};
   persistChatHistory();
-  addMessage('assistant','Claro. Para crear una miniatura que realmente represente tu video necesito una cosa: ¿de qué trata? Puedes añadir el texto que quieres en grande y un estilo, por ejemplo: «Guerra espiritual; texto: DIOS PELEA POR TI; estilo: cinematográfico». Después podrás ajustar el texto gratis.');
-  status('Esperando el tema de la miniatura; no se consumió ninguna generación de IA.','info');
+  addMessage('assistant',visualQuestion(kind||'image'));
+  status('Esperando el contexto de la imagen; no se consumió cuota.','info');
   return true;
  }
  chat.thumbnailBrief=null;persistChatHistory();
- const statusData=await getCentralProviderStatus();
- centralProviders=statusData.providers||centralProviders;
- centralFeatures=statusData.features||centralFeatures;
- centralModelCatalog=statusData.modelCatalog||centralModelCatalog;
- if(!Object.values(centralProviders).some(Boolean)&&!readPollinationsToken()){
-  addMessage('assistant','No hay motores de imagen disponibles ahora. Revisa Laboratorio IA y vuelve a intentarlo.');
-  return true;
+ try{
+  const available=await getCentralProviderStatus();
+  centralProviders=available.providers||centralProviders;
+  centralFeatures=available.features||centralFeatures;
+  centralModelCatalog=available.modelCatalog||centralModelCatalog;
+  await generateVisualRequest(description,credentials(),kind||'image');
+ }catch(error){
+  const detail=String(error?.message||'El motor de imágenes no respondió.').slice(0,420);
+  addMessage('assistant','Entendí tu diseño, pero no pude completar la generación porque los motores disponibles fallaron o alcanzaron sus límites. Tu descripción no necesita cambiar. '+detail+' Puedes probar otro motor en Laboratorio IA o reintentar después.');
+  status('El diseño se entendió, pero el motor no pudo producirlo.','warning');
  }
- const original=pending?.original||text;
- await generateThumbnail(original+'\n'+text,credentials(),topic);
  return true;
-}
-function directCoreImage(text){
- if(attachments.length)return false;
- const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- if(/\b(prompt|guion|ideas|descripcion|texto|instrucciones)\b/.test(q))return false;
- return /(?:genera|generar|crea|crear|haz|hacer|dibuja|disena|ilustra|renderiza).{0,65}\b(imagen|foto|ilustracion|miniatura|poster|retrato)\b/.test(q);
-}
-async function answerWithImage(text,creds){
- status('Generando la imagen en el motor disponible…');
- const ratio=/\b(youtube|miniatura|horizontal|paisaje|panoramica|16:9)\b/i.test(text)?'wide':/\b(vertical|historia|story|reel|retrato)\b/i.test(text)?'portrait':'square';
- const result=await runTool('image-gen',[],{
-  ...creds,provider:$('#core-image-provider')?.value||'auto',prompt:text,ratio,style:'cinematic'
- },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.10)),msg||'Generando imagen…');});
- if(!result?.blob)throw Error('El generador no devolvió una imagen.');
- addMessage('assistant','Aquí está la imagen que pediste. Puedes descargarla y continuar la conversación.',{
-  results:[{name:'Imagen generada',reason:'Solicitud visual del usuario',result}],partial:false
- });
- status('Imagen lista.','success');
 }
 function directCoreTask(text){
  if(attachments.length)return null;
@@ -1033,7 +1066,7 @@ async function requestPlan(userText){
     return;
   }
   // Collect the video topic before spending any image generation quota.
-  if(await handleThumbnailRequest(userText))return;
+  if(await handleImageCreationRequest(userText))return;
   // Text-to-speech is a real media output, never a prose-only model answer.
   if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
@@ -1091,11 +1124,7 @@ async function requestPlan(userText){
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
-  if(directCoreImage(userText)){
-    if(hasConnectedModel)await answerWithImage(userText,creds);
-    else{addMessage('assistant','No hay un motor de imágenes configurado en este momento. Revisa Laboratorio IA.');status('Motor de imagen no disponible.','warning');}
-    return;
-  }
+  // Las peticiones de generación visual ya fueron atendidas por el flujo contextual.
   const directTask=directCoreTask(userText);
   if(directTask){
     if(hasConnectedModel)await answerConversation(userText,creds,directTask);
@@ -1344,8 +1373,8 @@ function createExecutionResults(executed,partial){
        const edit=document.createElement('button');edit.type='button';edit.className='mini-button core-edit-thumb';edit.textContent='Añadir texto / Editar';
        edit.addEventListener('click',async()=>{
         try{await openImageEditor({blob:result.blob,filename:result.filename,initialText:result.suggestedText||'',onSave:async output=>{
-         addMessage('assistant','Miniatura editada en tu dispositivo, sin gastar otra generación de IA.',{
-          results:[{name:'Miniatura con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
+         addMessage('assistant','Imagen editada en tu dispositivo, sin gastar otra generación de IA.',{
+          results:[{name:'Imagen con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
          });
          status('Miniatura editada y lista para descargar.','success');
         }});}catch(error){status(error?.message||'No pude abrir el editor.','warning');}
@@ -1355,7 +1384,7 @@ function createExecutionResults(executed,partial){
        variation.textContent='Otra versión';
        variation.addEventListener('click',()=>{
          const last=messages.slice().reverse().find(entry=>entry.role==='user'&&/(?:miniatura|imagen|foto|diseñ|gener)/i.test(entry.content));
-         const input=$('#core-input');input.value=(last?.content||'Genera una miniatura de YouTube')+'; crea otra versión con composición diferente, calidad profesional y un sujeto más claro.';
+         const input=$('#core-input');input.value=(last?.content||'Genera una imagen atractiva')+'; crea otra versión con una composición distinta, más detalles y mejor calidad visual.';
          input.dispatchEvent(new Event('input'));input.focus();
          status('Petición preparada. Enviar generará otra imagen y utilizará cuota del modelo seleccionado.','info');
        });
@@ -1401,6 +1430,9 @@ async function sendMessage(){
 }
 export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
+  const integratedHistory=$('#core-history');
+  const mainSidebarSlot=$('#core-sidebar-conversations');
+  if(integratedHistory&&mainSidebarSlot)mainSidebarSlot.append(integratedHistory);
   initImageEditor();
   loadChatHistory();
   renderMessages({forceBottom:true});updateChatScreen();
