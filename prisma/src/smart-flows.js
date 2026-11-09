@@ -13,8 +13,8 @@ const ready=(steps,category)=>result('Voy a realizar '+steps.length+' operacione
 
 function imageTasks(text){
  const q=normalized(text),steps=[];
- const removeBg=/(?:quitar|eliminar|borrar|retirar).{0,40}\bfondo\b|fondo transparente/.test(q);
- const privacy=/(?:quitar|eliminar|limpiar|borrar).{0,42}(?:metadatos|exif|ubicacion|geolocalizacion)/.test(q);
+ const removeBg=/(?:quita|quitar|elimina|eliminar|borra|borrar|retira|retirar).{0,40}\bfondo\b|fondo transparente/.test(q);
+ const privacy=/(?:quita|quitar|elimina|eliminar|limpia|limpiar|borra|borrar).{0,42}(?:metadatos|exif|ubicacion|geolocalizacion)/.test(q);
  const identify=/(?:reconoc|identific|clasific).{0,45}(?:objet|imagen|foto|contenido visual)/.test(q);
  const size=/(?:redimension|dimension|cambiar.{0,12}tama|ajustar.{0,12}tama|\b\d{3,4}\s*[x×]\s*\d{3,4})/.test(q);
  const watermark=/marca de agua|ponle mi marca|pon mi marca/.test(q);
@@ -37,7 +37,7 @@ function imageTasks(text){
   steps.push(step('image-resize',{width:target[0],height:target[1],keep:!/\bexact[oa]|deformar\b/.test(q)},'Redimensionar a '+target.join(' × ')+' px'));
  }
  if(watermark){
-  const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|con\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i);
+  const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|con\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i).replace(/\\s+y\\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim();
   if(!mark)return result('Puedo añadir una marca de agua. ¿Qué texto debe aparecer en la imagen?');
   steps.push(step('image-watermark',{watermark:mark,position:'bottom-right',size:36,opacity:45,color:'#ffffff'},'Añadir marca de agua'));
  }
@@ -57,7 +57,7 @@ function videoTasks(text){
  const extractAudio=/(?:extrae|extraer|sacar|separa|separar).{0,35}(?:audio|sonido|voz)/.test(q);
  const thumbnail=/(?:fotograma|captura|miniatura|thumbnail|frame)/.test(q);
  const trim=/(?:recortar|recorta|cortar|corta|fragmento|tramo)/.test(q);
- const mute=/(?:sin sonido|sin audio|silencia|silenciar|quitar audio|elimina audio)/.test(q);
+ const mute=/(?:sin sonido|sin audio|silencia|silenciar|quita audio|quitar audio|elimina audio|eliminar audio)/.test(q);
  const watermark=/marca de agua/.test(q);
  const summary=/(?:resum|puntos clave|notas|explica lo que dice)/.test(q);
  if(![transcribe,extractAudio,thumbnail,trim,mute].some(Boolean))return null;
@@ -65,7 +65,7 @@ function videoTasks(text){
   const second=Number(capture(q,/(?:segundo|en|en el segundo|del segundo)\s*(\d+(?:\.\d+)?)/))||1;
   steps.push(step('video-thumbnail',{second},'Capturar fotograma del vídeo'));
   if(watermark){
-   const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i);
+   const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i).replace(/\\s+y\\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim();
    if(!mark)return result('¿Qué texto debe llevar la marca de agua de la miniatura?');
    steps.push(step('image-watermark',{watermark:mark,position:'bottom-right'},'Marcar la miniatura'));
   }
