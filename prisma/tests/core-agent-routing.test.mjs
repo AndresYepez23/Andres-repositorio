@@ -299,4 +299,30 @@ const swSource = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 assert.match(swSource, /cache:"no-store"/);
 
 
+
+// The app-wide daily ceiling grows with active provider families, not raw key
+// count. Extra keys never multiply a project's actual provider quota.
+const capacityEnv = {
+ GEMINI_API_KEY:'g1',
+ GROQ_API_KEY:'q1',
+ HF_TOKEN:'hf1',
+ POLLINATIONS_API_KEY:'p1',
+ AI:{run(){}},
+};
+const capacityWithMoreKeys = {
+ ...capacityEnv,
+ GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
+ GROQ_API_KEY_2:'q2', GROQ_API_KEY_3:'q3', GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5',
+};
+assert.equal(getProviderDailyLimit(capacityEnv,'groq'),30);
+assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
+assert.equal(getSharedDailyBudget(capacityEnv),130);
+assert.equal(getVisitorDailyLimit(capacityEnv),65);
+assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
+assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}),60);
+assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
+const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
+assert.match(statusSource, /dailyUsage: usage/);
+assert.match(statusSource, /dailyAvailable/);
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
