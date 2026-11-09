@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
+import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -76,7 +78,7 @@ assert.doesNotThrow(()=>validate(picture)({
 
 // Provider-specific credential pools: six for Gemini/OpenRouter/HF/Pollinations,
 // but Groq deliberately remains capped at five.
-import { getCredentialSlots, getCredentialStatus, maxCredentialSlots } from '../functions/_lib/credential-pool.js';
+
 const fakeKeys = {
  GEMINI_API_KEY:'g1', GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GEMINI_API_KEY_4:'g4', GEMINI_API_KEY_5:'g5', GEMINI_API_KEY_6:'g6',
@@ -95,5 +97,92 @@ assert.equal(getCredentialSlots(fakeKeys,'openrouter').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'openrouter').slots.length,6);
 assert.equal(getCredentialSlots(fakeKeys,'groq').length,5);
 assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,5);
+
+
+// Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
+const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter']);
+const availableAll = name => allProviders.has(name);
+assert.deepEqual(rankProviders({task:'planner',available:availableAll}),ROUTE_ORDER.planner);
+assert.deepEqual(rankProviders({task:'coding',available:availableAll}),ROUTE_ORDER.coding);
+assert.deepEqual(rankProviders({preferred:'gemini',task:'coding',available:availableAll})[0],'gemini');
+const now=Date.now();
+const cooled=rankProviders({task:'planner',available:availableAll,now,health:{
+ 'groq:planner':{at:now,failures:3,coolingUntil:now+60000,averageMs:22000}
+}});
+assert.equal(cooled[0],'cloudflare','a cooled provider must move behind healthy alternatives');
+assert.equal(cooled.at(-1),'openrouter','OpenRouter stays the final independent reserve');
+assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
+assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
+assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
+assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
+assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
+
+// Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
+function mockCredentialEnv(values={}) {
+ const holds=new Map();
+ const db={
+  prepare(sql){
+   return {bind(...args){
+    return {
+     first:async()=>{
+      if(sql.includes('SELECT state, reason, valid_until FROM ai_provider_health')){
+       const [provider,nowSeconds]=args,hold=holds.get(provider);
+       return hold&&hold.valid_until>nowSeconds?hold:null;
+      }
+      return null;
+     },
+     run:async()=>{
+      if(sql.includes('INSERT INTO ai_provider_health')){
+       const [provider,state,reason,valid_until]=args;
+       holds.set(provider,{provider,state,reason,valid_until});
+      }
+      return {success:true};
+     }
+    };
+   }};
+  }
+ };
+ return {...values,PRISMA_RATE_DB:db,__holds:holds};
+}
+const authEnv=mockCredentialEnv({GEMINI_API_KEY:'g1',GEMINI_API_KEY_2:'g2',GEMINI_API_KEY_3:'g3'});
+const authSlots=[];
+const authResult=await requestWithCredentialPool(authEnv,'gemini',async(key,slot)=>{
+ authSlots.push(slot);
+ return new Response(slot===1?'unauthorized':'ok',{status:slot===1?401:200});
+});
+assert.equal(authResult.status,200);
+assert.deepEqual(authSlots,[1,2],'only a key-specific auth failure may try one alternate credential');
+
+const rateEnv=mockCredentialEnv({GROQ_API_KEY:'q1',GROQ_API_KEY_2:'q2',GROQ_API_KEY_3:'q3'});
+let rateCalls=0;
+const rateResult=await requestWithCredentialPool(rateEnv,'groq',async()=>{
+ rateCalls++;
+ return new Response('rate limited',{status:429,headers:{'Retry-After':'60'}});
+});
+assert.equal(rateResult.status,429);
+assert.equal(rateCalls,1,'a provider 429 must not rotate to another account');
+await assert.rejects(()=>requestWithCredentialPool(rateEnv,'groq',async()=>{
+ rateCalls++;
+ return new Response('ok',{status:200});
+}),error=>error.code==='PROVIDER_COOLDOWN');
+assert.equal(rateCalls,1,'provider cooldown must prevent repeated paid/quota calls');
+
+const creditEnv=mockCredentialEnv({POLLINATIONS_API_KEY:'p1',POLLINATIONS_API_KEY_2:'p2'});
+let creditCalls=0;
+const creditResult=await requestWithCredentialPool(creditEnv,'pollinations',async()=>{
+ creditCalls++;
+ return new Response('no credits',{status:402});
+});
+assert.equal(creditResult.status,402);
+assert.equal(creditCalls,1,'HTTP 402 must stop the provider pool instead of trying more accounts');
+
+const transientEnv=mockCredentialEnv({OPENROUTER_API_KEY:'o1',OPENROUTER_API_KEY_2:'o2',OPENROUTER_API_KEY_3:'o3'});
+const transientSlots=[];
+const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',async(key,slot)=>{
+ transientSlots.push(slot);
+ return new Response(slot===1?'upstream error':'ok',{status:slot===1?503:200});
+});
+assert.equal(transientResult.status,200);
+assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
