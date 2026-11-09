@@ -4,9 +4,16 @@ import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
 import { planFileConversion } from './file-conversions.js';
+import { openImageEditor, initImageEditor } from './core-image-editor.js';
+import { renderMarkdownSafe } from './core-markdown.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
+const CHATS_KEY = 'prisma-core-chats-v2';
+const MAX_CHATS = 50;
+let conversations = [];
+let activeConversationId = '';
+let conversationSearch = '';
 const MAX_STEPS = 10;
 let messages = [];
 let attachments = [];
@@ -19,6 +26,8 @@ let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggin
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
 let localBrainEnabled = false;
+let voiceReading = false;
+let voiceUtterance = 0;
 const resultObjectUrls = new Map();
 
 function readPollinationsToken(){
@@ -43,8 +52,8 @@ function escapeHtml(value){
 }
 function save(){
   try{
-    const serializable=messages.slice(-40).map(message=>{
-      const item={role:message.role,content:message.content,time:message.time};
+    const serializable=messages.slice(-60).map(message=>{
+      const item={role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,id:message.id||'',feedback:message.feedback||''};
       if(message.engine)item.engine=message.engine;
       if(message.model)item.model=message.model;
       if(message.fallbackFrom)item.fallbackFrom=message.fallbackFrom;
@@ -64,12 +73,241 @@ function save(){
       }));
       return item;
     });
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(serializable));
+    const active=conversations.find(chat=>chat.id===activeConversationId);
+    if(active){
+      active.messages=messages.slice(-60);
+      active.updated=Date.now();
+      const first=messages.find(message=>message.role==='user'&&message.content.trim());
+      if(first&&(!active.titled||active.title==='Nueva conversación')){
+        active.title=String(first.content).replace(/\s+/g,' ').trim().slice(0,58)||'Nueva conversación';
+        active.titled=true;
+      }
+    }
+    persistChatHistory(serializable);
+    localStorage.removeItem(STORAGE_KEY);
   }catch{}
 }
+function newChatRecord(content=[]){
+ const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+ const first=content.find(message=>message.role==='user'&&message.content?.trim());
+ return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,pinned:false};
+}
+function persistChatHistory(activeSerialized=null){
+ try{
+  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,MAX_CHATS).map(chat=>({
+   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,pinned:!!chat.pinned,
+   messages:chat.id===activeConversationId&&activeSerialized
+    ?activeSerialized:chat.messages.slice(-60).map(message=>({
+     id:message.id||'',role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,
+     engine:message.engine,model:message.model,fallbackFrom:message.fallbackFrom,
+     feedback:message.feedback||'',files:message.files?.slice(0,8),
+     results:message.results?.map(entry=>({name:entry.name,reason:entry.reason,
+      result:{summary:String(entry.result?.summary||'').slice(0,500),
+       text:String(entry.result?.text||'').slice(0,6000),filename:entry.result?.filename||'',
+       hasFile:!!(entry.result?.blob||entry.result?.hasFile)}}))
+    }))
+  }));
+  localStorage.setItem(CHATS_KEY,JSON.stringify(records));
+ }catch(error){
+  // Browser storage may be full. Retain the active chat and discard oldest
+  // persisted chats before retrying; never silently discard the active thread.
+  try{
+   const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,12).map(chat=>({
+     id:chat.id,title:chat.title,titled:chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,
+     messages:chat.messages.slice(-20).map(m=>({id:m.id,role:m.role,content:String(m.content||'').slice(0,9000),time:m.time,engine:m.engine,model:m.model,feedback:m.feedback}))
+   }));
+   localStorage.setItem(CHATS_KEY,JSON.stringify(records));
+  }catch{}
+ }
+}
+function loadChatHistory(){
+ let stored=[];
+ try{
+  const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
+  if(Array.isArray(records))stored=records.filter(chat=>chat&&typeof chat.id==='string'&&Array.isArray(chat.messages))
+    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null,pinned:!!chat.pinned}));
+ }catch{}
+ if(!stored.length){
+  let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old.slice(-60);}catch{}
+  stored=[newChatRecord(legacy)];
+ }
+ conversations=stored;
+ conversations.sort((a,b)=>b.updated-a.updated);
+ activeConversationId=conversations[0].id;
+ messages=conversations[0].messages.slice();
+ renderConversationList();
+}
+function renderConversationList(){
+ const list=$('#core-conversation-list');if(!list)return;
+ const sorted=conversations.slice().sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||b.updated-a.updated);
+ const visible=sorted.filter(chat=>!conversationSearch||
+  chat.title.toLocaleLowerCase('es').includes(conversationSearch)||
+  chat.messages.some(message=>String(message.content||'').toLocaleLowerCase('es').includes(conversationSearch)));
+ list.replaceChildren();
+ if(!visible.length){const empty=document.createElement('p');empty.className='core-history-empty';empty.textContent='No se encontraron conversaciones.';list.append(empty);return;}
+ for(const chat of visible){
+  const row=document.createElement('div');row.className='core-history-entry'+(chat.id===activeConversationId?' active':'');
+  const select=document.createElement('button');select.type='button';select.className='core-history-select';select.title=chat.title;
+  select.setAttribute('aria-current',chat.id===activeConversationId?'page':'false');
+  const strong=document.createElement('strong');strong.textContent=chat.title;
+  const small=document.createElement('small');small.textContent=(chat.pinned?'📌 · ':'')+chat.messages.length+' mensajes';
+  select.append(strong,small);
+  select.addEventListener('click',()=>openConversation(chat.id));
+  const more=document.createElement('button');more.type='button';more.className='core-history-more';more.textContent='⋯';more.title='Opciones de conversación';more.setAttribute('aria-label','Opciones de '+chat.title);
+  more.addEventListener('click',()=>{
+   if(row.querySelector('.core-history-menu')){row.querySelector('.core-history-menu').remove();return;}
+   list.querySelectorAll('.core-history-menu').forEach(menu=>menu.remove());
+   const menu=document.createElement('div');menu.className='core-history-menu';
+   const rename=document.createElement('button');rename.type='button';rename.textContent='Renombrar';
+   rename.addEventListener('click',()=>{
+    const title=window.prompt('Nombre de la conversación',chat.title);
+    if(title?.trim()){chat.title=title.trim().slice(0,70);chat.titled=true;persistChatHistory();renderConversationList();}
+   });
+   const remove=document.createElement('button');remove.type='button';remove.textContent='Eliminar';remove.className='danger';
+   remove.addEventListener('click',()=>{
+    if(!window.confirm('¿Eliminar esta conversación de este dispositivo?'))return;
+    if(busy)return;
+    conversations=conversations.filter(item=>item.id!==chat.id);
+    if(!conversations.length)conversations=[newChatRecord()];
+    if(activeConversationId===chat.id){activeConversationId=conversations[0].id;messages=conversations[0].messages.slice();renderMessages({forceBottom:true});}
+    persistChatHistory();renderConversationList();
+   });
+   const pin=document.createElement('button');pin.type='button';pin.textContent=chat.pinned?'Desanclar':'Anclar';
+   pin.addEventListener('click',()=>{chat.pinned=!chat.pinned;persistChatHistory();renderConversationList();});
+   menu.append(pin,rename,remove);row.append(menu);
+  });
+  row.append(select,more);list.append(row);
+ }
+}
+function closeConversationDrawer(){document.querySelector('#core-workspace')?.classList.remove('history-open');}
+function openConversation(id){
+ if(busy||executionActive)return;
+ const chat=conversations.find(item=>item.id===id);if(!chat)return;
+ speechSynthesisStop();
+ activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();
+ pendingPlan=null;$('#core-plan')?.classList.add('hidden');
+ userPinnedToBottom=true;renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();
+ updateChatScreen();status('Conversación cargada.','success');
+}
+function startNewConversation(){
+ if(busy||executionActive)return;
+ speechSynthesisStop();
+ const active=conversations.find(chat=>chat.id===activeConversationId);
+ if(active&&!active.messages.length){closeConversationDrawer();$('#core-input')?.focus();return;}
+ const record=newChatRecord();conversations.unshift(record);activeConversationId=record.id;
+ messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');
+ persistChatHistory();renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
+ status('Nueva conversación. El historial anterior sigue disponible.','success');
+ $('#core-input')?.focus();
+}
+function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';}
 function addMessage(role,content,extra={}){
-  messages.push({role,content:String(content||''),time:Date.now(),...extra});
-  messages=messages.slice(-40);save();renderMessages({forceBottom:role==='user'});
+  messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
+  messages=messages.slice(-60);save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
+}
+function speechSynthesisStop(){
+ voiceUtterance++;
+ voiceReading=false;
+ try{window.speechSynthesis?.cancel();}catch{}
+ document.querySelectorAll('[data-core-action="listen"]').forEach(button=>button.setAttribute('aria-pressed','false'));
+}
+function speakInBrowser(text,button){
+ if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){
+  status('Este navegador no permite reproducir lectura de voz. Puedes generar MP3 con Texto a voz IA.','warning');
+  return;
+ }
+ if(voiceReading){speechSynthesisStop();status('Lectura detenida.','info');return;}
+ const clean=String(text||'').replace(/\s+/g,' ').trim();
+ if(!clean){status('No hay texto para reproducir.','warning');return;}
+ speechSynthesisStop();
+ voiceReading=true;const token=voiceUtterance;
+ button?.setAttribute('aria-pressed','true');
+ const all=window.speechSynthesis.getVoices()||[];
+ const spanish=all.filter(v=>/^es(?:-|_)/i.test(v.lang));
+ const rank=voice=>{
+  const name=String(voice.name||'').toLowerCase();
+  return (/premium|enhanced|natural|neural/.test(name)?20:0)+
+   (/google|mónica|monica|paulina|siri|helena|luciana/.test(name)?14:0)+
+   (/es-(co|mx|es)/i.test(voice.lang)?5:0)+(voice.default?2:0);
+ };
+ const voice=spanish.sort((a,b)=>rank(b)-rank(a))[0]||all.find(v=>v.default)||null;
+ const chunks=clean.match(/.{1,420}(?:[.!?]\s|$)|.{1,420}/g)||[clean];
+ let index=0;
+ const next=()=>{
+  if(token!==voiceUtterance||!voiceReading)return;
+  if(index>=chunks.length){voiceReading=false;button?.setAttribute('aria-pressed','false');status('Lectura terminada.','success');return;}
+  const utterance=new SpeechSynthesisUtterance(chunks[index++]);
+  utterance.lang=voice?.lang||'es-ES';if(voice)utterance.voice=voice;
+  utterance.rate=1;utterance.pitch=1;utterance.volume=1;
+  utterance.onend=next;
+  utterance.onerror=event=>{if(event.error==='interrupted'||event.error==='canceled')return;speechSynthesisStop();status('El navegador no pudo reproducir esa voz. Prueba otra disponible en tu dispositivo.','warning');};
+  window.speechSynthesis.speak(utterance);
+ };
+ status('Leyendo con la voz del navegador. No consume créditos de Prisma.','info');
+ next();
+}
+function coreActionIcon(name){
+ const paths={
+  listen:'<path d="m11 5-5 4H3v6h3l5 4V5Z"/><path d="M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/>',
+  copy:'<rect width="13" height="13" x="8" y="8" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  share:'<path d="M12 16V3m-5 5 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+  like:'<path d="M7 10v11H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3Zm0 0 5-8a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 8a2 2 0 0 1-2 2H7"/>',
+  dislike:'<path d="M7 14V3H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3Zm0 0 5 8a3 3 0 0 0 3-3v-4h5a2 2 0 0 0 2-2l-1-8a2 2 0 0 0-2-2H7"/>',
+  more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+ };
+ return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+(paths[name]||paths.more)+'</svg>';
+}
+function renderMessageActions(message){
+ const actions=document.createElement('div');actions.className='core-message-actions';
+ const button=(name,title,handler)=>{
+  const el=document.createElement('button');el.type='button';el.className='core-message-action';
+  el.title=title;el.setAttribute('aria-label',title);el.innerHTML=coreActionIcon(name);
+  el.addEventListener('click',()=>handler(el));actions.append(el);return el;
+ };
+ button('listen','Escuchar respuesta con la voz del navegador',el=>speakInBrowser(message.content,el));
+ button('copy','Copiar respuesta',async()=>{
+  try{await navigator.clipboard.writeText(message.content);status('Respuesta copiada.','success');}
+  catch{status('No fue posible copiar al portapapeles.','warning');}
+ });
+ button('share','Compartir respuesta o archivo',async()=>{
+  const fileResult=message.results?.map(entry=>entry.result).find(result=>result?.blob&&result.blob.size<100*1024*1024);
+  const shareFile=fileResult?new File([fileResult.blob],fileResult.filename||'prisma-archivo',{type:fileResult.blob.type||'application/octet-stream'}):null;
+  const payload=shareFile&&navigator.canShare?.({files:[shareFile]})?{title:'Prisma Space',files:[shareFile]}:{title:'Respuesta de Prisma',text:message.content};
+  if(navigator.share){try{await navigator.share(payload);}catch(error){if(error.name!=='AbortError')status('No se pudo compartir.','warning');}}
+  else{try{await navigator.clipboard.writeText(message.content);status('Texto copiado para compartir. Descarga el archivo para enviarlo.','success');}catch{status('Compartir no está disponible en este navegador.','warning');}}
+ });
+ for(const [key,title] of [['like','Me gustó'],['dislike','No me gustó']]){
+  const el=button(key,title,()=>{
+   message.feedback=message.feedback===key?'':key;
+   save();renderMessages();status('Valoración guardada solo en este navegador.','success');
+  });
+  el.setAttribute('aria-pressed',message.feedback===key?'true':'false');
+ }
+ const more=button('more','Más opciones',()=>{
+  const current=actions.querySelector('.core-action-menu');
+  if(current){current.remove();return;}
+  document.querySelectorAll('.core-action-menu').forEach(menu=>menu.remove());
+  const menu=document.createElement('div');menu.className='core-action-menu';
+  const option=(label,handler)=>{
+   const b=document.createElement('button');b.type='button';b.textContent=label;
+   b.addEventListener('click',()=>{menu.remove();handler();});menu.append(b);
+  };
+  option('Preparar un MP3 de esta respuesta',()=>{
+   const text=String(message.content).slice(0,1450);
+   const input=$('#core-input');input.value='Convierte a audio: '+text;input.dispatchEvent(new Event('input'));input.focus();
+   status('Preparé la solicitud. Enviar consumirá una generación de voz si el proveedor tiene cuota.','info');
+  });
+  option('Pedir otra versión',()=>{
+   const previous=messages.slice(0,messages.indexOf(message)).reverse().find(entry=>entry.role==='user');
+   const input=$('#core-input');input.value=previous?'Dame otra versión de tu respuesta a: '+previous.content:'Dame otra versión de esta respuesta.';
+   input.dispatchEvent(new Event('input'));input.focus();
+   status('Solicitud preparada. Envíala cuando quieras generar otra respuesta.','info');
+  });
+  option('Copiar como texto',()=>{navigator.clipboard?.writeText(message.content).then(()=>status('Copiado.','success')).catch(()=>status('No se pudo copiar.','warning'));});
+  more.parentNode?.append(menu);
+ });
+ return actions;
 }
 function isNearBottom(list,threshold=120){
   return list.scrollHeight-list.scrollTop-list.clientHeight<threshold;
@@ -90,7 +328,9 @@ function renderMessages({forceBottom=false}={}){
   for(const message of messages){
     const bubble=document.createElement('article');bubble.className='core-message '+(message.role==='user'?'user':'assistant');
     const label=document.createElement('span');label.className='core-message-label';label.textContent=message.role==='user'?'TÚ':'PRISMA CORE';
-    const body=document.createElement('div');body.className='core-message-body';body.textContent=message.content;
+    const body=document.createElement('div');body.className='core-message-body';
+    if(message.role==='assistant')body.innerHTML=renderMarkdownSafe(message.content);
+    else body.textContent=message.content;
     bubble.append(label,body);
     if(message.role==='assistant'&&message.engine){
       const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'};
@@ -101,6 +341,7 @@ function renderMessages({forceBottom=false}={}){
     }
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
+    if(message.role==='assistant'&&message.content?.trim())bubble.append(renderMessageActions(message));
     list.append(bubble);
   }
   if(shouldStick){
@@ -556,6 +797,91 @@ function describeUnattachedToolRequest(userText){
 }
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
+function thumbnailIntent(text){
+ const q=normalizeCoreIntent(text);
+ if(/\b(prompt|ideas?|guion|descripcion|descripción)\b/.test(q)&&/\b(?:para|de)\b.{0,24}\bminiatura\b/.test(q))return false;
+ const name=/\b(miniatura|thumbnail)\b|\bportada\b.{0,30}\b(youtube|video)\b/.test(q);
+ const action=/(?:crea|crear|gener|diseñ|disen|haz|hacer|puedes|quiero|necesito|prepara|preparar|fabricar|editar|mejorar)/.test(q);
+ return name&&action;
+}
+function thumbnailTopic(text){
+ const clean=String(text||'').trim();
+ const candidates=[
+  /(?:miniatura|thumbnail|portada)(?:\s+para\s+(?:(?:mi|un|el)\s+)?(?:video|youtube))?\s+(?:de|sobre|acerca de|con|para)\s+(.{7,})/i,
+  /(?:video|vídeo)\s+(?:sobre|de|que trata de)\s+(.{7,})/i,
+  /(?:tema|asunto)\s*[:：-]\s*(.{5,})/i
+ ];
+ for(const pattern of candidates){const value=clean.match(pattern)?.[1]?.replace(/[,;]\s*(?:texto|frase|titulo|título|estilo|colores)\s*[:：].*$/i,'').replace(/[?.!]+$/,'').trim();if(value&&!/^(?:youtube|un video|mi video|el video|algo|lo que sea)$/i.test(value))return value;}
+ return '';
+}
+function cleanThumbnailTopic(value){
+ return String(value||'')
+  .replace(/^\s*(?:tema|asunto)\s*[:：=-]\s*/i,'')
+  .replace(/(?:[;,.]\s*|\s+)(?:texto|frase|título|titulo|estilo|colores?|rostro|logo|letra)\s*[:：=][\s\S]*$/i,'')
+  .trim();
+}
+function extractThumbnailText(value){
+ return String(value||'').match(/(?:texto|frase|título|titulo)\s*(?:principal|grande|de portada)?\s*[:：=]\s*["“']?([^"”'\n]{2,65})/i)?.[1]?.split(/[,;]|\s+y\s+(?:estilo|colores|rostro)/i)[0]?.trim()||'';
+}
+async function generateThumbnail(text,creds,topic){
+ const chosen=$('#core-image-provider')?.value||'auto';
+ const headline=extractThumbnailText(text);
+ const imagePrompt='Professional cinematic YouTube thumbnail image, 16:9 aspect ratio, visually striking detailed composition, clear central subject, dramatic contrast, impactful lighting, premium commercial art direction, optimized at small sizes, coherent relevant subject for this video: '+topic+'. Leave an uncluttered darker area on the left for optional typography overlay. Do not render letters, words, watermarks, brands or logos. This is a video thumbnail background, not a travel poster or wallpaper.';
+ status('Diseñando una miniatura de YouTube 16:9…');
+ const result=await runTool('image-gen',[],{
+  ...creds,prompt:imagePrompt,provider:chosen,style:'cinematic',ratio:'wide',
+  negativePrompt:'random scenery, unrelated abstract artwork, accidental text, small illegible writing, distorted faces, logos'
+ },(p,message)=>{status(message||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),message||'Generando miniatura…');});
+ if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
+ result.originTopic=topic;result.suggestedText=headline;
+ addMessage('assistant','Aquí tienes la base visual de la miniatura. Para que destaque en YouTube, pulsa «Añadir texto / Editar» bajo la imagen: puedes poner el título, cambiar su tamaño, color y posición sin gastar otra generación de IA.',{
+  results:[{name:'Miniatura base para YouTube',reason:'Fondo 16:9 preparado para añadir tipografía',result}]
+ });
+ status('Miniatura lista. Puedes editarla gratis dentro de Prisma.','success');
+}
+async function handleThumbnailRequest(text){
+ const chat=conversations.find(item=>item.id===activeConversationId);
+ if(!chat)return false;
+ const pending=chat.thumbnailBrief;
+ const isThumbnail=thumbnailIntent(text);
+ const uploadedImage=attachments.find(file=>String(file.type||'').startsWith('image/'));
+ const wantsText=/(?:anade|añade|agrega|escribe|pon|coloca|editar|edita).{0,45}(?:texto|titulo|título|frase|miniatura)/i.test(normalizeCoreIntent(text));
+ if(uploadedImage&&wantsText){
+   const title=extractThumbnailText(text)||'';
+   await openImageEditor({blob:uploadedImage,filename:uploadedImage.name,initialText:title,onSave:async output=>{
+     addMessage('assistant','Edité la miniatura con texto localmente. Aquí puedes descargarla.',{
+      results:[{name:'Imagen editada',reason:'Texto añadido sin enviar la imagen a IA',result:output}]
+     });
+     attachments=[];renderAttachments();
+   }});
+   status('Editor de miniaturas abierto. No consume créditos de imagen.','success');return true;
+ }
+ if(!pending&&!isThumbnail)return false;
+ if(pending&&/^(?:cancelar|cancela|olvida|no quiero|salir|deja eso)\b/i.test(text.trim())){
+  chat.thumbnailBrief=null;persistChatHistory();
+  addMessage('assistant','Perfecto. Cancelé la miniatura pendiente. ¿Qué quieres hacer ahora?');return true;
+ }
+ const topic=cleanThumbnailTopic(pending?String(text||'').trim():thumbnailTopic(text));
+ if(!topic||topic.length<7||/^(?:si|sí|vale|ok|claro|hazlo|como quieras)$/i.test(topic)){
+  chat.thumbnailBrief={original:pending?.original||text,started:Date.now()};
+  persistChatHistory();
+  addMessage('assistant','Claro. Para crear una miniatura que realmente represente tu video necesito una cosa: ¿de qué trata? Puedes añadir el texto que quieres en grande y un estilo, por ejemplo: «Guerra espiritual; texto: DIOS PELEA POR TI; estilo: cinematográfico». Después podrás ajustar el texto gratis.');
+  status('Esperando el tema de la miniatura; no se consumió ninguna generación de IA.','info');
+  return true;
+ }
+ chat.thumbnailBrief=null;persistChatHistory();
+ const statusData=await getCentralProviderStatus();
+ centralProviders=statusData.providers||centralProviders;
+ centralFeatures=statusData.features||centralFeatures;
+ centralModelCatalog=statusData.modelCatalog||centralModelCatalog;
+ if(!Object.values(centralProviders).some(Boolean)&&!readPollinationsToken()){
+  addMessage('assistant','No hay motores de imagen disponibles ahora. Revisa Laboratorio IA y vuelve a intentarlo.');
+  return true;
+ }
+ const original=pending?.original||text;
+ await generateThumbnail(original+'\n'+text,credentials(),topic);
+ return true;
+}
 function directCoreImage(text){
  if(attachments.length)return false;
  const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -566,7 +892,7 @@ async function answerWithImage(text,creds){
  status('Generando la imagen en el motor disponible…');
  const ratio=/\b(youtube|miniatura|horizontal|paisaje|panoramica|16:9)\b/i.test(text)?'wide':/\b(vertical|historia|story|reel|retrato)\b/i.test(text)?'portrait':'square';
  const result=await runTool('image-gen',[],{
-  ...creds,provider:'auto',prompt:text,ratio,style:'illustration'
+  ...creds,provider:$('#core-image-provider')?.value||'auto',prompt:text,ratio,style:'cinematic'
  },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.10)),msg||'Generando imagen…');});
  if(!result?.blob)throw Error('El generador no devolvió una imagen.');
  addMessage('assistant','Aquí está la imagen que pediste. Puedes descargarla y continuar la conversación.',{
@@ -629,6 +955,12 @@ function inlineSpeechText(command){
  if(quoted)return quoted[1].trim();
  const separator=full.match(/(?:texto|frase|mensaje|contenido|que diga|lo siguiente)\s*[:：]\s*([\s\S]{2,})$/i);
  if(separator)return separator[1].trim();
+ const natural=full.match(/^(?:convierte|convertir|pasa|pasame|pásame|hazme|genera|graba|narra|léeme|leeme)\s+(?:(?:este|el|mi|un)\s+)?(?:(?:texto|mensaje|frase)\s+)?(?:a|en)\s+(?:audio|voz|mp3)\s*[,;:\-]?\s+([\s\S]{2,})$/i);
+ if(natural&&!/^(?:este texto|el texto|el archivo|un documento|mi documento|el documento)\s*$/i.test(natural[1].trim()))return natural[1].trim();
+ const casual=full.match(/^(?:hazme|genera(?:me)?|crea(?:me)?|graba(?:me)?|quiero|necesito|dame|prepara(?:me)?|pon|dilo|di|narra|leeme|léeme)\s+(?:un\s+)?(?:audio|mp3|voz|locucion|locución)?\s*(?:que\s+(?:diga|suene|lea)|con\s+(?:la\s+)?frase|de\s+)?\s*[:,-]?\s*([\s\S]{3,})$/i);
+ if(casual&&casual[1]&&!/^(?:este|el|mi)\s+(?:texto|archivo|documento|pdf|word)\s*$/i.test(casual[1].trim()))return casual[1].trim();
+ const spoken=full.match(/(?:que\s+diga|para\s+decir)\s*[:,-]?\s*([\s\S]{3,})$/i);
+ if(spoken)return spoken[1].trim();
  const colon=full.match(/[:：]\s*([^\n]{2,}(?:\n[\s\S]*)?)$/);
  if(colon)return colon[1].trim();
  const newlines=full.split(/\n+/).slice(1).join('\n').trim();
@@ -700,6 +1032,8 @@ async function requestPlan(userText){
     status('Listo para ayudarte.','success');
     return;
   }
+  // Collect the video topic before spending any image generation quota.
+  if(await handleThumbnailRequest(userText))return;
   // Text-to-speech is a real media output, never a prose-only model answer.
   if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
@@ -1006,6 +1340,27 @@ function createExecutionResults(executed,partial){
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
       button.addEventListener('click',()=>{const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';a.click();});
       row.append(label,button);
+      if(String(result.blob.type||'').startsWith('image/')){
+       const edit=document.createElement('button');edit.type='button';edit.className='mini-button core-edit-thumb';edit.textContent='Añadir texto / Editar';
+       edit.addEventListener('click',async()=>{
+        try{await openImageEditor({blob:result.blob,filename:result.filename,initialText:result.suggestedText||'',onSave:async output=>{
+         addMessage('assistant','Miniatura editada en tu dispositivo, sin gastar otra generación de IA.',{
+          results:[{name:'Miniatura con texto',reason:'Edición local gratuita',result:{...output,previewUrl:URL.createObjectURL(output.blob)}}]
+         });
+         status('Miniatura editada y lista para descargar.','success');
+        }});}catch(error){status(error?.message||'No pude abrir el editor.','warning');}
+       });
+       row.append(edit);
+       const variation=document.createElement('button');variation.type='button';variation.className='mini-button';
+       variation.textContent='Otra versión';
+       variation.addEventListener('click',()=>{
+         const last=messages.slice().reverse().find(entry=>entry.role==='user'&&/(?:miniatura|imagen|foto|diseñ|gener)/i.test(entry.content));
+         const input=$('#core-input');input.value=(last?.content||'Genera una miniatura de YouTube')+'; crea otra versión con composición diferente, calidad profesional y un sujeto más claro.';
+         input.dispatchEvent(new Event('input'));input.focus();
+         status('Petición preparada. Enviar generará otra imagen y utilizará cuota del modelo seleccionado.','info');
+       });
+       row.append(variation);
+      }
       if(result.blob.size<=200*1024*1024&&!/\\.zip$/i.test(result.filename||'')){
         const reuse=document.createElement('button');reuse.type='button';reuse.className='mini-button';
         reuse.textContent='Usar en otra tarea';
@@ -1046,8 +1401,14 @@ async function sendMessage(){
 }
 export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
-  try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(saved))messages=saved.slice(-40);}catch{messages=[];}
-  renderMessages({forceBottom:true});
+  initImageEditor();
+  loadChatHistory();
+  renderMessages({forceBottom:true});updateChatScreen();
+  $('#core-history-search')?.addEventListener('input',event=>{conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();renderConversationList();});
+  $('#core-history-toggle')?.addEventListener('click',()=>$('#core-workspace')?.classList.toggle('history-open'));
+  $('#core-history-close')?.addEventListener('click',closeConversationDrawer);
+  $('#core-history-backdrop')?.addEventListener('click',closeConversationDrawer);
+  $('#core-history-new')?.addEventListener('click',startNewConversation);
   $('#core-messages').addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom($('#core-messages'));},{passive:true});
   $('#core-send').addEventListener('click',sendMessage);
   const miniButton=$('#core-mini-toggle');
@@ -1081,10 +1442,7 @@ export function initPrismaCore(){
     if(total>100*1024*1024){status('El total de archivos no puede superar 100 MB.','warning');event.target.value='';return;}
     attachments=[...attachments,...incoming].slice(0,8);renderAttachments();event.target.value='';
   });
-  $('#core-clear').addEventListener('click',()=>{
-    if(busy)return;
-    releaseResultObjectUrls();messages=[];pendingPlan=null;userPinnedToBottom=true;localStorage.removeItem(STORAGE_KEY);renderMessages({forceBottom:true});$('#core-plan').classList.add('hidden');status('Conversación nueva. El historial local se ha limpiado.','success');
-  });
+  $('#core-clear').addEventListener('click',startNewConversation);
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);

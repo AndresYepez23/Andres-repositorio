@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { initPrismMotion } from './prism-motion.js';
 import { categories, tools, statusLabels } from './registry.js';
 import { providers } from './providers.js';
 import { runTool } from './engines.js';
@@ -213,7 +214,7 @@ function render(){
   $('#section-title').textContent=activeView==='favorites'?'Tus herramientas favoritas':activeView==='recent'?'Abiertas recientemente':searchTerm?'Resultados de búsqueda':activeCategory==='all'?'Encuentra lo que necesitas':currentCategoryName();
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
-  $('#category-label').classList.toggle('hidden',activeView==='ai');$('#category-nav').classList.toggle('hidden',activeView==='ai');
+  $('#category-label').classList.remove('hidden');$('#category-nav').classList.remove('hidden');
   document.querySelectorAll('#category-nav [data-category]').forEach(button=>button.classList.toggle('active',activeView==='explore'&&button.dataset.category===activeCategory));
   $('#favorite-count').textContent=favorites.size;$('#recent-count').textContent=recentTools.length;
   $('#filter-chips').classList.toggle('hidden',activeView!=='explore');
@@ -536,9 +537,11 @@ function providerConnectionCard(config){
     return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div></article>';
   }
   const connected=!!getPollinationsToken();
+  const shared=!!centralConnectionState.providers.pollinations;
+  const sharedNotice='<p class="provider-connection-detail" id="polli-shared-summary"><strong>Motor compartido de Prisma:</strong> '+(shared?'Disponible para todos, según saldo y cuota. No requiere conectar una cuenta personal.':'Comprobando disponibilidad central…')+'</p>';
   const details='<details class="provider-credential-details" id="provider-config-pollinations"><summary>Configuración inicial de Prisma Space</summary><label class="connection-key-label" for="polli-app-key">App Key pública</label><input class="form-control" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false"><small>Identifica esta aplicación; no es tu contraseña ni tu clave de consumo. Registra la URL de retorno que aparece abajo en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>.</small><div class="provider-redirect"><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URL de retorno</button></div><button type="button" class="button button-primary" id="polli-connect">Continuar con Pollinations</button></details>';
   const action='<button type="button" class="button button-primary" id="polli-connect-start">'+(connected?'Conectar otra cuenta':'Conectar mi cuenta')+'</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" id="polli-disconnect">Desconectar</button>';
-  return '<article class="provider-connection-card" data-connection-card="pollinations-connect"><div class="provider-connection-top"><div><h4>Pollinations Connect</h4><p>Imágenes, texto y audio</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="pollinations-connect">'+(connected?'Conectado en esta pestaña':'Cuenta personal sin conectar')+'</span></div><p class="provider-connection-detail">Esta conexión OAuth sigue siendo personal y utiliza los permisos y límites de tu cuenta de Pollinations.</p><div class="provider-connect-row">'+action+'</div>'+details+'</article>';
+  return '<article class="provider-connection-card" data-connection-card="pollinations-connect"><div class="provider-connection-top"><div><h4>Pollinations Connect</h4><p>Imágenes, texto y audio</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="pollinations-connect">'+(connected?'Cuenta personal conectada':'Cuenta personal opcional')+'</span></div><p class="provider-connection-detail">Esta conexión OAuth es opcional y usa tus límites solo si la autorizas. No es necesaria para utilizar el motor compartido de Prisma.</p>'+sharedNotice+'<div class="provider-connect-row">'+action+'</div>'+details+'</article>';
 }
 function renderProviderConnections(){
   const container=$('#provider-connect-grid');if(!container)return;
@@ -568,7 +571,7 @@ async function refreshProviderConnectionStatuses(){
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
-      status.textContent=provider==='pollinations-connect'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
+      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
     if(provider==='pollinations-connect'){
@@ -576,6 +579,15 @@ async function refreshProviderConnectionStatuses(){
       const openButton=$('#polli-connect-start');if(openButton)openButton.textContent=isConnected?'Conectar otra cuenta':'Conectar mi cuenta';
     }
   });
+  const sharedText=$('#polli-shared-summary');
+  if(sharedText){
+    const isReady=!!central.providers?.pollinations;
+    const warning=central.warnings?.pollinations;
+    sharedText.textContent='Motor compartido de Prisma: '+(isReady
+      ?'Conexión central disponible para todos (sujeta a saldo y cuotas). No requiere conectar una cuenta personal.'
+      :!central.ok?'No se pudo verificar el estado en Cloudflare.'
+      :warning||'Conexión central no disponible temporalmente. La cuenta personal sigue siendo opcional.');
+  }
   const hfSummary=$('#hf-model-summary');
   if(hfSummary){
     const catalog=central.modelCatalog||{};
@@ -1180,6 +1192,7 @@ safeStartup('categorías',renderCategories);
 safeStartup('proveedores',renderProviders);
 safeStartup('interfaz',render);
 safeStartup('interacción visual',setupHeroInteraction);
+safeStartup('prisma 3D',initPrismMotion);
 safeStartup('menú de perfil',setupProfileMenu);
 safeStartup('panel principal',setupHomeDashboard);
 safeStartup('búsqueda móvil',setupMobileSearch);

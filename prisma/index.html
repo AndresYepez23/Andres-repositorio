@@ -63,25 +63,43 @@
             <p>No busques herramientas ni aprendas procesos. Describe el resultado, adjunta tus archivos y Prisma decidirá cómo resolverlo con las capacidades disponibles.</p>
             <div class="core-capabilities"><span>PDF y documentos</span><span>Imágenes y diseño</span><span>Audio y vídeo</span><span>Investigación y creación</span><span>Procesamiento local y modelos IA</span></div>
           </div>
-          <div class="core-workspace">
+          <div class="core-workspace" id="core-workspace">
+            <div class="core-history-backdrop" id="core-history-backdrop" aria-hidden="true"></div>
+            <nav class="core-history" id="core-history" aria-label="Historial de conversaciones">
+              <div class="core-history-head"><strong>Conversaciones</strong><button type="button" class="core-history-close" id="core-history-close" aria-label="Cerrar historial">×</button></div>
+              <button type="button" class="core-history-new" id="core-history-new"><span aria-hidden="true">＋</span> Nuevo chat</button>
+              <label class="core-history-search"><span aria-hidden="true">⌕</span><input id="core-history-search" type="search" placeholder="Buscar conversaciones…" aria-label="Buscar conversaciones"></label>
+              <div class="core-conversation-list" id="core-conversation-list"></div>
+              <p class="core-history-footnote">Los chats se guardan en este navegador, no se sincronizan. Descarga los archivos generados que quieras conservar.</p>
+            </nav>
             <div class="core-chat-column">
-              <div class="core-chat-toolbar"><div><strong>Prisma</strong><small>Tu asistente de trabajo</small></div><div class="core-toolbar-actions"><button type="button" class="mini-button" id="core-mini-toggle" title="Descarga un modelo local de unos 23 MB para encontrar herramientas sin API de inferencia">Activar Prisma Mini</button><button type="button" class="mini-button" id="core-clear">Nueva conversación</button></div></div>
+              <div class="core-chat-toolbar"><div class="core-chat-name">
+  <button type="button" class="core-history-toggle" id="core-history-toggle" aria-label="Abrir historial de chats" title="Historial">☰</button>
+  <div><strong id="core-conversation-name">Nueva conversación</strong><small>Prisma Core · asistente multimodelo</small></div></div>
+  <div class="core-toolbar-actions"><button type="button" class="mini-button core-mini-button" id="core-mini-toggle" title="Motor local opcional para descubrir herramientas">Prisma Mini</button><button type="button" class="mini-button core-new-button" id="core-clear">＋ <span>Nuevo chat</span></button></div></div>
               <div class="core-connect-banner" id="core-connect-banner"><span class="core-connect-mark" data-icon="plug"></span><div><strong>Activa tu asistente</strong><p>Conecta un motor de IA gratuito o usa una clave propia para que Prisma pueda entender tus instrucciones y coordinar herramientas.</p></div><button type="button" class="button button-quiet" id="core-connect-now">Conectar motor</button></div>
               <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
               <div class="core-plan hidden" id="core-plan"></div>
               <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
               <div class="core-composer" id="core-composer">
                 <div class="core-attachments" id="core-attachments"></div>
-                <textarea id="core-input" rows="2" placeholder="Ej.: quita el fondo de esta imagen y déjala lista para Instagram…" aria-label="Mensaje para Prisma Core"></textarea>
+                <textarea id="core-input" rows="2" placeholder="Pregunta o describe lo que necesitas…" aria-label="Mensaje para Prisma Core"></textarea>
                 <div class="core-composer-footer">
-                  <div class="core-composer-tools"><button type="button" class="mini-button" id="core-file-button"><span data-icon="paperclip"></span> Adjuntar archivos</button><input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.docx,.xlsx,.csv,.txt,.md,audio/*,video/*,.zip"></div>
+                  <div class="core-composer-tools"><button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20.8 11.6-8.6 8.6a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.3 9.3a2 2 0 0 1-2.8-2.8l8.6-8.6"/></svg><span>Adjuntar</span></button>
+<input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip"></div>
                   <button type="button" class="button button-primary" id="core-send">Enviar <span data-icon="arrow-right"></span></button>
                 </div>
-                <small>Hasta 8 archivos · 100 MB en total. El archivo original se procesa localmente cuando es posible. Para analizar documentos, el texto extraído puede enviarse al motor de IA conectado para que lo entienda; los archivos no se adjuntan automáticamente al modelo.</small>
+                <details class="core-model-settings"><summary>Imagen: motor automático <span aria-hidden="true">⌄</span></summary>
+<label>Modelo de generación visual
+<select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option></select></label>
+<small>Elegir un motor concreto no garantiza su disponibilidad. La edición de texto de miniaturas es local y gratuita.</small>
+</details>
+<small class="core-composer-note">Hasta 8 archivos · 100 MB. Se procesan localmente cuando es posible; el texto enviado a una IA externa se indica en cada operación.</small>
               </div>
             </div>
             <aside class="core-side">
-              <div class="core-side-card"><span class="core-side-icon" data-icon="layers"></span><h3>Una sola conversación</h3><p>Describe el resultado. Prisma selecciona las herramientas, organiza los pasos y reúne las entregas en este chat.</p></div>
+              <div class="core-side-card"><span class="core-side-icon" data-icon="layers"></span><h3>Conversaciones independientes</h3><p>Crea distintos chats para tus proyectos y retómalos desde el historial de este dispositivo.</p></div>
               <div class="core-side-card"><span class="core-side-icon" data-icon="shield-check"></span><h3>Privacidad y control</h3><p>Las operaciones locales se ejecutan en tu dispositivo. Los servicios externos se identifican y requieren autorización.</p></div>
               <div class="core-side-card"><span class="core-side-icon" data-icon="plug"></span><h3>Conecta un motor de texto</h3><p>Prisma Core utiliza motores compartidos y Pollinations Connect, y puede activar Prisma Mini en tu navegador para reconocer herramientas sin API.</p><button type="button" class="text-action" id="core-open-settings">Gestionar conexiones →</button></div>
               <div class="core-side-footnote">La conversación se guarda en este navegador. Tus claves permanecen en la sesión. La memoria aún no se sincroniza entre dispositivos.</div>
@@ -196,7 +214,7 @@
               <span class="provider-connection-status" id="connections-summary">0 motores conectados</span>
             </div>
             <div class="provider-connect-grid" id="provider-connect-grid" aria-live="polite"></div>
-            <p class="connection-footnote">Gemini, Hugging Face y Groq se configuran una sola vez en Cloudflare y quedan disponibles para todos. Pollinations Connect conserva su autorización individual. Las cuotas y límites de tus cuentas siguen aplicando.</p>
+            <p class="connection-footnote">Gemini, Groq, Cloudflare y Pollinations central pueden estar disponibles para todos sin cuenta personal, según saldo y cuotas. Pollinations Connect es una conexión individual opcional; su estado no indica si el motor compartido está disponible.</p>
           </section>
           <div class="ai-feature-card"><div class="ai-feature-copy"><span class="ai-feature-label">CREACIÓN VISUAL · DISPONIBLE</span><h3>De una idea a una imagen.</h3><p>Describe lo que imaginas, elige un motor disponible y crea una imagen descargable. La conexión central de Gemini se está habilitando primero para el asistente de texto; las rutas de imagen se migrarán y probarán por separado.</p><div class="hero-actions"><button class="button button-primary" id="open-image-gen"><span data-icon="sparkles"></span> Generar imagen</button><button class="button button-quiet" id="open-ai-assistant"><span data-icon="message-circle"></span> Asistente de texto</button></div></div><div class="ai-feature-art"><span class="ai-orb ai-orb-one"></span><span class="ai-orb ai-orb-two"></span><span class="ai-art-spark">✦</span></div></div><div class="provider-heading"><div><h3>Motores y ecosistema conectado</h3><p>IA multimodal, APIs para desarrolladores y proyectos open source que amplían Prisma.</p></div><span class="status-pill status-planned">BYOP + BYOK</span></div>
           <div class="provider-grid" id="provider-grid"></div>
@@ -208,6 +226,23 @@
     </main>
   </div>
 
+  <div class="core-editor-backdrop hidden" id="core-image-editor" role="dialog" aria-modal="true" aria-labelledby="core-editor-heading">
+    <section class="core-editor-panel">
+      <header><div><span class="eyebrow">EDITOR GRATUITO · EN TU DISPOSITIVO</span><h2 id="core-editor-heading">Editar miniatura</h2><p>Añade texto legible y mejora la composición sin gastar otra generación de IA.</p></div><button type="button" id="core-editor-close" class="core-editor-close" aria-label="Cerrar editor">×</button></header>
+      <div class="core-editor-layout">
+        <div class="core-editor-preview"><canvas id="core-editor-canvas" width="1280" height="720" aria-label="Vista previa de la miniatura"></canvas><small>La imagen original permanece intacta.</small></div>
+        <div class="core-editor-controls">
+          <label>Texto principal<input id="core-editor-main-text" maxlength="68" placeholder="Ej.: DIOS PELEA POR TI"></label>
+          <label>Texto secundario<input id="core-editor-sub-text" maxlength="90" placeholder="Opcional: breve subtítulo"></label>
+          <label>Posición<select id="core-editor-position"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select></label>
+          <label>Color<select id="core-editor-color"><option value="#ffffff">Blanco</option><option value="#ffe7a2">Dorado</option><option value="#a4e4dc">Turquesa</option><option value="#d5c1ff">Lavanda</option></select></label>
+          <label>Tamaño del título<input type="range" id="core-editor-size" min="42" max="116" value="82"></label>
+          <label class="core-editor-check"><input type="checkbox" id="core-editor-shade" checked> Oscurecer detrás del texto para mejorar la lectura</label>
+        </div>
+      </div>
+      <footer><button type="button" class="mini-button" id="core-editor-reset">Restablecer</button><button type="button" class="button button-primary" id="core-editor-save">Guardar imagen en el chat</button></footer>
+    </section>
+  </div>
   <div class="modal-backdrop hidden" id="tool-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title">
     <section class="tool-modal">
       <header class="modal-header"><div class="modal-title-wrap"><span class="modal-icon" id="modal-icon"></span><div><div class="modal-kicker" id="modal-kicker">HERRAMIENTA</div><h2 id="modal-title">Herramienta</h2></div></div><button type="button" class="icon-button" id="modal-close" aria-label="Cerrar herramienta" title="Cerrar herramienta" data-icon="x"></button></header>
