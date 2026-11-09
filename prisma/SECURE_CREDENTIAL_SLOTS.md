@@ -1,6 +1,6 @@
 # Pools seguros de credenciales de Prisma Core
 
-Prisma admite **hasta seis API keys o tokens por proveedor externo compatible**, con una excepción temporal: **Requesty está limitado a tres claves**. La capacidad configurada en esta ronda es de hasta 63 espacios de credenciales en 11 proveedores. Las claves se guardan como secretos de Cloudflare Pages y nunca se exponen al navegador, a GitHub ni a los registros.
+Prisma admite **hasta seis API keys o tokens por proveedor externo compatible**, con una excepción temporal: **Requesty está limitado a tres claves**. La capacidad configurada en esta ronda es de hasta 57 espacios de credenciales en 10 proveedores. Las claves se guardan como secretos de Cloudflare Pages y nunca se exponen al navegador, a GitHub ni a los registros.
 
 ## Formato recomendado: un secreto JSON por proveedor
 
@@ -23,10 +23,9 @@ Para Requesty, el arreglo no puede contener más de tres claves.
 | Requesty | **3** | `REQUESTY_API_KEYS_JSON` | `REQUESTY_API_KEY`, `REQUESTY_API_KEY_2`, `REQUESTY_API_KEY_3` |
 | SenseNova | 6 | `SENSENOVA_API_KEYS_JSON` | `SENSENOVA_API_KEY`, `SENSENOVA_API_KEY_2` … `SENSENOVA_API_KEY_6` |
 | Z.AI / Zhipu | 6 | `ZAI_API_KEYS_JSON` | `ZAI_API_KEY`, `ZAI_API_KEY_2` … `ZAI_API_KEY_6` |
-| Baidu Qianfan | 6 | `QIANFAN_API_KEYS_JSON` | `QIANFAN_API_KEY`, `QIANFAN_API_KEY_2` … `QIANFAN_API_KEY_6` |
 | AIHubMix | 6 | `AIHUBMIX_API_KEYS_JSON` | `AIHUBMIX_API_KEY`, `AIHUBMIX_API_KEY_2` … `AIHUBMIX_API_KEY_6` |
 
-El JSON es el método recomendado porque Cloudflare Workers tiene un límite de variables y secretos por Worker (64 en Free y 128 en Paid, según sus límites publicados). Once secretos JSON compactos permiten alojar estos pools sin necesitar 63 variables separadas. Consulta [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/) y [Pages Functions bindings](https://developers.cloudflare.com/pages/functions/bindings/).
+El JSON es el método recomendado porque Cloudflare Workers tiene un límite de variables y secretos por Worker (64 en Free y 128 en Paid, según sus límites publicados). Diez secretos JSON compactos permiten alojar estos pools sin necesitar 57 variables separadas. Consulta [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/) y [Pages Functions bindings](https://developers.cloudflare.com/pages/functions/bindings/).
 
 ## Compatibilidad y prioridad
 
@@ -53,9 +52,7 @@ El JSON es el método recomendado porque Cloudflare Workers tiene un límite de 
 - **Cloudflare Workers AI:** utiliza el binding `AI`, no una API key externa. Cloudflare gestiona sus credenciales y cuota.
 - **Pollinations Connect:** es una autorización individual del visitante y utiliza el saldo del propio usuario; es independiente del pool central de Pollinations.
 - **Kilo AI Gateway:** permite acceso anónimo sin clave; si Prisma configura claves, admite hasta seis.
-- **Baidu Qianfan:** admite seis claves, pero las llamadas siguen bloqueadas hasta verificar la gratuidad de la cuenta y activar `BAIDU_FREE_QUOTA_CONFIRMED=1`.
 
-AMD Radeon Token Factory queda fuera de Prisma por ahora: se retiró del catálogo de conexiones, del backend y del enrutamiento.
 
 ## Límites y condiciones particulares que no se multiplican
 
@@ -64,7 +61,6 @@ AMD Radeon Token Factory queda fuera de Prisma por ahora: se retiró del catálo
 - Requesty: máximo tres claves. Prisma limita el conjunto a 25 solicitudes/día y 10/minuto.
 - SenseNova: Prisma limita el conjunto a 25 solicitudes/día y 5/minuto.
 - Z.AI: Prisma limita el conjunto a 25 solicitudes/día y 3/minuto.
-- Baidu: permanece bloqueado hasta confirmar en Qianfan que los modelos seleccionados aparecen a precio cero para esa cuenta.
 
 Los topes son por proveedor y no por clave. No se aumenta automáticamente el presupuesto interno al añadir credenciales.
 
