@@ -1863,3 +1863,100 @@ body.app-booting .app-shell{visibility:hidden!important}
  .auth-backdrop{padding:14px}
  .auth-panel{width:100%;max-height:calc(100dvh - 28px);padding:22px 18px;border-radius:18px}
 }
+
+
+/* Prisma Core · keep both sides of every turn inside one readable chat lane. */
+html:has(body.is-core-view),
+html:has(body.is-core-view) body {
+  overflow-x: hidden !important;
+}
+body.is-core-view {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+body.is-core-view .app-shell,
+body.is-core-view .main-area,
+body.is-core-view .page-content,
+body.is-core-view #core-section,
+body.is-core-view #core-workspace,
+body.is-core-view .core-chat-column,
+body.is-core-view #core-messages {
+  box-sizing: border-box;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+body.is-core-view .app-shell,
+body.is-core-view .main-area,
+body.is-core-view .page-content,
+body.is-core-view #core-section,
+body.is-core-view #core-workspace,
+body.is-core-view .core-chat-column {
+  overflow-x: hidden !important;
+}
+body.is-core-view #core-messages {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+body.is-core-view .core-message-row {
+  display: flex;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 1080px;
+  min-width: 0;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+body.is-core-view .core-message-row.user { justify-content: flex-end; }
+body.is-core-view .core-message-row.assistant { justify-content: flex-start; }
+body.is-core-view .core-message-row > .core-message {
+  min-width: 0;
+  max-width: 100%;
+  align-self: auto;
+  flex: 0 1 auto;
+}
+body.is-core-view .core-message-row > .core-message.user {
+  width: auto;
+  max-width: min(81%, 610px);
+}
+body.is-core-view .core-message-row > .core-message.assistant {
+  width: min(100%, 980px);
+  max-width: 100%;
+}
+body.is-core-view .core-message-row > .core-message.assistant.has-results {
+  width: 100%;
+  max-width: 100%;
+}
+body.is-core-view .core-message-body,
+body.is-core-view .core-message-results,
+body.is-core-view .core-result-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+body.is-core-view .core-message-body pre {
+  max-width: 100%;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+body.is-core-view .core-message-body pre code {
+  white-space: inherit;
+  overflow-wrap: anywhere;
+}
+body.is-core-view #core-thinking {
+  width: min(100%, 1080px);
+  max-width: 100%;
+  margin-inline: auto;
+}
+@media (max-width: 620px) {
+  body.is-core-view .core-message-row { max-width: 100%; }
+  body.is-core-view .core-message-row > .core-message.user { max-width: 91%; }
+  body.is-core-view .core-message-row > .core-message.assistant,
+  body.is-core-view .core-message-row > .core-message.assistant.has-results {
+    width: 100%;
+  }
+}
