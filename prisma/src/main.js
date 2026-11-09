@@ -1199,20 +1199,39 @@ function safeStartup(label,callback){
 // Safari iOS can shrink the visual viewport when the software keyboard opens.
 // Resize the chat shell while leaving scrolling exclusively inside the messages.
 function setupPrismaCoreViewport(){
-  let frame=0;
+  let raf=0;
+  const textInput=()=>document.querySelector('#core-input');
   const sync=()=>{
-    if(frame)cancelAnimationFrame(frame);
-    frame=requestAnimationFrame(()=>{
-      const visible=window.visualViewport?.height||window.innerHeight;
-      const height=Math.max(240,Math.round(visible));
-      document.documentElement.style.setProperty('--prisma-core-viewport',height+'px');
+    if(raf)cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=>{
+      const viewport=window.visualViewport;
+      const visible=Math.max(260,Math.round(viewport?.height||window.innerHeight));
+      const offset=Math.max(0,Math.round(viewport?.offsetTop||0));
+      const full=Math.max(visible,Math.round(window.innerHeight||visible));
+      document.documentElement.style.setProperty('--prisma-core-viewport',visible+'px');
+      document.documentElement.style.setProperty('--prisma-vp-top',offset+'px');
+      const keyboardOpen=!!(document.activeElement===textInput()&&full-visible>110);
+      document.body.classList.toggle('is-keyboard-open',keyboardOpen);
+      if(keyboardOpen){
+        const list=document.querySelector('#core-messages');
+        if(list?.scrollHeight>list?.clientHeight)list.scrollTop=list.scrollHeight;
+      }
     });
   };
-  sync();
+  const afterFocus=()=>{
+    sync();
+    // Safari completa la animación del teclado después de disparar focusin.
+    setTimeout(sync,120);setTimeout(sync,380);
+  };
+  const focusTarget=event=>event.target===textInput();
+  document.addEventListener('focusin',event=>{if(focusTarget(event))afterFocus();});
+  document.addEventListener('focusout',event=>{if(focusTarget(event)){sync();setTimeout(sync,360);}});
   window.visualViewport?.addEventListener('resize',sync,{passive:true});
   window.visualViewport?.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
-  window.addEventListener('orientationchange',sync,{passive:true});
+  window.addEventListener('orientationchange',afterFocus,{passive:true});
+  window.addEventListener('pageshow',sync,{passive:true});
+  sync();
 }
 safeStartup('ventana del chat',setupPrismaCoreViewport);
 safeStartup('categorías',renderCategories);
