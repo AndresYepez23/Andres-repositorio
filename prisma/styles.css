@@ -1813,3 +1813,8 @@ body.sidebar-search-open .sidebar-search-slot .core-history-search{display:flex}
  .core-message-body .core-markdown-table th,
  .core-message-body .core-markdown-table td{padding:8px 9px;min-width:82px}
 }
+
+
+/* Core is the first paint: keep the old landing navigation out of the boot frame. */
+body.is-core-view #core-workspace > .core-history{display:none!important}
+.core-sidebar-loading{margin:0;padding:8px 10px;color:var(--subtle);font-size:10px;line-height:1.5}
