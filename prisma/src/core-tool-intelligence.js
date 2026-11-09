@@ -316,11 +316,11 @@ export function coreCapabilityContext(){
  return [
   'CAPACIDADES REALES DE PRISMA SPACE (fuente: registro de herramientas activo):',
   'Hay '+list.length+' herramientas activas o beta; '+localCount+' funcionan localmente o en el navegador.',
-  ...groups.map(group=>group.name+': '+group.count+' herramientas. Ejemplos: '+group.examples.join(', ')+'.'),
+  ...groups.map(group=>group.name+': '+group.count+' herramientas. Ejemplo: '+group.examples[0]+'.'),
   'También puedo conversar, explicar, resumir, comparar, razonar, redactar, crear contenido y ayudar con programación mediante los motores de IA conectados.',
   'Las herramientas locales/navegador no necesitan cuota de inferencia; las capacidades remotas dependen de la conexión, el modelo y sus límites.',
   'No afirmes que una herramienta está lista si no figura en este registro. No inventes funciones, motores activos, resultados ni ejecuciones.'
- ].join('\n').slice(0,1850);
+ ].join('\n').slice(0,1450);
 }
 export function describeCoreTools(query,files=[]){
  const list=coreToolCatalog();
@@ -331,7 +331,7 @@ export function describeCoreTools(query,files=[]){
    '**¡Puedo ayudarte con bastante más que una conversación!** Soy el asistente de Prisma Space y puedo elegir herramientas según el resultado que necesites.',
    'Actualmente tengo **'+list.length+' herramientas activas**, de las cuales **'+localCount+' funcionan localmente o en tu navegador**, sin consumir cuota de inferencia.',
    '**Mis áreas principales**',
-   ...groups.map(group=>'- **'+group.name+'** ('+group.count+'): '+group.examples.join(' y ')+'.'),
+   ...groups.map(group=>'- **'+group.name+'** ('+group.count+(group.count===1?' herramienta':' herramientas')+'): '+group.examples.join(' y ')+'.'),
    '**También puedo** explicar temas, resumir y analizar información, comparar opciones, razonar, programar, redactar, crear guiones y ayudarte a planificar.',
    'Puedes pedirme directamente el resultado que buscas o adjuntar un archivo. Yo selecciono y encadeno las herramientas compatibles; te pediré autorización cuando una operación utilice servicios externos.'
   ].join('\n\n');
@@ -343,9 +343,13 @@ export function describeCoreTools(query,files=[]){
 }
 function isBroadCapabilityQuestion(query){
  const q=normalize(query);
- return /(?:que|cuales|cuantas).{0,35}(?:habilidades|capacidades|puedes hacer|sabes hacer|puedo pedirte)|(?:que sabes hacer|que puedes hacer|en que puedes ayudarme|como me puedes ayudar|para que sirves|cual es tu repertorio|muestrame todo lo que puedes hacer)/.test(q);
+ const specific=/\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|hojas de calculo|csv|json|codigo|programacion|web|miniaturas?|youtube|redes sociales)\b/.test(q);
+ const general=/(?:que|cuales|cuantas).{0,35}(?:habilidades|capacidades|puedes hacer|sabes hacer|puedo pedirte)|(?:que sabes hacer|que puedes hacer|en que puedes ayudarme|como me puedes ayudar|para que sirves|cual es tu repertorio|muestrame todo lo que puedes hacer)/.test(q);
+ return general&&!specific;
 }
 export function isToolDiscoveryQuestion(query){
  const q=normalize(query);
- return isBroadCapabilityQuestion(q)||/(?:que|cuales|cuantas|dime|muestrame|recomienda).{0,45}(?:herramientas|funciones|utilidades|capacidades)|(?:herramientas|funciones|utilidades).{0,35}(?:tienes|hay|recomiendas|puedo usar)|(?:que puedo hacer con|que herramientas usarias para)/.test(q)&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
+ const specificCapability=/(?:que|cuales|cuantas).{0,40}(?:habilidades|capacidades|puedes hacer|sabes hacer).{0,55}\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|csv|json|codigo|programacion|web)\b/.test(q);
+ const generalTools=/(?:que|cuales|cuantas|dime|muestrame|recomienda).{0,45}(?:herramientas|funciones|utilidades|capacidades)|(?:herramientas|funciones|utilidades).{0,35}(?:tienes|hay|recomiendas|puedo usar)|(?:que puedo hacer con|que herramientas usarias para)/.test(q);
+ return isBroadCapabilityQuestion(q)||specificCapability||generalTools&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
 }
