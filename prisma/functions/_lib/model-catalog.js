@@ -1,7 +1,11 @@
 // Curated, server-controlled model allowlists. Never trust client supplied model IDs.
 export const CHAT_MODELS = {
   pollinations: [
-    {id:"openai/gpt-5.4-nano",name:"GPT-5.4 Nano",specialty:"Texto rápido y tareas creativas"}
+    {id:"openai/gpt-5.4-nano",name:"GPT-5.4 Nano",specialty:"Texto rápido y tareas creativas"},
+    {id:"openai/gpt-oss-20b",name:"GPT-OSS 20B",specialty:"Instrucciones y escritura"},
+    {id:"mistralai/mistral-small-3.2",name:"Mistral Small 3.2",specialty:"Redacción y conversación"},
+    {id:"qwen/qwen3-coder-30b-a3b-instruct",name:"Qwen 3 Coder",specialty:"Programación y explicación de código"},
+    {id:"google/gemma-4-26b-a4b-it",name:"Gemma 4 26B",specialty:"Tareas generales y análisis"}
   ],
   huggingface: [
     {id:"openai/gpt-oss-20b:cheapest",name:"GPT-OSS 20B",specialty:"Chat rápido y económico"},
@@ -13,11 +17,15 @@ export const CHAT_MODELS = {
   ],
   groq: [
     {id:"openai/gpt-oss-20b",name:"GPT-OSS 20B",specialty:"Rapidez"},
-    {id:"openai/gpt-oss-120b",name:"GPT-OSS 120B",specialty:"Razonamiento"}
+    {id:"openai/gpt-oss-120b",name:"GPT-OSS 120B",specialty:"Razonamiento"},
+    {id:"llama-3.3-70b-versatile",name:"Llama 3.3 70B",specialty:"Redacción y análisis"},
+    {id:"llama-3.1-8b-instant",name:"Llama 3.1 8B Instant",specialty:"Respuestas rápidas"}
   ],
   cloudflare: [
     {id:"@cf/google/gemma-4-26b-a4b-it",name:"Gemma 4 26B",specialty:"Chat y razonamiento"},
-    {id:"@cf/meta/llama-3.3-70b-instruct-fp8-fast",name:"Llama 3.3 70B Fast",specialty:"Alternativa de chat"}
+    {id:"@cf/meta/llama-3.3-70b-instruct-fp8-fast",name:"Llama 3.3 70B Fast",specialty:"Alternativa de chat"},
+    {id:"@cf/qwen/qwen3.8-27b",name:"Qwen 3.8 27B",specialty:"Instrucciones y programación"},
+    {id:"@cf/deepseek-ai/deepseek-v4.1-flash-1017",name:"DeepSeek V4.1 Flash",specialty:"Razonamiento y análisis"}
   ],
   gemini: [
     {id:"gemini-3.5-flash-lite",name:"Gemini Flash-Lite",specialty:"Respuestas breves"},
