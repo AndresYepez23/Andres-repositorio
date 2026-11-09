@@ -1109,7 +1109,29 @@ async function requestPlan(userText){
     status('Herramientas relacionadas identificadas sin usar IA.','success');
     return;
   }
-  // Collect the video topic before spending any image generation quota.
+  // Existing-image edits must be handled before generative-visual intent.
+  // In particular, "prepara ESTA imagen para mi web" must never spend a
+  // remote image-generation request, with or without the attachment.
+  const earlyHistory=messages.slice(-9,-1).filter(item=>item.role==='user').map(item=>item.content);
+  const localImageIntent=planCoreOfflineAction(userText,attachments,earlyHistory);
+  const hasImage=attachments.some(file=>String(file.type||'').startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp)$/i.test(String(file.name||'')));
+  if(localImageIntent&&(hasImage||!attachments.length&&localImageIntent.type==='needs-input')){
+    if(localImageIntent.type!=='ready'){
+      addMessage('assistant',localImageIntent.message);
+      status('Adjunta la imagen original para editarla sin gastar IA.','info');
+      return;
+    }
+    const localPlan={message:localImageIntent.message,steps:localImageIntent.steps,
+      userRequest:userText,needs_clarification:false,combineFinalFiles:false};
+    const localSteps=validatePlan(localPlan);
+    if(!localSteps.every(({tool})=>['local','browser'].includes(tool.mode)))
+      throw Error('Una edición local intentó utilizar un proveedor remoto.');
+    pendingPlan={plan:localPlan,steps:localSteps};
+    addMessage('assistant',localPlan.message);
+    await executePlan();
+    return;
+  }
+  // Genuine creation requests still use image generation, when intended.
   if(await handleImageCreationRequest(userText))return;
   // Text-to-speech is a real media output, never a prose-only model answer.
   if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
