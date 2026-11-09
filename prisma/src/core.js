@@ -7,6 +7,11 @@ import { planFileConversion } from './file-conversions.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
+const CHATS_KEY = 'prisma-core-chats-v2';
+const MAX_CHATS = 50;
+let conversations = [];
+let activeConversationId = '';
+let conversationSearch = '';
 const MAX_STEPS = 10;
 let messages = [];
 let attachments = [];
@@ -43,8 +48,8 @@ function escapeHtml(value){
 }
 function save(){
   try{
-    const serializable=messages.slice(-40).map(message=>{
-      const item={role:message.role,content:message.content,time:message.time};
+    const serializable=messages.slice(-60).map(message=>{
+      const item={role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,id:message.id||'',feedback:message.feedback||''};
       if(message.engine)item.engine=message.engine;
       if(message.model)item.model=message.model;
       if(message.fallbackFrom)item.fallbackFrom=message.fallbackFrom;
@@ -64,12 +69,134 @@ function save(){
       }));
       return item;
     });
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(serializable));
+    const active=conversations.find(chat=>chat.id===activeConversationId);
+    if(active){
+      active.messages=messages.slice(-60);
+      active.updated=Date.now();
+      const first=messages.find(message=>message.role==='user'&&message.content.trim());
+      if(first&&(!active.titled||active.title==='Nueva conversación')){
+        active.title=String(first.content).replace(/\\s+/g,' ').trim().slice(0,58)||'Nueva conversación';
+        active.titled=true;
+      }
+    }
+    persistChatHistory(serializable);
+    localStorage.removeItem(STORAGE_KEY);
   }catch{}
 }
+function newChatRecord(content=[]){
+ const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+ const first=content.find(message=>message.role==='user'&&message.content?.trim());
+ return {id,title:first?String(first.content).replace(/\\s+/g,' ').trim().slice(0,58):'Nueva conversación',
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content};
+}
+function persistChatHistory(activeSerialized=null){
+ try{
+  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,MAX_CHATS).map(chat=>({
+   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,
+   messages:chat.id===activeConversationId&&activeSerialized
+    ?activeSerialized:chat.messages.slice(-60).map(message=>({
+     id:message.id||'',role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,
+     engine:message.engine,model:message.model,fallbackFrom:message.fallbackFrom,
+     feedback:message.feedback||'',files:message.files?.slice(0,8),
+     results:message.results?.map(entry=>({name:entry.name,reason:entry.reason,
+      result:{summary:String(entry.result?.summary||'').slice(0,500),
+       text:String(entry.result?.text||'').slice(0,6000),filename:entry.result?.filename||'',
+       hasFile:!!(entry.result?.blob||entry.result?.hasFile)}}))
+    }))
+  }));
+  localStorage.setItem(CHATS_KEY,JSON.stringify(records));
+ }catch(error){
+  // Browser storage may be full. Retain the active chat and discard oldest
+  // persisted chats before retrying; never silently discard the active thread.
+  try{
+   const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,12).map(chat=>({
+     id:chat.id,title:chat.title,titled:chat.titled,created:chat.created,updated:chat.updated,
+     messages:chat.messages.slice(-20).map(m=>({id:m.id,role:m.role,content:String(m.content||'').slice(0,9000),time:m.time,engine:m.engine,model:m.model,feedback:m.feedback}))
+   }));
+   localStorage.setItem(CHATS_KEY,JSON.stringify(records));
+  }catch{}
+ }
+}
+function loadChatHistory(){
+ let stored=[];
+ try{
+  const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
+  if(Array.isArray(records))stored=records.filter(chat=>chat&&typeof chat.id==='string'&&Array.isArray(chat.messages))
+    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60)}));
+ }catch{}
+ if(!stored.length){
+  let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old.slice(-60);}catch{}
+  stored=[newChatRecord(legacy)];
+ }
+ conversations=stored;
+ conversations.sort((a,b)=>b.updated-a.updated);
+ activeConversationId=conversations[0].id;
+ messages=conversations[0].messages.slice();
+ renderConversationList();
+}
+function renderConversationList(){
+ const list=$('#core-conversation-list');if(!list)return;
+ const sorted=conversations.slice().sort((a,b)=>b.updated-a.updated);
+ const visible=sorted.filter(chat=>!conversationSearch||chat.title.toLocaleLowerCase('es').includes(conversationSearch));
+ list.replaceChildren();
+ if(!visible.length){const empty=document.createElement('p');empty.className='core-history-empty';empty.textContent='No se encontraron conversaciones.';list.append(empty);return;}
+ for(const chat of visible){
+  const row=document.createElement('div');row.className='core-history-entry'+(chat.id===activeConversationId?' active':'');
+  const select=document.createElement('button');select.type='button';select.className='core-history-select';select.title=chat.title;
+  select.setAttribute('aria-current',chat.id===activeConversationId?'page':'false');
+  const strong=document.createElement('strong');strong.textContent=chat.title;
+  const small=document.createElement('small');small.textContent=chat.messages.length+' mensajes';
+  select.append(strong,small);
+  select.addEventListener('click',()=>openConversation(chat.id));
+  const more=document.createElement('button');more.type='button';more.className='core-history-more';more.textContent='⋯';more.title='Opciones de conversación';more.setAttribute('aria-label','Opciones de '+chat.title);
+  more.addEventListener('click',()=>{
+   if(row.querySelector('.core-history-menu')){row.querySelector('.core-history-menu').remove();return;}
+   list.querySelectorAll('.core-history-menu').forEach(menu=>menu.remove());
+   const menu=document.createElement('div');menu.className='core-history-menu';
+   const rename=document.createElement('button');rename.type='button';rename.textContent='Renombrar';
+   rename.addEventListener('click',()=>{
+    const title=window.prompt('Nombre de la conversación',chat.title);
+    if(title?.trim()){chat.title=title.trim().slice(0,70);chat.titled=true;persistChatHistory();renderConversationList();}
+   });
+   const remove=document.createElement('button');remove.type='button';remove.textContent='Eliminar';remove.className='danger';
+   remove.addEventListener('click',()=>{
+    if(!window.confirm('¿Eliminar esta conversación de este dispositivo?'))return;
+    if(busy)return;
+    conversations=conversations.filter(item=>item.id!==chat.id);
+    if(!conversations.length)conversations=[newChatRecord()];
+    if(activeConversationId===chat.id){activeConversationId=conversations[0].id;messages=conversations[0].messages.slice();renderMessages({forceBottom:true});}
+    persistChatHistory();renderConversationList();
+   });
+   menu.append(rename,remove);row.append(menu);
+  });
+  row.append(select,more);list.append(row);
+ }
+}
+function closeConversationDrawer(){document.querySelector('#core-workspace')?.classList.remove('history-open');}
+function openConversation(id){
+ if(busy||executionActive)return;
+ const chat=conversations.find(item=>item.id===id);if(!chat)return;
+ speechSynthesisStop();
+ activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();
+ pendingPlan=null;$('#core-plan')?.classList.add('hidden');
+ userPinnedToBottom=true;renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();
+ updateChatScreen();status('Conversación cargada.','success');
+}
+function startNewConversation(){
+ if(busy||executionActive)return;
+ speechSynthesisStop();
+ const active=conversations.find(chat=>chat.id===activeConversationId);
+ if(active&&!active.messages.length){closeConversationDrawer();$('#core-input')?.focus();return;}
+ const record=newChatRecord();conversations.unshift(record);activeConversationId=record.id;
+ messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');
+ persistChatHistory();renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
+ status('Nueva conversación. El historial anterior sigue disponible.','success');
+ $('#core-input')?.focus();
+}
+function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';}
 function addMessage(role,content,extra={}){
-  messages.push({role,content:String(content||''),time:Date.now(),...extra});
-  messages=messages.slice(-40);save();renderMessages({forceBottom:role==='user'});
+  messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
+  messages=messages.slice(-60);save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
 }
 function isNearBottom(list,threshold=120){
   return list.scrollHeight-list.scrollTop-list.clientHeight<threshold;
@@ -1046,8 +1173,13 @@ async function sendMessage(){
 }
 export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
-  try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(saved))messages=saved.slice(-40);}catch{messages=[];}
-  renderMessages({forceBottom:true});
+  loadChatHistory();
+  renderMessages({forceBottom:true});updateChatScreen();
+  $('#core-history-search')?.addEventListener('input',event=>{conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();renderConversationList();});
+  $('#core-history-toggle')?.addEventListener('click',()=>$('#core-workspace')?.classList.toggle('history-open'));
+  $('#core-history-close')?.addEventListener('click',closeConversationDrawer);
+  $('#core-history-backdrop')?.addEventListener('click',closeConversationDrawer);
+  $('#core-history-new')?.addEventListener('click',startNewConversation);
   $('#core-messages').addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom($('#core-messages'));},{passive:true});
   $('#core-send').addEventListener('click',sendMessage);
   const miniButton=$('#core-mini-toggle');
@@ -1081,10 +1213,7 @@ export function initPrismaCore(){
     if(total>100*1024*1024){status('El total de archivos no puede superar 100 MB.','warning');event.target.value='';return;}
     attachments=[...attachments,...incoming].slice(0,8);renderAttachments();event.target.value='';
   });
-  $('#core-clear').addEventListener('click',()=>{
-    if(busy)return;
-    releaseResultObjectUrls();messages=[];pendingPlan=null;userPinnedToBottom=true;localStorage.removeItem(STORAGE_KEY);renderMessages({forceBottom:true});$('#core-plan').classList.add('hidden');status('Conversación nueva. El historial local se ha limpiado.','success');
-  });
+  $('#core-clear').addEventListener('click',startNewConversation);
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
