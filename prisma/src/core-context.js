@@ -70,9 +70,28 @@ export function buildConversationContext(history = [], query = '', options = {})
 
 export function chooseCoreReasoning(task = 'conversation', text = '') {
   const q = fold(text);
-  if (task === 'coding' || task === 'reasoning') return 'smart';
+  const deep = /\b(depura|debug|refactoriza|implementa|reescribe|arquitectura|analiza|investiga|demuestra|demostrar|resuelve|evalua|razonamiento|argumenta|exhaustivo|profundo|a fondo|detalladamente|paso a paso)\b/.test(q);
+  if (task === 'coding') {
+    if(q.length < 180 && /^(?:que es|para que sirve|cual es|explica brevemente|dame un ejemplo)\b/.test(q) && !deep) return 'balanced';
+    return 'smart';
+  }
+  if (task === 'reasoning') return q.length < 130 && !deep ? 'balanced' : 'smart';
   if (task === 'songwriting' || task === 'creative') return 'balanced';
-  if (task === 'conversation' && q.length <= 140 &&
-    !/\b(compara|analiz|investig|demuestr|demostrar|resuelve|explica detalladamente|evalua|razonamiento|argumenta)\b/.test(q)) return 'fast';
+  if ((task === 'conversation' || task === 'general') && q.length <= 160 && !deep) return 'fast';
   return 'balanced';
+}
+
+// Limit unneeded output tokens without making substantive requests artificially
+// short. A concise answer should not reserve the same tokens as a full report.
+export function chooseCoreResponseLength(task = 'conversation', text = '') {
+  const q = fold(text).trim();
+  const detailed = /\b(detallad|complet|extens|profund|a fondo|paso a paso|informe|ensayo|tutorial|guia completa|proyecto completo|archivo completo)\b/.test(q);
+  const brief = /\b(breve|corto|resumido|en una frase|rapido|simple|sin explicaciones)\b/.test(q);
+  if(task === 'songwriting') return 'long';
+  if(detailed) return 'long';
+  if(brief) return 'short';
+  if(task === 'coding') return q.length < 150 && /^(?:que es|para que sirve|explica|dame un ejemplo)\b/.test(q) ? 'medium' : 'long';
+  if(task === 'reasoning') return q.length < 130 ? 'medium' : 'long';
+  if(task === 'conversation' || task === 'quick' || task === 'general') return q.length < 160 ? 'short' : 'medium';
+  return 'medium';
 }
