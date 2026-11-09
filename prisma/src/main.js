@@ -538,7 +538,7 @@ function providerConnectionCard(config){
   }
   const connected=!!getPollinationsToken();
   const shared=!!centralConnectionState.providers.pollinations;
-  const sharedNotice='<p class="provider-connection-detail"><strong>Motor compartido de Prisma:</strong> '+(shared?'Disponible para todos, según saldo y cuota. No requiere conectar una cuenta personal.':'Estado central pendiente de verificar. Consulta la tarjeta «Pollinations central» de arriba.')+'</p>';
+  const sharedNotice='<p class="provider-connection-detail" id="polli-shared-summary"><strong>Motor compartido de Prisma:</strong> '+(shared?'Disponible para todos, según saldo y cuota. No requiere conectar una cuenta personal.':'Comprobando disponibilidad central…')+'</p>';
   const details='<details class="provider-credential-details" id="provider-config-pollinations"><summary>Configuración inicial de Prisma Space</summary><label class="connection-key-label" for="polli-app-key">App Key pública</label><input class="form-control" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false"><small>Identifica esta aplicación; no es tu contraseña ni tu clave de consumo. Registra la URL de retorno que aparece abajo en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>.</small><div class="provider-redirect"><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URL de retorno</button></div><button type="button" class="button button-primary" id="polli-connect">Continuar con Pollinations</button></details>';
   const action='<button type="button" class="button button-primary" id="polli-connect-start">'+(connected?'Conectar otra cuenta':'Conectar mi cuenta')+'</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" id="polli-disconnect">Desconectar</button>';
   return '<article class="provider-connection-card" data-connection-card="pollinations-connect"><div class="provider-connection-top"><div><h4>Pollinations Connect</h4><p>Imágenes, texto y audio</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="pollinations-connect">'+(connected?'Cuenta personal conectada':'Cuenta personal opcional')+'</span></div><p class="provider-connection-detail">Esta conexión OAuth es opcional y usa tus límites solo si la autorizas. No es necesaria para utilizar el motor compartido de Prisma.</p>'+sharedNotice+'<div class="provider-connect-row">'+action+'</div>'+details+'</article>';
@@ -579,6 +579,15 @@ async function refreshProviderConnectionStatuses(){
       const openButton=$('#polli-connect-start');if(openButton)openButton.textContent=isConnected?'Conectar otra cuenta':'Conectar mi cuenta';
     }
   });
+  const sharedText=$('#polli-shared-summary');
+  if(sharedText){
+    const isReady=!!central.providers?.pollinations;
+    const warning=central.warnings?.pollinations;
+    sharedText.textContent='Motor compartido de Prisma: '+(isReady
+      ?'Conexión central disponible para todos (sujeta a saldo y cuotas). No requiere conectar una cuenta personal.'
+      :!central.ok?'No se pudo verificar el estado en Cloudflare.'
+      :warning||'Conexión central no disponible temporalmente. La cuenta personal sigue siendo opcional.');
+  }
   const hfSummary=$('#hf-model-summary');
   if(hfSummary){
     const catalog=central.modelCatalog||{};
