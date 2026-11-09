@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
-import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
+import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
@@ -80,9 +80,8 @@ assert.doesNotThrow(()=>validate(picture)({
  steps:webEditing.steps.map(step=>({tool_id:step.tool_id,params:step.params}))
 }));
 
-// Provider-specific credential pools: six for Gemini/OpenRouter/HF/Pollinations,
-// but Groq deliberately remains capped at five.
-
+// Every external API-key provider supports six slots. Compact JSON pools
+// keep the binding count below Cloudflare's per-Worker environment limit.
 const fakeKeys = {
  GEMINI_API_KEY:'g1', GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GEMINI_API_KEY_4:'g4', GEMINI_API_KEY_5:'g5', GEMINI_API_KEY_6:'g6',
@@ -91,17 +90,34 @@ const fakeKeys = {
  OPENROUTER_API_KEY:'o1', OPENROUTER_API_KEY_2:'o2', OPENROUTER_API_KEY_3:'o3',
  OPENROUTER_API_KEY_4:'o4', OPENROUTER_API_KEY_5:'o5', OPENROUTER_API_KEY_6:'o6',
 };
-for (const provider of ['gemini','openrouter','huggingface','pollinations']) {
+for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
  assert.equal(maxCredentialSlots(provider),6,provider+' must support six slots');
 }
-assert.equal(maxCredentialSlots('groq'),5);
+assert.equal(maxCredentialSlots('cloudflare'),0,'Workers AI uses a Cloudflare binding, not API keys');
 assert.equal(getCredentialSlots(fakeKeys,'gemini').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'gemini').max,6);
 assert.equal(getCredentialSlots(fakeKeys,'openrouter').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'openrouter').slots.length,6);
-assert.equal(getCredentialSlots(fakeKeys,'groq').length,5);
-assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,5);
+assert.equal(getCredentialSlots(fakeKeys,'groq').length,6);
+assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,6);
 
+const compactPools = Object.fromEntries(Object.entries(CREDENTIAL_POOL_VARIABLES).map(([provider,variable]) =>
+ [variable,JSON.stringify(Array.from({length:6},(_,index)=>provider+'-key-'+(index+1)))]
+));
+for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
+ const slots=getCredentialSlots(compactPools,provider);
+ assert.equal(slots.length,6,provider+' JSON pool must expose six keys');
+ assert.equal(slots[5].number,6,provider+' JSON pool must map its sixth key');
+ assert.equal(getCredentialStatus(compactPools,provider).poolValid,true);
+ assert.match(getCredentialStatus(compactPools,provider).slots[0].variable,/\\[1\\]$/);
+}
+const mixedPool={REQUESTY_API_KEYS_JSON:'["json-key-1","json-key-2"]',REQUESTY_API_KEY_2:'manual-key-2'};
+assert.equal(getCredentialSlots(mixedPool,'requesty')[0].value,'json-key-1');
+assert.equal(getCredentialSlots(mixedPool,'requesty')[1].value,'manual-key-2','individual slot variables override the same JSON position');
+const duplicatePool={ZAI_API_KEYS_JSON:'["same-key","same-key","third-key"]'};
+assert.deepEqual(getCredentialSlots(duplicatePool,'zai').map(slot=>slot.number),[1,3],'duplicate secrets are not counted as separate credentials');
+assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'{"not":"an array"}'},'requesty').poolValid,false);
+assert.equal(getCredentialSlots({GROQ_API_KEY:'q1',GROQ_API_KEY_BACKUP:'q2'},'groq').length,2,'legacy BACKUP aliases remain supported');
 
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
 const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','baidu','aihubmix','amd']);
@@ -165,7 +181,7 @@ const authSlots=[];
 const authResult=await requestWithCredentialPool(authEnv,'gemini',async(key,slot)=>{
  authSlots.push(slot);
  return new Response(slot===1?'unauthorized':'ok',{status:slot===1?401:200});
-});
+},{startIndex:0});
 assert.equal(authResult.status,200);
 assert.deepEqual(authSlots,[1,2],'only a key-specific auth failure may try one alternate credential');
 
@@ -197,9 +213,20 @@ const transientSlots=[];
 const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',async(key,slot)=>{
  transientSlots.push(slot);
  return new Response(slot===1?'upstream error':'ok',{status:slot===1?503:200});
-});
+},{startIndex:0});
 assert.equal(transientResult.status,200);
 assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
+
+const sixSlotEnv=mockCredentialEnv({
+ REQUESTY_API_KEYS_JSON:JSON.stringify(['r1','r2','r3','r4','r5','r6'])
+});
+let selectedSlot=0;
+const selectedResult=await requestWithCredentialPool(sixSlotEnv,'requesty',async(key,slot)=>{
+ selectedSlot=slot;
+ return new Response('ok',{status:200});
+},{startIndex:5});
+assert.equal(selectedResult.status,200);
+assert.equal(selectedSlot,6,'the request pool must be able to select the sixth configured key');
 
 
 // Provider-independent Markdown rendering and real capability discovery.
