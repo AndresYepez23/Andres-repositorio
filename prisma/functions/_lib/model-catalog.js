@@ -32,6 +32,41 @@ export const CHAT_MODELS = {
   ],
   openrouter: [
     {id:"openrouter/free",name:"OpenRouter Free Router",specialty:"Respaldo automático · selecciona modelos gratuitos disponibles"}
+  ],
+  kilo: [
+    {id:"z-ai/glm-5:free",name:"GLM-5 Free",specialty:"Razonamiento y conversación · acceso anónimo"},
+    {id:"minimax/minimax-m2.1:free",name:"MiniMax M2.1 Free",specialty:"Conversación y escritura · acceso anónimo"}
+  ],
+  requesty: [
+    {id:"nemotron-3.5-lightning-30b-a3b",name:"Nemotron 3.5 Lightning 30B",specialty:"Agentes, razonamiento y código · gratuito"},
+    {id:"muse-glimmer-30b",name:"Muse Glimmer 30B",specialty:"Razonamiento y tareas agentic · gratuito"},
+    {id:"novita/ling-3.1-flash",name:"Ling 3.1 Flash",specialty:"Razonamiento híbrido · endpoint gratuito Novita"}
+  ],
+  sensenova: [{id:"sensenova-6.8-flash-lite",name:"SenseNova 6.8 Flash Lite",specialty:"Razonamiento, agentes y multimodalidad · beta gratuita"}],
+  zai: [
+    {id:"glm-4.7-flash",name:"GLM-4.7 Flash",specialty:"Razonamiento y programación · gratuito"},
+    {id:"glm-4.5-flash",name:"GLM-4.5 Flash",specialty:"Conversación rápida · gratuito"},
+    {id:"glm-4.6v-flash",name:"GLM-4.6V Flash",specialty:"Modelo visual gratuito; este flujo usa solo texto"}
+  ],
+  baidu: [
+    {id:"ernie-speed-128k",name:"ERNIE-Speed-128K",specialty:"Conversación y contexto largo · cuota gratuita regional"},
+    {id:"ernie-lite-128k",name:"ERNIE-Lite-128K",specialty:"Conversación ligera · cuota gratuita regional"},
+    {id:"ernie-tiny-8k",name:"ERNIE-Tiny-8K",specialty:"Respuestas rápidas · cuota gratuita regional"}
+  ],
+  aihubmix: [
+    {id:"coding-glm-5.3-free",name:"Coding GLM-5.3 Free",specialty:"Programación · 10 llamadas de prueba totales"},
+    {id:"coding-glm-5.3-flash-free",name:"Coding GLM-5.3 Flash Free",specialty:"Programación rápida · 10 llamadas de prueba totales"},
+    {id:"coding-kimi-k3-free",name:"Coding Kimi K3 Free",specialty:"Programación y razonamiento · 10 llamadas de prueba totales"},
+    {id:"xiaomi-mimo-v2.6-pro-free",name:"Xiaomi MiMo V2.6 Pro Free",specialty:"Razonamiento · 10 llamadas de prueba totales"},
+    {id:"coding-minimax-m3-free",name:"Coding MiniMax M3 Free",specialty:"Programación · 10 llamadas de prueba totales"}
+  ],
+  amd: [
+    {id:"DeepSeek-V4-Flash",name:"DeepSeek V4 Flash",specialty:"Razonamiento · Token Factory de evaluación"},
+    {id:"DeepSeek-V4.1-Flash",name:"DeepSeek V4.1 Flash",specialty:"Razonamiento · Token Factory de evaluación"},
+    {id:"Qwen3.8-Flash-Next",name:"Qwen 3.8 Flash Next",specialty:"Razonamiento rápido · evaluación"},
+    {id:"Qwen3.8-27B",name:"Qwen 3.8 27B",specialty:"Chat y programación · evaluación"},
+    {id:"GLM-5.3-Flash",name:"GLM-5.3 Flash",specialty:"Razonamiento y código · evaluación"},
+    {id:"MiMo-V2.6-Flash",name:"MiMo V2.6 Flash",specialty:"Conversación · evaluación"}
   ]
 };
 export const IMAGE_MODELS = {
