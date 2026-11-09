@@ -9,6 +9,13 @@ export const CREDENTIAL_ROOTS = Object.freeze({
   huggingface: "HF_TOKEN",
   openrouter: "OPENROUTER_API_KEY",
   pollinations: "POLLINATIONS_API_KEY",
+  kilo: "KILO_API_KEY",
+  requesty: "REQUESTY_API_KEY",
+  sensenova: "SENSENOVA_API_KEY",
+  zai: "ZAI_API_KEY",
+  baidu: "QIANFAN_API_KEY",
+  aihubmix: "AIHUBMIX_API_KEY",
+  amd: "RADEON_API_KEY",
 });
 export const CREDENTIAL_SLOT_LIMITS = Object.freeze({
   gemini: 6,
@@ -16,6 +23,13 @@ export const CREDENTIAL_SLOT_LIMITS = Object.freeze({
   huggingface: 6,
   openrouter: 6,
   pollinations: 6,
+  kilo: 1,
+  requesty: 1,
+  sensenova: 1,
+  zai: 1,
+  baidu: 1,
+  aihubmix: 1,
+  amd: 1,
 });
 // Backwards-compatible global maximum; use maxCredentialSlots(provider)
 // whenever displaying or enumerating an individual provider's slots.
