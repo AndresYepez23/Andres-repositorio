@@ -1471,3 +1471,16 @@ body.is-core-view .core-history-entry.active{
  .sidebar{padding-top:env(safe-area-inset-top)}
  .profile-menu{padding-bottom:max(6px,env(safe-area-inset-bottom))}
 }
+
+
+/* PWA en iPhone: separar los diálogos de la barra de estado y el home indicator. */
+@media(display-mode:standalone){
+ .auth-backdrop,.voice-backdrop,.pwa-instructions{
+  padding-top:max(16px,env(safe-area-inset-top));
+  padding-bottom:max(16px,env(safe-area-inset-bottom));
+ }
+ .auth-panel,.voice-panel{
+  max-height:calc(var(--prisma-core-viewport,100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 26px);
+ }
+ .auth-panel .auth-close{top:0}
+}
