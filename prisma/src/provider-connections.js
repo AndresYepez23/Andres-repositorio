@@ -76,7 +76,17 @@ export async function validateProviderCredential(provider, credential) {
   if (provider === 'gemini') accountLabel = (data.models || []).length + ' modelos consultados';
   return { ok: true, provider, accountLabel };
 }
-export async function getCentralProviderStatus() {
+let cachedCentralStatus = null;
+let centralStatusExpiresAt = 0;
+let centralStatusPending = null;
+
+// Avoid blocking every message on repeated provider-catalogue network calls.
+// Cache holds only public status metadata, never API credentials or prompts.
+export async function getCentralProviderStatus({ force = false } = {}) {
+  const now = Date.now();
+  if (!force && cachedCentralStatus && now < centralStatusExpiresAt) return cachedCentralStatus;
+  if (centralStatusPending) return centralStatusPending;
+
   const empty = {
     ok: false,
     mode: "central",
@@ -86,34 +96,41 @@ export async function getCentralProviderStatus() {
     warnings: {},
     configured: {},
     credentialSlots: {},
-    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},
+    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false}
   };
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6500);
-  try {
-    const response = await fetch("/api/providers/status", {
-      method: "GET",
-      cache: "no-store",
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) return empty;
-    const data = await response.json();
-    return {
-      ...empty,
-      ...data,
-      ok: data.ok === true,
-      providers: { ...empty.providers, ...(data.providers || {}) },
-      models: data.models || {},
-      modelCatalog: data.modelCatalog || empty.modelCatalog,
-      warnings: data.warnings || {},
-      configured: data.configured || {},
-      credentialSlots: data.credentialSlots || {},
-      features: { ...empty.features, ...(data.features || {}) },
-    };
-  } catch {
-    return empty;
-  } finally {
-    clearTimeout(timeout);
-  }
+  const work = (async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6500);
+    try {
+      const response = await fetch("/api/providers/status", {
+        method: "GET", cache: "no-store", signal: controller.signal,
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) throw Error("No fue posible consultar proveedores.");
+      const data = await response.json();
+      if (data.ok !== true) throw Error("La consulta no fue válida.");
+      const ready = {
+        ...empty, ...data, ok:true,
+        providers: { ...empty.providers, ...(data.providers || {}) },
+        models: data.models || {},
+        modelCatalog: data.modelCatalog || empty.modelCatalog,
+        warnings: data.warnings || {},
+        configured: data.configured || {},
+        credentialSlots: data.credentialSlots || {},
+        features: { ...empty.features, ...(data.features || {}) }
+      };
+      cachedCentralStatus = ready;
+      centralStatusExpiresAt = Date.now() + 30000;
+      return ready;
+    } catch {
+      // Short, bounded stale cache keeps existing sessions functional during a
+      // transient status outage; inference endpoints still validate every request.
+      return cachedCentralStatus && Date.now() < centralStatusExpiresAt + 60000
+        ? cachedCentralStatus : empty;
+    } finally { clearTimeout(timeout); }
+  })();
+
+  centralStatusPending = work;
+  try { return await work; }
+  finally { if (centralStatusPending === work) centralStatusPending = null; }
 }
