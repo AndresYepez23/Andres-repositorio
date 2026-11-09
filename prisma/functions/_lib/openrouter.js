@@ -1,4 +1,5 @@
 // OpenRouter Free Router account metadata and conservative shared limits.
+import { getCredentialSlots } from "./credential-pool.js";
 let accountCache = null;
 let accountCacheAt = 0;
 let accountCacheKey = "";
@@ -9,7 +10,7 @@ function numericOrNull(value) {
 }
 
 export async function getOpenRouterAccount(env) {
-  const key = String(env.OPENROUTER_API_KEY || "").trim();
+  const key = getCredentialSlots(env,"openrouter")[0]?.value || "";
   if (!key) return null;
   const suffix = key.slice(-8);
   if (accountCache && accountCacheKey === suffix && Date.now() - accountCacheAt < 5 * 60 * 1000) {
