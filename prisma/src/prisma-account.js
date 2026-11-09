@@ -55,7 +55,7 @@ async function doSync(){
   const normalized={id:String(chat.id).slice(0,120),title:String(chat.title||'Nueva conversación').slice(0,70),
     pinned:!!chat.pinned,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),
     titled:!!chat.titled,thumbnailBrief:null,
-    messages:chat.messages.slice(-45).map(m=>({id:m.id,role:m.role,content:String(m.content||'').slice(0,14000),time:m.time,engine:m.engine,model:m.model,feedback:m.feedback}))};
+    messages:chat.messages.slice(-30).map(m=>({id:m.id,role:m.role,content:String(m.content||'').slice(0,5000),time:m.time,engine:m.engine,model:m.model,feedback:m.feedback}))};
   const existing=map.get(normalized.id);
   if(!existing||Number(normalized.updated)>Number(existing.updated)||0){
    map.set(normalized.id,normalized);
