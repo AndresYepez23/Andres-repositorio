@@ -273,6 +273,9 @@ function closeProfileMenu(){
 }
 function setupProfileMenu(){
   const toggle=$('#profile-toggle'),menu=$('#profile-menu');
+  // Safari: backdrop-filter en .topbar crea un containing block para elementos fixed.
+  // Montar el panel en body permite situarlo en el viewport real.
+  if(menu&&menu.parentElement!==document.body)document.body.append(menu);
   toggle.addEventListener('click',event=>{event.stopPropagation();const open=menu.classList.toggle('hidden')===false;toggle.setAttribute('aria-expanded',String(open));document.body.classList.toggle('profile-open',open);});
   menu.addEventListener('click',event=>event.stopPropagation());document.addEventListener('click',closeProfileMenu);
   $('#clear-local-data').addEventListener('click',()=>{
