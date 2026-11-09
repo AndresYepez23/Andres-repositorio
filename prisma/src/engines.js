@@ -793,7 +793,11 @@ async function generateText(p,cb){
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>
   provider==='pollinations'
    ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
-   : Boolean(p.centralProviders?.[provider]),
+   : provider==='kilo'&&preferred==='auto'
+      ? Boolean(p.centralProviders?.kilo&&p.centralAutoEligible?.kilo)
+      : provider==='aihubmix'&&preferred==='auto'
+        ? Boolean(p.centralProviders?.aihubmix&&p.centralAutoEligible?.aihubmix)
+        : Boolean(p.centralProviders?.[provider]),
   getRouteMemory()
  );
  // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
@@ -803,8 +807,12 @@ async function generateText(p,cb){
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
  const modelFor=provider=>selectTaskModel(
-  provider,task,tier,p.centralModelCatalog?.chat?.[provider]||[]
- );
+  provider,task,tier,
+   // NVIDIA trial endpoints are always a deliberate manual selection.
+   provider==='kilo'&&preferred==='auto'
+    ? (p.centralModelCatalog?.chat?.kilo||[]).filter(item=>!String(item.id||'').toLowerCase().startsWith('nvidia/'))
+    : (p.centralModelCatalog?.chat?.[provider]||[])
+  );
  for(let candidateIndex=0;candidateIndex<candidates.length;candidateIndex++){
   const provider=candidates[candidateIndex];
   const remaining=totalDeadline-(Date.now()-startedAt);
