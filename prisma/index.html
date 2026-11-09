@@ -65,7 +65,7 @@
           </div>
           <div class="core-workspace">
             <div class="core-chat-column">
-              <div class="core-chat-toolbar"><div><strong>Prisma</strong><small>Tu asistente de trabajo</small></div><button type="button" class="mini-button" id="core-clear">Nueva conversación</button></div>
+              <div class="core-chat-toolbar"><div><strong>Prisma</strong><small>Tu asistente de trabajo</small></div><div class="core-toolbar-actions"><button type="button" class="mini-button" id="core-mini-toggle" title="Descarga un modelo local de unos 23 MB para encontrar herramientas sin API de inferencia">Activar Prisma Mini</button><button type="button" class="mini-button" id="core-clear">Nueva conversación</button></div></div>
               <div class="core-connect-banner" id="core-connect-banner"><span class="core-connect-mark" data-icon="plug"></span><div><strong>Activa tu asistente</strong><p>Conecta un motor de IA gratuito o usa una clave propia para que Prisma pueda entender tus instrucciones y coordinar herramientas.</p></div><button type="button" class="button button-quiet" id="core-connect-now">Conectar motor</button></div>
               <div class="core-messages" id="core-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
               <div class="core-plan hidden" id="core-plan"></div>
@@ -83,7 +83,7 @@
             <aside class="core-side">
               <div class="core-side-card"><span class="core-side-icon" data-icon="layers"></span><h3>Una sola conversación</h3><p>Describe el resultado. Prisma selecciona las herramientas, organiza los pasos y reúne las entregas en este chat.</p></div>
               <div class="core-side-card"><span class="core-side-icon" data-icon="shield-check"></span><h3>Privacidad y control</h3><p>Las operaciones locales se ejecutan en tu dispositivo. Los servicios externos se identifican y requieren autorización.</p></div>
-              <div class="core-side-card"><span class="core-side-icon" data-icon="plug"></span><h3>Conecta un motor de texto</h3><p>Prisma Core utiliza tus conexiones personales de Pollinations, Groq, Hugging Face o Gemini.</p><button type="button" class="text-action" id="core-open-settings">Gestionar conexiones →</button></div>
+              <div class="core-side-card"><span class="core-side-icon" data-icon="plug"></span><h3>Conecta un motor de texto</h3><p>Prisma Core utiliza motores compartidos y Pollinations Connect, y puede activar Prisma Mini en tu navegador para reconocer herramientas sin API.</p><button type="button" class="text-action" id="core-open-settings">Gestionar conexiones →</button></div>
               <div class="core-side-footnote">La conversación se guarda en este navegador. Tus claves permanecen en la sesión. La memoria aún no se sincroniza entre dispositivos.</div>
             </aside>
           </div>

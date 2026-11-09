@@ -80,7 +80,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface", "groq", "cloudflare"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
   }
 
@@ -95,6 +95,10 @@ export async function onRequestPost({ request, env }) {
   if (requestedModel && !allowedModel(provider, "chat", requestedModel)) {
     return json({error:"Modelo no permitido para el proveedor seleccionado."},400);
   }
+  if(provider==="pollinations"){
+    const hold=await getProviderHold(env,"pollinations");
+    if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
+  }
   if(provider==="huggingface"){
     const hold=await getProviderHold(env,"huggingface");
     if(hold)return json({error:hold.reason,provider:"huggingface",status:402},402);
@@ -105,6 +109,31 @@ export async function onRequestPost({ request, env }) {
   }
   const limitError = await checkLimits(env, request, provider);
   if (limitError) return json({error:limitError.error},limitError.status);
+
+  if (provider === "pollinations") {
+    if (!env.POLLINATIONS_API_KEY) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
+    const model=requestedModel||"openai/gpt-5.4-nano";
+    let response;
+    try {
+      response=await fetch("https://gen.pollinations.ai/v1/chat/completions",{
+        method:"POST",
+        headers:{"Content-Type":"application/json",Authorization:"Bearer "+env.POLLINATIONS_API_KEY},
+        body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.7,max_tokens:clamp(payload.maxOutputTokens,128,2200,800),stream:false})
+      });
+    } catch {
+      return json({error:"No fue posible conectar con Pollinations. Prisma probará otro motor.",provider:"pollinations"},502);
+    }
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      if(response.status===402)await setProviderHold(env,"pollinations","quota_exhausted","Pollinations no dispone de saldo autorizado. Prisma usará los demás motores.",21600);
+      if(response.status===401||response.status===403)await setProviderHold(env,"pollinations","auth_error","La clave central Pollinations no está autorizada. Revisa el secreto en Cloudflare.",3600);
+      const message=response.status===429?"Pollinations alcanzó su límite temporal.":response.status===402?"Pollinations no dispone de saldo autorizado.":"Pollinations respondió con un error ("+response.status+").";
+      return json({error:message,provider:"pollinations",status:response.status},response.status===429?429:response.status===402?402:502);
+    }
+    const text=String(data.choices?.[0]?.message?.content||"").trim();
+    if(!text)return json({error:"Pollinations no devolvió texto.",provider:"pollinations"},502);
+    return json({ok:true,provider:"pollinations",model,text,usage:data.usage||null});
+  }
 
   if (provider === "huggingface") {
     if (!env.HF_TOKEN) {

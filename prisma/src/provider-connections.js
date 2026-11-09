@@ -80,12 +80,12 @@ export async function getCentralProviderStatus() {
   const empty = {
     ok: false,
     mode: "central",
-    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false },
+    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false },
     models: {},
     modelCatalog: {chat:{},image:{},audio:{}},
     warnings: {},
     configured: {},
-    features: {cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},
+    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},
   };
   try {
     const response = await fetch("/api/providers/status", {

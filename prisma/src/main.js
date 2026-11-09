@@ -449,7 +449,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div></article>';
@@ -457,7 +457,7 @@ function providerConnectionCard(config){
   const connected=!!getPollinationsToken();
   const details='<details class="provider-credential-details" id="provider-config-pollinations"><summary>Configuración inicial de Prisma Space</summary><label class="connection-key-label" for="polli-app-key">App Key pública</label><input class="form-control" id="polli-app-key" type="text" placeholder="pk_..." autocomplete="off" spellcheck="false"><small>Identifica esta aplicación; no es tu contraseña ni tu clave de consumo. Registra la URL de retorno que aparece abajo en <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener noreferrer">Pollinations Connect</a>.</small><div class="provider-redirect"><code id="polli-redirect"></code><button type="button" class="mini-button" id="polli-copy-redirect">Copiar URL de retorno</button></div><button type="button" class="button button-primary" id="polli-connect">Continuar con Pollinations</button></details>';
   const action='<button type="button" class="button button-primary" id="polli-connect-start">'+(connected?'Conectar otra cuenta':'Conectar mi cuenta')+'</button><button type="button" class="button button-quiet '+(connected?'':'hidden')+'" id="polli-disconnect">Desconectar</button>';
-  return '<article class="provider-connection-card" data-connection-card="pollinations"><div class="provider-connection-top"><div><h4>Pollinations Connect</h4><p>Imágenes, texto y audio</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="pollinations">'+(connected?'Conectado en esta pestaña':'Cuenta personal sin conectar')+'</span></div><p class="provider-connection-detail">Esta conexión OAuth sigue siendo personal y utiliza los permisos y límites de tu cuenta de Pollinations.</p><div class="provider-connect-row">'+action+'</div>'+details+'</article>';
+  return '<article class="provider-connection-card" data-connection-card="pollinations-connect"><div class="provider-connection-top"><div><h4>Pollinations Connect</h4><p>Imágenes, texto y audio</p></div><span class="provider-connection-status '+(connected?'connected':'')+'" data-connection-status="pollinations-connect">'+(connected?'Conectado en esta pestaña':'Cuenta personal sin conectar')+'</span></div><p class="provider-connection-detail">Esta conexión OAuth sigue siendo personal y utiliza los permisos y límites de tu cuenta de Pollinations.</p><div class="provider-connect-row">'+action+'</div>'+details+'</article>';
 }
 function renderProviderConnections(){
   const container=$('#provider-connect-grid');if(!container)return;
@@ -466,7 +466,8 @@ function renderProviderConnections(){
     {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Motor compartido mediante Inference Providers. La cuenta gratuita de Hugging Face incluye un crédito mensual limitado de USD 0,10 (sujeto a cambios); no es ilimitado. Prisma prioriza el modelo de menor coste y no activa recargas automáticas.',secretName:'HF_TOKEN',shared:true},
     {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Se habilitará como motor compartido para tareas compatibles, con límites de solicitudes y alternativas cuando alcance su cuota.',secretName:'GROQ_API_KEY',shared:true},
     {id:'cloudflare',name:'Cloudflare Workers AI',summary:'Gemma 4, Llama y FLUX.1 Schnell',detail:'Motor directo integrado en Cloudflare. Generación de texto e imágenes con asignación gratuita diaria y límites propios de Prisma.',bindingName:'AI',shared:true},
-    {id:'pollinations',name:'Pollinations Connect',shared:false}
+    {id:'pollinations',name:'Pollinations central',summary:'Generación multimodal con la cuenta de Prisma',detail:'La clave sk_ se guarda únicamente en Cloudflare como POLLINATIONS_API_KEY y consume tu saldo. Chat e imágenes tienen cuotas estrictas; si no hay clave, los usuarios pueden usar Pollinations Connect con su propio saldo.',secretName:'POLLINATIONS_API_KEY',shared:true},
+    {id:'pollinations-connect',name:'Pollinations Connect',shared:false}
   ];
   container.innerHTML=configs.map(providerConnectionCard).join()+
     '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Catálogo de Hugging Face</h4><p>6 modelos de chat + catálogo multimedia</p></div><span class="provider-connection-status">Cuotas limitadas</span></div><p class="provider-connection-detail">Hugging Face permite inferencia de chat con modelos seleccionables. FLUX/Stable Diffusion, Whisper y otros modelos multimedia pueden consumir rápidamente el crédito mensual; por eso su acceso central se habilita únicamente con un permiso explícito.</p><div id="hf-model-summary" class="provider-connection-detail">Consultando modelos...</div></article>'+
@@ -482,14 +483,14 @@ function renderProviderConnections(){
 async function refreshProviderConnectionStatuses(){
   const central=await getCentralProviderStatus();
   Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured});
-  const connected={pollinations:!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare};
+  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
-      status.textContent=provider==='pollinations'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
+      status.textContent=provider==='pollinations-connect'?(isConnected?'Conectado en esta pestaña':'Cuenta personal sin conectar'):!central.ok?'No se pudo consultar Cloudflare':isConnected?'Disponible para todos':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
-    if(provider==='pollinations'){
+    if(provider==='pollinations-connect'){
       $('#polli-disconnect')?.classList.toggle('hidden',!isConnected);
       const openButton=$('#polli-connect-start');if(openButton)openButton.textContent=isConnected?'Conectar otra cuenta':'Conectar mi cuenta';
     }
@@ -554,7 +555,7 @@ const fallbackModels={
 function modelOptions(kind,provider){
   if(provider==='auto')return [['','Automático · modelo recomendado']];
   const group=kind==='image'?'image':kind==='audio'?'audio':'chat';
-  if(provider!=='pollinations'){
+  if(provider!=='pollinations'||centralConnectionState.providers.pollinations){
     const models=centralConnectionState.modelCatalog?.[group]?.[provider]||[];
     return models.length?models.map(item=>[item.id,item.name+' · '+item.specialty]):[['','Predeterminado del motor']];
   }
@@ -566,7 +567,7 @@ async function loadPollinationsModels(kind,provider='pollinations'){
   const options=modelOptions(kind,provider);
   select.innerHTML=options.map(([value,label])=>'<option value="'+escapeHtml(value)+'">'+escapeHtml(label)+'</option>').join('');
   if(options.some(o=>o[0]===selected))select.value=selected;
-  if(provider!=='pollinations'||pollinationsModelCache[kind].length)return;
+  if(provider!=='pollinations'||centralConnectionState.providers.pollinations||pollinationsModelCache[kind].length)return;
   try{
     const response=await fetch('https://gen.pollinations.ai/'+kind+'/models');
     if(!response.ok)return;
@@ -594,7 +595,7 @@ async function loadPollinationsPricing(kind='image'){
   }catch(error){console.info('No se pudo consultar la tarifa en vivo de Pollinations.',error);return [];}
 }
 function providerNoticeText(provider,quality,task='image'){
- const connected={pollinations:!!getPollinationsToken(),...centralConnectionState.providers};
+ const connected={...centralConnectionState.providers,pollinations:!!(getPollinationsToken()||centralConnectionState.providers.pollinations)};
  const features=centralConnectionState.features||{};
  let selected=provider||'auto';
  if(selected==='auto'){
@@ -604,13 +605,14 @@ function providerNoticeText(provider,quality,task='image'){
  if(!selected)return 'No hay un motor activo para esta tarea. Revisa las conexiones del Laboratorio IA.';
  const selectedAvailable=selected==='groq'&&task==='audio'?!!features.groqAudio:!!connected[selected];
  if(!selectedAvailable)return (selected==='groq'&&task==='audio'?centralConnectionState.warnings?.groqAudio:centralConnectionState.warnings?.[selected])||'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
+ if(selected==='pollinations'&&task==='image'&&!features.pollinationsImages&&!getPollinationsToken())return 'Pollinations necesita una clave central en Cloudflare o una cuenta personal conectada.';
  if(selected==='huggingface'&&task==='image'&&!features.huggingfaceImages)return 'Hugging Face permite generar imágenes, pero está desactivado para no agotar tus créditos gratuitos. Usa Cloudflare FLUX.';
  if(selected==='huggingface'&&task==='audio'&&!features.huggingfaceAudio)return 'El audio de Hugging Face está desactivado para proteger el crédito mensual.';
  if(selected==='groq'&&task==='audio'&&!features.groqAudio)return centralConnectionState.warnings?.groqAudio||'Groq Whisper está temporalmente en pausa. Prisma intentará otro motor de transcripción disponible.';
  if(selected==='cloudflare')return 'Cloudflare Workers AI: motor compartido, limitado por las cuotas gratuitas diarias y el control de solicitudes de Prisma.';
  if(selected==='huggingface')return 'Hugging Face: seis modelos de texto habilitados. El nivel gratuito incluye solo US$0,10 de créditos mensuales; selecciona modelos con cuidado.';
  if(selected==='groq')return 'Groq: usa la clave central de Cloudflare. Las solicitudes están sujetas al plan gratuito y límites de Prisma.';
- if(selected==='pollinations')return 'Pollinations: esta conexión es personal. Cada usuario autoriza su cuenta y su propio presupuesto.';
+ if(selected==='pollinations')return centralConnectionState.providers.pollinations?'Pollinations central: servicio compartido con límites diarios; consume el saldo autorizado del propietario de Prisma.':'Pollinations Connect: cada visitante autoriza su cuenta y su presupuesto personal.';
  return 'Gemini: motor central de Prisma para chat y razonamiento. La generación de imágenes de Gemini todavía no está habilitada.';
 }
 function updateProviderNotice(target,task='image'){

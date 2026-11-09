@@ -1,5 +1,5 @@
 // Atomic counters in Cloudflare D1. Fail closed if bindings/storage are missing.
-const LIMITS = {gemini:50,huggingface:10,groq:30,cloudflare:30,"cloudflare-image":3,"huggingface-image":1,"groq-audio":3};
+const LIMITS = {gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,"pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,"groq-audio":3};
 export async function checkLimits(env,request,provider) {
   const db=env.PRISMA_RATE_DB;
   if(!db?.prepare)return {status:503,error:"Prisma no puede comprobar sus límites de consumo."};
