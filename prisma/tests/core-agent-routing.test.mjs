@@ -185,4 +185,31 @@ const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',
 assert.equal(transientResult.status,200);
 assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
 
+
+// Sidebar UI contract: compact brand, persistent chat search, new-chat row,
+// desktop collapse/reopen, and profile kept in the main top bar.
+const sidebarHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const sidebarMain = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+const sidebarCore = readFileSync(new URL('../src/core.js', import.meta.url), 'utf8');
+const sidebarCss = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+for (const id of [
+  'sidebar-search-toggle','sidebar-collapse-toggle','sidebar-search-slot',
+  'sidebar-new-chat-slot','core-history-search','core-history-new','mobile-menu'
+]) {
+  assert.equal((sidebarHtml.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1,
+    'sidebar control must exist exactly once: ' + id);
+}
+assert.match(sidebarCore, /sidebarSearchSlot\.append\(chatSearch\)/);
+assert.match(sidebarCore, /sidebarNewChatSlot\.append\(newChatButton\)/);
+assert.match(sidebarMain, /function setupSidebarControls\(\)/);
+assert.match(sidebarMain, /prisma-sidebar-collapsed/);
+assert.match(sidebarMain, /sidebar-search-open/);
+assert.match(sidebarCss, /body\.sidebar-collapsed \.sidebar/);
+assert.match(sidebarCss, /body\.sidebar-search-open \.sidebar-search-slot/);
+const topbarIndex = sidebarHtml.indexOf('class="topbar"');
+const profileIndex = sidebarHtml.indexOf('class="profile-wrap"');
+const topbarEnd = sidebarHtml.indexOf('</header>', topbarIndex);
+assert.ok(topbarIndex >= 0 && profileIndex > topbarIndex && profileIndex < topbarEnd,
+  'profile menu must remain in its existing topbar position');
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
