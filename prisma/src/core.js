@@ -463,7 +463,13 @@ async function answerConversation(text,creds,task='conversation'){
   : task==='coding'?'Entrega directamente la solución de programación pedida, incluyendo código cuando corresponda y una explicación concisa. No simules ejecuciones.'
   : 'Resuelve la pregunta directamente en español, con naturalidad y detalle apropiado. No prepares planes, no devuelvas JSON ni afirmes haber ejecutado acciones. Si careces de datos verificables actuales, reconócelo.';
  const prompt='Eres Prisma Core, un asistente conversacional que puede utilizar herramientas, pero aquí debes RESPONDER al usuario. '+instruction+'\n'+(context?'HISTORIAL RECIENTE:\n'+context+'\n':'')+'SOLICITUD ACTUAL:\n'+text;
- const response=await runTool(task==='songwriting'?'music-lyrics':'ai-assistant',[],{
+ const normalized=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const toolId=task==='songwriting'?'music-lyrics':
+  task==='coding'?'ai-code-helper':
+  /\b(mejorar|mejora|optimiza|pulir|reescribe).{0,35}\bprompt\b|\bprompt\b.{0,35}\b(mejorar|mejora|optimiza|pulir)/.test(normalized)?'ai-prompt-lab':
+  /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/.test(normalized)&&task==='creative'?'ai-youtube-kit':
+  /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio|estudiar para|prepara un examen)\b/.test(normalized)?'ai-study-notes':'ai-assistant';
+ const response=await runTool(toolId,[],{
   prompt,provider:'auto',reasoning:task==='reasoning'?'smart':'balanced',
   tone:task==='songwriting'||task==='creative'?'creative':'friendly',
   length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
