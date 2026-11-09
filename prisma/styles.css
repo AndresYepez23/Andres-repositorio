@@ -1484,3 +1484,6 @@ body.is-core-view .core-history-entry.active{
  }
  .auth-panel .auth-close{top:0}
 }
+
+/* La barra unificada usa solo el icono de clip; su etiqueta queda accesible en aria-label. */
+body.is-core-view .core-attach-button span{display:none!important}
