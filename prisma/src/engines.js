@@ -817,7 +817,7 @@ async function generateText(p,cb){
   try{
    let text='',model='';
    if(provider==='pollinations'&&!p.centralProviders?.pollinations){
-    model=p.model||modelProfiles.pollinations[tier];
+    model=p.model||selectTaskModel('pollinations',task,tier,p.centralModelCatalog?.chat?.pollinations||[]);
     const {response,data}=await fetchJsonWithDeadline('https://gen.pollinations.ai/v1/chat/completions',{
      method:'POST',
      headers:{Authorization:'Bearer '+String(p.polliToken).trim(),'Content-Type':'application/json'},
@@ -850,7 +850,7 @@ async function generateText(p,cb){
    reportModelAttempt(provider,task,true,Date.now()-attemptStart);
    const firstAttempt=attempted[0];
    const firstPreferred=preferred==='auto'?baseOrder[0]:preferred;
-   const fallbackFrom=firstPreferred!==provider?firstPreferred:(firstAttempt&&firstAttempt!==provider?firstAttempt:null);
+   const fallbackFrom=firstAttempt&&firstAttempt!==provider?firstAttempt:(preferred!=='auto'&&preferred!==provider?preferred:null);
    const summary='Respuesta generada con '+providerNames[provider]+' · modelo '+(model||'predeterminado')+(fallbackFrom?' · respaldo automático tras fallo de '+providerNames[fallbackFrom]:'.');
    return {text,provider,model:model||'predeterminado',fallbackFrom,
     fallbackReason:fallbackFrom?errors[0]||'El motor preferido no estuvo disponible.':'',summary};
