@@ -1,16 +1,39 @@
 import { getOpenRouterLimits } from "./openrouter.js";
+import { getCredentialSlots, CREDENTIAL_ROOTS } from "./credential-pool.js";
 
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
-const LIMITS={gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
+export const LIMITS=Object.freeze({gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
- "groq-audio":3,"pollinations-audio":2,"gemini-image":2};
+ "groq-audio":3,"pollinations-audio":2,"gemini-image":2});
 
+// Internal budgets are per provider/project, not per API key. Multiple keys
+// in one account do not multiply the provider's real quota. An owner can tune
+// a safe app-side ceiling with PRISMA_<PROVIDER>_DAILY_LIMIT in Cloudflare.
+export function getProviderDailyLimit(env,provider){
+ const variable='PRISMA_'+String(provider||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')+'_DAILY_LIMIT';
+ const configured=Number(env?.[variable]);
+ if(Number.isFinite(configured)&&configured>0)return Math.max(1,Math.min(5000,Math.floor(configured)));
+ return LIMITS[provider]||10;
+}
+export function getSharedDailyBudget(env){
+ const primary=['gemini','groq','huggingface','pollinations'];
+ let budget=primary.reduce((sum,provider)=>sum+(getCredentialSlots(env,provider).length?getProviderDailyLimit(env,provider):0),0);
+ if(env?.AI?.run)budget+=getProviderDailyLimit(env,'cloudflare');
+ const configured=Number(env?.PRISMA_TOTAL_DAILY_LIMIT);
+ if(Number.isFinite(configured)&&configured>0)budget=Math.min(budget,Math.floor(configured));
+ return Math.max(1,Math.min(600,budget));
+}
+export function getVisitorDailyLimit(env){
+ const configured=Number(env?.PRISMA_VISITOR_DAILY_LIMIT);
+ if(Number.isFinite(configured)&&configured>0)return Math.max(10,Math.min(200,Math.floor(configured)));
+ return Math.max(30,Math.min(90,Math.ceil(getSharedDailyBudget(env)*.5)));
+}
 function windows(now=Date.now()){
  const minute=Math.floor(now/60000),day=Math.floor(minute/1440)*1440;
  return {minute,day};
 }
 
-export async function getProviderUsage(env,provider,dailyLimit=LIMITS[provider]||10,perMinuteLimit=null){
+export async function getProviderUsage(env,provider,dailyLimit=getProviderDailyLimit(env,provider),perMinuteLimit=null){
  const db=env.PRISMA_RATE_DB;
  if(!db?.prepare)return {available:false,daily:null,minute:null};
  const {minute,day}=windows();
@@ -44,19 +67,19 @@ export async function checkLimits(env,request,provider){
  const key=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("").slice(0,32);
  const {minute,day}=windows();
  const openrouterLimits=provider==="openrouter"?await getOpenRouterLimits(env):null;
- const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:(LIMITS[provider]||10);
+ const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:getProviderDailyLimit(env,provider);
  // Distinct per-visitor anti-abuse limits allow the backup to respond
  // even if this visitor has already used their daily/minute allowance
  // with Prisma's main providers. Neither allowance is unlimited.
  const isBackup=provider==="openrouter";
  const scopes=[
   [isBackup?"ip-minute:openrouter:"+key:"ip-minute:"+key,minute,isBackup?5:10,isBackup?"PROVIDER_MINUTE_LIMIT":"GLOBAL_LIMIT"],
-  [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?20:30,isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
+  [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?20:getVisitorDailyLimit(env),isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
   ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
   // OpenRouter is the independent paid/free safety net. It must remain usable
   // when the shared free quotas of the primary Prisma providers are exhausted.
-  ...(provider==="openrouter"?[]:[["total-day",day,60,"GLOBAL_LIMIT"]])
+  ...(provider==="openrouter"?[]:[["total-day",day,getSharedDailyBudget(env),"GLOBAL_LIMIT"]])
  ];
  const denied=([scope,start,max,code])=>{
   const isMinute=scope.includes("-minute:");
