@@ -625,6 +625,16 @@ function isRestrictedSongRequest(prompt){
  const q=String(prompt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  return /\b(letra exacta|letra completa de|continua(?:r)? la letra|sigue la letra|copia(?:r)? la letra|en el estilo de|al estilo de|imita(?:r)? a|exactamente como canta|como la cancion de|igual que canta)\b/.test(q);
 }
+// Abort slow inference calls; one stalled upstream must not freeze Prisma Core.
+async function fetchJsonWithDeadline(url,options,deadlineMs){
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),deadlineMs);
+ try{
+  const response=await fetch(url,{...options,signal:controller.signal});
+  const data=await response.json().catch(()=>({}));
+  return {response,data};
+ }finally{clearTimeout(timeout);}
+}
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
@@ -653,7 +663,7 @@ async function generateText(p,cb){
   summary:['gemini','cloudflare','groq','huggingface','pollinations'],
   quick:['gemini','cloudflare','groq','huggingface','pollinations'],
   general:['gemini','groq','cloudflare','huggingface','pollinations'],
-  planner:['gemini','groq','cloudflare','huggingface','pollinations'],
+  planner:['groq','gemini','pollinations','cloudflare','huggingface'],
   conversation:['gemini','cloudflare','groq','huggingface','pollinations']
  };
  const preferred=p.provider||'auto';
@@ -666,13 +676,26 @@ async function generateText(p,cb){
  if((p.polliToken||p.centralProviders?.pollinations)&&!providerOrder.includes('pollinations'))providerOrder.push('pollinations');
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI'};
  const errors=[],attempted=[];
+ // Retried calls count against user and project quotas, so cap per task.
+ const candidates=[...new Set(providerOrder)].filter(provider=>
+  provider==='pollinations'
+   ? Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim())
+   : Boolean(p.centralProviders?.[provider])
+ ).slice(0,3);
+ const startedAt=Date.now();
+ const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
+ const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
  const modelFor=provider=>{
-  const desired=modelProfiles[provider]?.[tier]||'';
+  // Planning needs compact structured output; prefer the faster model, not maximum reasoning tokens.
+  const desired=task==='planner'&&provider==='groq'?modelProfiles.groq.fast:task==='planner'&&provider==='gemini'?modelProfiles.gemini.fast:modelProfiles[provider]?.[tier]||'';
   const catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(!catalog.length)return desired;
   return catalog.some(item=>item.id===desired)?desired:catalog[0]?.id||desired;
  };
- for(const provider of [...new Set(providerOrder)]){
+ for(const provider of candidates){
+  const remaining=totalDeadline-(Date.now()-startedAt);
+  if(remaining<=2500){errors.push('La búsqueda de un motor superó el tiempo total de espera.');break;}
+  const requestDeadline=Math.min(individualDeadline,remaining);
   if(!['gemini','huggingface','groq','cloudflare','pollinations'].includes(provider))continue;
   if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
@@ -686,17 +709,16 @@ async function generateText(p,cb){
    let text='',model='';
    if(provider==='pollinations'&&!p.centralProviders?.pollinations){
     model=p.model||modelProfiles.pollinations[tier];
-    const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{
+    const {response,data}=await fetchJsonWithDeadline('https://gen.pollinations.ai/v1/chat/completions',{
      method:'POST',
      headers:{Authorization:'Bearer '+String(p.polliToken).trim(),'Content-Type':'application/json'},
      body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:user}],temperature:.7,max_tokens:outputTokens,stream:false})
-    });
-    const data=await response.json().catch(()=>({}));
+    },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.'),{status:response.status});
     text=data.choices?.[0]?.message?.content||data.output_text||'';
    }else{
     model=provider===preferred&&p.model?p.model:modelFor(provider);
-    const response=await fetch('/api/ai/chat',{
+    const {response,data}=await fetchJsonWithDeadline('/api/ai/chat',{
      method:'POST',
      headers:{'Content-Type':'application/json','Accept':'application/json'},
      cache:'no-store',
@@ -707,8 +729,7 @@ async function generateText(p,cb){
       temperature:.7,
       maxOutputTokens:outputTokens
      })
-    });
-    const data=await response.json().catch(()=>({}));
+    },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status});
     text=String(data.text||'').trim();model=data.model||model;
    }
@@ -724,8 +745,14 @@ async function generateText(p,cb){
    return {text,provider,model:model||'predeterminado',fallbackFrom,summary};
   }catch(error){
    const code=error?.status?' HTTP '+error.status:'';
-   errors.push(providerNames[provider]+code+': '+(error?.message||'fallo de conexión'));
-   if(attempted.length<providerOrder.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
+   const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
+   errors.push(providerNames[provider]+code+': '+detail);
+   // A shared IP quota applies to every provider; retrying another provider will not help.
+   if(error?.status===429&&/Prisma alcanzó su límite temporal gratuito/i.test(String(error?.message||''))){
+    errors.push('Se alcanzó el límite de solicitudes de Prisma. No se harán más intentos en esta operación.');
+    break;
+   }
+   if(attempted.length<candidates.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
   }
  }
  if(errors.length)throw Error('No fue posible generar la respuesta con los motores conectados. '+errors.join(' | '));

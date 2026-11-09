@@ -9,8 +9,8 @@ export async function checkLimits(env,request,provider) {
   const minute=Math.floor(Date.now()/60000);
   const day=Math.floor(minute/1440)*1440;
   const scopes=[
-    ["ip-minute:"+key,minute,6],
-    ["ip-day:"+key,day,15],
+    ["ip-minute:"+key,minute,10],
+    ["ip-day:"+key,day,30],
     ["provider-day:"+provider,day,LIMITS[provider]||10],
     ["total-day",day,60]
   ];

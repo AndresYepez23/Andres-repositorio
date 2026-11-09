@@ -87,10 +87,13 @@ export async function getCentralProviderStatus() {
     configured: {},
     features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},
   };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6500);
   try {
     const response = await fetch("/api/providers/status", {
       method: "GET",
       cache: "no-store",
+      signal: controller.signal,
       headers: { Accept: "application/json" },
     });
     if (!response.ok) return empty;
@@ -108,5 +111,7 @@ export async function getCentralProviderStatus() {
     };
   } catch {
     return empty;
+  } finally {
+    clearTimeout(timeout);
   }
 }
