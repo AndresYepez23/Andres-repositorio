@@ -159,6 +159,11 @@ export const tools = [
   ,{ id:'contrast-check-local', name:'Comprobador de contraste WCAG', description:'Calcula contraste entre dos colores y evalúa criterios AA y AAA.', category:'image', icon:'contrast', status:'ready', mode:'local', file:false, tag:'WCAG · Local' }
   ,{ id:'text-dedupe-words-local', name:'Eliminar palabras repetidas', description:'Detecta y elimina repeticiones consecutivas de palabras en un texto.', category:'text', icon:'list-checks', status:'ready', mode:'local', file:false, tag:'Procesamiento local' }
 
+
+  ,{ id:'text-redact-sensitive', name:'Ocultar datos sensibles', description:'Detecta y oculta posibles claves API, correos y teléfonos en textos antes de compartirlos. Requiere revisión manual.', category:'privacy', icon:'shield-check', status:'ready', mode:'local', file:false, tag:'Privacidad · Sin enviar datos' }
+  ,{ id:'utm-builder', name:'Crear enlaces UTM', description:'Prepara URLs de campañas con fuente, medio, campaña y etiquetas opcionales para medir publicaciones.', category:'creator', icon:'link', status:'ready', mode:'local', file:false, tag:'Marketing · SEO · Local' }
+  ,{ id:'subtitle-srt-local', name:'Crear subtítulos SRT', description:'Convierte un guion en un archivo SRT descargable con tiempos aproximados, editables en CapCut u otro editor.', category:'creator', icon:'captions', status:'ready', mode:'local', file:false, tag:'Subtítulos · Sin IA' }
+
 ];
 
 export const statusLabels = { ready:'Disponible', beta:'Beta', soon:'Próximamente' };
