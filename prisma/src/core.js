@@ -747,7 +747,7 @@ async function executePlan(){
   if(!pendingPlan||executionActive)return;
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
-  const executed=[];let currentFiles=[...attachments],lastText='';
+  const executed=[];let currentFiles=[...attachments],lastText='',successful=false;
   try{
     for(let index=0;index<steps.length;index++){
       if(cancelRequested)break;
@@ -800,6 +800,7 @@ async function executePlan(){
         const label=plan.combineFinalFiles?'PDF terminado. Incluye las páginas y modificaciones solicitadas; descarga el documento final.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
         addMessage('assistant',label,{results:visibleResults,partial:false});
       }
+      successful=true;
       status('Ejecución completada.','success');
     }
   }catch(error){
@@ -807,7 +808,11 @@ async function executePlan(){
     addMessage('assistant','No pude completar toda la tarea: '+(error?.message||'error inesperado')+'.'+(executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.'),{results:executed,partial:true});
     status('Ejecución detenida.','error');
   }finally{
-    executionActive=false;setBusy(false);attachments=[];renderAttachments();$('#core-file-input').value='';
+    executionActive=false;setBusy(false);
+    // Keep source files available after a failed or cancelled operation, so the
+    // user can correct a page range without uploading the original PDF again.
+    if(successful){attachments=[];$('#core-file-input').value='';}
+    renderAttachments();
   }
 }
 function resultObjectUrl(blob){
