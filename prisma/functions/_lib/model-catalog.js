@@ -38,7 +38,8 @@ export const IMAGE_MODELS = {
   ],
   cloudflare: [{id:"@cf/black-forest-labs/flux-1-schnell",name:"FLUX.1 Schnell",specialty:"Generación de imágenes con Workers AI"}],
   // Higher-cost inference. Enabled only with HF_MEDIA_ENABLED=1.
-  huggingface: [{id:"stabilityai/stable-diffusion-3-medium-diffusers",name:"Stable Diffusion 3 Medium",specialty:"Generación de imágenes con HF Inference"}]
+  huggingface: [{id:"stabilityai/stable-diffusion-3-medium-diffusers",name:"Stable Diffusion 3 Medium",specialty:"Generación de imágenes con HF Inference"}],
+  gemini: [{id:"gemini-3.1-flash-image",name:"Gemini 3.1 Flash Image",specialty:"Imagen premium, requiere activación de facturación"}]
 };
 export const AUDIO_MODELS = {
   groq: [{id:"whisper-large-v3-turbo",name:"Whisper Large V3 Turbo",specialty:"Transcripción rápida"}],
