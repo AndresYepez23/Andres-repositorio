@@ -267,10 +267,12 @@ export async function onRequestPost({ request, env }) {
     });
     try{
       response=await askGroq(env.GROQ_API_KEY);
-      // Secondary credentials are used only for transport/provider faults, not 429/402.
-      // Shared Prisma rate counters always apply regardless of which key is selected.
-      if(env.GROQ_API_KEY_BACKUP&&[401,403,500,502,503,504].includes(response.status)){
-        response=await askGroq(env.GROQ_API_KEY_BACKUP);
+      // Secondary credentials from Cloudflare are genuine backups; 429 gets one
+      // bounded attempt, then Prisma returns to its normal provider fallback.
+      // Prisma's shared D1 quotas continue to apply to either credential.
+      const groqBackup=String(env.GROQ_API_KEY_2||env.GROQ_API_KEY_BACKUP||'').trim();
+      if(groqBackup&&groqBackup!==env.GROQ_API_KEY&&[401,403,429,500,502,503,504].includes(response.status)){
+        response=await askGroq(groqBackup);
       }
     }catch{
       await setProviderHold(env,"groq","network_error","Groq no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.",60);
@@ -346,8 +348,11 @@ export async function onRequestPost({ request, env }) {
   try {
     response = await askGemini(activeModel);
     data = await response.json().catch(() => ({}));
-    if (env.GEMINI_API_KEY_BACKUP && [401,403,500,502,503,504].includes(response.status)) {
-      response = await askGemini(activeModel,env.GEMINI_API_KEY_BACKUP);
+    // A separate authorized Gemini project may still have capacity when the
+    // primary responds with 429; attempt the secondary at most once.
+    const geminiBackup=String(env.GEMINI_API_KEY_2||env.GEMINI_API_KEY_BACKUP||'').trim();
+    if (geminiBackup && geminiBackup !== env.GEMINI_API_KEY && [401,403,429,500,502,503,504].includes(response.status)) {
+      response = await askGemini(activeModel,geminiBackup);
       data = await response.json().catch(() => ({}));
     }
     if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
