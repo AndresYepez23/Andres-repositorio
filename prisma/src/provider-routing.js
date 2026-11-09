@@ -2,15 +2,15 @@
 // Routing is sequential: one model is used on the healthy path; alternatives
 // are contacted only after a real failure. OpenRouter remains the final reserve.
 export const ROUTE_ORDER = Object.freeze({
-  planner: ["groq","cloudflare","sensenova","zai","gemini","requesty","kilo","pollinations","huggingface","baidu","openrouter"],
-  quick: ["groq","cloudflare","kilo","requesty","sensenova","zai","gemini","pollinations","huggingface","baidu","openrouter"],
-  conversation: ["groq","cloudflare","gemini","sensenova","zai","requesty","kilo","pollinations","huggingface","baidu","openrouter"],
-  general: ["groq","cloudflare","gemini","sensenova","zai","requesty","kilo","pollinations","huggingface","baidu","openrouter"],
-  summary: ["cloudflare","groq","gemini","requesty","sensenova","zai","kilo","pollinations","huggingface","baidu","openrouter"],
-  coding: ["cloudflare","groq","zai","requesty","sensenova","kilo","gemini","pollinations","huggingface","baidu","openrouter"],
-  reasoning: ["gemini","sensenova","zai","requesty","cloudflare","groq","kilo","pollinations","huggingface","baidu","openrouter"],
-  creative: ["groq","gemini","sensenova","zai","requesty","cloudflare","kilo","pollinations","huggingface","baidu","openrouter"],
-  songwriting: ["groq","gemini","sensenova","zai","requesty","cloudflare","kilo","pollinations","huggingface","baidu","openrouter"],
+  planner: ["groq","cloudflare","sensenova","zai","gemini","requesty","pollinations","huggingface","baidu","openrouter"],
+  quick: ["groq","cloudflare","requesty","sensenova","zai","gemini","pollinations","huggingface","baidu","openrouter"],
+  conversation: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","baidu","openrouter"],
+  general: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","baidu","openrouter"],
+  summary: ["cloudflare","groq","gemini","requesty","sensenova","zai","pollinations","huggingface","baidu","openrouter"],
+  coding: ["cloudflare","groq","zai","requesty","sensenova","gemini","pollinations","huggingface","baidu","openrouter"],
+  reasoning: ["gemini","sensenova","zai","requesty","cloudflare","groq","pollinations","huggingface","baidu","openrouter"],
+  creative: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","baidu","openrouter"],
+  songwriting: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","baidu","openrouter"],
 });
 
 const MODEL_BY_TASK = Object.freeze({
