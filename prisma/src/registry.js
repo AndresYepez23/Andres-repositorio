@@ -161,10 +161,10 @@ export const tools = [
 
   ,{ id:'text-redact-local', name:'Anonimizar datos en un texto', description:'Oculta correos, teléfonos, enlaces y direcciones IPv4 en tu dispositivo. Revisa el resultado antes de compartirlo.', category:'privacy', icon:'shield-check', status:'ready', mode:'local', file:false, tag:'Privacidad · Sin IA' }
   ,{ id:'json-compare-local', name:'Comparar dos JSON', description:'Detecta los campos añadidos, eliminados y modificados entre dos estructuras JSON sin subir información.', category:'data', icon:'files', status:'ready', mode:'local', file:false, tag:'Desarrollo · Local' }
-  ,{ id:'citation-ids-local', name:'Extraer DOI, PMID y arXiv', description:'Recupera identificadores bibliográficos de textos científicos y genera enlaces para consultarlos.', category:'study', icon:'book-open', status:'ready', mode:'local', file:false, tag:'Investigación · Local' }
-  ,{ id:'ai-compare-options', name:'Comparador inteligente de opciones', description:'Compara alternativas, ventajas, riesgos y criterios sin inventar precios ni datos actuales.', category:'ai', icon:'scale', status:'beta', mode:'byok', file:false, tag:'IA · Decisiones' }
-  ,{ id:'ai-action-plan', name:'Planificador inteligente', description:'Transforma objetivos en pasos concretos, entregables, dependencias y riesgos.', category:'ai', icon:'list-checks', status:'beta', mode:'byok', file:false, tag:'IA · Productividad' }
-  ,{ id:'ai-text-review', name:'Revisor crítico de textos', description:'Identifica contradicciones, errores de estructura y mejoras en documentos que pegues.', category:'ai', icon:'file-search', status:'beta', mode:'byok', file:false, tag:'IA · Escritura' }
+  ,{ id:'citation-ids-local', name:'Extraer DOI, PMID y arXiv', description:'Recupera identificadores bibliográficos de textos científicos y genera enlaces para consultarlos.', category:'study', icon:'graduation-cap', status:'ready', mode:'local', file:false, tag:'Investigación · Local' }
+  ,{ id:'ai-compare-options', name:'Comparador inteligente de opciones', description:'Compara alternativas, ventajas, riesgos y criterios sin inventar precios ni datos actuales.', category:'ai', icon:'sliders', status:'beta', mode:'byok', file:false, tag:'IA · Decisiones' }
+  ,{ id:'ai-action-plan', name:'Planificador inteligente', description:'Transforma objetivos en pasos concretos, entregables, dependencias y riesgos.', category:'ai', icon:'list', status:'beta', mode:'byok', file:false, tag:'IA · Productividad' }
+  ,{ id:'ai-text-review', name:'Revisor crítico de textos', description:'Identifica contradicciones, errores de estructura y mejoras en documentos que pegues.', category:'ai', icon:'file-text', status:'beta', mode:'byok', file:false, tag:'IA · Escritura' }
 
 ];
 
