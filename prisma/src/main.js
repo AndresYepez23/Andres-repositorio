@@ -1205,7 +1205,7 @@ function setupPrismaCoreViewport(){
   const root=document.documentElement;
   const input=document.querySelector('#core-input');
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true;
-  let raf=0,lastUnfocusedHeight=0,wasKeyboardOpen=false;
+  let raf=0,lastUnfocusedHeight=0;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
     raf=requestAnimationFrame(()=>{
@@ -1218,13 +1218,12 @@ function setupPrismaCoreViewport(){
       const fullHeight=Math.max(layoutHeight,screenHeight);
       // Track the unoccluded height instead of comparing against innerHeight,
       // which can shrink alongside visualViewport in an installed PWA.
-      if(!focused&&!(wasKeyboardOpen&&visible<lastUnfocusedHeight-100)){
-        lastUnfocusedHeight=Math.max(visible,fullHeight);
-      }
+      if(!focused)lastUnfocusedHeight=fullHeight;
       if(!lastUnfocusedHeight)lastUnfocusedHeight=fullHeight;
       const keyboardGap=lastUnfocusedHeight-visible;
-      const keyboardOpen=keyboardGap>110&&(focused||wasKeyboardOpen);
-      wasKeyboardOpen=keyboardOpen;
+      // The PWA may under-report visualViewport.height even with no keyboard.
+      // Never infer an open keyboard once the composer has lost focus.
+      const keyboardOpen=focused&&keyboardGap>110;
       const height=standalone&&!keyboardOpen?Math.max(fullHeight,lastUnfocusedHeight):visible;
       // pageTop is measured in document coordinates. Unlike offsetTop alone
       // it also follows Safari's implicit focus scrolling on WebKit.
