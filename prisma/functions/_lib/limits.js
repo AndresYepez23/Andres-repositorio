@@ -9,6 +9,9 @@ export const LIMITS=Object.freeze({
  "groq-audio":3,"pollinations-audio":2,"gemini-image":2
 });
 
+const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,baidu:3,aihubmix:10,amd:3});
+export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[provider]||null;}
+
 // Internal budgets are per provider/project, not per API key. Multiple keys
 // in one account do not multiply the provider's real quota. An owner can tune
 // a safe app-side ceiling with PRISMA_<PROVIDER>_DAILY_LIMIT in Cloudflare.
@@ -16,7 +19,7 @@ export function getProviderDailyLimit(env,provider){
  const variable='PRISMA_'+String(provider||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')+'_DAILY_LIMIT';
  const configured=Number(env?.[variable]);
  if(Number.isFinite(configured)&&configured>0)return Math.max(1,Math.min(5000,Math.floor(configured)));
- if(provider==="aihubmix"&&env?.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1")return 25;
+ if(provider==="aihubmix"&&env?.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1")return 15;
  return LIMITS[provider]||10;
 }
 export function getSharedDailyBudget(env){
@@ -95,8 +98,8 @@ export async function checkLimits(env,request,provider){
   [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?20:getVisitorDailyLimit(env),isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
   ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
+  ...(PROVIDER_MINUTE_LIMITS[provider] ? [["provider-minute:"+provider,minute,PROVIDER_MINUTE_LIMITS[provider],"PROVIDER_MINUTE_LIMIT"]] : []),
   ...(provider==="aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1" ? [["provider-lifetime:aihubmix",0,10,"PROVIDER_LIMIT"]] : []),
-  ...(provider==="aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1" ? [["provider-minute:aihubmix",minute,10,"PROVIDER_MINUTE_LIMIT"]] : []),
   // OpenRouter is the independent paid/free safety net. It must remain usable
   // when the shared free quotas of the primary Prisma providers are exhausted.
   ...(provider==="openrouter"?[]:[["total-day",day,getSharedDailyBudget(env),"GLOBAL_LIMIT"]])
