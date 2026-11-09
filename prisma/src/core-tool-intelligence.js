@@ -1,7 +1,7 @@
 // Prisma Core: universal, zero-API capability index and conservative local actions.
 // Every ready/beta tool is indexed automatically from the source registry.
 // AI providers remain available for ambiguous, semantic and multi-step work.
-import { tools } from './registry.js';
+import { tools, categories } from './registry.js';
 
 const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}./:+-]+/gu,' ').replace(/\s+/g,' ').trim();
 const words = value => normalize(value).split(' ').filter(part => part.length > 2);
@@ -302,15 +302,50 @@ export function planCoreOfflineAction(query,files=[],history=[]){
   return ok([step('qr',{text:qrMatch[1]},'Crear código QR con el enlace indicado')]);
  return null;
 }
+function capabilityGroups(){
+ const list=coreToolCatalog();
+ return categories.filter(category=>category.id!=='all').map(category=>{
+  const items=list.filter(tool=>tool.category===category.id);
+  if(!items.length)return null;
+  return {id:category.id,name:category.name,count:items.length,examples:items.slice(0,2).map(tool=>tool.name)};
+ }).filter(Boolean);
+}
+export function coreCapabilityContext(){
+ const list=coreToolCatalog(),localCount=list.filter(local).length;
+ const groups=capabilityGroups();
+ return [
+  'CAPACIDADES REALES DE PRISMA SPACE (fuente: registro de herramientas activo):',
+  'Hay '+list.length+' herramientas activas o beta; '+localCount+' funcionan localmente o en el navegador.',
+  ...groups.map(group=>group.name+': '+group.count+' herramientas. Ejemplos: '+group.examples.join(', ')+'.'),
+  'También puedo conversar, explicar, resumir, comparar, razonar, redactar, crear contenido y ayudar con programación mediante los motores de IA conectados.',
+  'Las herramientas locales/navegador no necesitan cuota de inferencia; las capacidades remotas dependen de la conexión, el modelo y sus límites.',
+  'No afirmes que una herramienta está lista si no figura en este registro. No inventes funciones, motores activos, resultados ni ejecuciones.'
+ ].join('\n').slice(0,1850);
+}
 export function describeCoreTools(query,files=[]){
  const list=coreToolCatalog();
  const localCount=list.filter(local).length;
+ if(isBroadCapabilityQuestion(query)){
+  const groups=capabilityGroups();
+  return [
+   '**¡Puedo ayudarte con bastante más que una conversación!** Soy el asistente de Prisma Space y puedo elegir herramientas según el resultado que necesites.',
+   'Actualmente tengo **'+list.length+' herramientas activas**, de las cuales **'+localCount+' funcionan localmente o en tu navegador**, sin consumir cuota de inferencia.',
+   '**Mis áreas principales**',
+   ...groups.map(group=>'- **'+group.name+'** ('+group.count+'): '+group.examples.join(' y ')+'.'),
+   '**También puedo** explicar temas, resumir y analizar información, comparar opciones, razonar, programar, redactar, crear guiones y ayudarte a planificar.',
+   'Puedes pedirme directamente el resultado que buscas o adjuntar un archivo. Yo selecciono y encadeno las herramientas compatibles; te pediré autorización cuando una operación utilice servicios externos.'
+  ].join('\n\n');
+ }
  const search=searchCoreTools(query,files,12).filter(tool=>tool.rank>3);
  if(!search.length)return 'Prisma Core tiene '+list.length+' herramientas activas (ready o beta), de las cuales '+localCount+' son locales o funcionan en el navegador. Puedo buscar por tipo de archivo o resultado deseado. ¿Qué quieres crear o transformar?';
  const selected=search.slice(0,7);
  return 'Prisma Core conoce '+list.length+' herramientas disponibles, incluyendo '+localCount+' locales o de navegador. Para esta tarea, las más relacionadas son:\n'+selected.map(item=>'- '+item.name+' ('+(local(item)?'sin cuota de IA':'requiere proveedor')+')').join('\n')+'\nPuedes pedirme el resultado final, adjuntar archivos y dejar que seleccione las operaciones. No es necesario indicar el nombre de cada herramienta.';
 }
+function isBroadCapabilityQuestion(query){
+ const q=normalize(query);
+ return /(?:que|cuales|cuantas).{0,35}(?:habilidades|capacidades|puedes hacer|sabes hacer|puedo pedirte)|(?:que sabes hacer|que puedes hacer|en que puedes ayudarme|como me puedes ayudar|para que sirves|cual es tu repertorio|muestrame todo lo que puedes hacer)/.test(q);
+}
 export function isToolDiscoveryQuestion(query){
  const q=normalize(query);
- return /(?:que|cuales|cuantas|dime|muestrame|recomienda).{0,45}(?:herramientas|funciones|utilidades|capacidades)|(?:herramientas|funciones|utilidades).{0,35}(?:tienes|hay|recomiendas|puedo usar)|(?:que puedo hacer con|que herramientas usarias para)/.test(q)&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
+ return isBroadCapabilityQuestion(q)||/(?:que|cuales|cuantas|dime|muestrame|recomienda).{0,45}(?:herramientas|funciones|utilidades|capacidades)|(?:herramientas|funciones|utilidades).{0,35}(?:tienes|hay|recomiendas|puedo usar)|(?:que puedo hacer con|que herramientas usarias para)/.test(q)&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
 }
