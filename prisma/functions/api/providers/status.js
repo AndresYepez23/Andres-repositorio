@@ -1,7 +1,6 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
-import { getAmdFreeModels } from "../../_lib/amd-models.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
@@ -39,7 +38,6 @@ export async function onRequestGet({ env }) {
     return (!daily || daily.remaining > 0) && (!minute || minute.remaining > 0);
   };
   const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
-  const amdModels = configured.amd > 0 ? await getAmdFreeModels(env) : [];
   const kiloModels = await getKiloFreeModels(env);
   const aihubmixModels = configured.aihubmix > 0 ? await getAihubmixFreeModels(env) : [];
   const available = Object.fromEntries(poolProviders.map(provider =>
@@ -81,7 +79,6 @@ export async function onRequestGet({ env }) {
     else if (provider === "kilo" && !configured[provider] && kiloModels.length) warnings[provider] = "Acceso gratuito anónimo activo; KILO_API_KEYS_JSON es opcional y admite hasta seis claves. Modelos gratuitos verificados en vivo.";
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
-    else if (provider === "amd" && configured[provider] > 0 && amdModels.length === 0) warnings[provider] = "No se pudo validar un modelo gratuito de texto en el catálogo actual de AMD; permanece desactivado.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
     else if (provider === "baidu" && configured[provider] > 0 && env.BAIDU_FREE_QUOTA_CONFIRMED !== "1") warnings[provider] = "Baidu está bloqueado para evitar consumo facturable. Confirma en Qianfan que ERNIE-Speed/Lite/Tiny tienen cuota gratuita en tu cuenta y define BAIDU_FREE_QUOTA_CONFIRMED=1.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
@@ -94,7 +91,6 @@ export async function onRequestGet({ env }) {
   if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
 
   const modelCatalog = modelsForUI();
-  modelCatalog.chat.amd = amdModels;
   modelCatalog.chat.kilo = kiloModels;
   modelCatalog.chat.aihubmix = aihubmixModels;
 
@@ -130,7 +126,6 @@ export async function onRequestGet({ env }) {
       zai: Boolean(available.zai),
       baidu: Boolean(available.baidu),
       aihubmix: Boolean(available.aihubmix),
-      amd: Boolean(available.amd),
     },
     configured: {
       pollinations: configured.pollinations > 0,
@@ -145,7 +140,6 @@ export async function onRequestGet({ env }) {
       zai: configured.zai > 0,
       baidu: configured.baidu > 0,
       aihubmix: configured.aihubmix > 0,
-      amd: configured.amd > 0,
     },
     warnings,
     capacity: {
@@ -180,7 +174,6 @@ export async function onRequestGet({ env }) {
       zai: "glm-4.7-flash",
       baidu: "ernie-speed-128k",
       aihubmix: "coding-glm-5.3-free",
-      amd: "DeepSeek-V4-Flash",
     },
   }), { status: 200, headers });
 }
