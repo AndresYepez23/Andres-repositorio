@@ -46,6 +46,7 @@ export async function onRequestGet({ env }) {
   const openrouterReady = Boolean(available.openrouter);
   const speechReady = pollinationsReady && !blockedSpeech;
   const groqAudioReady = groqReady && !blockedGroqAudio;
+  const cloudflareReady = limited && Boolean(env.AI?.run) && dailyAvailable("cloudflare");
 
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
     const hold = holds[provider];
@@ -67,6 +68,7 @@ export async function onRequestGet({ env }) {
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
   }
+  if (env.AI?.run && usage.cloudflare?.daily?.remaining === 0) warnings.cloudflare = "Prisma alcanzó su presupuesto interno diario para Cloudflare Workers AI. Se renovará en el siguiente día UTC.";
   if (blockedSpeech) warnings.pollinationsAudio = blockedSpeech.reason;
   if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
 
