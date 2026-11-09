@@ -6,6 +6,7 @@ import { buildSmartLocalFlow } from './smart-flows.js';
 import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
+import { initPrismaVoice } from './prisma-voice.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -109,6 +110,7 @@ function persistChatHistory(activeSerialized=null){
     }))
   }));
   localStorage.setItem(CHATS_KEY,JSON.stringify(records));
+  document.dispatchEvent(new Event('prisma:chats-changed'));
  }catch(error){
   // Browser storage may be full. Retain the active chat and discard oldest
   // persisted chats before retrying; never silently discard the active thread.
@@ -169,6 +171,7 @@ function renderConversationList(){
     if(!window.confirm('¿Eliminar esta conversación de este dispositivo?'))return;
     if(busy)return;
     conversations=conversations.filter(item=>item.id!==chat.id);
+   document.dispatchEvent(new CustomEvent('prisma:chat-deleted',{detail:{id:chat.id}}));
     if(!conversations.length)conversations=[newChatRecord()];
     if(activeConversationId===chat.id){activeConversationId=conversations[0].id;messages=conversations[0].messages.slice();renderMessages({forceBottom:true});}
     persistChatHistory();renderConversationList();
@@ -205,6 +208,7 @@ function updateChatScreen(){const section=$('#core-section');section?.classList.
 function addMessage(role,content,extra={}){
   messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
   messages=messages.slice(-60);save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
+  document.dispatchEvent(new CustomEvent('prisma:core-message',{detail:{role,content:String(content||'')}}));
 }
 function speechSynthesisStop(){
  voiceUtterance++;
@@ -319,7 +323,7 @@ function renderMessages({forceBottom=false}={}){
   list.replaceChildren();
   if(!messages.length){
     const welcome=document.createElement('div');welcome.className='core-welcome';
-    welcome.innerHTML='<span class="eyebrow core-welcome-eyebrow">PRISMA CORE · TU ASISTENTE</span><h2>Empieza por lo que <span class="core-welcome-gradient">quieres lograr</span></h2><p>No necesitas saber qué herramienta usar. Escríbeme en lenguaje natural o adjunta un archivo y me encargo de organizar el trabajo.</p>';
+    welcome.innerHTML='<span class="eyebrow core-welcome-eyebrow">PRISMA CORE · TU ASISTENTE</span><h2>¿Qué necesitas hacer?<span class="core-welcome-gradient">Déjaselo a Prisma.</span></h2><p>No necesitas saber qué herramienta usar. Escríbeme en lenguaje natural o adjunta un archivo y me encargo de organizar el trabajo.</p>';
     const examples=document.createElement('div');examples.className='core-examples';
     examples.innerHTML=['Divide este PDF y guarda cada página por separado','Convierte este PDF en un Word editable','Analiza este documento y resume lo importante','Prepara esta imagen para Instagram','Crea una página web para mi negocio'].map((x,i)=>'<button type="button" data-example="'+i+'">'+escapeHtml(x)+'</button>').join('');
     welcome.append(examples);list.append(welcome);
@@ -1428,14 +1432,24 @@ async function sendMessage(){
   catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
   finally{setBusy(false);}
 }
+function exportActiveChat(){
+ const chat=conversations.find(x=>x.id===activeConversationId);if(!chat)return;
+ const payload={title:chat.title,exportedAt:new Date().toISOString(),messages:messages.map(m=>({role:m.role,content:String(m.content||''),time:m.time}))};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='prisma-chat-'+new Date().toISOString().slice(0,10)+'.json';link.click();
+ setTimeout(()=>URL.revokeObjectURL(url),800);status('Conversación exportada.','success');
+}
 export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
   const integratedHistory=$('#core-history');
   const mainSidebarSlot=$('#core-sidebar-conversations');
   if(integratedHistory&&mainSidebarSlot)mainSidebarSlot.append(integratedHistory);
   initImageEditor();
+  initPrismaVoice();
   loadChatHistory();
   renderMessages({forceBottom:true});updateChatScreen();
+  document.addEventListener('prisma:core-export-request',exportActiveChat);
+  document.addEventListener('prisma:remote-chats-ready',()=>{if(busy||executionActive)return;loadChatHistory();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();});
   $('#core-history-search')?.addEventListener('input',event=>{conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();renderConversationList();});
   $('#core-history-toggle')?.addEventListener('click',()=>$('#core-workspace')?.classList.toggle('history-open'));
   $('#core-history-close')?.addEventListener('click',closeConversationDrawer);
