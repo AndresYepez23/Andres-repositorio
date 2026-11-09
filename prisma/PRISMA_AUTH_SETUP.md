@@ -7,7 +7,7 @@
 ## Separación obligatoria
 Usar un proyecto **Prisma Space** en Supabase, nunca la base de OdontoUdeC ni las credenciales compartidas de su autenticación.
 
-El proyecto Supabase gratuito estaba cotizado en US$0/mes, pero el conector solicitó confirmación específica antes de crearlo. Por eso **no se creó ni configuró** y los métodos de acceso permanecen deshabilitados en producción.
+Prisma Space dispone de un proyecto separado de Supabase (`hyoxywiwhnhfekakhivp`), creado en la organización autorizada con plan gratuito cotizado a **US$0/mes**. En noviembre de 2026 se aplicó el esquema de perfiles y conversaciones con RLS y no se modificó OdontoUdeC. Cloudflare Pages producción contiene la URL y la **clave publicable** de este proyecto; los demás secretos siguen en Cloudflare. Queda pendiente verificar las redirecciones de Auth, SMTP y proveedores OAuth antes de considerar el registro comprobado de extremo a extremo.
 
 ### Pasos para habilitarlo (una vez confirmado el proyecto)
 1. Crear Prisma Space en la organización autorizada de Supabase. Registrar URL y publishable key (NO service_role).
@@ -27,3 +27,21 @@ Los chats anónimos siguen en `localStorage`. La nube se usa solo después de qu
 
 ## Voz
 La transcripción primero intenta Web Speech cuando es compatible; como respaldo puede grabar y transcribir con `/api/ai/transcribe` y Groq (limitado por cuota). El modo conversación es **por turnos**, no un streaming full duplex continuo.
+
+## Respaldo de claves propias y cuotas
+
+El backend admite opcionalmente los secretos `GROQ_API_KEY_BACKUP` y `GEMINI_API_KEY_BACKUP` en Cloudflare Pages. Solo se usan frente a fallos de servicio (5xx), problemas de red o credenciales rechazadas (401/403), y deben pertenecer a cuentas para las que exista autorización válida. **No** se usan para saltar 429, crédito agotado (402), topes del proveedor ni el límite compartido de Prisma. Los cuatro límites D1 de Prisma siguen aplicando a toda operación.
+
+Para configurar otras claves, usar **Cloudflare Pages → prismaspace → Settings → Variables and Secrets**, tipo **Secret**. Nunca incluir claves privadas en `index.html`, el repositorio, parámetros de URL ni el navegador.
+
+El modo local de Prisma puede responder a preguntas básicas sobre identidad y límites sin consumir inferencia, pero no equivale a un LLM generativo disponible las 24 horas. Un respaldo de nube «siempre disponible» no se puede garantizar mientras se usen cuotas gratuitas y servicios externos.
+
+## Terminación del registro
+
+Antes de invitar usuarios, confirmar en Supabase:
+- Authentication → URL Configuration → Site URL: `https://prismaspace.pages.dev`.
+- Redirect URLs → añadir `https://prismaspace.pages.dev/**` y otros dominios propios que se vayan a usar.
+- Correo de confirmación, límites antiabuso y SMTP remitente verificado. La cuenta de Resend de otra aplicación **no** se copia automáticamente.
+- Google, Apple y SMS solo se activan al instalar proveedores con sus credenciales y flags correspondientes.
+
+La aplicación debe seguir permitiendo el uso anónimo en navegador y PWA.
