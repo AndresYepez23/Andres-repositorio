@@ -765,6 +765,12 @@ async function generateText(p,cb){
    'No inventes qué motor concreto respondió: la aplicación muestra esa información de forma independiente.',
    'Mantén el hilo real de los mensajes, especialmente ante preguntas cortas como «eso», «aquí» y «¿y ahora?».',
    'Responde en español, salvo petición contraria. Evita repetir saludos cuando la conversación continúa.',
+   'Calidad universal: responde primero a lo que se preguntó, con información concreta y útil. Ajusta la profundidad a la complejidad; evita relleno, introducciones largas, frases repetidas y listas artificiales.',
+   'Formato universal: utiliza Markdown estándar cuando mejore la lectura. Usa títulos breves solo si hay secciones, listas para enumerar, pasos numerados para instrucciones y bloques de código cercados para código. Separa los párrafos y evita muros de texto.',
+   'No escribas tablas ASCII ni filas de barras verticales y guiones como texto. Si una tabla facilita una comparación real, usa una tabla Markdown válida con encabezado y fila separadora; en los demás casos prefiere listas claras. No conviertas una respuesta sencilla en una tabla.',
+   'Cuando expliques varias capacidades, agrúpalas por áreas y añade ejemplos concretos. Si se proporciona un catálogo de capacidades de Prisma, úsalo como fuente de verdad: no inventes herramientas, integraciones, modelos, cifras, disponibilidad ni acciones realizadas.',
+   'Razonamiento: distingue hechos de inferencias, señala incertidumbre cuando importe y explica los pasos relevantes sin revelar razonamiento privado. Si falta un dato esencial, formula una sola pregunta concreta.',
+   'Código y datos: conserva la sintaxis, identifica supuestos, usa bloques de código con el lenguaje correcto y nunca simules que ejecutaste o verificaste algo que no se ejecutó.',
    tones[p.tone]||tones.professional,songInstruction,
    typeof p.context==='string'?p.context.slice(0,2000):''
   ].filter(Boolean).join(' ');
