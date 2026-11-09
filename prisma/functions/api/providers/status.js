@@ -77,6 +77,7 @@ export async function onRequestGet({ env }) {
   const warnings = {};
   for (const provider of poolProviders) {
     if (holds[provider]) warnings[provider] = holds[provider].reason;
+    else if (credentialSlots[provider].poolConfigured && !credentialSlots[provider].poolValid) warnings[provider] = "El secreto " + credentialSlots[provider].poolVariable + " debe contener un arreglo JSON válido de hasta seis claves de texto.";
     else if (provider === "kilo" && !configured[provider] && kiloModels.length) warnings[provider] = "Acceso gratuito anónimo activo; KILO_API_KEY es opcional. Modelos gratuitos verificados en vivo.";
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
