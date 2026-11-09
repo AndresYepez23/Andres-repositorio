@@ -331,6 +331,12 @@ function setupApiExplorer(){
 }
 function buildFields(t){
   switch(t.id){
+    case 'pdf-form-fields':return '<div class="tool-hint">Muestra únicamente el nombre y tipo de los campos del formulario. Por privacidad no extrae respuestas ni datos personales.</div>';
+    case 'pdf-form-flatten':return '<div class="tool-hint">Fija los campos existentes como contenido visual. Después de esta operación ya no se podrán editar como formulario. Guarda una copia del PDF original.</div>';
+    case 'pdf-add-blank':return field('Cuántas páginas añadir','count','number','1','Entre 1 y 10 páginas.','min="1" max="10"')+selectField('Ubicación','position',[['end','Al final'],['start','Al principio']],'end');
+    case 'image-identify-local':return '<div class="tool-hint">Modelo gratuito ViT ONNX de Hugging Face ejecutado en el dispositivo. La primera vez descarga un modelo de aproximadamente 50–90 MB. Puede tardar en móviles y sus etiquetas están en inglés. No identifica personas.</div>';
+    case 'csv-profile-local':return selectField('Separador CSV','delimiter',[['auto','Detectar automáticamente'],[',','Coma'],[';','Punto y coma'],['\t','Tabulación']],'auto')+'<div class="tool-hint">Revisa celdas vacías, cantidad de valores únicos, tipos probables y filas duplicadas sin enviar el archivo.</div>';
+    case 'json-schema-validate':return textareaField('Datos JSON','text','{"id":1,"nombre":"Prisma"}','Pega el contenido JSON que quieres validar.')+textareaField('JSON Schema','schema','{"type":"object","required":["id"],"properties":{"id":{"type":"integer"}}}','AJV comprueba los datos con las reglas de tu esquema. Todo ocurre en el navegador.');
     case 'pdf-split':return '<div class="tool-hint">Divide el documento en un PDF por página y descarga todos los archivos en un ZIP. Se procesa en tu dispositivo, sin subir el documento ni necesitar una API.</div>';
     case 'pdf-compress':return '<div class="tool-hint">Optimiza la estructura interna del PDF sin convertir las páginas en imágenes. No necesita API y conserva el texto seleccionable. La reducción depende del documento; si el peso está en fotografías, esta técnica puede no reducirlo. La compresión avanzada de imágenes se incorporará por separado.</div>';
     case 'pdf-to-word':return '<div class="tool-hint">Convierte PDF digitales con texto seleccionable en un archivo DOCX editable. No requiere cuenta ni API: el procesamiento ocurre en tu navegador. Los PDFs escaneados necesitan OCR y la maquetación compleja puede requerir ajustes en Word.</div>';
@@ -1095,6 +1101,10 @@ $('#open-ai-assistant')?.addEventListener('click',()=>{const tool=tools.find(t=>
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 $$('[data-view-jump]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.viewJump)));
 $('#global-search').addEventListener('input',e=>{const wasEmpty=!searchTerm.trim();searchTerm=e.target.value;activeView='explore';activeCategory='all';render();if((wasEmpty&&searchTerm.trim())||!searchTerm.trim())scrollToCurrentView();});
+$('#explore-search')?.addEventListener('input',e=>{searchTerm=e.target.value;activeView='explore';activeCategory='all';$('#global-search').value=searchTerm;render();});
+$('#explore-subcategory')?.addEventListener('change',e=>{activeView='explore';activeCategory=e.target.value;expandedToolFamily=familyForCategory(activeCategory)?.id||expandedToolFamily;renderCategories();render();});
+$('[data-quick-tool]').forEach(button=>button.addEventListener('click',()=>{const t=tools.find(tool=>tool.id===button.dataset.quickTool);if(t)openTool(t);}));
+
 $('#theme-toggle').addEventListener('click',()=>{const root=document.documentElement;const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;$('#theme-toggle').innerHTML=icon(next==='dark'?'sun':'moon');localStorage.setItem('prisma-theme',next);});
 const savedTheme=localStorage.getItem('prisma-theme');if(savedTheme){document.documentElement.dataset.theme=savedTheme;$('#theme-toggle').innerHTML=icon(savedTheme==='dark'?'sun':'moon');}
 $('#explore-tools').addEventListener('click',()=>$('#tools-section').scrollIntoView({behavior:'smooth'}));
