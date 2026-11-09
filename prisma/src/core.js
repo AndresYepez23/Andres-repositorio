@@ -10,6 +10,7 @@ import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
+import { buildConversationContext, chooseCoreReasoning } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -993,8 +994,9 @@ async function answerConversation(text,creds,task='conversation'){
    task==='coding'?'ai-code-helper':
    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
-  const contextMessages=messages.slice(-13,-1).filter(m=>['user','assistant'].includes(m.role)&&String(m.content||'').trim())
-   .map(m=>({role:m.role,content:String(m.content).slice(0,1800)}));
+  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,{
+   maxMessages:13,maxChars:14000
+  });
   const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
   if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
@@ -1004,7 +1006,7 @@ async function answerConversation(text,creds,task='conversation'){
   const assistantContext=[instruction,coreCapabilityContext(),providerContext].join('\n\n').slice(0,1950);
   const response=await runTool(toolId,[],{
     prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
-    reasoning:task==='reasoning'?'smart':'balanced',
+    reasoning:chooseCoreReasoning(task,taskText),
     tone:task==='songwriting'||task==='creative'?'creative':'friendly',
     length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
     task,...creds
