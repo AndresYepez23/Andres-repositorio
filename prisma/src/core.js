@@ -1577,7 +1577,15 @@ export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
   const integratedHistory=$('#core-history');
   const mainSidebarSlot=$('#core-sidebar-conversations');
+  const sidebarSearchSlot=$('#sidebar-search-slot');
+  const sidebarNewChatSlot=$('#sidebar-new-chat-slot');
   if(integratedHistory&&mainSidebarSlot)mainSidebarSlot.append(integratedHistory);
+  // The chat search and new-chat action live in the persistent sidebar shell,
+  // not inside the Core-only history list. They remain available on every view.
+  const chatSearch=$('#core-history-search');
+  const newChatButton=$('#core-history-new');
+  if(chatSearch&&sidebarSearchSlot)sidebarSearchSlot.append(chatSearch);
+  if(newChatButton&&sidebarNewChatSlot)sidebarNewChatSlot.append(newChatButton);
   initImageEditor();
   initPrismaVoice();
   loadChatHistory();
