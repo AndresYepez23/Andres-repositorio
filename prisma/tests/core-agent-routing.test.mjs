@@ -273,11 +273,12 @@ assert.match(sidebarHtml, /<div class="metric-strip hidden">/);
 assert.match(sidebarHtml, /<section class="home-dashboard hidden" id="home-dashboard">/);
 assert.match(sidebarHtml, /<section class="tools-section hidden" id="tools-section">/);
 assert.match(sidebarHtml, /<section class="ai-section hidden" id="ai-section">/);
-assert.match(sidebarHtml, /id="core-messages"[\\s\\S]*?class="core-welcome"/);
+assert.ok(sidebarHtml.indexOf('id="core-messages"') < sidebarHtml.indexOf('class="core-welcome"'));
+assert.ok(sidebarHtml.includes('class="core-welcome"'));
 assert.match(sidebarHtml, /id="category-nav"[^>]*class="category-nav hidden"/);
 assert.doesNotMatch(sidebarHtml, /class="core-sidebar-conversations hidden"/);
-assert.match(sidebarCore, /mainSidebarSlot\\.replaceChildren\\(integratedHistory\\)/);
-assert.match(sidebarCss, /body\\.is-core-view #core-workspace > \\.core-history/);
+assert.ok(sidebarCore.includes('mainSidebarSlot.replaceChildren(integratedHistory)'));
+assert.ok(sidebarCss.includes('body.is-core-view #core-workspace > .core-history'));
 assert.match(sidebarMain, /activeView='core'/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
