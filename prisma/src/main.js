@@ -356,10 +356,10 @@ function buildFields(t){
       selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina']],'nova')+
       selectField('Formato de audio','format',[['mp3','MP3'],['wav','WAV'],['opus','Opus']],'mp3')+
       pollinationsAuthFields();
-    case 'ai-transcribe':return selectField('Motor de transcripción','provider',[['auto','Automático · recomendado'],['groq','Groq Whisper Turbo · central'],['huggingface','Hugging Face · créditos limitados'],['pollinations','Pollinations · cuenta personal']],'auto')+
+    case 'ai-transcribe':return selectField('Motor de transcripción','provider',[['auto','Automático · recomendado'],['groq','Groq Whisper Turbo · central'],['cloudflare','Cloudflare Whisper · respaldo'],['huggingface','Hugging Face · créditos limitados'],['pollinations','Pollinations · cuenta personal']],'auto')+
       selectField('Modelo de transcripción','model',[['','Automático · según motor']],'')+
       selectField('Idioma','language',[['es','Español'],['en','Inglés'],['auto','Detectar automáticamente']],'es')+
-      '<div class="tool-hint">Automático: usa Groq Whisper cuando GROQ_API_KEY esté configurada. Hugging Face requiere activar explícitamente el consumo multimedia. Pollinations utiliza una cuenta autorizada por el usuario.</div>';
+      '<div class="tool-hint">Automático: prioriza Groq Whisper y cambia a Cloudflare Whisper si Groq falla o alcanza sus límites. Cloudflare no necesita otra clave y tiene un cupo de seguridad de Prisma. Hugging Face requiere activar explícitamente el consumo multimedia; Pollinations utiliza una cuenta personal.</div>';
     case 'image-watermark':return field('Texto de la marca','watermark','text','Prisma Space','Puedes usar tu nombre, marca o sitio web.')+selectField('Ubicación','position',[['bottom-right','Abajo a la derecha'],['bottom-left','Abajo a la izquierda'],['top-right','Arriba a la derecha'],['top-left','Arriba a la izquierda'],['center','Centro']],'bottom-right')+field('Tamaño (px)','size','number','36','','min="12" max="180"')+field('Opacidad (%)','opacity','number','45','Entre 8 y 90.','min="8" max="90"')+selectField('Color','color',[['#ffffff','Blanco'],['#111827','Negro'],['#9adbd2','Turquesa'],['#ffffff','Blanco']],'#ffffff');
     case 'image-flip':return selectField('Dirección','direction',[['horizontal','Horizontal'],['vertical','Vertical']],'horizontal');
     case 'image-collage':return selectField('Fondo del mosaico','background',[['#ffffff','Blanco'],['#101218','Oscuro'],['#9adbd2','Turquesa claro']],'#ffffff');
@@ -449,7 +449,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false},features:{cloudflareImages:false,cloudflareAudio:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div></article>';
@@ -598,15 +598,16 @@ function providerNoticeText(provider,quality,task='image'){
  const features=centralConnectionState.features||{};
  let selected=provider||'auto';
  if(selected==='auto'){
-   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','pollinations','huggingface']:['gemini','cloudflare','groq','huggingface','pollinations'];
-   selected=order.find(item=>(item==='groq'&&task==='audio'?features.groqAudio:connected[item])&&(task!=='image'||item!=='huggingface'||features.huggingfaceImages)&&(task!=='audio'||item!=='huggingface'||features.huggingfaceAudio))||'';
+   const order=task==='image'?['cloudflare','pollinations','huggingface']:task==='audio'?['groq','cloudflare','pollinations','huggingface']:['gemini','cloudflare','groq','huggingface','pollinations'];
+   selected=order.find(item=>(item==='groq'&&task==='audio'?features.groqAudio:item==='cloudflare'&&task==='audio'?features.cloudflareAudio:connected[item])&&(task!=='image'||item!=='huggingface'||features.huggingfaceImages)&&(task!=='audio'||item!=='huggingface'||features.huggingfaceAudio))||'';
  }
  if(!selected)return 'No hay un motor activo para esta tarea. Revisa las conexiones del Laboratorio IA.';
- const selectedAvailable=selected==='groq'&&task==='audio'?!!features.groqAudio:!!connected[selected];
- if(!selectedAvailable)return (selected==='groq'&&task==='audio'?centralConnectionState.warnings?.groqAudio:centralConnectionState.warnings?.[selected])||'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
+ const selectedAvailable=selected==='groq'&&task==='audio'?!!features.groqAudio:selected==='cloudflare'&&task==='audio'?!!features.cloudflareAudio:!!connected[selected];
+ if(!selectedAvailable)return (selected==='groq'&&task==='audio'?centralConnectionState.warnings?.groqAudio:selected==='cloudflare'&&task==='audio'?centralConnectionState.warnings?.cloudflareAudio:centralConnectionState.warnings?.[selected])||'Este motor todavía no está habilitado en Prisma. La clave central se configura en Cloudflare.';
  if(selected==='huggingface'&&task==='image'&&!features.huggingfaceImages)return 'Hugging Face permite generar imágenes, pero está desactivado para no agotar tus créditos gratuitos. Usa Cloudflare FLUX.';
  if(selected==='huggingface'&&task==='audio'&&!features.huggingfaceAudio)return 'El audio de Hugging Face está desactivado para proteger el crédito mensual.';
  if(selected==='groq'&&task==='audio'&&!features.groqAudio)return centralConnectionState.warnings?.groqAudio||'Groq Whisper está temporalmente en pausa. Prisma intentará otro motor de transcripción disponible.';
+ if(selected==='cloudflare'&&task==='audio')return 'Cloudflare Whisper: respaldo compartido sin API Key adicional. Prisma limita este motor a 3 transcripciones diarias para controlar el consumo.';
  if(selected==='cloudflare')return 'Cloudflare Workers AI: motor compartido, limitado por las cuotas gratuitas diarias y el control de solicitudes de Prisma.';
  if(selected==='huggingface')return 'Hugging Face: seis modelos de texto habilitados. El nivel gratuito incluye solo US$0,10 de créditos mensuales; selecciona modelos con cuidado.';
  if(selected==='groq')return 'Groq: usa la clave central de Cloudflare. Las solicitudes están sujetas al plan gratuito y límites de Prisma.';

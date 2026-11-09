@@ -746,52 +746,64 @@ async function transcribeAudio(files,p,cb){
  if(!files[0])throw Error('Selecciona un archivo de audio.');
  const selected=p.provider||'auto';
  const hasGroqAudio=p.centralFeatures?.groqAudio===true||(p.centralFeatures?.groqAudio!==false&&!!p.centralProviders?.groq);
+ const hasCloudflareAudio=p.centralFeatures?.cloudflareAudio===true||(p.centralFeatures?.cloudflareAudio!==false&&!!p.centralProviders?.cloudflare);
  const hasHfAudio=!!p.centralFeatures?.huggingfaceAudio;
  const personalToken=String(p.polliToken||'').trim();
  let order;
  if(selected==='auto'){
-  order=[...(hasGroqAudio?['groq']:[]),...(hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
+  order=[...(hasGroqAudio?['groq']:[]),...(hasCloudflareAudio?['cloudflare']:[]),...(hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
  }else if(selected==='pollinations'){
-  order=['pollinations',...(hasGroqAudio?['groq']:[]),...(hasHfAudio?['huggingface']:[])];
+  order=['pollinations',...(hasGroqAudio?['groq']:[]),...(hasCloudflareAudio?['cloudflare']:[]),...(hasHfAudio?['huggingface']:[])];
  }else{
-  order=[selected,...(selected!=='groq'&&hasGroqAudio?['groq']:[]),...(selected!=='huggingface'&&hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
+  order=[selected,...(selected!=='groq'&&hasGroqAudio?['groq']:[]),...(selected!=='cloudflare'&&hasCloudflareAudio?['cloudflare']:[]),...(selected!=='huggingface'&&hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
  }
- const errors=[];
+ const errors=[],attempted=[];
+ const names={groq:'Groq Whisper',cloudflare:'Cloudflare Whisper',huggingface:'Hugging Face Whisper',pollinations:'Pollinations Whisper'};
  for(const provider of [...new Set(order)]){
   try{
-   if(provider==='groq'||provider==='huggingface'){
+   if(provider==='groq'||provider==='cloudflare'||provider==='huggingface'){
     if(provider==='huggingface'&&!hasHfAudio)throw Error('Hugging Face Audio está desactivado para proteger los créditos.');
     if(provider==='groq'&&p.centralFeatures?.groqAudio===false)throw Error('Groq Whisper está temporalmente en pausa.');
+    if(provider==='cloudflare'&&p.centralFeatures?.cloudflareAudio===false)throw Error('Cloudflare Whisper está temporalmente en pausa.');
+    attempted.push(provider);
     const form=new FormData();
     form.append('file',files[0]);
     form.append('provider',provider);
-    form.append('model',provider==='groq'?'whisper-large-v3-turbo':'openai/whisper-large-v3');
+    const model=provider==='groq'?(selected==='groq'&&p.model?p.model:'whisper-large-v3-turbo'):provider==='cloudflare'?'@cf/openai/whisper':'openai/whisper-large-v3';
+    form.append('model',model);
     if(p.language&&p.language!=='auto')form.append('language',p.language);
-    progress(cb,.2,'Transcribiendo con '+provider+' mediante el backend protegido de Prisma…');
+    progress(cb,.2,'Transcribiendo con '+names[provider]+' mediante el backend protegido de Prisma…');
     const response=await fetch('/api/ai/transcribe',{method:'POST',body:form});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Object.assign(Error(data.error||'La transcripción no está disponible ('+response.status+').'),{status:response.status});
     progress(cb,1,'Transcripción lista.');
-    return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+provider+' · '+data.model};
+    const firstPreferred=selected==='auto'?order[0]:selected;
+    const fallbackFrom=firstPreferred&&firstPreferred!==provider?firstPreferred:null;
+    return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+names[provider]+(fallbackFrom?' · respaldo automático tras '+names[fallbackFrom]:''),provider,model:data.model||model,fallbackFrom};
    }
    if(provider==='pollinations'){
     if(!personalToken)continue;
-    const form=new FormData();form.append('file',files[0]);form.append('model',p.model||'openai/whisper-1');
+    attempted.push(provider);
+    const form=new FormData();form.append('file',files[0]);
+    const model=selected==='pollinations'&&p.model?p.model:'openai/whisper-1';
+    form.append('model',model);
     if(p.language&&p.language!=='auto')form.append('language',p.language);
-    progress(cb,.2,'Groq no está disponible. Probando Pollinations como respaldo…');
+    progress(cb,.2,'Los motores centrales no están disponibles. Probando Pollinations como respaldo…');
     const response=await fetch('https://gen.pollinations.ai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+personalToken},body:form});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Object.assign(Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.'),{status:response.status});
     if(!data.text)throw Error('Pollinations no devolvió una transcripción.');
     progress(cb,1,'Transcripción lista.');
-    return {text:data.text,summary:'Archivo: '+files[0].name+' · respaldo automático con Pollinations · '+(p.model||'openai/whisper-1')};
+    const firstPreferred=selected==='auto'?order[0]:selected;
+    const fallbackFrom=firstPreferred&&firstPreferred!==provider?firstPreferred:null;
+    return {text:data.text,summary:'Archivo: '+files[0].name+' · respaldo automático con Pollinations · '+model,provider,model,fallbackFrom};
    }
   }catch(error){
-   errors.push(provider+(error?.status?' HTTP '+error.status:'')+': '+(error?.message||'fallo de conexión'));
+   errors.push((names[provider]||provider)+(error?.status?' HTTP '+error.status:'')+': '+(error?.message||'fallo de conexión'));
   }
  }
  if(errors.length)throw Error('No se pudo transcribir el audio con los motores disponibles. '+errors.join(' | '));
- throw Error('No hay un motor de transcripción activo. Conecta Groq o autoriza un proveedor compatible desde el Laboratorio IA.');
+ throw Error('No hay un motor de transcripción activo. Conecta Groq, Cloudflare Whisper o autoriza un proveedor compatible desde el Laboratorio IA.');
 }
 async function imageAdvanced(id,files,p,cb){
  if(id==='image-gen')return generateImage(p,cb);

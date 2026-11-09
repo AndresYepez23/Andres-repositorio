@@ -28,6 +28,7 @@ export const IMAGE_MODELS = {
 };
 export const AUDIO_MODELS = {
   groq: [{id:"whisper-large-v3-turbo",name:"Whisper Large V3 Turbo",specialty:"Transcripción rápida"}],
+  cloudflare: [{id:"@cf/openai/whisper",name:"Whisper · Workers AI",specialty:"Transcripción de respaldo sin otra clave"}],
   huggingface: [{id:"openai/whisper-large-v3",name:"Whisper Large V3",specialty:"Transcripción (reserva no habilitada)"}]
 };
 export function allowedModel(provider, type, model) {

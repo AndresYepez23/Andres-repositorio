@@ -11,6 +11,7 @@ export async function onRequestGet({ env }) {
   const blockedHF=limited ? await getProviderHold(env,"huggingface") : null;
   const blockedGroq=limited ? await getProviderHold(env,"groq") : null;
   const blockedGroqAudio=limited ? await getProviderHold(env,"groq-audio") : null;
+  const blockedCloudflareAudio=limited ? await getProviderHold(env,"cloudflare-audio") : null;
   const huggingfaceReady=limited && Boolean(env.HF_TOKEN) && !blockedHF;
   const groqReady=limited && Boolean(env.GROQ_API_KEY) && !blockedGroq;
   const groqAudioReady=limited && Boolean(env.GROQ_API_KEY) && !blockedGroqAudio;
@@ -25,9 +26,9 @@ export async function onRequestGet({ env }) {
       cloudflare: limited && Boolean(env.AI?.run),
     },
     configured: {gemini:Boolean(env.GEMINI_API_KEY),huggingface:Boolean(env.HF_TOKEN),groq:Boolean(env.GROQ_API_KEY),cloudflare:Boolean(env.AI?.run)},
-    warnings: {...(blockedHF?{huggingface:blockedHF.reason}:{}),...(blockedGroq?{groq:blockedGroq.reason}:{}),...(blockedGroqAudio?{groqAudio:blockedGroqAudio.reason}:{})},
+    warnings: {...(blockedHF?{huggingface:blockedHF.reason}:{}),...(blockedGroq?{groq:blockedGroq.reason}:{}),...(blockedGroqAudio?{groqAudio:blockedGroqAudio.reason}:{}),...(blockedCloudflareAudio?{cloudflareAudio:blockedCloudflareAudio.reason}:{})},
     modelCatalog: modelsForUI(),
-    features: {cloudflareImages: limited && Boolean(env.AI?.run), huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", groqAudio: groqAudioReady},
+    features: {cloudflareImages: limited && Boolean(env.AI?.run), cloudflareAudio: limited && Boolean(env.AI?.run) && !blockedCloudflareAudio, huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", groqAudio: groqAudioReady},
     models: {
       gemini: env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
       huggingface: "openai/gpt-oss-20b:cheapest",
