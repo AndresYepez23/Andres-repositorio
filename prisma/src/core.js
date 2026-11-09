@@ -424,6 +424,24 @@ function isConversationWithoutTools(text){
 }
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
+function directCoreImage(text){
+ if(attachments.length)return false;
+ const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ if(/\b(prompt|guion|ideas|descripcion|texto|instrucciones)\b/.test(q))return false;
+ return /(?:genera|generar|crea|crear|haz|hacer|dibuja|disena|ilustra|renderiza).{0,65}\b(imagen|foto|ilustracion|miniatura|poster|retrato)\b/.test(q);
+}
+async function answerWithImage(text,creds){
+ status('Generando la imagen en el motor disponible…');
+ const ratio=/\b(youtube|miniatura|horizontal|paisaje|panoramica|16:9)\b/i.test(text)?'wide':/\b(vertical|historia|story|reel|retrato)\b/i.test(text)?'portrait':'square';
+ const result=await runTool('image-gen',[],{
+  ...creds,provider:'auto',prompt:text,ratio,style:'illustration'
+ },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.10)),msg||'Generando imagen…');});
+ if(!result?.blob)throw Error('El generador no devolvió una imagen.');
+ addMessage('assistant','Aquí está la imagen que pediste. Puedes descargarla y continuar la conversación.',{
+  results:[{name:'Imagen generada',reason:'Solicitud visual del usuario',result}],partial:false
+ });
+ status('Imagen lista.','success');
+}
 function directCoreTask(text){
  if(attachments.length)return null;
  const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
@@ -472,6 +490,11 @@ async function requestPlan(userText){
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
   const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
+  if(directCoreImage(userText)){
+    if(hasConnectedModel)await answerWithImage(userText,creds);
+    else{addMessage('assistant','No hay un motor de imágenes configurado en este momento. Revisa Laboratorio IA.');status('Motor de imagen no disponible.','warning');}
+    return;
+  }
   const directTask=directCoreTask(userText);
   if(directTask){
     if(hasConnectedModel)await answerConversation(userText,creds,directTask);
@@ -568,13 +591,20 @@ async function requestPlan(userText){
     plan=parsePlan(result.text);
     if(!plan.needs_clarification)steps=validatePlan(plan);
   }catch(firstError){
-    status('Revisando el formato y la compatibilidad del plan…');setProgress(.17,'Corrigiendo el plan…');
-    const repair=await runTool('ai-assistant',[],{
-      prompt:'Tu respuesta anterior no cumplió el formato o seleccionó una herramienta no disponible. Corrige el plan usando exclusivamente el catálogo del mensaje original. Devuelve SOLO JSON válido con el esquema indicado. Error detectado: '+(firstError?.message||'plan inválido')+'\n\nSOLICITUD Y CATÁLOGO ORIGINAL:\n'+plannerPrompt,
-      provider:'auto',reasoning:'smart',tone:'professional',length:'long',task:'planner',...creds
-    },(p,msg)=>{status(msg||'Corrigiendo el plan…');setProgress(.17+Math.max(0,Math.min(1,Number(p)||0))*.08,msg||'Corrigiendo el plan…');});
-    plan=parsePlan(repair.text);
-    if(!plan.needs_clarification)steps=validatePlan(plan);
+    // Avoid a second large planner request that wastes quotas. Use the local
+    // rule-based planner when it can identify a safe operation; otherwise
+    // explain the limitation instead of silently showing a dead approval form.
+    console.warn('Prisma Core plan invalid; using deterministic fallback',firstError?.message||firstError);
+    const local=buildLocalPlan(userText);
+    if(local.steps?.length){
+      const safeLocal=local.steps.every(step=>tools.some(tool=>tool.id===step.tool_id&&['local','browser'].includes(tool.mode)));
+      if(safeLocal){plan=local;steps=validatePlan(local);}
+    }
+    if(!plan){
+      addMessage('assistant','Entendí tu solicitud, pero no pude construir una secuencia segura de herramientas. Intenta describir el resultado final o abre la herramienta correspondiente en Explorar. Los motores de IA siguen disponibles para responder preguntas y redactar contenido.');
+      status('No fue posible organizar el flujo; prueba una instrucción más específica.','warning');
+      return;
+    }
   }
   plan.userRequest=userText+attachmentContext;
   if(plan.needs_clarification){showPlan(plan,[]);addMessage('assistant',plan.message||plan.question||'Necesito una aclaración antes de continuar.');status('Hace falta una aclaración.','warning');return;}
