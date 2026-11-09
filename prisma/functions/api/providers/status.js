@@ -3,7 +3,8 @@ import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getAmdFreeModels } from "../../_lib/amd-models.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
-import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
+import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
+import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
   "Cache-Control": "no-store",
@@ -27,22 +28,25 @@ export async function onRequestGet({ env }) {
   ));
   const usageEntries = await Promise.all(poolProviders
     .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
-    .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider), provider === "aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE === "1" ? 10 : null)]));
+    .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider), getProviderMinuteLimit(provider))]));
   const usage = Object.fromEntries(usageEntries);
   if (limited && env.AI?.run) {
     usage.cloudflare = await getProviderUsage(env, "cloudflare", getProviderDailyLimit(env, "cloudflare"));
   }
   const dailyAvailable = provider => {
     const daily = usage[provider]?.daily;
-    return !daily || daily.remaining > 0;
+    const minute = usage[provider]?.minute;
+    return (!daily || daily.remaining > 0) && (!minute || minute.remaining > 0);
   };
   const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
   const amdModels = configured.amd > 0 ? await getAmdFreeModels(env) : [];
   const kiloModels = await getKiloFreeModels(env);
+  const aihubmixModels = configured.aihubmix > 0 ? await getAihubmixFreeModels(env) : [];
   const available = Object.fromEntries(poolProviders.map(provider =>
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
       dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
-      !(provider === "amd" && amdModels.length === 0) && !(provider === "kilo" && kiloModels.length === 0)]
+      !(provider === "amd" && amdModels.length === 0) && !(provider === "kilo" && kiloModels.length === 0) &&
+      !(provider === "aihubmix" && aihubmixModels.length === 0)]
   ));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
@@ -75,9 +79,11 @@ export async function onRequestGet({ env }) {
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
     else if (provider === "aihubmix" && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "amd" && configured[provider] > 0 && amdModels.length === 0) warnings[provider] = "No se pudo validar un modelo gratuito de texto en el catálogo actual de AMD; permanece desactivado.";
+    else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
+    else if (usage[provider]?.minute?.remaining === 0) warnings[provider] = "Prisma alcanzó el límite interno por minuto para este motor. Se renovará en el siguiente minuto.";
   }
   if (env.AI?.run && usage.cloudflare?.daily?.remaining === 0) warnings.cloudflare = "Prisma alcanzó su presupuesto interno diario para Cloudflare Workers AI. Se renovará en el siguiente día UTC.";
   if (blockedSpeech) warnings.pollinationsAudio = blockedSpeech.reason;
@@ -86,6 +92,7 @@ export async function onRequestGet({ env }) {
   const modelCatalog = modelsForUI();
   if (amdModels.length) modelCatalog.chat.amd = amdModels;
   modelCatalog.chat.kilo = kiloModels;
+  modelCatalog.chat.aihubmix = aihubmixModels;
 
   return new Response(JSON.stringify({
     ok: true,
@@ -99,8 +106,8 @@ export async function onRequestGet({ env }) {
       max: credentialSlots[provider].max,
       available: available[provider],
       paused: Boolean(holds[provider]),
-      state: holds[provider]?.state || (usage[provider]?.daily?.remaining === 0 ? "daily_limit" : provider === "kilo" && available.kilo && !configured[provider] ? "anonymous" : configured[provider] ? "configured" : "missing"),
-      reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 ? warnings[provider] : null),
+      state: holds[provider]?.state || (usage[provider]?.daily?.remaining === 0 ? "daily_limit" : usage[provider]?.minute?.remaining === 0 ? "minute_limit" : provider === "kilo" && available.kilo && !configured[provider] ? "anonymous" : configured[provider] ? "configured" : "missing"),
+      reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 || usage[provider]?.minute?.remaining === 0 ? warnings[provider] : null),
       retryAt: holds[provider]?.valid_until || null,
       dailyUsage: usage[provider]?.daily || null,
       lifetimeUsage: provider === "aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? aihubmixLifetime : null,
