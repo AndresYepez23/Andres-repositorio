@@ -151,7 +151,7 @@ assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3","r4"]'
 assert.equal(getCredentialSlots({GROQ_API_KEY:'q1',GROQ_API_KEY_BACKUP:'q2'},'groq').length,2,'legacy BACKUP aliases remain supported');
 
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
-const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','baidu','aihubmix']);
+const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','aihubmix']);
 const availableAll = name => allProviders.has(name);
 assert.deepEqual(rankProviders({task:'planner',available:availableAll}),ROUTE_ORDER.planner);
 assert.deepEqual(rankProviders({task:'coding',available:availableAll}),ROUTE_ORDER.coding);
@@ -175,7 +175,7 @@ assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableA
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
 assert.equal(ROUTE_ORDER.general.includes('kilo'),false,'Kilo free trial endpoints remain manual-only');
 assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial stays manual-only');
-assert.equal(ROUTE_ORDER.general.includes('baidu'),false,'Baidu remains manual until regional eligibility is confirmed');
+assert.equal(CHAT_MODELS.baidu,undefined,'Excluded providers must not be registered');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
@@ -407,10 +407,10 @@ assert.match(statusSource, /getProviderMinuteLimit/);
 assert.match(statusSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
 const chatSource = readFileSync(new URL('../functions/api/ai/chat.js', import.meta.url), 'utf8');
 assert.match(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
-assert.doesNotMatch(chatSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from chat routing');
-assert.doesNotMatch(statusSource,/RADEON|developer\.amd\.com/,'AMD endpoint must be removed from provider status');
+assert.doesNotMatch(chatSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded endpoints must be absent from chat routing');
+assert.doesNotMatch(statusSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded endpoints must be absent from provider status');
 const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
-for (const provider of ['kilo','requesty','sensenova','zai','baidu','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
+for (const provider of ['kilo','requesty','sensenova','zai','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
 assert.equal(CHAT_MODELS.requesty.length,13);
 assert.equal(CHAT_MODELS.aihubmix.length,0,'AIHubMix catalogue is loaded from its live API, not a stale hard-coded list');
 assert.equal(CHAT_MODELS.amd,undefined,'AMD is removed from the model catalog');
