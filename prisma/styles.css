@@ -522,3 +522,58 @@ body.modal-open{overflow:hidden}
 .core-thinking-dot{color:var(--accent);font-size:15px;animation:prisma-thinking-pulse 1.6s ease-in-out infinite}
 @keyframes prisma-thinking-pulse{0%,100%{opacity:.45;transform:scale(.93)}50%{opacity:1;transform:scale(1.08)}}
 @media(prefers-reduced-motion:reduce){.core-thinking-dot{animation:none}}
+
+
+/* PRISMA 1.1 · Repertorio simplificado y espacio de trabajo amplio */
+.category-family{margin:0 0 3px}
+.category-family-toggle{display:flex;align-items:center;gap:10px;width:100%;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--text);text-align:left;padding:10px 12px;cursor:pointer;font:inherit;font-size:12px;font-weight:650}
+.category-family-toggle:hover,.category-family-toggle.expanded{background:var(--panel-2);border-color:var(--line)}
+.category-family-toggle>span:nth-child(2){flex:1;min-width:0}
+.category-family-toggle small{font-size:10px;font-weight:500;color:var(--muted)}
+.category-family-toggle .category-chevron svg{width:12px;height:12px;opacity:.6;transition:transform .2s}
+.category-family-toggle.expanded .category-chevron svg{transform:rotate(180deg)}
+.category-family-children{padding:3px 0 8px 25px}
+.category-family-children .category-item{min-height:32px;padding:7px 12px;margin:1px 0;font-size:11px}
+.explore-finder{display:flex;align-items:stretch;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.explore-query-wrap{display:flex;align-items:center;gap:10px;flex:2 1 320px;min-width:0;padding:0 15px;min-height:48px;border:1px solid var(--line-strong);background:var(--panel);border-radius:12px}
+.explore-query-wrap>span svg{height:18px;width:18px;color:var(--muted)}
+.explore-query-wrap input{flex:1;min-width:0;border:0;outline:0;color:var(--text);background:transparent;font:inherit;font-size:12px}
+.explore-specialty{display:flex;align-items:center;gap:10px;flex:1 1 170px;min-height:48px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:0 12px;font-size:11px}
+.explore-specialty>span{color:var(--muted);white-space:nowrap}
+.explore-specialty select{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:11px}
+.quick-tool-actions{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+.quick-tool-actions button{border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);padding:8px 12px;font:inherit;font-size:10px;cursor:pointer}
+.quick-tool-actions button:hover{border-color:var(--accent);background:var(--panel-2)}
+.filter-row{gap:10px}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;max-width:100%}
+.tool-modal{width:min(1120px,calc(100vw - 38px));max-height:min(95vh,1000px);max-height:min(95dvh,1000px)}
+.modal-header{padding:20px 28px}
+.modal-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:14px 18px;padding:22px 28px}
+.modal-body>.modal-description,.modal-body>.file-drop,.modal-body>.file-list,.modal-body>.tool-hint,.modal-body>.progress-wrap,.modal-body>.workflow-options,.modal-body>.inline-fields,.modal-body>.provider-config,.modal-body>.prompt-examples,.modal-body>.workflow-provider-notice,.modal-body>#tool-output,.modal-body>.mini-button,.modal-body>.check-line,.modal-body>.model-controls,.modal-body>.model-details,.modal-body>.output-panel{grid-column:1/-1;min-width:0}
+.modal-body>.form-field:has(textarea){grid-column:1/-1}
+.modal-body>.form-field:has(textarea) textarea{min-height:154px;resize:vertical;line-height:1.55}
+.modal-body>.form-field:has(#field-prompt) textarea,.modal-body>.form-field:has(#field-text) textarea{min-height:180px}
+.modal-body .form-field{min-width:0}
+.modal-body .form-field .form-control{width:100%;min-width:0}
+.modal-body>.tool-hint{margin-block:2px}
+.modal-body .file-drop{padding:24px;min-height:145px}
+.modal-footer{padding:13px 28px}
+.model-details{border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:var(--panel-2)}
+.model-details summary{cursor:pointer;font-size:11px;font-weight:650;color:var(--text)}
+.model-details .form-field{margin-top:11px}
+.modal-body .workflow-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(max-width:750px){
+ .tool-modal{width:100vw;max-width:none;height:100dvh;max-height:100dvh;border-radius:0;display:flex;flex-direction:column}
+ .modal-header{padding:13px 16px;flex:0 0 auto}
+ .modal-body{grid-template-columns:minmax(0,1fr);gap:10px;padding:13px 16px;flex:1 1 auto;min-height:0;overflow:auto}
+ .modal-body>.form-field:has(textarea){grid-column:1}
+ .modal-body .workflow-options{grid-template-columns:minmax(0,1fr)}
+ .modal-footer{padding:10px 14px calc(10px + env(safe-area-inset-bottom));gap:8px}
+ .modal-footer .modal-privacy{display:none}
+ .modal-body .file-drop{min-height:115px;padding:17px}
+ .explore-finder{gap:8px}
+ .explore-query-wrap{flex-basis:100%}
+ .explore-specialty{flex-basis:100%}
+ .quick-tool-actions{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+ .quick-tool-actions button{white-space:nowrap}
+}
