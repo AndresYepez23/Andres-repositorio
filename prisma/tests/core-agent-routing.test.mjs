@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
-import { getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
+import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
@@ -122,11 +122,15 @@ assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free
 assert.equal(selectTaskModel('sensenova','general','balanced',[{id:'sensenova-6.8-flash-lite'}]),'sensenova-6.8-flash-lite');
 assert.equal(selectTaskModel('zai','reasoning','smart',[{id:'glm-4.7-flash'}]),'glm-4.7-flash');
 assert.equal(selectTaskModel('requesty','coding','balanced',[{id:'novita/ling-3.1-flash'}]),'novita/ling-3.1-flash');
+assert.equal(selectTaskModel('requesty','general','fast',CHAT_MODELS.requesty),'novita/inclusionai/ling-3.0-tiny');
 assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra:free'}]),'nvidia/nemotron-3-ultra:free');
 assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableAll})[0],'kilo');
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
 assert.equal(rankProviders({preferred:'amd',task:'general',available:availableAll})[0],'amd');
 assert.equal(ROUTE_ORDER.general.includes('kilo'),false,'Kilo free trial endpoints remain manual-only');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial stays manual-only');
+assert.equal(ROUTE_ORDER.general.includes('amd'),false,'AMD evaluation endpoints stay manual-only');
+assert.equal(ROUTE_ORDER.general.includes('baidu'),false,'Baidu remains manual until regional eligibility is confirmed');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
@@ -328,7 +332,12 @@ assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWith
 assert.equal(getSharedDailyBudget(capacityEnv),150);
 assert.equal(getVisitorDailyLimit(capacityEnv),75);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
-assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),25);
+assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),15);
+assert.equal(getProviderMinuteLimit('aihubmix'),10);
+assert.equal(getProviderMinuteLimit('requesty'),10);
+assert.equal(getProviderMinuteLimit('sensenova'),5);
+assert.equal(getProviderMinuteLimit('zai'),3);
+assert.equal(getProviderMinuteLimit('kilo'),3);
 assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}),60);
 assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
 const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
@@ -338,11 +347,16 @@ assert.match(statusSource, /perMinutePerVisitor: 20/);
 assert.match(statusSource, /aihubmixLifetime/);
 assert.match(statusSource, /getKiloFreeModels/);
 assert.match(statusSource, /getAmdFreeModels/);
+assert.match(statusSource, /getAihubmixFreeModels/);
+assert.match(statusSource, /getProviderMinuteLimit/);
 const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
 for (const provider of ['kilo','requesty','sensenova','zai','baidu','aihubmix','amd']) assert.match(modelCatalogSource, new RegExp(provider+':'));
 assert.equal(CHAT_MODELS.requesty.length,13);
-assert.equal(CHAT_MODELS.aihubmix.length,64);
-assert.ok(CHAT_MODELS.aihubmix.every(model=>model.id.endsWith('-free')));
+assert.equal(CHAT_MODELS.aihubmix.length,0,'AIHubMix catalogue is loaded from its live API, not a stale hard-coded list');
 assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/ling-3.1-flash'));
+assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/inclusionai/ling-3.0-tiny'));
+const aihubmixSource = readFileSync(new URL('../functions/_lib/aihubmix-models.js', import.meta.url), 'utf8');
+assert.match(aihubmixSource, /free_quota_config/);
+assert.match(aihubmixSource, /weight !== 1/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
