@@ -6,6 +6,8 @@ import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
+import { buildConversationContext, chooseCoreReasoning } from '../src/core-context.js';
+import { runLocalCreatorTool } from '../src/local-creator-tools.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -40,6 +42,9 @@ const scenarios = [
  ['Cuenta palabras de texto: Buenos dias desde Prisma', [], 'word-count'],
  ['Extrae correos de texto: contacto@example.com y hola@example.org', [], 'text-extract-emails'],
  ['Crea un QR para https://prismaspace.pages.dev', [], 'qr'],
+ ['Oculta datos sensibles del texto: contacto@example.com', [], 'text-redact-sensitive'],
+ ['Crea subtítulos SRT del texto: Hola, esto es Prisma', [], 'subtitle-srt-local'],
+ ['Crea URL UTM para https://example.com origen:instagram medio:social campaña:lanzamiento', [], 'utm-builder'],
 ];
 for (const [request, files, toolId] of scenarios) {
  const plan = router.planCoreOfflineAction(request,files,[]);
@@ -173,8 +178,8 @@ assert.equal(selectTaskModel('requesty','general','fast',CHAT_MODELS.requesty),'
 assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra:free'}]),'nvidia/nemotron-3-ultra:free');
 assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableAll})[0],'kilo');
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
-assert.equal(ROUTE_ORDER.general.includes('kilo'),false,'Kilo free trial endpoints remain manual-only');
-assert.equal(ROUTE_ORDER.general.includes('aihubmix'),false,'AIHubMix trial stays manual-only');
+assert.equal(ROUTE_ORDER.general.includes('kilo'),true,'Kilo may be used as safe automatic fallback with vetted non-NVIDIA models');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),true,'AIHubMix is a candidate but its trial must be gated by the runtime flag');
 assert.equal(CHAT_MODELS.baidu,undefined,'Excluded providers must not be registered');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
@@ -404,9 +409,10 @@ assert.match(statusSource, /aihubmixLifetime/);
 assert.match(statusSource, /getKiloFreeModels/);
 assert.match(statusSource, /getAihubmixFreeModels/);
 assert.match(statusSource, /getProviderMinuteLimit/);
-assert.match(statusSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
+assert.match(statusSource, /aihubmixDailyQuotaActive/);
+assert.match(statusSource, /kiloAutomaticEligible/);
 const chatSource = readFileSync(new URL('../functions/api/ai/chat.js', import.meta.url), 'utf8');
-assert.match(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
+assert.doesNotMatch(chatSource, /BAIDU_FREE_QUOTA_CONFIRMED/);
 assert.doesNotMatch(chatSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded endpoints must be absent from chat routing');
 assert.doesNotMatch(statusSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded endpoints must be absent from provider status');
 const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
@@ -419,5 +425,30 @@ assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/inclusionai/ling-3
 const aihubmixSource = readFileSync(new URL('../functions/_lib/aihubmix-models.js', import.meta.url), 'utf8');
 assert.match(aihubmixSource, /free_quota_config/);
 assert.match(aihubmixSource, /weight !== 1/);
+
+// Browser-independent intelligence and privacy utility regressions.
+const priorChat=[
+ {role:'user',content:'El proyecto se llama Prisma Space y utiliza proveedores Groq y Gemini.'},
+ {role:'assistant',content:'Podemos priorizar el uso gratuito del sistema.'},
+ ...Array.from({length:12},(_,i)=>({role:i%2?'assistant':'user',content:'Detalle de otra tarea '+i}))
+];
+const recalled=buildConversationContext(priorChat,'¿Qué proveedores tiene Prisma Space?',{maxMessages:12,maxChars:10000});
+assert.ok(recalled.some(entry=>entry.content.includes('Groq y Gemini')),'Relevant older context must be retained.');
+assert.ok(recalled.at(-1).content.includes('otra tarea'),'Recent context must be retained.');
+assert.ok(recalled.length<=12);
+assert.equal(chooseCoreReasoning('coding','Depura este código'),'smart');
+assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast');
+assert.ok(runLocalCreatorTool('text-redact-sensitive',{text:'Correo: test@example.com y clave: rqsty-sk-Abc123Abc123Abc123'}).text.includes('[CLAVE OCULTA]'));
+assert.doesNotMatch(runLocalCreatorTool('text-redact-sensitive',{text:'test@example.com'}).text,/test@example.com/);
+const utm=runLocalCreatorTool('utm-builder',{url:'https://example.com/?a=1',source:'instagram',medium:'social',campaign:'prisma'});
+assert.match(utm.text,/utm_source=instagram/);
+assert.match(utm.text,/a=1/);
+assert.throws(()=>runLocalCreatorTool('utm-builder',{url:'javascript:alert(1)',source:'x',medium:'y',campaign:'z'}));
+const srt=runLocalCreatorTool('subtitle-srt-local',{text:'Hola Prisma\nBienvenidos',secondsPerCue:3});
+assert.match(srt.text,/00:00:00,000 --> 00:00:03,000/);
+assert.equal(srt.filename,'prisma-subtitulos.srt');
+const engineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(engineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
+assert.match(engineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
