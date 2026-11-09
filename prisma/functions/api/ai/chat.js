@@ -195,12 +195,18 @@ export async function onRequestPost({ request, env }) {
     if (!env.GROQ_API_KEY) return json({error:"Groq aún no tiene GROQ_API_KEY configurado en Cloudflare."},503);
     const model=requestedModel||"openai/gpt-oss-20b";
     let response;
+    const askGroq=key=>fetch("https://api.groq.com/openai/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+key},
+      body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
+    });
     try{
-      response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-        method:"POST",
-        headers:{"Content-Type":"application/json",Authorization:"Bearer "+env.GROQ_API_KEY},
-        body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
-      });
+      response=await askGroq(env.GROQ_API_KEY);
+      // Secondary credentials are used only for transport/provider faults, not 429/402.
+      // Shared Prisma rate counters always apply regardless of which key is selected.
+      if(env.GROQ_API_KEY_BACKUP&&[401,403,500,502,503,504].includes(response.status)){
+        response=await askGroq(env.GROQ_API_KEY_BACKUP);
+      }
     }catch{
       await setProviderHold(env,"groq","network_error","Groq no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.",60);
       return json({error:"No fue posible conectar con Groq. Prisma lo pausará brevemente y probará otro motor.",provider:"groq",status:502,retryAfter:60},502);
@@ -262,11 +268,11 @@ export async function onRequestPost({ request, env }) {
     body.systemInstruction = { parts: [{ text: normalized.system.join("\n\n").slice(0, 12000) }] };
   }
 
-  const askGemini = targetModel => fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(targetModel) + ":generateContent", {
+  const askGemini = (targetModel,key=env.GEMINI_API_KEY) => fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(targetModel) + ":generateContent", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": env.GEMINI_API_KEY,
+      "x-goog-api-key": key,
     },
     body: JSON.stringify(body),
   });
@@ -275,6 +281,10 @@ export async function onRequestPost({ request, env }) {
   try {
     response = await askGemini(activeModel);
     data = await response.json().catch(() => ({}));
+    if (env.GEMINI_API_KEY_BACKUP && [401,403,500,502,503,504].includes(response.status)) {
+      response = await askGemini(activeModel,env.GEMINI_API_KEY_BACKUP);
+      data = await response.json().catch(() => ({}));
+    }
     if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
       // The higher-capability model can be temporarily overloaded; use a lower-cost model.
       activeModel = "gemini-3.5-flash-lite";
