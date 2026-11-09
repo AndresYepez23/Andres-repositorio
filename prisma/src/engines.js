@@ -1,5 +1,6 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
 import { LOCAL_CREATOR_TOOL_IDS, runLocalCreatorTool } from './local-creator-tools.js';
+import { runAdvancedTextTool } from './advanced-text-tools.js';
 const PDF_LIB='https://esm.sh/pdf-lib@1.17.1';
 const QR='https://esm.sh/qrcode@1.5.4';
 const MAMMOTH='https://esm.sh/mammoth@1.9.1';
@@ -1376,6 +1377,9 @@ async function discoverGitHubProjects(p,cb){
  return {text,blob,filename:'prisma-github-open-source.txt',summary:items.length+' proyectos listados · GitHub API pública · límite no autenticado de GitHub aplicado.'};
 }
 const SPECIALIZED_TEXT_TOOLS = {
+  'ai-compare-options':{task:'reasoning',label:'Comparación de alternativas preparada',instruction:'Compara solo alternativas y criterios proporcionados. Distingue hechos, supuestos y aspectos por verificar. Muestra ventajas, desventajas, riesgos y una recomendación condicionada. No inventes precios, puntuaciones, disponibilidad ni fuentes.'},
+  'ai-action-plan':{task:'reasoning',label:'Plan práctico preparado',instruction:'Transforma el objetivo en pasos concretos y priorizados, dependencias, entregables verificables, riesgos y una primera acción inmediata. No inventes costos, fechas ni ejecuciones.'},
+  'ai-text-review':{task:'reasoning',label:'Revisión crítica preparada',instruction:'Revisa el texto facilitado. Señala contradicciones, ambigüedades, errores de estructura y oportunidades de claridad. Entrega una versión corregida solo si el usuario la solicita. No simules verificación externa ni inventes fuentes.'},
  'ai-youtube-kit':{
   task:'creative',label:'Kit de contenido creado',
   instruction:'Actúa como productor profesional de YouTube y redes sociales. A partir de la idea, entrega 5 títulos atractivos sin clickbait engañoso, una descripción lista para publicar, 7 hashtags relevantes, un guion por secciones, 3 ideas de shorts y un prompt visual para miniatura con texto muy corto. No inventes estadísticas de rendimiento.'
@@ -1406,6 +1410,7 @@ async function runSpecializedTextTool(id,p,cb){
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(LOCAL_CREATOR_TOOL_IDS.includes(id))return runLocalCreatorTool(id,p);
+  if(['text-redact-local','json-compare-local','citation-ids-local'].includes(id))return runAdvancedTextTool(id,p);
  if(id==='text-file-convert')return convertTextFile(files,p,cb);
  if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
