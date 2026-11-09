@@ -11,8 +11,8 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
-let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false };
-let centralFeatures = { cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false };
+let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false };
+let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
 const resultObjectUrls = new Map();
@@ -429,7 +429,7 @@ async function answerConversation(text,creds){
 }
 async function requestPlan(userText){
   const centralStatus=await getCentralProviderStatus();
-  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
+  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
@@ -674,7 +674,7 @@ export function initPrismaCore(){
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false};
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();
