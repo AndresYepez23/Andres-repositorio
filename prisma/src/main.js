@@ -536,7 +536,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,baidu:false,aihubmix:false,amd:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     const usage=config.usageId?'<div class="provider-connection-detail" id="'+config.usageId+'">Consultando consumo y límites…</div>':'';
@@ -559,11 +559,19 @@ function renderProviderConnections(){
     {id:'openrouter',name:'OpenRouter',summary:'Respaldo automático de Prisma Core · OpenRouter Free Router',detail:'Último motor de respaldo de texto: solo se intenta después de que Gemini, Groq, Cloudflare, Pollinations y Hugging Face no puedan responder. Usa openrouter/free para seleccionar automáticamente un modelo gratuito disponible; no enruta a modelos de pago.',secretName:'OPENROUTER_API_KEY',usageId:'openrouter-usage',shared:true},
     {id:'cloudflare',name:'Cloudflare Workers AI',summary:'Gemma 4, Llama y FLUX.1 Schnell',detail:'Motor directo integrado en Cloudflare. Generación de texto e imágenes con asignación gratuita diaria y límites propios de Prisma.',bindingName:'AI',shared:true},
     {id:'pollinations',name:'Pollinations central',summary:'Generación multimodal con la cuenta de Prisma',detail:'La clave sk_ se guarda únicamente en Cloudflare como POLLINATIONS_API_KEY y consume tu saldo. Chat e imágenes tienen cuotas estrictas; si no hay clave, los usuarios pueden usar Pollinations Connect con su propio saldo.',secretName:'POLLINATIONS_API_KEY',shared:true},
-    {id:'pollinations-connect',name:'Pollinations Connect',shared:false}
+    {id:'pollinations-connect',name:'Pollinations Connect',shared:false},
+     {id:'kilo',name:'Kilo AI Gateway',summary:'GLM-5 Free y MiniMax Free · acceso anónimo',detail:'No requiere clave para modelos marcados :free. Límite público de 200 solicitudes/hora por IP; Prisma aplica un tope interno diario. Puedes añadir KILO_API_KEY opcionalmente.',secretName:'KILO_API_KEY (opcional)',shared:true},
+     {id:'requesty',name:'Requesty',summary:'Nemotron, Muse Glimmer y Ling',detail:'Plan gratuito con 200 solicitudes/día y sin tarjeta. Prisma solo admite modelos cuyo precio figura como cero. Secreto requerido: REQUESTY_API_KEY.',secretName:'REQUESTY_API_KEY',shared:true},
+     {id:'sensenova',name:'SenseNova / SenseTime',summary:'SenseNova 6.8 Flash Lite',detail:'Beta pública gratuita con hasta 1.500 llamadas por modelo cada cinco horas, según la oferta vigente. Prisma aplica un límite interno menor. Secreto: SENSENOVA_API_KEY.',secretName:'SENSENOVA_API_KEY',shared:true},
+     {id:'zai',name:'Z.AI / Zhipu',summary:'GLM-4.7 Flash · GLM-4.5 Flash · GLM-4.6V Flash',detail:'Solo se permiten modelos Flash gratuitos. No se habilitan modelos GLM de pago. Secreto: ZAI_API_KEY.',secretName:'ZAI_API_KEY',shared:true},
+     {id:'baidu',name:'Baidu Qianfan / ERNIE',summary:'ERNIE-Speed · ERNIE-Lite · ERNIE-Tiny',detail:'Modelos gratuitos sujetos a habilitación y cuotas regionales. Puede exigir verificación de identidad china. Usa un API Key bce-v3 de Qianfan como QIANFAN_API_KEY.',secretName:'QIANFAN_API_KEY',shared:true},
+     {id:'aihubmix',name:'AIHubMix',summary:'GLM · Kimi · MiniMax · Xiaomi MiMo',detail:'10 llamadas de prueba totales sin tarjeta. Tras una recarga única de USD 1 se habilitan cuotas diarias. Permanece fuera del enrutamiento automático y limitado a modelos -free. Secreto: AIHUBMIX_API_KEY.',secretName:'AIHUBMIX_API_KEY',shared:true},
+     {id:'amd',name:'AMD Radeon Cloud Token Factory',summary:'DeepSeek · Qwen · GLM · MiMo',detail:'Solo evaluación: API gratuita alojada en la región china y términos que prohíben cargas de producción. No se usa en el enrutamiento automático. Secreto: RADEON_API_KEY.',secretName:'RADEON_API_KEY',shared:true}
   ];
   container.innerHTML=configs.map(providerConnectionCard).join()+
     '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Catálogo de Hugging Face</h4><p>6 modelos de chat + catálogo multimedia</p></div><span class="provider-connection-status">Cuotas limitadas</span></div><p class="provider-connection-detail">Hugging Face permite inferencia de chat con modelos seleccionables. FLUX/Stable Diffusion, Whisper y otros modelos multimedia pueden consumir rápidamente el crédito mensual; por eso su acceso central se habilita únicamente con un permiso explícito.</p><div id="hf-model-summary" class="provider-connection-detail">Consultando modelos...</div></article>'+
-    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Motores open source locales</h4><p>Procesamiento en el dispositivo</p></div><span class="provider-connection-status connected">Disponibles</span></div><p class="provider-connection-detail">PDF-Lib, Tesseract.js, FFmpeg y otras bibliotecas ejecutan tareas directamente en el dispositivo cuando es posible.</p></article>';
+    '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>OpenCode Zen</h4><p>GLM, Kimi, Nemotron y MiMo</p></div><span class="provider-connection-status">No integrado</span></div><p class="provider-connection-detail">Se conserva en el inventario, pero las condiciones actuales reservan el uso gratuito externo a OpenCode. Prisma no lo llamará desde su backend.</p></article>'+
+     '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Motores open source locales</h4><p>Procesamiento en el dispositivo</p></div><span class="provider-connection-status connected">Disponibles</span></div><p class="provider-connection-detail">PDF-Lib, Tesseract.js, FFmpeg y otras bibliotecas ejecutan tareas directamente en el dispositivo cuando es posible.</p></article>';
   const input=$('#polli-app-key');if(input){input.value=localStorage.getItem('prisma-polli-client-id')||POLLINATIONS_APP_KEY;input.addEventListener('input',()=>localStorage.setItem('prisma-polli-client-id',input.value.trim()));}
   const redirect=$('#polli-redirect');if(redirect)redirect.textContent=location.origin+location.pathname;
   $('#polli-connect-start')?.addEventListener('click',()=>{const key=$('#polli-app-key')?.value||localStorage.getItem('prisma-polli-client-id')||'';if(key.trim().startsWith('pk_'))connectPollinations();else{$('#provider-config-pollinations').open=true;$('#polli-app-key')?.focus();toast('Configura una sola vez la App Key pública de Prisma Space.','info');}});
@@ -629,12 +637,12 @@ async function refreshProviderConnectionStatuses(){
       target.innerHTML=daily+pause+lines+'<small>Las claves no multiplican la cuota del proyecto o cuenta. Prisma respeta los límites reales del proveedor y usa los demás motores cuando corresponde.</small>';
     }
   });
-  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter};
+  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter,kilo:!!central.providers.kilo,requesty:!!central.providers.requesty,sensenova:!!central.providers.sensenova,zai:!!central.providers.zai,baidu:!!central.providers.baidu,aihubmix:!!central.providers.aihubmix,amd:!!central.providers.amd};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
       const health=central.providerHealth?.[provider]||{};
-      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':health.dailyUsage?.remaining===0?'Límite diario interno alcanzado':health.paused?'Motor en pausa temporal':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
+      status.textContent=provider==='pollinations-connect'?(isConnected?'Cuenta personal conectada':'Cuenta personal opcional'):!central.ok?'No se pudo consultar Cloudflare':health.dailyUsage?.remaining===0?'Límite diario interno alcanzado':health.lifetimeUsage?.remaining===0?'Prueba gratuita agotada':health.paused?'Motor en pausa temporal':provider==='kilo'&&isConnected&&!central.configured?.kilo?'Gratis sin clave · acceso anónimo':isConnected?'Credenciales configuradas · sujetas a cuota':(central.warnings?.[provider]||'Pendiente de configurar');
       status.classList.toggle('connected',isConnected);
     }
     if(provider==='pollinations-connect'){
@@ -866,7 +874,7 @@ function openTool(t){
   $('#modal-close').focus({preventScroll:true});
 }
 function textStudioModelSettings(){
- return selectField('Motor de texto','provider',[['auto','Automático · mejor disponible'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['pollinations','Pollinations'],['huggingface','Hugging Face (créditos limitados)']],'auto')+
+ return selectField('Motor de texto','provider',[['auto','Automático · mejor disponible'],['groq','Groq'],['gemini','Google Gemini'],['cloudflare','Cloudflare Workers AI'],['sensenova','SenseNova'],['zai','Z.AI / GLM'],['requesty','Requesty'],['kilo','Kilo Gateway'],['baidu','Baidu ERNIE'],['aihubmix','AIHubMix · prueba limitada'],['amd','AMD Token Factory · solo pruebas'],['pollinations','Pollinations'],['huggingface','Hugging Face (créditos limitados)']],'auto')+
   selectField('Modelo específico (opcional)','model',[['','Automático · según tarea']],'')+
   '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice">Prisma elegirá el modelo más adecuado según la tarea.</div>';
 }
