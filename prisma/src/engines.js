@@ -852,15 +852,53 @@ async function generateText(p,cb){
  throw Error('No hay un motor de texto disponible para esta tarea. Revisa las conexiones del Laboratorio IA.');
 }
 async function generateSpeech(p,cb){
- const token=String(p.polliToken||'').trim(),input=String(p.prompt||'').trim();
- if(!token)throw Error('Conecta tu cuenta de Pollinations antes de generar audio.');
- if(!input)throw Error('Escribe el texto que quieres convertir en voz.');
- progress(cb,.2,'Generando voz...');
- const response=await fetch('https://gen.pollinations.ai/v1/audio/speech',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:p.model||'openai/tts-1',input,voice:p.voice||'nova',response_format:p.format||'mp3'})});
- if(!response.ok){let msg='';try{msg=await response.text();}catch{}throw Error('No se pudo generar el audio ('+response.status+'). '+msg.slice(0,180));}
- const blob=await response.blob();if(!blob.type.startsWith('audio/'))throw Error('El proveedor no devolvió un archivo de audio.');
- progress(cb,1,'Audio listo.');
- return {...download(blob,'prisma-voz.'+(p.format||'mp3')),previewUrl:URL.createObjectURL(blob),audio:true,summary:'Voz: '+(p.voice||'nova')+' · Modelo: '+(p.model||'openai/tts-1')};
+ const input=String(p.prompt||p.text||'').trim();
+ if(input.length<2)throw Error('Escribe el texto que deseas convertir en voz.');
+ if(input.length>1500)throw Error('Este generador admite hasta 1.500 caracteres por operación. Divide el texto largo en fragmentos.');
+ const model=String(p.model||'openai/tts-1');
+ const voice=String(p.voice||'nova');
+ const format=String(p.format||'mp3');
+ const requested=String(p.provider||'auto');
+ const token=String(p.polliToken||'').trim();
+ const tryCentral=requested!=='personal';
+ const errors=[];
+ const check=async(response,where)=>{
+  if(!response.ok){
+   let detail='';
+   try{const data=await response.json();detail=String(data.error?.message||data.error||data.message||'').slice(0,220);}catch{}
+   const error=Object.assign(new Error(detail||where+' no pudo generar voz ('+response.status+').'),{status:response.status});
+   throw error;
+  }
+  const blob=await response.blob();
+  if(!blob.size||!blob.type.startsWith('audio/'))throw Error(where+' no devolvió un archivo de audio válido.');
+  progress(cb,1,'Audio listo para escuchar y descargar.');
+  const extension=format==='opus'?'opus':format==='wav'?'wav':'mp3';
+  return {...download(blob,'prisma-voz.'+extension),previewUrl:URL.createObjectURL(blob),audio:true,
+   provider:where,model,summary:'Voz '+voice+' · '+where+' · '+model+'. Archivo descargable; sujeto al presupuesto y la cuota configurados.'};
+ };
+ if(tryCentral){
+  progress(cb,.13,'Preparando voz con el motor central de Prisma…');
+  try{
+   const response=await fetch('/api/ai/speech',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({input,model,voice,format}),signal:AbortSignal.timeout(48000)
+   });
+   return await check(response,'Pollinations central');
+  }catch(error){errors.push('Motor central: '+(error?.message||'sin respuesta'));}
+ }
+ if(token){
+  progress(cb,.46,'Probando tu conexión personal autorizada de Pollinations…');
+  try{
+   const response=await fetch('https://gen.pollinations.ai/v1/audio/speech',{
+    method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({model,input,voice,response_format:format}),signal:AbortSignal.timeout(48000)
+   });
+   return await check(response,'Pollinations personal');
+  }catch(error){errors.push('Cuenta personal: '+(error?.message||'sin respuesta'));}
+ }else if(requested==='personal'){
+  throw Error('No hay una cuenta personal de Pollinations conectada. Puedes usar el motor central automático si está disponible.');
+ }
+ throw Error('No se pudo generar el archivo de audio. '+errors.join(' · ')+(token?'':' Puedes conectar una cuenta de Pollinations con permiso para audio. No se activa ningún pago automático.'));
 }
 async function transcribeAudio(files,p,cb){
  if(!files[0])throw Error('Selecciona un archivo de audio.');
