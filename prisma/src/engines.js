@@ -210,6 +210,44 @@ async function runVideo(id,files,p,cb){
  progress(cb,1,'Archivo listo.');
  return {...download(blob,fileName(files[0])+'-'+output),summary:'Procesamiento local en el navegador · '+formatBytesEngine(blob.size)};
 }
+function parseYouTubeVideoId(value){
+ let url;
+ try{url=new URL(String(value||'').trim());}catch{return '';}
+ if(url.protocol!=='https:')return '';
+ const host=url.hostname.toLowerCase().replace(/^www\\./,'');
+ let id='';
+ if(host==='youtu.be')id=url.pathname.split('/').filter(Boolean)[0]||'';
+ else if(['youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com'].includes(host)){
+  if(url.pathname==='/watch')id=url.searchParams.get('v')||'';
+  else id=url.pathname.match(/^\\/(?:shorts|embed|live|v)\\/([A-Za-z0-9_-]{11})(?:[/?#]|$)/)?.[1]||'';
+ }
+ return /^[A-Za-z0-9_-]{11}$/.test(id)?id:'';
+}
+async function youtubeMediaKit(files,p,cb){
+ const id=parseYouTubeVideoId(p.url);
+ if(!id)throw Error('Pega un enlace válido de un video de YouTube (no una lista o canal).');
+ progress(cb,.12,'Obteniendo la miniatura de YouTube…');
+ const response=await fetch('/api/youtube/thumbnail?id='+encodeURIComponent(id),{method:'GET',cache:'no-store',headers:{Accept:'image/jpeg'}});
+ if(!response.ok)throw Error(response.status===404?'YouTube no ofrece una miniatura disponible para ese video.':'No se pudo obtener la miniatura de YouTube.');
+ const thumbnail=await response.blob();
+ if(!thumbnail.type.startsWith('image/')||thumbnail.size<500)throw Error('YouTube devolvió una miniatura no válida.');
+ const artifacts=[{name:'Miniatura del video',filename:'youtube-'+id+'-thumbnail.jpg',blob:thumbnail,type:thumbnail.type}];
+ if(files?.length){
+  if(files.length>1)throw Error('Adjunta un solo video para extraer el audio.');
+  const file=files[0];
+  if(!(file.type||'').startsWith('video/')&&!/\\.(mp4|mov|mkv|webm)$/i.test(file.name||''))throw Error('El archivo adjunto debe ser un video compatible.');
+  progress(cb,.25,'Extrayendo el audio del archivo original a MP3…');
+  const audio=await runVideo('audio-convert',[file],{format:'mp3'},(value,message)=>progress(cb,.25+Math.max(0,Math.min(1,Number(value)||0))*.72,message||'Convirtiendo a MP3…'));
+  artifacts.push({name:'Audio extraído del video',filename:fileName(file)+'-audio.mp3',blob:audio.blob,type:'audio/mpeg'});
+ }
+ progress(cb,1,'Archivos preparados.');
+ return {
+  artifacts,
+  summary:files?.length
+   ?'Miniatura descargable y MP3 extraído localmente. Convierte únicamente videos propios o para los que tengas autorización.'
+   :'Miniatura lista. Para obtener el MP3, adjunta el archivo de video original que tengas derecho a convertir; Prisma no descarga audio directamente desde YouTube.'
+ };
+}
 function convertUnits(p){
  const v=Number(p.value);if(!Number.isFinite(v))throw Error('Introduce un valor válido.');
  const kind=p.kind,from=p.from,to=p.to;
@@ -1403,6 +1441,7 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
+ if(id==='youtube-media-kit')return youtubeMediaKit(files,p,cb);
  if(id==='text-file-convert')return convertTextFile(files,p,cb);
  if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
