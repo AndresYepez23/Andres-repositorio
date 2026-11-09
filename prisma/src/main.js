@@ -616,7 +616,7 @@ async function refreshProviderConnectionStatuses(){
   // Safe public metadata: only variable names and occupied slot positions.
   Object.entries(central.credentialSlots||{}).forEach(([provider,info])=>{
     const summary=$('[data-credential-summary="'+provider+'"]');
-    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / 5 · Ver espacios seguros';
+    if(summary)summary.textContent='Credenciales: '+Number(info.count||0)+' / '+Number(info.max||0)+' · Ver espacios seguros';
     const target=$('[data-credential-slots="'+provider+'"]');
     if(target&&Array.isArray(info.slots)){
       const lines=info.slots.map(slot=>
