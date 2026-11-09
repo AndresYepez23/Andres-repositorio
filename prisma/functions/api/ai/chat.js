@@ -389,7 +389,6 @@ export async function onRequestPost({ request, env }) {
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
     baidu:{url:"https://qianfan.baidubce.com/v2/chat/completions",model:"ernie-speed-128k"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
-    amd:{url:"https://developer.amd.com.cn/radeon/api/v1/chat/completions",model:null},
   };
   if(compatibleProviders[provider]){
     const config=compatibleProviders[provider];
