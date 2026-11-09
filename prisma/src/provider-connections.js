@@ -80,12 +80,12 @@ export async function getCentralProviderStatus() {
   const empty = {
     ok: false,
     mode: "central",
-    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false },
+    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false },
     models: {},
     modelCatalog: {chat:{},image:{},audio:{}},
     warnings: {},
     configured: {},
-    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},
+    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},
   };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6500);

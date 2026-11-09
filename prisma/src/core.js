@@ -23,8 +23,8 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
-let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false };
-let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false };
+let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false };
+let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
 let localBrainEnabled = false;
@@ -1131,7 +1131,7 @@ async function requestPlan(userText){
     return;
   }
   const centralStatus=await getCentralProviderStatus();
-  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
+  centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false};
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
@@ -1441,9 +1441,9 @@ async function sendMessage(){
     console.warn('Prisma Core',error?.code||error?.message||error);
     const detail=String(error?.message||'');
     const globalLimit=error?.code==='GLOBAL_LIMIT'||/Prisma alcanzó su límite temporal gratuito global|Se alcanzó el límite de solicitudes de Prisma/i.test(detail);
-    const providerLimit=error?.code==='PROVIDER_LIMIT';
+    const providerLimit=error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT';
     if(globalLimit||providerLimit){
-      addMessage('assistant',localQuotaExplanation(globalLimit?'GLOBAL_LIMIT':'PROVIDER_LIMIT'));
+      addMessage('assistant',localQuotaExplanation(globalLimit?'GLOBAL_LIMIT':error?.code||'PROVIDER_LIMIT'));
       status('Se alcanzó una cuota temporal.','warning');
     }else{
       addMessage('assistant','No pude completar esa operación con los motores disponibles. '+detail.slice(0,280)+' Puedes seguir utilizando las herramientas locales.');
@@ -1547,7 +1547,7 @@ export function initPrismaCore(){
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
   getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
+    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();

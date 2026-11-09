@@ -1,26 +1,69 @@
+import { getOpenRouterLimits } from "./openrouter.js";
+
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
 const LIMITS={gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
  "groq-audio":3,"pollinations-audio":2,"gemini-image":2};
+
+function windows(now=Date.now()){
+ const minute=Math.floor(now/60000),day=Math.floor(minute/1440)*1440;
+ return {minute,day};
+}
+
+export async function getProviderUsage(env,provider,dailyLimit=LIMITS[provider]||10,perMinuteLimit=null){
+ const db=env.PRISMA_RATE_DB;
+ if(!db?.prepare)return {available:false,daily:null,minute:null};
+ const {minute,day}=windows();
+ try{
+  const dailyRow=await db.prepare("SELECT request_count FROM ai_rate_limits WHERE scope=? AND window_start=?")
+   .bind("provider-day:"+provider,day).first();
+  const dailyUsed=Number(dailyRow?.request_count||0);
+  let minuteUsage=null;
+  if(perMinuteLimit!==null){
+   const minuteRow=await db.prepare("SELECT request_count FROM ai_rate_limits WHERE scope=? AND window_start=?")
+    .bind("provider-minute:"+provider,minute).first();
+   const used=Number(minuteRow?.request_count||0);
+   minuteUsage={used,limit:perMinuteLimit,remaining:Math.max(0,perMinuteLimit-used),resetAt:new Date((minute+1)*60000).toISOString()};
+  }
+  return {
+   available:true,
+   daily:{used:dailyUsed,limit:dailyLimit,remaining:Math.max(0,dailyLimit-dailyUsed),resetAt:new Date((day+1440)*60000).toISOString()},
+   minute:minuteUsage
+  };
+ }catch(error){
+  console.error("Prisma provider usage lookup",error?.message||error);
+  return {available:false,daily:null,minute:null};
+ }
+}
+
 export async function checkLimits(env,request,provider){
  const db=env.PRISMA_RATE_DB;
  if(!db?.prepare)return {status:503,code:"LIMITS_UNAVAILABLE",error:"Prisma no puede comprobar sus límites de consumo."};
  const ip=request.headers.get("CF-Connecting-IP")||"unknown";
  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
  const key=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("").slice(0,32);
- const minute=Math.floor(Date.now()/60000),day=Math.floor(minute/1440)*1440;
+ const {minute,day}=windows();
+ const openrouterLimits=provider==="openrouter"?await getOpenRouterLimits(env):null;
+ const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:(LIMITS[provider]||10);
  const scopes=[
   ["ip-minute:"+key,minute,10,"GLOBAL_LIMIT"],
   ["ip-day:"+key,day,30,"GLOBAL_LIMIT"],
-  ["provider-day:"+provider,day,LIMITS[provider]||10,"PROVIDER_LIMIT"],
-  ["total-day",day,60,"GLOBAL_LIMIT"]
+  ...(provider==="openrouter"?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
+  ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
+  // OpenRouter is the independent paid/free safety net. It must remain usable
+  // when the shared free quotas of the primary Prisma providers are exhausted.
+  ...(provider==="openrouter"?[]:[["total-day",day,60,"GLOBAL_LIMIT"]])
  ];
  const denied=([scope,start,max,code])=>{
-  const reset=(start+(scope.startsWith("ip-minute:")?1:1440))*60;
-  return {status:429,code,scope:scope.split(":")[0],retryAfter:Math.max(1,reset-Math.floor(Date.now()/1000)),
-   error:code==="PROVIDER_LIMIT"
-    ?"Este proveedor alcanzó la cuota diaria de Prisma. Puedes intentar otro si hay cuota compartida disponible."
-    :"Prisma alcanzó su límite temporal gratuito global. Las herramientas locales siguen disponibles."};
+  const isMinute=scope.includes("-minute:");
+  const reset=(start+(isMinute?1:1440))*60;
+  return {status:429,code,scope:scope.split(":")[0],
+   retryAfter:Math.max(1,reset-Math.floor(Date.now()/1000)),
+   error:code==="PROVIDER_MINUTE_LIMIT"
+    ?"OpenRouter alcanzó su límite de solicitudes por minuto. Espera un momento y vuelve a intentarlo."
+    :code==="PROVIDER_LIMIT"
+     ?"OpenRouter alcanzó el límite diario de solicitudes configurado para Prisma."
+     :"Prisma alcanzó su límite temporal gratuito global. Las herramientas locales siguen disponibles."};
  };
  const sql=String.raw`INSERT INTO ai_rate_limits(scope,window_start,request_count)
 VALUES(?,?,1) ON CONFLICT(scope,window_start) DO UPDATE

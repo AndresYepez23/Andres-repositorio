@@ -536,10 +536,11 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
-    return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div></article>';
+    const usage=config.usageId?'<div class="provider-connection-detail" id="'+config.usageId+'">Consultando consumo y límites…</div>':'';
+    return '<article class="provider-connection-card" data-connection-card="'+config.id+'" data-central-provider="'+config.id+'"><div class="provider-connection-top"><div><h4>'+config.name+'</h4><p>'+config.summary+'</p></div><span class="provider-connection-status" data-connection-status="'+config.id+'">Consultando Cloudflare…</span></div><p class="provider-connection-detail">'+config.detail+'</p><div class="provider-connect-row"><small>'+(config.bindingName?'Binding de Cloudflare: <code>'+config.bindingName+'</code>':'Secreto de Cloudflare: <code>'+config.secretName+'</code> · Solo el backend puede leerlo.')+'</small></div>'+usage+'</article>';
   }
   const connected=!!getPollinationsToken();
   const shared=!!centralConnectionState.providers.pollinations;
@@ -554,6 +555,7 @@ function renderProviderConnections(){
     {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis de texto',detail:'Motor central de Prisma. Una sola clave maestra protegida permite que todos los visitantes utilicen el servicio, sujetos a las cuotas y límites de tu proyecto.',secretName:'GEMINI_API_KEY',shared:true},
     {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Motor compartido mediante Inference Providers. La cuenta gratuita de Hugging Face incluye un crédito mensual limitado de USD 0,10 (sujeto a cambios); no es ilimitado. Prisma prioriza el modelo de menor coste y no activa recargas automáticas.',secretName:'HF_TOKEN',shared:true},
     {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Se habilitará como motor compartido para tareas compatibles, con límites de solicitudes y alternativas cuando alcance su cuota.',secretName:'GROQ_API_KEY',shared:true},
+    {id:'openrouter',name:'OpenRouter',summary:'Respaldo automático de Prisma Core · OpenRouter Free Router',detail:'Último motor de respaldo de texto: solo se intenta después de que Gemini, Groq, Cloudflare, Pollinations y Hugging Face no puedan responder. Usa openrouter/free para seleccionar automáticamente un modelo gratuito disponible; no enruta a modelos de pago.',secretName:'OPENROUTER_API_KEY',usageId:'openrouter-usage',shared:true},
     {id:'cloudflare',name:'Cloudflare Workers AI',summary:'Gemma 4, Llama y FLUX.1 Schnell',detail:'Motor directo integrado en Cloudflare. Generación de texto e imágenes con asignación gratuita diaria y límites propios de Prisma.',bindingName:'AI',shared:true},
     {id:'pollinations',name:'Pollinations central',summary:'Generación multimodal con la cuenta de Prisma',detail:'La clave sk_ se guarda únicamente en Cloudflare como POLLINATIONS_API_KEY y consume tu saldo. Chat e imágenes tienen cuotas estrictas; si no hay clave, los usuarios pueden usar Pollinations Connect con su propio saldo.',secretName:'POLLINATIONS_API_KEY',shared:true},
     {id:'pollinations-connect',name:'Pollinations Connect',shared:false}
@@ -569,10 +571,49 @@ function renderProviderConnections(){
   $('#polli-copy-redirect')?.addEventListener('click',async()=>{await navigator.clipboard.writeText(location.origin+location.pathname);toast('URL de retorno copiada.','success');});
   refreshProviderConnectionStatuses();
 }
+let openRouterUsageRequest=null;
+async function refreshOpenRouterUsage(){
+  const target=$('#openrouter-usage');if(!target||openRouterUsageRequest)return;
+  target.textContent='Consultando consumo y límites de OpenRouter…';
+  openRouterUsageRequest=(async()=>{
+    try{
+      const response=await fetch('/api/providers/openrouter-usage',{method:'GET',cache:'no-store',headers:{Accept:'application/json'}});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok||!data.ok)throw Error(data.error||'No fue posible consultar los límites.');
+      if(!data.configured){
+        target.textContent=data.warning||'Falta configurar OPENROUTER_API_KEY en Cloudflare.';
+        return;
+      }
+      const daily=data.usage?.daily;
+      const minute=data.usage?.minute;
+      const account=data.account;
+      const money=value=>'USD '+Number(value).toFixed(4);
+      const lines=[];
+      if(daily){
+        lines.push('<strong>Solicitudes de Prisma hoy:</strong> '+daily.used+' / '+daily.limit+' · quedan '+daily.remaining);
+      }else lines.push('<strong>Contador de Prisma:</strong> no disponible (revisa el binding D1).');
+      if(minute)lines.push('<strong>Velocidad:</strong> '+minute.limit+' solicitudes/min · '+minute.used+' usadas en este minuto.');
+      if(account){
+        lines.push('<strong>Cuota OpenRouter Free:</strong> '+account.externalFreeDailyLimit+' solicitudes/día según el nivel de la cuenta.');
+        if(account.dailySpendUsd!==null)lines.push('<strong>Gasto de la cuenta hoy:</strong> '+money(account.dailySpendUsd)+'.');
+        if(account.spendLimitUsd!==null)lines.push('<strong>Presupuesto de esta API key:</strong> '+money(account.spendRemainingUsd??0)+' restantes de '+money(account.spendLimitUsd)+'.');
+      }else{
+        lines.push('<strong>Cuota OpenRouter:</strong> se aplica el nivel gratuito conservador de 50 solicitudes/día y 20/min; no se pudo consultar el estado de la cuenta.');
+      }
+      if(data.hold?.reason)lines.push('<strong>Estado temporal:</strong> '+escapeHtml(data.hold.reason));
+      lines.push('<small>Tope interno configurable en Cloudflare: <code>OPENROUTER_DAILY_LIMIT</code> y <code>OPENROUTER_PER_MINUTE_LIMIT</code>. Nunca se supera la cuota gratuita detectada en tu cuenta.</small>');
+      lines.push('<a href="https://openrouter.ai/activity" target="_blank" rel="noopener noreferrer">Ver consumo en OpenRouter</a> · <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">Administrar límite de gasto de la clave</a>');
+      target.innerHTML=lines.map(line=>'<div style="margin-top:7px">'+line+'</div>').join('');
+    }catch(error){
+      target.textContent='No se pudieron consultar los límites de OpenRouter: '+(error?.message||'error de conexión');
+    }
+  })();
+  try{await openRouterUsageRequest;}finally{openRouterUsageRequest=null;}
+}
 async function refreshProviderConnectionStatuses(){
   const central=await getCentralProviderStatus();
   Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured});
-  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare};
+  const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
     if(status){
@@ -601,6 +642,7 @@ async function refreshProviderConnectionStatuses(){
       renderGroup('Imágenes · requiere activar consumo',catalog.image?.huggingface||[])+
       renderGroup('Audio · requiere activar consumo',catalog.audio?.huggingface||[]);
   }
+  if($('#openrouter-usage'))void refreshOpenRouterUsage();
   const count=Object.values(connected).filter(Boolean).length;
   const summary=$('#connections-summary');if(summary)summary.textContent=count+' motor'+(count===1?'':'es')+' disponible'+(count===1?'':'s')+' para Prisma';
 }
@@ -1003,7 +1045,7 @@ async function attachProviderCredentials(params){
   params.hfToken='';
   params.geminiKey='';
   params.groqKey='';
-  params.centralProviders=central.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false};
+  params.centralProviders=central.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false};
   params.centralFeatures=central.features||{};
   params.centralModelCatalog=central.modelCatalog||{chat:{},image:{},audio:{}};
   return params;

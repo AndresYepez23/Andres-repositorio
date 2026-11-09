@@ -1,7 +1,7 @@
 // Respuestas factuales del producto, no atribuibles falsamente a GPT/Gemini.
 // Soporte básico local cuando el presupuesto de modelos compartidos está agotado.
 const fold = value => String(value||'').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-const PROVIDERS={gemini:'Google Gemini',groq:'Groq',cloudflare:'Cloudflare Workers AI',pollinations:'Pollinations',huggingface:'Hugging Face'};
+const PROVIDERS={gemini:'Google Gemini',groq:'Groq',cloudflare:'Cloudflare Workers AI',pollinations:'Pollinations',huggingface:'Hugging Face',openrouter:'OpenRouter'};
 function modelLine(history=[]){
  const last=[...history].reverse().find(entry=>entry.role==='assistant'&&entry.engine);
  if(!last)return 'Todavía no hay una respuesta identificada de un modelo en esta conversación.';
@@ -21,12 +21,12 @@ export function resolvePrismaProductQuestion(text,history=[],providers={}){
  const earlier=lastTopic(history);
  if(!q)return null;
  // Questions about the identity / models of THIS application are product facts.
- const queryModels=/\b(modelos?|motores?|gemini|groq|gpt ?[3456]|chatgpt|openai|claude|llama)\b/.test(q);
+ const queryModels=/\b(modelos?|motores?|gemini|groq|openrouter|gpt ?[3456]|chatgpt|openai|claude|llama)\b/.test(q);
  const localIdentity=/^(eres una (?:inteligencia|ia|inteligente)|eres ia|eres un (?:robot|chatbot)|quien eres|que eres|tu quien eres)\??$/.test(q);
  const selfModel=/(?:eres|usas|utilizas|funcionas con|que modelo|cual modelo|que ia|en prisma|aqui en prisma)/.test(q);
  const briefFollowup=/^(?:aqui|aqui en prisma|y aqui|y gemini|y groq|y ahora|eso|pero aqui|hay otros|hay mas modelos|y que modelos)$/.test(q);
  const inContext=queryModels||/\b(prisma|core|aqui|tu)\b/.test(q)||briefFollowup;
- const previousProduct=/\b(prisma|gemini|groq|modelo|motor|gpt|openai)\b/.test(earlier);
+ const previousProduct=/\b(prisma|gemini|groq|openrouter|modelo|motor|gpt|openai)\b/.test(earlier);
  if(localIdentity){
   return 'Sí, soy Prisma Core, el asistente de IA de Prisma Space. Puedo conversar y coordinar herramientas. No soy un modelo único: puedo utilizar motores diferentes según la tarea y la disponibilidad. '+modelLine(history);
  }
@@ -43,7 +43,8 @@ export function resolvePrismaProductQuestion(text,history=[],providers={}){
  return null;
 }
 export function localQuotaExplanation(scope='GLOBAL_LIMIT'){
+ if(scope==='PROVIDER_MINUTE_LIMIT')return 'OpenRouter alcanzó su límite de solicitudes por minuto. Prisma esperará a que se renueve esa ventana antes de volver a utilizarlo; las herramientas locales siguen disponibles.';
  return scope==='PROVIDER_LIMIT'
- ? 'Ese proveedor alcanzó su cuota temporal. Prisma puede intentar otro motor autorizado, siempre respetando los límites compartidos. Las herramientas locales continúan disponibles.'
- : 'La capacidad gratuita compartida de Prisma está temporalmente agotada. No es un fallo de tu pregunta ni significa que Gemini, Groq y Cloudflare estén caídos a la vez. Para proteger el servicio no repetiré llamadas que vuelvan a consumir cuota. Puedes seguir utilizando las herramientas locales y reintentar cuando se renueve el límite.';
+ ? 'Ese proveedor alcanzó su cuota temporal. Prisma ya intentó los motores alternativos disponibles, incluido OpenRouter cuando estaba configurado. Las herramientas locales continúan disponibles.'
+ : 'La capacidad compartida de los motores de IA está temporalmente agotada, incluso después de probar OpenRouter cuando estaba configurado. No es un fallo de tu pregunta ni significa que todos los proveedores estén caídos a la vez. Para proteger el servicio no repetiré llamadas que vuelvan a consumir cuota. Puedes seguir utilizando las herramientas locales y reintentar cuando se renueven los límites.';
 }
