@@ -148,6 +148,8 @@ export async function onRequestGet({ env }) {
     usage,
     modelCatalog,
     features: {
+      aihubmixDailyQuotaActive: env.AIHUBMIX_DAILY_QUOTA_ACTIVE === "1",
+      kiloAutomaticEligible: kiloModels.some(item => !String(item.id).toLowerCase().startsWith("nvidia/")),
       pollinationsAudio: speechReady,
       pollinationsImages: pollinationsReady,
       cloudflareImages: cloudflareReady,
