@@ -1222,3 +1222,268 @@ body.is-core-view .core-voice-button:focus-visible{outline:2px solid var(--accen
  .auth-panel{gap:10px}
  .auth-panel .auth-guest{display:block;padding:9px 12px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:10px;text-align:center;color:var(--accent);background:var(--panel-2)}
 }
+
+
+/* PRISMA CORE 4 · un campo, un contenedor, corrección iOS Safari y PWA */
+html:has(body.is-core-view){
+  height:100%;
+  overflow:hidden!important;
+  overscroll-behavior:none;
+  background:var(--bg);
+}
+body.is-core-view{
+  position:fixed!important;
+  top:var(--prisma-vp-top,0px)!important;
+  left:0!important;
+  right:0!important;
+  width:100%!important;
+  height:var(--prisma-core-viewport,100dvh)!important;
+  max-height:var(--prisma-core-viewport,100dvh)!important;
+  overflow:hidden!important;
+  overscroll-behavior:none;
+}
+body.is-core-view .app-shell,
+body.is-core-view .main-area{
+  min-height:0!important;
+  height:100%!important;
+  max-height:100%!important;
+  overflow:hidden!important;
+}
+body.is-core-view .page-content,
+body.is-core-view .core-section,
+body.is-core-view .core-workspace,
+body.is-core-view .core-chat-column{
+  min-height:0!important;
+  overflow:hidden!important;
+}
+body.is-core-view .core-messages{
+  flex:1 1 0!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow-y:auto!important;
+  overflow-x:hidden;
+}
+body.is-core-view .core-composer{
+  flex:0 0 auto;
+  width:100%;
+  padding:8px 10px max(8px,env(safe-area-inset-bottom));
+  background:transparent!important;
+  border:none!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  z-index:5;
+}
+body.is-core-view.is-keyboard-open .core-composer{padding-bottom:6px!important}
+body.is-core-view .core-compose-surface{
+  width:100%;
+  display:flex;
+  gap:4px;
+  align-items:center;
+  min-height:52px;
+  padding:5px;
+  border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line-strong));
+  border-radius:21px;
+  background:linear-gradient(115deg,color-mix(in srgb,#85d8d5 5%,var(--panel)),var(--panel) 42%,color-mix(in srgb,#b0a1ef 5%,var(--panel)));
+  box-shadow:0 4px 24px rgba(0,0,0,.08);
+}
+body.is-core-view .core-compose-surface:focus-within{
+  border-color:color-mix(in srgb,var(--accent) 56%,var(--line));
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 9%,transparent);
+}
+body.is-core-view .core-compose-surface #core-input{
+  flex:1 1 0;
+  min-width:0;
+  width:100%;
+  height:39px;
+  min-height:39px;
+  max-height:118px;
+  padding:9px 10px;
+  margin:0;
+  border:0!important;
+  border-radius:13px;
+  resize:none;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--text);
+  font-size:16px;
+  line-height:1.35;
+  outline:none;
+  -webkit-appearance:none;
+}
+body.is-core-view .core-compose-surface .core-composer-footer{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  margin:0;
+  padding:0;
+  border:0!important;
+}
+body.is-core-view .core-composer-tools{display:flex;gap:3px;align-items:center}
+body.is-core-view .core-attach-button,
+body.is-core-view .core-model-settings>summary,
+body.is-core-view .core-voice-button{
+  display:grid;
+  place-items:center;
+  min-width:31px;
+  width:31px;
+  height:34px;
+  min-height:34px;
+  flex:0 0 31px;
+  padding:0;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted);
+}
+body.is-core-view .core-attach-button:hover,
+body.is-core-view .core-model-settings>summary:hover,
+body.is-core-view .core-voice-button:hover{background:var(--panel-2);color:var(--accent)}
+body.is-core-view .core-talk-button{
+  background:linear-gradient(130deg,color-mix(in srgb,#8fe0d8 16%,var(--panel)),color-mix(in srgb,#b3a5f3 18%,var(--panel)));
+  color:var(--accent);
+}
+body.is-core-view .core-composer .button-primary{
+  min-width:37px;
+  width:37px;
+  height:37px;
+  min-height:37px;
+  padding:0;
+  border-radius:13px;
+  flex:0 0 37px;
+  background:linear-gradient(125deg,#8cddd5,#abc4ea 56%,#b7a9f2);
+  color:#142327;
+  gap:0;
+}
+body.is-core-view #core-send-label{display:none}
+body.is-core-view #core-send svg{width:17px;height:17px}
+body.is-core-view .core-attachments:empty{display:none}
+body.is-core-view .core-attachments:not(:empty){margin-bottom:6px}
+body.is-core-view .core-model-panel{bottom:calc(100% + 17px);left:-47px}
+body.is-core-view .topbar{position:relative!important;top:0!important;}
+/* Evita que la hoja de login quede atrapada en el área del teclado de iOS. */
+.auth-backdrop,.voice-backdrop,.pwa-instructions{
+  top:var(--prisma-vp-top,0px);
+  bottom:auto;
+  height:var(--prisma-core-viewport,100dvh);
+  min-height:0;
+  overflow:hidden;
+}
+.auth-backdrop.hidden,.voice-backdrop.hidden,.pwa-instructions.hidden{display:none!important}
+.auth-panel{
+  max-height:calc(var(--prisma-core-viewport,100dvh) - 24px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.auth-panel .auth-close{
+  position:sticky!important;
+  top:0;
+  align-self:flex-end;
+  margin-top:-8px;
+  margin-bottom:-36px;
+  z-index:15;
+  flex:0 0 36px;
+  border-radius:50%;
+  background:var(--panel-2);
+  color:var(--text);
+}
+body.is-core-view .core-top-actions .icon-button:hover,
+body.is-core-view .profile-chip:hover{
+  border-color:color-mix(in srgb,#a9b8e9 48%,var(--line));
+}
+@media(max-width:620px){
+  body.is-core-view .core-compose-surface{gap:2px;padding:4px;border-radius:18px}
+  body.is-core-view .core-compose-surface #core-input{padding:9px 7px}
+  body.is-core-view .core-compose-surface .core-composer-footer{gap:2px}
+  body.is-core-view .core-composer-tools{gap:1px}
+  body.is-core-view .core-attach-button,
+  body.is-core-view .core-model-settings>summary,
+  body.is-core-view .core-voice-button{
+    width:29px;min-width:29px;flex-basis:29px;height:34px;
+  }
+  body.is-core-view .core-composer .button-primary{width:36px;min-width:36px;flex-basis:36px}
+  body.is-core-view .core-composer{padding:7px 8px max(7px,env(safe-area-inset-bottom))}
+  body.is-core-view.is-keyboard-open .core-composer{padding-bottom:4px!important}
+  body.is-core-view .core-compose-surface #core-input{font-size:16px}
+}
+@media(max-width:355px){
+  body.is-core-view .core-compose-surface #core-input{padding-left:5px;padding-right:2px}
+  body.is-core-view .core-attach-button,
+  body.is-core-view .core-model-settings>summary,
+  body.is-core-view .core-voice-button{width:27px;min-width:27px;flex-basis:27px}
+}
+@media(display-mode:standalone){
+  body.is-core-view .topbar{
+    height:calc(64px + env(safe-area-inset-top))!important;
+    flex:0 0 calc(64px + env(safe-area-inset-top))!important;
+    min-height:calc(64px + env(safe-area-inset-top))!important;
+    padding:env(safe-area-inset-top) 12px 0!important;
+    box-sizing:border-box;
+  }
+  body.is-core-view .core-composer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  body.is-core-view.is-keyboard-open .core-composer{padding-bottom:5px!important}
+}
+
+
+/* Voice feedback and restrained accents */
+body.is-core-view .core-voice-feedback:not(.hidden){
+ display:block;
+ padding:5px 11px 6px;
+ margin:0 7px 5px;
+ color:var(--accent);
+ font-size:11px;
+ line-height:1.5;
+ background:linear-gradient(90deg,color-mix(in srgb,#87ded5 10%,var(--panel)),transparent 86%);
+ border-radius:10px;
+}
+body.is-core-view #core-dictate[aria-pressed="true"]{
+ color:#0e282b;
+ background:linear-gradient(135deg,#8addd3,#b0aeed)!important;
+ animation:prisma-voice-pulse 1.5s ease-in-out infinite;
+}
+@keyframes prisma-voice-pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 12%,transparent)}}
+@media(prefers-reduced-motion:reduce){body.is-core-view #core-dictate[aria-pressed="true"]{animation:none}}
+.voice-panel #voice-play-reply{
+ border-color:color-mix(in srgb,var(--accent) 38%,var(--line));
+ background:color-mix(in srgb,#9acfcf 13%,var(--panel));
+ color:var(--accent);
+}
+body.is-core-view .core-message.assistant .core-message-label{
+ color:color-mix(in srgb,var(--accent) 72%,#b5a8f3);
+}
+body.is-core-view .core-message.user{
+ border-color:color-mix(in srgb,#a6a4f0 18%,var(--line-strong));
+}
+body.is-core-view #core-top-more[aria-expanded="true"]{
+ border-color:color-mix(in srgb,#a9a1f0 42%,var(--line));
+}
+body.is-core-view .core-history-entry.active{
+ border-left:2px solid color-mix(in srgb,#a1d7db 55%,#b9a3ef);
+}
+@media(display-mode:standalone){
+ body:not(.is-core-view) .topbar{
+  min-height:calc(76px + env(safe-area-inset-top));
+  height:calc(76px + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);
+ }
+ .sidebar{padding-top:env(safe-area-inset-top)}
+ .profile-menu{padding-bottom:max(6px,env(safe-area-inset-bottom))}
+}
+
+
+/* PWA en iPhone: separar los diálogos de la barra de estado y el home indicator. */
+@media(display-mode:standalone){
+ .auth-backdrop,.voice-backdrop,.pwa-instructions{
+  padding-top:max(16px,env(safe-area-inset-top));
+  padding-bottom:max(16px,env(safe-area-inset-bottom));
+ }
+ .auth-panel,.voice-panel{
+  max-height:calc(var(--prisma-core-viewport,100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 26px);
+ }
+ .auth-panel .auth-close{top:0}
+}
+
+/* La barra unificada usa solo el icono de clip; su etiqueta queda accesible en aria-label. */
+body.is-core-view .core-attach-button span{display:none!important}

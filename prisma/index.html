@@ -118,8 +118,10 @@
               <div class="core-status" id="core-status" data-kind="info" role="status">Listo para planificar.</div><div class="core-progress hidden" id="core-progress" aria-live="polite"><div class="core-progress-track"><span id="core-progress-bar"></span></div><small id="core-progress-label">Preparando…</small><button type="button" class="mini-button hidden" id="core-cancel">Detener</button></div>
               <div class="core-composer" id="core-composer">
                 <div class="core-attachments" id="core-attachments"></div>
-                <textarea id="core-input" rows="1" placeholder="Pregunta o describe lo que necesitas…" aria-label="Mensaje para Prisma Core"></textarea>
-                <div class="core-composer-footer">
+                <div class="core-voice-feedback hidden" id="core-voice-feedback" role="status" aria-live="polite"></div>
+                <div class="core-compose-surface">
+                  <textarea id="core-input" rows="1" placeholder="Escribe a Prisma…" aria-label="Mensaje para Prisma Core"></textarea>
+                  <div class="core-composer-footer">
                   <div class="core-composer-tools"><button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20.8 11.6-8.6 8.6a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.3 9.3a2 2 0 0 1-2.8-2.8l8.6-8.6"/></svg><span>Adjuntar</span></button>
 <input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip"><details class="core-model-settings">
@@ -136,10 +138,9 @@
                   </details>
                   <button type="button" class="core-voice-button" id="core-dictate" aria-label="Dictar mensaje" title="Dictar mensaje"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
                   <button type="button" class="core-voice-button core-talk-button" id="core-talk" aria-label="Conversación por voz" title="Conversación por voz"><svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><path d="M4 9v6m4-10v14m4-17v20m4-15v10m4-8v6"/></svg></button></div>
-                  <button type="button" class="button button-primary" id="core-send"><span id="core-send-label">Enviar</span><span data-icon="arrow-right"></span></button>
+                  <button type="button" class="button button-primary" id="core-send" aria-label="Enviar mensaje"><span id="core-send-label">Enviar</span><span data-icon="arrow-right"></span></button>
+                  </div>
                 </div>
-
-
               </div>
             </div>
             <aside class="core-side">
@@ -300,7 +301,7 @@
     <button type="button" class="auth-reset" id="auth-reset" disabled>Recuperar contraseña</button><p class="auth-message" id="auth-message" role="status"></p>
   </section>
 </div>
-<div class="voice-backdrop hidden" id="voice-modal" role="dialog" aria-modal="true" aria-labelledby="voice-title"><section class="voice-panel"><button class="auth-close" type="button" id="voice-close" aria-label="Cerrar voz">×</button><span class="voice-orb" aria-hidden="true">✦</span><h2 id="voice-title">Conversación por voz</h2><p>Habla por turnos con Prisma. La IA responde y tu dispositivo puede leer su mensaje. No es una llamada continua en tiempo real.</p><div class="voice-transcript" id="voice-transcript" role="status">Pulsa el micrófono para hablar.</div><div class="voice-controls"><button type="button" id="voice-record">Hablar</button><button type="button" id="voice-stop">Detener voz</button></div><small>La transcripción puede usar el servicio de voz del dispositivo o Groq, según disponibilidad y permiso.</small></section></div>
+<div class="voice-backdrop hidden" id="voice-modal" role="dialog" aria-modal="true" aria-labelledby="voice-title"><section class="voice-panel"><button class="auth-close" type="button" id="voice-close" aria-label="Cerrar voz">×</button><span class="voice-orb" aria-hidden="true">✦</span><h2 id="voice-title">Conversación por voz</h2><p>Habla por turnos con Prisma. La IA responde y tu dispositivo puede leer su mensaje. No es una llamada continua en tiempo real.</p><div class="voice-transcript" id="voice-transcript" role="status">Pulsa el micrófono para hablar.</div><div class="voice-controls"><button type="button" id="voice-record">Hablar</button><button type="button" id="voice-stop">Detener voz</button><button type="button" class="hidden" id="voice-play-reply">Escuchar respuesta</button></div><small>La transcripción puede usar el servicio de voz del dispositivo o Groq, según disponibilidad y permiso.</small></section></div>
 <div class="pwa-instructions hidden" id="pwa-instructions" role="dialog" aria-modal="true" aria-label="Instalar Prisma"><section><button type="button" id="pwa-instructions-close" aria-label="Cerrar">×</button><img src="./assets/prisma-app-icon.svg" width="50" height="50" alt=""><h2>Instala Prisma Space</h2><p id="pwa-instructions-text">Abre el menú de compartir de Safari y elige «Añadir a pantalla de inicio».</p><button type="button" class="auth-submit" id="pwa-instructions-done">Entendido</button></section></div>
   <div class="modal-backdrop hidden" id="tool-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title">
     <section class="tool-modal">
