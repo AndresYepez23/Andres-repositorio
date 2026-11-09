@@ -78,7 +78,7 @@ export async function onRequestGet({ env }) {
     if (holds[provider]) warnings[provider] = holds[provider].reason;
     else if (provider === "kilo" && !configured[provider] && kiloModels.length) warnings[provider] = "Acceso gratuito anónimo activo; KILO_API_KEY es opcional. Modelos gratuitos verificados en vivo.";
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
-    else if (provider === "aihubmix" && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
+    else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "amd" && configured[provider] > 0 && amdModels.length === 0) warnings[provider] = "No se pudo validar un modelo gratuito de texto en el catálogo actual de AMD; permanece desactivado.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
@@ -91,7 +91,7 @@ export async function onRequestGet({ env }) {
   if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
 
   const modelCatalog = modelsForUI();
-  if (amdModels.length) modelCatalog.chat.amd = amdModels;
+  modelCatalog.chat.amd = amdModels;
   modelCatalog.chat.kilo = kiloModels;
   modelCatalog.chat.aihubmix = aihubmixModels;
 
