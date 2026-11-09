@@ -223,11 +223,11 @@ const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',
 assert.equal(transientResult.status,200);
 assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
 
-const sixSlotEnv=mockCredentialEnv({
+const requestyThreeSlotEnv=mockCredentialEnv({
  REQUESTY_API_KEYS_JSON:JSON.stringify(['r1','r2','r3'])
 });
 let selectedSlot=0;
-const selectedResult=await requestWithCredentialPool(sixSlotEnv,'requesty',async(key,slot)=>{
+const selectedResult=await requestWithCredentialPool(requestyThreeSlotEnv,'requesty',async(key,slot)=>{
  selectedSlot=slot;
  return new Response('ok',{status:200});
 },{startIndex:2});
