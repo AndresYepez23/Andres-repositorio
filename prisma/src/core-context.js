@@ -69,7 +69,7 @@ export function buildConversationContext(history = [], query = '', options = {})
 }
 
 export function chooseCoreReasoning(task = 'conversation', text = '') {
-  const q = fold(text);
+  const q = fold(text).replace(/^[¿?¡!\s]+/,'').trim();
   const deep = /\b(depura|debug|refactoriza|implementa|reescribe|arquitectura|analiza|investiga|demuestra|demostrar|resuelve|evalua|razonamiento|argumenta|exhaustivo|profundo|a fondo|detalladamente|paso a paso)\b/.test(q);
   if (task === 'coding') {
     if(q.length < 180 && /^(?:que es|para que sirve|cual es|explica brevemente|dame un ejemplo)\b/.test(q) && !deep) return 'balanced';
@@ -84,9 +84,9 @@ export function chooseCoreReasoning(task = 'conversation', text = '') {
 // Limit unneeded output tokens without making substantive requests artificially
 // short. A concise answer should not reserve the same tokens as a full report.
 export function chooseCoreResponseLength(task = 'conversation', text = '') {
-  const q = fold(text).trim();
-  const detailed = /\b(detallad|complet|extens|profund|a fondo|paso a paso|informe|ensayo|tutorial|guia completa|proyecto completo|archivo completo)\b/.test(q);
-  const brief = /\b(breve|corto|resumido|en una frase|rapido|simple|sin explicaciones)\b/.test(q);
+  const q = fold(text).replace(/^[¿?¡!\s]+/,'').trim();
+  const detailed = /\b(?:detallad\w*|complet\w*|extens\w*|profund\w*|a fondo|paso a paso|informe|ensayo|tutorial|guia completa|proyecto completo|archivo completo)\b/.test(q);
+  const brief = /\b(?:breve(?:mente)?|cort[oa]|resumid[oa]|en una frase|rapido|simple|sin explicaciones)\b/.test(q);
   if(task === 'songwriting') return 'long';
   if(detailed) return 'long';
   if(brief) return 'short';
