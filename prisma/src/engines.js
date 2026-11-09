@@ -69,21 +69,25 @@ async function pdfTool(id,files,p,cb){
  }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
-  const pages=src.getPageIndices(),requested=Number(p.parts||0);
+  const pages=src.getPageIndices(),requested=Number(p.parts||0),chunkSize=Number(p.chunkSize||0);
+  if(requested&&chunkSize)throw Error('Elige entre dividir por cantidad de partes o por páginas por bloque.');
   if(requested&&(!Number.isInteger(requested)||requested<2||requested>20||requested>pages.length))
    throw Error('La cantidad de partes debe estar entre 2 y 20 y no puede superar el número de páginas.');
+  if(chunkSize&&(!Number.isInteger(chunkSize)||chunkSize<1||chunkSize>200))
+   throw Error('El número de páginas por bloque debe estar entre 1 y 200.');
   const groups=requested
    ? Array.from({length:requested},(_,i)=>pages.slice(Math.floor(i*pages.length/requested),Math.floor((i+1)*pages.length/requested)))
+   : chunkSize?Array.from({length:Math.ceil(pages.length/chunkSize)},(_,i)=>pages.slice(i*chunkSize,(i+1)*chunkSize))
    : pages.map(page=>[page]);
   for(let i=0;i<groups.length;i++){
    const single=await PDFDocument.create(),copied=await single.copyPages(src,groups[i]);
    copied.forEach(page=>single.addPage(page));
-   const label=requested?'parte-':'pagina-';
+   const label=requested||chunkSize?'parte-':'pagina-';
    zip.file(label+String(i+1).padStart(3,'0')+'.pdf',await single.save());
    progress(cb,(i+1)/groups.length*.85,'Preparando '+(i+1)+' de '+groups.length+'...');
   }
   const blob=await zip.generateAsync({type:'blob'});
-  return download(blob,fileName(files[0])+(requested?'-partes.zip':'-paginas.zip'));
+  return download(blob,fileName(files[0])+(requested||chunkSize?'-partes.zip':'-paginas.zip'));
  }
 
  if(id==='pdf-extract'){
