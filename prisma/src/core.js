@@ -215,6 +215,7 @@ function toolParamsHint(id){
     'ai-assistant':'Usa params.prompt con la instrucción completa, params.context opcional, params.tone y params.length.',
     'music-lyrics':'Usa params.prompt con la idea, tema, idioma, género y ambiente. Entrega letra original completa y un prompt de producción; no afirmes que se generó audio.',
     'image-gen':'Usa params.prompt con una descripción visual completa y params.ratio/style si aplica.',
+    'ai-voice':'Usa params.prompt con el texto real para sintetizar (máximo 1.500 caracteres), params.model="openai/tts-1", params.voice="nova", params.format="mp3". Entrega audio binario descargable; nunca simules la voz con texto.',
     'image-bg':'No requiere parámetros; elimina el fondo de una imagen.',
     'image-ocr':'No requiere parámetros; extrae texto de imágenes.',
     'excel-json':'Usa params.sheet y params.format: "json" o "csv".',
@@ -611,6 +612,84 @@ async function answerConversation(text,creds,task='conversation'){
  addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
  status('Listo. Puedes continuar la conversación o pedir ajustes.','success');
 }
+function speechIntent(message){
+ const q=String(message||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ if(/(?:audio|voz)\s+a\s+texto|transcrib|subtitul/.test(q))return false;
+ if(/(?:cancion|musica|melodia|instrumental|banda sonora)/.test(q)&&!/(?:letra|texto).*\b(?:voz|narrac|habla)/.test(q))return false;
+ if(/^[¿?\s]*(?:que es|como funciona|para que sirve|cuanto cuesta|es posible|puedes explicar)\b/.test(q))return false;
+ if(/^[¿?\s]*(?:por que|por qué|no me|me falla|error|fallo|problema)\b/.test(q))return false;
+ const narration=/(?:leeme|\blee\b|lectura en voz alta|\bnarra\b|narrame|ponle voz|hablalo|dilo en voz alta|escuchar.*(?:texto|respuesta|mensaje))/.test(q);
+ const generation=/(?:pas(?:a|ar|ame|alo|ala)|conviert|convert|transform|genera|generar|crea|crear|haz(?:me)?|graba|produce|quiero|necesito|guardar|guarda).{0,85}(?:audio|mp3|voz|narracion|hablado)/.test(q);
+ const reverse=/(?:texto|archivo|documento|respuesta|mensaje|frase).{0,65}(?:a\s+audio|a\s+voz|en\s+audio|en\s+mp3)/.test(q);
+ return narration||generation||reverse||/(?:texto\s+a\s+(?:voz|audio)|text\s*to\s*speech|\btts\b)/.test(q);
+}
+function inlineSpeechText(command){
+ const full=String(command||'').trim();
+ const quoted=full.match(/[«“"]([^«”"]{2,1600})[»”"]/);
+ if(quoted)return quoted[1].trim();
+ const separator=full.match(/(?:texto|frase|mensaje|contenido|que diga|lo siguiente)\s*[:：]\s*([\s\S]{2,})$/i);
+ if(separator)return separator[1].trim();
+ const colon=full.match(/[:：]\s*([^\n]{2,}(?:\n[\s\S]*)?)$/);
+ if(colon)return colon[1].trim();
+ const newlines=full.split(/\n+/).slice(1).join('\n').trim();
+ if(newlines.length>2)return newlines;
+ return '';
+}
+async function fulfillSpeechRequest(userText){
+ const q=String(userText||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ let content=inlineSpeechText(userText);
+ let origin='texto proporcionado';
+ if(!content&&attachments.length){
+  if(attachments.length>1){addMessage('assistant','Para crear el audio, adjunta un documento a la vez. Puedes enviarme los demás después.');return;}
+  const file=attachments[0],name=String(file.name||'').toLowerCase();
+  status('Leyendo el documento en tu navegador, antes de generar el audio…');
+  try{
+   if(file.type==='application/pdf'||name.endsWith('.pdf')){
+    const result=await runTool('pdf-text',[file],{},(p,msg)=>status(msg||'Leyendo PDF…'));
+    content=String(result?.text||'').replace(/--- Página \d+ ---/g,' ').trim();
+   }else if(name.endsWith('.docx')){
+    const result=await runTool('docx-html',[file],{},(p,msg)=>status(msg||'Leyendo Word…'));
+    const html=await result?.blob?.text?.();
+    if(html)content=new DOMParser().parseFromString(html,'text/html').body.textContent||'';
+   }else if(/\.(txt|md|markdown|html|htm)$/i.test(name)||file.type.startsWith('text/')){
+    const raw=await file.text();
+    content=/\.(html|htm)$/i.test(name)?new DOMParser().parseFromString(raw,'text/html').body.textContent||'':raw;
+   }else if(file.type.startsWith('image/')){
+    const result=await runTool('image-ocr',[file],{language:'spa'},(p,msg)=>status(msg||'Extrayendo texto de la imagen…'));
+    content=result?.text||'';
+   }else{
+    addMessage('assistant','Este archivo todavía no tiene una ruta de lectura para texto a voz. Puedes adjuntar PDF con texto seleccionable, Word DOCX, TXT, Markdown, HTML o una imagen legible.');return;
+   }
+   origin='archivo '+file.name;
+  }catch(error){addMessage('assistant','No pude leer el documento para producir una voz: '+(error?.message||'error de lectura')+'. Puedes pegar el texto directamente.');return;}
+ }
+ if(!content&&/(?:anterior|ultimo|ultima|acabas de|tu respuesta|lo que escribiste|lo que dijiste)/.test(q)){
+  const last=messages.slice(0,-1).reverse().find(item=>item.role==='assistant'&&String(item.content||'').trim());
+  if(last){content=String(last.content).trim();origin='respuesta anterior';}
+ }
+ if(!content){
+  addMessage('assistant','Sí, puedo convertir texto a un archivo de audio MP3 descargable. Pega el contenido después de «Convierte a audio:» o adjunta un PDF, Word o archivo de texto. También puedes pedirme «lee tu respuesta anterior en voz».');
+  status('Falta el texto para crear la voz.','info');return;
+ }
+ content=String(content).replace(/\s+/g,' ').trim();
+ if(content.length<2){addMessage('assistant','No encontré texto legible para sintetizar. Puedes pegarlo directamente.');return;}
+ if(content.length>1500){
+  addMessage('assistant','Encontré '+content.length+' caracteres en '+origin+'. Para proteger tu presupuesto, cada audio admite hasta 1.500 caracteres. Indica un fragmento concreto o pega el párrafo que quieres escuchar; no voy a recortar el documento sin avisarte.');
+  status('Texto demasiado largo para la cuota de voz.','info');return;
+ }
+ if(attachments.length)addMessage('assistant','Preparé el texto de '+origin+'. Para generar el MP3, ese texto se enviará al proveedor de voz conectado; los archivos originales no se enviarán.');
+ status('Generando una voz real con el texto solicitado…');
+ const result=await runTool('ai-voice',[],{
+  ...credentials(),prompt:content,provider:'auto',
+  model:'openai/tts-1',voice:'nova',format:'mp3'
+ },(progress,message)=>{status(message||'Generando audio…');setProgress(Math.max(.05,Math.min(1,Number(progress)||.15)),message||'Generando audio…');});
+ if(!result?.blob||!String(result.blob.type||'').startsWith('audio/'))throw Error('El motor no devolvió un archivo de audio válido.');
+ addMessage('assistant','Aquí tienes la narración en audio. Puedes reproducirla y descargarla en MP3.',{
+  results:[{name:'Texto convertido a voz',reason:'Audio generado a partir de '+origin,result}]
+ });
+ attachments=[];renderAttachments();$('#core-file-input').value='';
+ status('Audio listo para escuchar y descargar.','success');
+}
 async function requestPlan(userText){
   // Simple greetings must work instantly, even when every external inference
   // provider is unavailable; do not spend AI quota on a basic salutation.
@@ -621,6 +700,8 @@ async function requestPlan(userText){
     status('Listo para ayudarte.','success');
     return;
   }
+  // Text-to-speech is a real media output, never a prose-only model answer.
+  if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
   const previousTexts=messages.slice(-9,-1).filter(message=>message.role==='user').map(message=>message.content);
   const fileConversion=planFileConversion(userText,attachments,previousTexts);

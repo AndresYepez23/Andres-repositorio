@@ -430,10 +430,12 @@ function buildFields(t){
       selectField('Extensión','length',[['short','Breve'],['medium','Media'],['long','Detallada']],'medium')+
       textareaField('Contexto adicional (opcional)','context','','Añade datos que el modelo deba tener en cuenta.')+
       '<div class="tool-hint workflow-provider-notice" id="tool-provider-notice"></div><button type="button" class="mini-button" id="open-ai-settings">Gestionar conexiones</button>';
-    case 'ai-voice':return textareaField('Texto que quieres convertir en voz','prompt','','Escribe el texto que quieres escuchar.')+
-      selectField('Modelo de voz','model',[['openai/tts-1','TTS estándar'],['openai/tts-1-hd','TTS alta calidad']],'openai/tts-1')+
-      selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina']],'nova')+
-      selectField('Formato de audio','format',[['mp3','MP3'],['wav','WAV'],['opus','Opus']],'mp3')+
+    case 'ai-voice':return textareaField('Texto que quieres convertir en voz','prompt','','Escribe hasta 1.500 caracteres. Prisma generará un archivo reproducible y descargable.')+
+      selectField('Motor de voz','provider',[['auto','Automático · conexión central y respaldo personal'],['personal','Mi cuenta Pollinations']],'auto')+
+      selectField('Modelo de voz','model',[['openai/tts-1','TTS estándar · recomendado'],['openai/tts-1-hd','TTS alta calidad · puede gastar más saldo']],'openai/tts-1')+
+      selectField('Voz','voice',[['nova','Nova · femenina'],['alloy','Alloy · neutra'],['echo','Echo · masculina'],['shimmer','Shimmer · femenina'],['onyx','Onyx · masculina'],['fable','Fable']],'nova')+
+      selectField('Formato de audio','format',[['mp3','MP3 · recomendado'],['wav','WAV'],['opus','Opus']],'mp3')+
+      '<div class="tool-hint" id="voice-provider-notice">Automático utiliza primero la conexión central de Prisma, con cuotas gratuitas estrictas. Si falla, puede utilizar tu cuenta de Pollinations autorizada; su saldo solo se consume dentro del presupuesto que configuraste.</div>'+
       pollinationsAuthFields();
     case 'ai-transcribe':return selectField('Motor de transcripción','provider',[['auto','Automático · recomendado'],['groq','Groq Whisper Turbo · central'],['huggingface','Hugging Face · créditos limitados'],['pollinations','Pollinations · cuenta personal']],'auto')+
       selectField('Modelo de transcripción','model',[['','Automático · según motor']],'')+
@@ -701,6 +703,26 @@ function updateProviderNotice(target,task='image'){
   notice.textContent=providerNoticeText(provider,quality,task);
 }
 function setupAIAuthorization(tool){
+ if(tool.id==='ai-voice'){
+  const provider=$('#field-provider'),notice=$('#voice-provider-notice');
+  const update=()=>{
+   if(!notice)return;
+   const personal=provider?.value==='personal';
+   const central=centralConnectionState.features?.pollinationsAudio===true;
+   notice.textContent=personal?'Se utilizará tu cuenta personal Pollinations y su presupuesto autorizado.':
+    central?'Prisma utilizará primero su conexión central de voz (2 generaciones compartidas al día), con tu cuenta como respaldo opcional.':
+    'El motor central de voz no está disponible o no se ha podido verificar. Prisma intentará tu cuenta personal si está autorizada; de lo contrario, explicará el bloqueo.';
+  };
+  provider?.addEventListener('change',update);
+  $('#open-ai-settings')?.addEventListener('click',()=>{closeTool();showView('ai');$('#ai-connection-card')?.scrollIntoView({behavior:'smooth',block:'center'});});
+  void getCentralProviderStatus().then(data=>{
+   Object.assign(centralConnectionState,{providers:data.providers,features:data.features,warnings:data.warnings,configured:data.configured});
+   update();
+  }).catch(()=>update());
+  update();
+  return;
+ }
+
  const task=tool.id==='image-gen'?'image':tool.id==='ai-transcribe'?'audio':'text';
  const provider=$('#field-provider');
  const quality=$('#field-qualityProfile');
