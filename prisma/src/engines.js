@@ -610,7 +610,7 @@ async function generateImage(p,cb){
 }
 function classifyTextTask(prompt,tier='balanced'){
  const q=String(prompt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- if(/\b(cancion|letra|componer|composicion|verso|coro|tema musical|musica original)\b/.test(q))return 'songwriting';
+ if(/\b(cancion|letra|componer|composicion|verso|coro|tema musical|musica original|song|lyrics|compose|chorus|verse)\b/.test(q))return 'songwriting';
  if(/\b(codigo|programacion|javascript|python|sql|api|debug|depurar|software)\b/.test(q))return 'coding';
  if(/\b(resumen|resume|resumir|sintetiza|extrae las ideas|puntos clave)\b/.test(q))return 'summary';
  if(/\b(idea|creativo|creativa|guion|historia|poema|eslogan|campana|contenido original)\b/.test(q))return 'creative';
@@ -619,11 +619,11 @@ function classifyTextTask(prompt,tier='balanced'){
  return 'general';
 }
 function isGenericModelRefusal(text){
- return /^(?:lo siento[, ]*pero no puedo ayudar con eso|no puedo ayudar con eso|no puedo cumplir esa solicitud|no puedo generar ese contenido)[.!\s]*/i.test(String(text||'').trim());
+ return /^(?:lo siento[, ]*(?:pero )?no puedo (?:ayudar con eso|cumplir esa solicitud|crear|generar|escribir|componer)|no puedo ayudarte con eso|no puedo ayudar con eso|no puedo cumplir esa solicitud|no puedo generar ese contenido)[.!\s]*/i.test(String(text||'').trim());
 }
 function isRestrictedSongRequest(prompt){
  const q=String(prompt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- return /\b(letra exacta|letra completa de|continua(?:r)? la letra|sigue la letra|copia(?:r)? la letra|en el estilo de|imita(?:r)? a|exactamente como canta)\b/.test(q);
+ return /\b(letra exacta|letra completa de|continua(?:r)? la letra|sigue la letra|copia(?:r)? la letra|(?:en|al) estilo de|imita(?:r)? a|exactamente como canta|como la cancion de|igual que canta)\b/.test(q);
 }
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
@@ -743,7 +743,7 @@ async function generateSpeech(p,cb){
 async function transcribeAudio(files,p,cb){
  if(!files[0])throw Error('Selecciona un archivo de audio.');
  const selected=p.provider||'auto';
- const hasGroqAudio=p.centralFeatures?.groqAudio!==false&&!!p.centralProviders?.groq;
+ const hasGroqAudio=p.centralFeatures?.groqAudio===true||(p.centralFeatures?.groqAudio!==false&&!!p.centralProviders?.groq);
  const hasHfAudio=!!p.centralFeatures?.huggingfaceAudio;
  const personalToken=String(p.polliToken||'').trim();
  let order;

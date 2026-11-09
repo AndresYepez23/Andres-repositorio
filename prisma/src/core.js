@@ -237,7 +237,7 @@ function compactPlanningCatalog(userText){
     [/miniatura|imagen.*youtube/, 'image-social-kit'],
     [/texto.*imagen|ocr/, 'image-ocr'],
     [/analiz.*pdf|resumen.*pdf|extraer.*texto.*pdf/, 'pdf-text'],
-    [/letra.*cancion|cancion.*original|compon|composicion musical|escrib.*cancion|haz.*cancion/, 'music-lyrics'],
+    [/letra.*cancion|cancion.*original|compon|composicion musical|escrib.*cancion|haz.*cancion|haces.*cancion|quiero.*cancion|necesito.*cancion|hazme.*cancion|escribeme.*cancion|crea.*cancion|crear.*cancion|gener.*cancion/, 'music-lyrics'],
     [/gener.*imagen|crear.*imagen|ilustracion.*ia/, 'image-gen'],
     [/transcrib.*audio|audio.*texto|voz.*texto/, 'ai-transcribe'],
     [/texto.*voz|voz sintetica|leer.*texto/, 'ai-voice']
@@ -414,7 +414,7 @@ function isConversationWithoutTools(text){
   const normalized=String(text||'').trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   if(normalized.length>160)return false;
   const simpleConversation=/^(hola+(?: prisma)?|holi+|hey|hello|buenas(?: tardes| noches| dias)?|saludos|que tal|como estas|quien eres|que eres|gracias|muchas gracias|que puedes hacer|que sabes hacer|me escuchas|estas ahi|buenos dias|buenas noches)[!?,.\s]*$/i.test(normalized);
-  const capabilityQuestion=/^(?:puedes|podrias|se puede|es posible|tienes la capacidad de)\b.{0,130}\?+$/i.test(normalized)&&!/(?:hazme|creame|escribeme|generame|preparame|componme)/i.test(normalized);
+  const capabilityQuestion=/^(?:puedes|podrias|se puede|es posible|tienes la capacidad de)\b.{0,130}\?+$/i.test(normalized)&&!/(?:hazme|creame|escribeme|generame|preparame|componme|hacer|crear|escribir|generar|componer|preparar|producir|convertir|editar|quitar|traducir|resumir|analizar|transcribir|programar|disenar|dibujar|redactar)/i.test(normalized);
   return simpleConversation||capabilityQuestion;
 }
 async function answerConversation(text,creds){
