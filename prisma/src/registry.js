@@ -164,6 +164,12 @@ export const tools = [
   ,{ id:'utm-builder', name:'Crear enlaces UTM', description:'Prepara URLs de campañas con fuente, medio, campaña y etiquetas opcionales para medir publicaciones.', category:'creator', icon:'link', status:'ready', mode:'local', file:false, tag:'Marketing · SEO · Local' }
   ,{ id:'subtitle-srt-local', name:'Crear subtítulos SRT', description:'Convierte un guion en un archivo SRT descargable con tiempos aproximados, editables en CapCut u otro editor.', category:'creator', icon:'captions', status:'ready', mode:'local', file:false, tag:'Subtítulos · Sin IA' }
 
+  ,{ id:'json-compare-local', name:'Comparar dos JSON', description:'Detecta campos añadidos, eliminados y modificados entre dos JSON sin subir información.', category:'data', icon:'files', status:'ready', mode:'local', file:false, tag:'Desarrollo · Local' }
+  ,{ id:'citation-ids-local', name:'Extraer DOI, PMID y arXiv', description:'Recupera identificadores bibliográficos de textos científicos y genera enlaces para consultarlos.', category:'study', icon:'graduation-cap', status:'ready', mode:'local', file:false, tag:'Investigación · Local' }
+  ,{ id:'ai-compare-options', name:'Comparador inteligente de opciones', description:'Compara alternativas, ventajas, riesgos y criterios sin inventar precios o datos actuales.', category:'ai', icon:'sliders', status:'beta', mode:'byok', file:false, tag:'IA · Decisiones' }
+  ,{ id:'ai-action-plan', name:'Planificador inteligente', description:'Transforma objetivos en pasos concretos, entregables, dependencias y riesgos.', category:'ai', icon:'list', status:'beta', mode:'byok', file:false, tag:'IA · Productividad' }
+  ,{ id:'ai-text-review', name:'Revisor crítico de textos', description:'Identifica contradicciones, errores de estructura y mejoras en documentos que pegues.', category:'ai', icon:'file-text', status:'beta', mode:'byok', file:false, tag:'IA · Escritura' }
+
 ];
 
 export const statusLabels = { ready:'Disponible', beta:'Beta', soon:'Próximamente' };

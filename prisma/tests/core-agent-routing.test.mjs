@@ -8,6 +8,7 @@ import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
 import { buildConversationContext, chooseCoreReasoning } from '../src/core-context.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
+import { compareJsonDocuments, extractAcademicIdentifiers, redactSensitiveText } from '../src/advanced-text-tools.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -450,5 +451,28 @@ assert.equal(srt.filename,'prisma-subtitulos.srt');
 const autoRouteEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
 assert.match(autoRouteEngineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
+
+// Additional browser-native utilities and specialist routing.
+const localJsonDiff=compareJsonDocuments('{"a":1,"nested":{"status":"pending"}}','{"a":2,"nested":{"status":"ready","added":true}}');
+assert.ok(localJsonDiff.text.includes('$.a')&&localJsonDiff.text.includes('$.nested.status'));
+assert.ok(localJsonDiff.text.includes('$.nested.added'));
+assert.equal(compareJsonDocuments('{"a":1}','{"a":1}').text,'Los dos documentos JSON son equivalentes.');
+assert.throws(()=>compareJsonDocuments('not json','{}'),/JSON original no es válido/);
+const extractedIds=extractAcademicIdentifiers('DOI 10.1038/s41586-020-2649-2 · PMID: 32895569 · arXiv: 2401.12345');
+assert.ok(extractedIds.text.includes('https://doi.org/10.1038/s41586-020-2649-2'));
+assert.ok(extractedIds.text.includes('https://pubmed.ncbi.nlm.nih.gov/32895569/'));
+assert.ok(extractedIds.text.includes('https://arxiv.org/abs/2401.12345'));
+const redactedText=redactSensitiveText('usuario@ejemplo.com +57 300 123 4567');
+assert.doesNotMatch(redactedText.text,/usuario@ejemplo.com/);
+for(const id of ['json-compare-local','citation-ids-local','ai-compare-options','ai-action-plan','ai-text-review'])
+ assert.ok(registered.some(tool=>tool.id===id),id+' registered');
+const enhancedEngine=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+const enhancedCore=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+for(const id of ['ai-compare-options','ai-action-plan','ai-text-review']){
+ assert.ok(enhancedEngine.includes("'"+id+"'"),id+' is executable');
+ assert.ok(enhancedCore.includes("'"+id+"'"),id+' routes from Core');
+}
+assert.ok(enhancedEngine.includes('runAdvancedTextTool'));
+assert.ok(readFileSync(new URL('../src/provider-connections.js',import.meta.url),'utf8').includes('cachedCentralStatus'));
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
