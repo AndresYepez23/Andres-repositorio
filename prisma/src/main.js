@@ -587,7 +587,6 @@ async function refreshOpenRouterUsage(){
       const daily=data.usage?.daily;
       const minute=data.usage?.minute;
       const account=data.account;
-      const money=value=>'USD '+Number(value).toFixed(4);
       const lines=[];
       if(daily){
         lines.push('<strong>Solicitudes de Prisma hoy:</strong> '+daily.used+' / '+daily.limit+' · quedan '+daily.remaining);
@@ -595,8 +594,7 @@ async function refreshOpenRouterUsage(){
       if(minute)lines.push('<strong>Velocidad:</strong> '+minute.limit+' solicitudes/min · '+minute.used+' usadas en este minuto.');
       if(account){
         lines.push('<strong>Cuota OpenRouter Free:</strong> '+account.externalFreeDailyLimit+' solicitudes/día según el nivel de la cuenta.');
-        if(account.dailySpendUsd!==null)lines.push('<strong>Gasto de la cuenta hoy:</strong> '+money(account.dailySpendUsd)+'.');
-        if(account.spendLimitUsd!==null)lines.push('<strong>Presupuesto de esta API key:</strong> '+money(account.spendRemainingUsd??0)+' restantes de '+money(account.spendLimitUsd)+'.');
+        lines.push('<small>Los saldos y límites de gasto privados solo se consultan desde tu panel de OpenRouter.</small>');
       }else{
         lines.push('<strong>Cuota OpenRouter:</strong> se aplica el nivel gratuito conservador de 50 solicitudes/día y 20/min; no se pudo consultar el estado de la cuenta.');
       }
