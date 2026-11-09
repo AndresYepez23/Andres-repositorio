@@ -464,7 +464,7 @@ function pdfPagesFromText(text){
 function pdfWatermarkFromText(text){
  const source=String(text||'');
  const matches=source.match(/marca\s+de\s+agua\s*(?:que\s+diga|con\s+(?:el\s+)?texto|de\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,65})/i);
- return String(matches?.[1]||'').replace(/\s+(?:y|ademas|tambien)\s+(?:numeracion|numerar|enumerar|paginas?).*$/i,'').trim();
+ return String(matches?.[1]||'').replace(/\s+(?:y|ademas|tambien)\s+(?:numer|enumer|foliar|paginas?).*$/i,'').trim();
 }
 // Deterministic local execution: a document editor is more reliable than asking
 // a language model to guess whether a known PDF tool exists.
@@ -506,6 +506,26 @@ function buildPdfEditPlan(userText){
  if(number)add('pdf-page-numbers',{position:/\b(arriba|superior|encabezado)\b/.test(q)?'top':'bottom'},'Numerar consecutivamente las páginas resultantes');
  if(watermark)add('pdf-watermark',{watermark:mark},'Añadir la marca de agua solicitada');
  return {type:'execute',plan:{message:'Editaré el PDF localmente: '+steps.map(step=>step.reason.toLowerCase()).join(', ')+'. Prepararé un solo archivo final para descargar.',needs_clarification:false,steps,combineFinalFiles:true,userRequest:request}};
+}
+
+// File-based capabilities should be explained from the real registry before any
+// model is asked to invent capabilities or pretend to edit an absent file.
+function describeUnattachedToolRequest(userText){
+ if(attachments.length)return null;
+ const q=normalizeCoreIntent(userText);
+ const options=[
+  {id:'pdf-to-word',test:/\b(pdf.*(?:word|docx)|(?:word|docx).*pdf)\b/,description:'convertir un PDF digital con texto seleccionable a Word editable'},
+  {id:'pdf-merge',test:/(?:unir|combinar|juntar|fusionar).{0,50}(?:pdf|documentos?)/,description:'combinar varios PDF en uno'},
+  {id:'pdf-split',test:/(?:dividir|separar|partir).{0,50}(?:pdf|paginas?)|(?:pdf).{0,30}(?:dividir|separar)/,description:'dividir un PDF en archivos separados'},
+  {id:'pdf-compress',test:/(?:comprimir|optimizar|reducir).{0,50}(?:pdf|documento)/,description:'optimizar la estructura de un PDF'},
+  {id:'pdf-text',test:/(?:extraer|obtener|sacar|leer).{0,40}(?:texto|contenido).{0,30}pdf|pdf.{0,40}(?:extraer|sacar|leer).{0,20}texto/,description:'extraer texto seleccionable de un PDF'},
+  {id:'image-bg',test:/(?:quitar|eliminar|borrar).{0,40}fondo.{0,40}(?:foto|imagen|fotografia)|(?:foto|imagen|fotografia).{0,50}(?:quitar|eliminar).{0,30}fondo/,description:'eliminar el fondo de una imagen con un modelo que funciona en el navegador'},
+  {id:'image-compress',test:/(?:comprimir|optimizar|reducir).{0,50}(?:foto|imagen|jpg|png|webp)/,description:'comprimir imágenes directamente en el navegador'},
+  {id:'image-ocr',test:/(?:extraer|obtener|reconocer|leer).{0,40}texto.{0,30}(?:imagen|foto)|(?:imagen|foto).{0,40}(?:ocr|texto)/,description:'reconocer texto de imágenes mediante OCR'}
+ ];
+ const picked=options.find(item=>item.test.test(q)&&tools.some(t=>t.id===item.id&&['ready','beta'].includes(t.status)));
+ if(!picked)return null;
+ return 'Sí. Prisma ya dispone de la herramienta «'+tools.find(t=>t.id===picked.id).name+'» para '+picked.description+'. Adjunta el archivo y dime los ajustes que necesitas; la procesaré con esa herramienta, sin pedirle a un modelo que simule el resultado.';
 }
 // Text requests are conversations, not approval screens. Reserve tool planning for
 // actual file conversion, image/audio generation and multi-stage operations.
@@ -583,6 +603,12 @@ async function requestPlan(userText){
    pendingPlan={plan,steps};
    addMessage('assistant',plan.message);
    await executePlan();
+   return;
+  }
+  const localCapability=describeUnattachedToolRequest(userText);
+  if(localCapability){
+   addMessage('assistant',localCapability);
+   status('Herramienta disponible. Adjunta un archivo para continuar.','info');
    return;
   }
   const centralStatus=await getCentralProviderStatus();
