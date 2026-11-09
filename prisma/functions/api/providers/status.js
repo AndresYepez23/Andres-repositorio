@@ -1,6 +1,7 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
+
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -9,38 +10,98 @@ const headers = {
 
 export async function onRequestGet({ env }) {
   const limited = Boolean(env.PRISMA_RATE_DB?.prepare);
-  const blockedHF=limited && getCredentialSlots(env,"huggingface").length<=1 ? await getProviderHold(env,"huggingface") : null;
-  const blockedPollinations=limited && getCredentialSlots(env,"pollinations").length<=1 ? await getProviderHold(env,"pollinations") : null;
-  const blockedSpeech=limited && getCredentialSlots(env,"pollinations").length<=1 ? await getProviderHold(env,"pollinations-audio") : null;
-  const blockedGroq=limited && getCredentialSlots(env,"groq").length<=1 ? await getProviderHold(env,"groq") : null;
-  const blockedGroqAudio=limited && getCredentialSlots(env,"groq").length<=1 ? await getProviderHold(env,"groq-audio") : null;
-  const blockedOpenRouter=limited && getCredentialSlots(env,"openrouter").length<=1 ? await getProviderHold(env,"openrouter") : null;
-  const huggingfaceReady=limited && Boolean(getCredentialSlots(env,"huggingface").length) && !blockedHF;
-  const pollinationsReady=limited && Boolean(getCredentialSlots(env,"pollinations").length) && !blockedPollinations;
-  const speechReady=limited && Boolean(getCredentialSlots(env,"pollinations").length) && !blockedSpeech;
-  const groqReady=limited && Boolean(getCredentialSlots(env,"groq").length) && !blockedGroq;
-  const groqAudioReady=limited && Boolean(getCredentialSlots(env,"groq").length) && !blockedGroqAudio;
-  const openrouterReady=limited && Boolean(getCredentialSlots(env,"openrouter").length) && !blockedOpenRouter;
+  const poolProviders = Object.keys(CREDENTIAL_ROOTS);
+  const holds = {};
+  if (limited) {
+    const entries = await Promise.all(poolProviders.map(async provider =>
+      [provider, await getProviderHold(env, provider)]
+    ));
+    for (const [provider, hold] of entries) holds[provider] = hold;
+  }
+
+  const configured = Object.fromEntries(poolProviders.map(provider =>
+    [provider, getCredentialSlots(env, provider).length]
+  ));
+  const available = Object.fromEntries(poolProviders.map(provider =>
+    [provider, limited && configured[provider] > 0 && !holds[provider]]
+  ));
+  const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
+  const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
+  const pollinationsReady = Boolean(available.pollinations);
+  const groqReady = Boolean(available.groq);
+  const huggingfaceReady = Boolean(available.huggingface);
+  const geminiReady = Boolean(available.gemini);
+  const openrouterReady = Boolean(available.openrouter);
+  const speechReady = pollinationsReady && !blockedSpeech;
+  const groqAudioReady = groqReady && !blockedGroqAudio;
+
+  const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
+    const hold = holds[provider];
+    const info = getCredentialStatus(env, provider);
+    return [provider, {
+      ...info,
+      providerPaused: Boolean(hold),
+      pauseState: hold?.state || null,
+      pauseReason: hold?.reason || null,
+      retryAt: hold?.valid_until || null,
+    }];
+  }));
+
+  const warnings = {};
+  for (const provider of poolProviders) {
+    if (holds[provider]) warnings[provider] = holds[provider].reason;
+    else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
+    else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
+  }
+  if (blockedSpeech) warnings.pollinationsAudio = blockedSpeech.reason;
+  if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
+
   return new Response(JSON.stringify({
     ok: true,
     mode: "central",
     protection: { d1RateLimiting: limited },
-    // Only slot positions and secret variable names are public, never values.
-    credentialSlots: Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider=>[provider,getCredentialStatus(env,provider)])),
+    // Only variable names, slot positions and aggregate health are public.
+    // Secret values are never returned to the browser.
+    credentialSlots,
+    providerHealth: Object.fromEntries(poolProviders.map(provider => [provider, {
+      configured: configured[provider],
+      max: credentialSlots[provider].max,
+      available: available[provider],
+      paused: Boolean(holds[provider]),
+      state: holds[provider]?.state || (configured[provider] ? "configured" : "missing"),
+      reason: holds[provider]?.reason || null,
+      retryAt: holds[provider]?.valid_until || null,
+    }])),
     providers: {
       pollinations: pollinationsReady,
-      gemini: limited && Boolean(getCredentialSlots(env,"gemini").length),
+      gemini: geminiReady,
       huggingface: huggingfaceReady,
       groq: groqReady,
       cloudflare: limited && Boolean(env.AI?.run),
       openrouter: openrouterReady,
     },
-    configured: {pollinations:Boolean(getCredentialSlots(env,"pollinations").length),gemini:Boolean(getCredentialSlots(env,"gemini").length),huggingface:Boolean(getCredentialSlots(env,"huggingface").length),groq:Boolean(getCredentialSlots(env,"groq").length),cloudflare:Boolean(env.AI?.run),openrouter:Boolean(getCredentialSlots(env,"openrouter").length)},
-    warnings: {...(blockedPollinations?{pollinations:blockedPollinations.reason}:{}),...(blockedSpeech?{pollinationsAudio:blockedSpeech.reason}:{}),...(blockedHF?{huggingface:blockedHF.reason}:{}),...(blockedGroq?{groq:blockedGroq.reason}:{}),...(blockedGroqAudio?{groqAudio:blockedGroqAudio.reason}:{}),...(blockedOpenRouter?{openrouter:blockedOpenRouter.reason}:{}),...(!getCredentialSlots(env,"openrouter").length?{openrouter:"Falta una credencial de OpenRouter en Cloudflare."}:{})},
+    configured: {
+      pollinations: configured.pollinations > 0,
+      gemini: configured.gemini > 0,
+      huggingface: configured.huggingface > 0,
+      groq: configured.groq > 0,
+      cloudflare: Boolean(env.AI?.run),
+      openrouter: configured.openrouter > 0,
+    },
+    warnings,
     modelCatalog: modelsForUI(),
-    features: {pollinationsAudio:speechReady,pollinationsImages:pollinationsReady,cloudflareImages: limited && Boolean(env.AI?.run), huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", geminiImages: limited && env.GEMINI_IMAGE_ENABLED==="1" && Boolean(getCredentialSlots(env,"gemini").length), huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED==="1", groqAudio: groqAudioReady, openrouterChat: openrouterReady},
+    features: {
+      pollinationsAudio: speechReady,
+      pollinationsImages: pollinationsReady,
+      cloudflareImages: limited && Boolean(env.AI?.run),
+      huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED === "1",
+      geminiImages: limited && env.GEMINI_IMAGE_ENABLED === "1" && geminiReady,
+      huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED === "1",
+      groqAudio: groqAudioReady,
+      openrouterChat: openrouterReady,
+    },
     models: {
-      pollinations:"openai/gpt-5.4-nano",
+      pollinations: "openai/gpt-5.4-nano",
       gemini: env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
       huggingface: "openai/gpt-oss-20b:cheapest",
       cloudflare: "@cf/google/gemma-4-26b-a4b-it",
