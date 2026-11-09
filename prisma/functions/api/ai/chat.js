@@ -80,8 +80,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const provider = String(payload.provider || "gemini");
-  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations"].includes(provider)) {
+  if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
+  }
+
+  if (provider === "openrouter" && !env.OPENROUTER_API_KEY) {
+    return json({ error: "OpenRouter no está configurado. Añade OPENROUTER_API_KEY como secreto de Cloudflare.", provider: "openrouter" }, 503);
   }
 
   let normalized;
@@ -107,8 +111,69 @@ export async function onRequestPost({ request, env }) {
     const hold=await getProviderHold(env,"groq");
     if(hold)return json({error:hold.reason,provider:"groq",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
   }
+  if(provider==="openrouter"){
+    const hold=await getProviderHold(env,"openrouter");
+    if(hold)return json({error:hold.reason,provider:"openrouter",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
+  }
   const limitError = await checkLimits(env, request, provider);
   if (limitError) return json({error:limitError.error,code:limitError.code,scope:limitError.scope,retryAfter:limitError.retryAfter},limitError.status);
+
+  if (provider === "openrouter") {
+    const model = requestedModel || "openrouter/free";
+    let response;
+    try {
+      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + env.OPENROUTER_API_KEY,
+          "HTTP-Referer": "https://prismaspace.pages.dev",
+          "X-Title": "Prisma Space",
+        },
+        body: JSON.stringify({
+          model,
+          messages: normalized.openaiMessages,
+          temperature: 0.65,
+          max_tokens: clamp(payload.maxOutputTokens, 128, 3000, 1200),
+          stream: false,
+          usage: { include: true },
+        }),
+      });
+    } catch {
+      await setProviderHold(env, "openrouter", "network_error", "OpenRouter no respondió; Prisma lo pausó brevemente.", 60);
+      return json({ error: "No fue posible conectar con OpenRouter.", provider: "openrouter", status: 502, retryAfter: 60 }, 502);
+    }
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const status = response.status;
+      const providerMessage = String(data.error?.message || data.error || "").slice(0, 220);
+      const dailyLimit = /daily|per.day|requests per day|free.model.*limit/i.test(providerMessage);
+      let holdSeconds = 0;
+      if (status === 429) holdSeconds = dailyLimit ? 21600 : Math.max(30, Math.min(300, Number(response.headers.get("retry-after") || 60)));
+      else if (status === 402) holdSeconds = 21600;
+      else if (status === 401 || status === 403) holdSeconds = 3600;
+      else if ([500, 502, 503, 504].includes(status)) holdSeconds = 60;
+      if (holdSeconds) {
+        const state = status === 429 ? "rate_limited" : status === 402 ? "quota_exhausted" : status === 401 || status === 403 ? "auth_error" : "provider_unavailable";
+        const reason = status === 429 ? "OpenRouter alcanzó un límite temporal; Prisma lo pausó y seguirá con los demás motores." :
+          status === 402 ? "OpenRouter no tiene saldo o la cuenta no puede usar modelos gratuitos." :
+          status === 401 || status === 403 ? "OpenRouter rechazó la clave. Revisa OPENROUTER_API_KEY en Cloudflare." :
+          "OpenRouter está temporalmente indisponible.";
+        await setProviderHold(env, "openrouter", state, reason, holdSeconds);
+      }
+      const message = status === 429 ? "OpenRouter alcanzó su límite temporal." :
+        status === 402 ? "OpenRouter no tiene saldo disponible para esta solicitud." :
+        status === 401 || status === 403 ? "OpenRouter rechazó la clave configurada. Revisa OPENROUTER_API_KEY." :
+        "OpenRouter respondió con un error (" + status + ")." + (providerMessage ? " " + providerMessage : "");
+      return json({ error: message, provider: "openrouter", status, retryAfter: holdSeconds || null }, status === 429 || status === 402 ? status : status === 400 ? 400 : 502);
+    }
+
+    const content = data.choices?.[0]?.message?.content;
+    const text = (typeof content === "string" ? content : Array.isArray(content) ? content.map(part => part?.text || "").join("\n") : "").trim();
+    if (!text) return json({ error: "OpenRouter no devolvió texto.", provider: "openrouter" }, 502);
+    return json({ ok: true, provider: "openrouter", model: data.model || model, text, usage: data.usage || null });
+  }
 
   if (provider === "pollinations") {
     if (!env.POLLINATIONS_API_KEY) return json({error:"Pollinations compartido aún no está activado. Configura POLLINATIONS_API_KEY como secreto de producción; Pollinations Connect personal sigue disponible.",provider:"pollinations"},503);
