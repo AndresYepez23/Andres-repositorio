@@ -591,7 +591,8 @@ async function refreshOpenRouterUsage(){
       if(daily){
         lines.push('<strong>Solicitudes de Prisma hoy:</strong> '+daily.used+' / '+daily.limit+' · quedan '+daily.remaining);
       }else lines.push('<strong>Contador de Prisma:</strong> no disponible (revisa el binding D1).');
-      if(minute)lines.push('<strong>Velocidad:</strong> '+minute.limit+' solicitudes/min · '+minute.used+' usadas en este minuto.');
+      if(minute)lines.push('<strong>Capacidad compartida de OpenRouter:</strong> '+minute.limit+' solicitudes/min · '+minute.used+' usadas en este minuto.');
+      lines.push('<strong>Protección por visitante:</strong> máximo 5 solicitudes/min y 20 solicitudes/día adicionales, independientes de los límites de los motores principales.');
       if(account){
         lines.push('<strong>Cuota OpenRouter Free:</strong> '+account.externalFreeDailyLimit+' solicitudes/día según el nivel de la cuenta.');
         lines.push('<small>Los saldos y límites de gasto privados solo se consultan desde tu panel de OpenRouter.</small>');
