@@ -17,15 +17,37 @@ export async function onRequestPost({request,env}){
  const prompt=String(payload.prompt||"").trim();
  const provider=String(payload.provider||"cloudflare");
  if(prompt.length<8||prompt.length>1800)return errorResponse("Describe la imagen en 8 a 1800 caracteres.",400);
- if(!["cloudflare","huggingface","pollinations"].includes(provider))return errorResponse("Motor de imagen no permitido.",400);
- const model=String(payload.model|| (provider==="cloudflare"?"@cf/black-forest-labs/flux-1-schnell":provider==="pollinations"?"black-forest-labs/flux.1-schnell":"stabilityai/stable-diffusion-3-medium-diffusers"));
+ if(!["cloudflare","huggingface","pollinations","gemini"].includes(provider))return errorResponse("Motor de imagen no permitido.",400);
+ const model=String(payload.model|| (provider==="cloudflare"?"@cf/black-forest-labs/flux-1-schnell":provider==="pollinations"?"black-forest-labs/flux.1-schnell":provider==="gemini"?"gemini-3.1-flash-image":"stabilityai/stable-diffusion-3-medium-diffusers"));
  if(!allowedModel(provider,"image",model))return errorResponse("Modelo de imagen no disponible en Prisma.",400);
  if(provider==="pollinations"&&!env.POLLINATIONS_API_KEY)return errorResponse("Pollinations compartido aún no está habilitado. Configura POLLINATIONS_API_KEY como secreto de Cloudflare.",503);
  if(provider==="cloudflare"&&!env.AI?.run)return errorResponse("Workers AI no está conectado en Cloudflare.",503);
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!env.HF_TOKEN))
   return errorResponse("Las imágenes de Hugging Face requieren activar explícitamente HF_MEDIA_ENABLED=1; no consumiremos tus créditos sin autorización.",503);
+  if(provider==="gemini"&&(env.GEMINI_IMAGE_ENABLED!=="1"||!env.GEMINI_API_KEY))
+   return errorResponse("Gemini Image es un motor de pago opcional. Requiere GEMINI_IMAGE_ENABLED=1 y una clave autorizada.",503);
  const quota=await checkLimits(env,request,provider+"-image");
  if(quota)return Response.json({error:quota.error,code:quota.code||'LIMIT'},{status:quota.status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+ if(provider==="gemini"){
+  try{
+   const ratios={square:"1:1",landscape:"4:3",portrait:"3:4",wide:"16:9"};
+   const response=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-goog-api-key":env.GEMINI_API_KEY},
+    body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseModalities:["IMAGE"],responseFormat:{image:{aspectRatio:ratios[payload.ratio]||"1:1",imageSize:"1K"}}}})
+   });
+   if(!response.ok)return errorResponse("Gemini no pudo generar la imagen ("+response.status+").",response.status===429?429:502);
+   const result=await response.json();
+   const part=result.candidates?.[0]?.content?.parts?.find(p=>p.inlineData?.data||p.inline_data?.data);
+   const data=part?.inlineData||part?.inline_data;
+   if(!data?.data)return errorResponse("Gemini no devolvió datos de imagen.",502);
+   const bytes=Uint8Array.from(atob(data.data),c=>c.charCodeAt(0));
+   if(bytes.byteLength>10*1024*1024)return errorResponse("La imagen de Gemini excede 10 MB.",502);
+   const mime=data.mimeType||data.mime_type||"image/png";
+   if(!["image/png","image/jpeg","image/webp"].includes(mime))return errorResponse("Gemini devolvió un tipo de archivo no permitido.",502);
+   return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Prisma-Model":model,"X-Content-Type-Options":"nosniff"}});
+  }catch(error){console.error("Prisma Gemini Image",String(error?.message||error).slice(0,100));return errorResponse("No fue posible generar la imagen con Gemini.",502);}
+ }
  if(provider==="cloudflare"){
   try{
    const response=await env.AI.run(model,{prompt:prompt.slice(0,1800),steps:4,...(Number.isInteger(Number(payload.seed))&&Number(payload.seed)>0?{seed:Number(payload.seed)}:{})});
