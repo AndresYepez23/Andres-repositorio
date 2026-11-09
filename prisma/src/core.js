@@ -7,6 +7,7 @@ import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
+import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -950,31 +951,32 @@ function directCoreTask(text){
  return 'conversation';
 }
 async function answerConversation(text,creds,task='conversation'){
- status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
- const context=messages.slice(-9,-1).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,1400)).join('\n').slice(-6500);
- const instruction=task==='songwriting'
-  ? 'Escribe directamente una letra de canción COMPLETAMENTE ORIGINAL, cantable, con título, versos, coro, puente y un breve prompt de producción musical. La respuesta es la propia canción, NO una lista de herramientas, un plan JSON ni instrucciones de ejecución. No afirmes haber generado un archivo de audio.'
-  : task==='creative'?'Responde directamente con el contenido creativo solicitado, listo para copiar o adaptar. No menciones herramientas internas.'
-  : task==='coding'?'Entrega directamente la solución de programación pedida, incluyendo código cuando corresponda y una explicación concisa. No simules ejecuciones.'
-  : 'Resuelve la pregunta directamente en español, con naturalidad y detalle apropiado. No prepares planes, no devuelvas JSON ni afirmes haber ejecutado acciones. Si careces de datos verificables actuales, reconócelo.';
- const prompt='Eres Prisma Core, un asistente conversacional que puede utilizar herramientas, pero aquí debes RESPONDER al usuario. '+instruction+'\n'+(context?'HISTORIAL RECIENTE:\n'+context+'\n':'')+'SOLICITUD ACTUAL:\n'+text;
- const normalized=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const toolId=task==='songwriting'?'music-lyrics':
-  task==='coding'?'ai-code-helper':
-  /\b(mejorar|mejora|optimiza|pulir|reescribe).{0,35}\bprompt\b|\bprompt\b.{0,35}\b(mejorar|mejora|optimiza|pulir)/.test(normalized)?'ai-prompt-lab':
-  /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/.test(normalized)&&task==='creative'?'ai-youtube-kit':
-  /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio|estudiar para|prepara un examen)\b/.test(normalized)?'ai-study-notes':'ai-assistant';
- const response=await runTool(toolId,[],{
-  prompt,provider:'auto',reasoning:task==='reasoning'?'smart':'balanced',
-  tone:task==='songwriting'||task==='creative'?'creative':'friendly',
-  length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
-  task,...creds
- },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
- const answer=String(response?.text||'').trim();
- if(!answer)throw Error('El motor seleccionado no devolvió contenido. Intenta nuevamente.');
- addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
- status('Listo. Puedes continuar la conversación o pedir ajustes.','success');
+  status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
+  const instruction=task==='songwriting'
+   ? 'Escribe una canción enteramente original con título, versos, coro, puente y una propuesta breve de producción; no simules haber generado audio.'
+   : task==='creative'?'Entrega la pieza creativa solicitada, lista para copiar o adaptar.'
+   : task==='coding'?'Resuelve la solicitud de programación e incluye código. No simules ejecución.'
+   : 'Responde de forma natural a la solicitud actual, atendiendo correctamente los turnos anteriores.';
+  const taskText=String(text||'');
+  const toolId=task==='songwriting'?'music-lyrics':
+   task==='coding'?'ai-code-helper':
+   /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
+   /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
+  const contextMessages=messages.slice(-13,-1).filter(m=>['user','assistant'].includes(m.role)&&String(m.content||'').trim())
+   .map(m=>({role:m.role,content:String(m.content).slice(0,1800)}));
+  const response=await runTool(toolId,[],{
+    prompt:taskText,context:instruction,contextMessages,provider:'auto',
+    reasoning:task==='reasoning'?'smart':'balanced',
+    tone:task==='songwriting'||task==='creative'?'creative':'friendly',
+    length:task==='songwriting'||task==='coding'||task==='reasoning'?'long':'medium',
+    task,...creds
+  },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
+  const answer=String(response?.text||'').trim();
+  if(!answer)throw Error('El motor seleccionado no devolvió contenido.');
+  addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
+  status('Respuesta lista. Puedes continuar esta conversación.','success');
 }
+
 function speechIntent(message){
  const q=String(message||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  if(/(?:audio|voz)\s+a\s+texto|transcrib|subtitul/.test(q))return false;
@@ -1068,6 +1070,12 @@ async function requestPlan(userText){
     addMessage('assistant','¡Hola! Soy Prisma Core. Pídeme una tarea o adjunta un archivo: puedo seleccionar las herramientas disponibles y ayudarte a crear, analizar o convertir contenido.');
     status('Listo para ayudarte.','success');
     return;
+  }
+  // Las preguntas sobre la identidad de Prisma y sus proveedores son hechos
+  // del producto: no deben quedar expuestas a respuestas inventadas del LLM.
+  if(!attachments.length){
+    const productAnswer=resolvePrismaProductQuestion(userText,messages.slice(-16,-1),centralProviders);
+    if(productAnswer){addMessage('assistant',productAnswer);status('Información de Prisma.','success');return;}
   }
   // Collect the video topic before spending any image generation quota.
   if(await handleImageCreationRequest(userText))return;
@@ -1420,7 +1428,7 @@ async function sendMessage(){
   if(!text&&!attachments.length)return;
   const filesNow=[...attachments];
   addMessage('user',text||'Procesa los archivos adjuntos.',{files:filesNow.map(file=>file.name)});
-  input.value='';input.style.height='auto';
+  input.value='';input.style.height='39px';
   // An attachment-only reply should continue a pending PDF editing request,
   // instead of launching an unrelated AI analysis of the uploaded document.
   const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
@@ -1429,7 +1437,19 @@ async function sendMessage(){
   const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':priorRequest?'Aquí está el archivo para la tarea anterior.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
   try{await requestPlan(requestText);}
-  catch(error){console.error(error);addMessage('assistant','No pude completar tu solicitud: '+(error?.message||'error de conexión')+'. Revisa el estado de los motores en Laboratorio IA o vuelve a intentarlo.');status('No se pudo completar la solicitud.','error');}
+  catch(error){
+    console.warn('Prisma Core',error?.code||error?.message||error);
+    const detail=String(error?.message||'');
+    const globalLimit=error?.code==='GLOBAL_LIMIT'||/Prisma alcanzó su límite temporal gratuito global|Se alcanzó el límite de solicitudes de Prisma/i.test(detail);
+    const providerLimit=error?.code==='PROVIDER_LIMIT';
+    if(globalLimit||providerLimit){
+      addMessage('assistant',localQuotaExplanation(globalLimit?'GLOBAL_LIMIT':'PROVIDER_LIMIT'));
+      status('Se alcanzó una cuota temporal.','warning');
+    }else{
+      addMessage('assistant','No pude completar esa operación con los motores disponibles. '+detail.slice(0,280)+' Puedes seguir utilizando las herramientas locales.');
+      status('El motor no respondió.','warning');
+    }
+  }
   finally{setBusy(false);}
 }
 function renameActiveChat(){
