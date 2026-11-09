@@ -80,7 +80,7 @@ export async function getCentralProviderStatus() {
   const empty = {
     ok: false,
     mode: "central",
-    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, baidu:false, aihubmix:false, amd:false },
+    providers: { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false },
     models: {},
     modelCatalog: {chat:{},image:{},audio:{}},
     warnings: {},
