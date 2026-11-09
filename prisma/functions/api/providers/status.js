@@ -32,6 +32,17 @@ export async function onRequestGet({ env }) {
   if (limited && env.AI?.run) {
     usage.cloudflare = await getProviderUsage(env, "cloudflare", getProviderDailyLimit(env, "cloudflare"));
   }
+  // Image generation has a distinct daily ceiling. A chat-capable provider
+  // may have no image capacity even while its text models are available.
+  const imageUsage = Object.fromEntries(limited ? await Promise.all(
+    ["cloudflare","pollinations","huggingface","gemini"].map(async provider => [
+      provider, await getProviderUsage(env, provider+"-image", getProviderDailyLimit(env,provider+"-image"))
+    ])
+  ) : []);
+  const imageReady = provider => Boolean(
+    limited && imageUsage[provider]?.daily?.remaining > 0 &&
+    (provider === "cloudflare" ? env.AI?.run : configured[provider] > 0 && !holds[provider])
+  );
   const dailyAvailable = provider => {
     const daily = usage[provider]?.daily;
     const minute = usage[provider]?.minute;
@@ -146,15 +157,16 @@ export async function onRequestGet({ env }) {
       configuredCredentials: Object.values(configured).reduce((sum,count) => sum + count, 0) + (env.AI?.run ? 1 : 0),
     },
     usage,
+    imageUsage,
     modelCatalog,
     features: {
       aihubmixDailyQuotaActive: env.AIHUBMIX_DAILY_QUOTA_ACTIVE === "1",
       kiloAutomaticEligible: kiloModels.some(item => !String(item.id).toLowerCase().startsWith("nvidia/")),
       pollinationsAudio: speechReady,
-      pollinationsImages: pollinationsReady,
-      cloudflareImages: cloudflareReady,
-      huggingfaceImages: huggingfaceReady && env.HF_MEDIA_ENABLED === "1",
-      geminiImages: limited && env.GEMINI_IMAGE_ENABLED === "1" && geminiReady,
+      pollinationsImages: imageReady("pollinations"),
+      cloudflareImages: imageReady("cloudflare"),
+      huggingfaceImages: imageReady("huggingface") && env.HF_MEDIA_ENABLED === "1",
+      geminiImages: imageReady("gemini") && env.GEMINI_IMAGE_ENABLED === "1",
       huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED === "1",
       groqAudio: groqAudioReady,
       openrouterChat: openrouterReady,
