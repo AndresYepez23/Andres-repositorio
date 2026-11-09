@@ -8,6 +8,7 @@ import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
 import { buildConversationContext, chooseCoreReasoning } from '../src/core-context.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
+import { compareJsonDocuments, extractAcademicIdentifiers } from '../src/advanced-text-tools.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -450,5 +451,26 @@ assert.equal(srt.filename,'prisma-subtitulos.srt');
 const autoRouteEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
 assert.match(autoRouteEngineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
+
+// Additional useful tools must work without network or secret credentials.
+for(const id of ['json-compare-local','citation-ids-local','ai-compare-options','ai-action-plan','ai-text-review'])
+ assert.ok(registered.some(tool=>tool.id===id),'Tool missing from catalog: '+id);
+const compared=compareJsonDocuments('{"status":"draft","count":1}','{"status":"live","count":2}');
+assert.match(compared.text,/\$\.status/);
+assert.match(compared.text,/\$\.count/);
+assert.ok(extractAcademicIdentifiers('10.1038/s41586-020-2649-2 PMID: 32895569').text.includes('pubmed.ncbi.nlm.nih.gov/32895569'));
+const updatedRedactor=runLocalCreatorTool('text-redact-sensitive',{text:'clave rqsty-sk-Abc123Abc123Abc123 correo ana@example.com https://example.com IP 192.168.1.2'});
+assert.ok(updatedRedactor.text.includes('[CLAVE OCULTA]'));
+assert.ok(updatedRedactor.text.includes('[ENLACE OCULTO]'));
+assert.ok(updatedRedactor.text.includes('[IP OCULTA]'));
+const jsonPlan=router.planCoreOfflineAction('Compara JSON:\n```json\n{"a":1}\n```\n```json\n{"a":2}\n```',[],[]);
+assert.equal(jsonPlan?.steps?.[0]?.tool_id,'json-compare-local');
+assert.equal(router.planCoreOfflineAction('Extrae DOI de este texto: 10.1038/s41586-020-2649-2',[],[])?.steps?.[0]?.tool_id,'citation-ids-local');
+const engineTools=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+for(const id of ['json-compare-local','citation-ids-local','ai-compare-options','ai-action-plan','ai-text-review'])assert.ok(engineTools.includes(id));
+const coreChatSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(coreChatSource,/ai-compare-options/);
+assert.match(coreChatSource,/ai-action-plan/);
+assert.match(coreChatSource,/ai-text-review/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
