@@ -706,7 +706,7 @@ async function generateText(p,cb){
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
  const modelFor=provider=>{
   // Planning needs compact structured output; prefer the faster model, not maximum reasoning tokens.
-  const desired=(task==='songwriting'||task==='creative')&&provider==='groq'?'llama-3.3-70b-versatile':
+  const desired=(task==='songwriting'||task==='creative')&&provider==='groq'?'openai/gpt-oss-120b':
    task==='coding'&&provider==='pollinations'?'qwen/qwen3-coder-30b-a3b-instruct':
    task==='planner'&&provider==='groq'?modelProfiles.groq.fast:
    task==='planner'&&provider==='gemini'?modelProfiles.gemini.fast:modelProfiles[provider]?.[tier]||'';
