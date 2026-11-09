@@ -1879,3 +1879,12 @@ body.prisma-auth-open{overflow:hidden}
     max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)!important;
   }
 }
+
+.core-message-fallback-reason{
+  display:block;
+  max-width:min(100%,880px);
+  margin:2px 8px 8px;
+  color:var(--subtle);
+  font-size:10px;
+  line-height:1.5;
+}
