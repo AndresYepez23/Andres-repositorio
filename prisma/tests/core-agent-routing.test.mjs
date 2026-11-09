@@ -108,8 +108,10 @@ for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
  const slots=getCredentialSlots(compactPools,provider);
  assert.equal(slots.length,6,provider+' JSON pool must expose six keys');
  assert.equal(slots[5].number,6,provider+' JSON pool must map its sixth key');
- assert.equal(getCredentialStatus(compactPools,provider).poolValid,true);
- assert.ok(getCredentialStatus(compactPools,provider).slots[0].variable.endsWith('[1]'));
+ const status=getCredentialStatus(compactPools,provider);
+ assert.equal(status.poolValid,true);
+ assert.ok(status.slots[0].variable.endsWith('[1]'));
+ assert.doesNotMatch(JSON.stringify(status),new RegExp(provider+'-key-1'),'credential values must never appear in status metadata');
 }
 const mixedPool={REQUESTY_API_KEYS_JSON:'["json-key-1","json-key-2"]',REQUESTY_API_KEY_2:'manual-key-2'};
 assert.equal(getCredentialSlots(mixedPool,'requesty')[0].value,'json-key-1');
@@ -117,6 +119,7 @@ assert.equal(getCredentialSlots(mixedPool,'requesty')[1].value,'manual-key-2','i
 const duplicatePool={ZAI_API_KEYS_JSON:'["same-key","same-key","third-key"]'};
 assert.deepEqual(getCredentialSlots(duplicatePool,'zai').map(slot=>slot.number),[1,3],'duplicate secrets are not counted as separate credentials');
 assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'{"not":"an array"}'},'requesty').poolValid,false);
+assert.equal(getCredentialStatus({ZAI_API_KEYS_JSON:JSON.stringify(Array.from({length:7},(_,i)=>'key-'+i))},'zai').poolValid,false,'JSON pools cannot exceed six credentials');
 assert.equal(getCredentialSlots({GROQ_API_KEY:'q1',GROQ_API_KEY_BACKUP:'q2'},'groq').length,2,'legacy BACKUP aliases remain supported');
 
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
