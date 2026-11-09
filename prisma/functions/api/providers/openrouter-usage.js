@@ -1,6 +1,7 @@
 import { getOpenRouterLimits } from "../../_lib/openrouter.js";
 import { getProviderUsage } from "../../_lib/limits.js";
 import { getProviderHold } from "../../_lib/provider-health.js";
+import { getCredentialSlots } from "../../_lib/credential-pool.js";
 
 const headers = {
   "Cache-Control": "no-store",
@@ -9,7 +10,7 @@ const headers = {
 };
 
 export async function onRequestGet({ env }) {
-  const configured = Boolean(env.OPENROUTER_API_KEY);
+  const configured = getCredentialSlots(env,"openrouter").length>0;
   if (!configured) {
     return new Response(JSON.stringify({
       ok: true,
