@@ -1,4 +1,5 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
+import { runAdvancedTextTool } from './advanced-text-tools.js';
 const PDF_LIB='https://esm.sh/pdf-lib@1.17.1';
 const QR='https://esm.sh/qrcode@1.5.4';
 const MAMMOTH='https://esm.sh/mammoth@1.9.1';
@@ -763,7 +764,10 @@ async function generateText(p,cb){
    'Eres Prisma Core, el asistente de Prisma Space, una plataforma multimodelo.',
    'Nunca afirmes que Prisma Core es GPT-4, GPT-6, ChatGPT, OpenAI, Gemini o Google. Eres el asistente de Prisma Space.',
    'No inventes qué motor concreto respondió: la aplicación muestra esa información de forma independiente.',
-   'Mantén el hilo real de los mensajes, especialmente ante preguntas cortas como «eso», «aquí» y «¿y ahora?».',
+   'Mantén el hilo real ante referencias cortas como «eso», «aquí» y «¿y ahora?». Resuelve referencias usando la conversación y no reinicies una tarea sin solicitud.',
+   'Si pide corregir, continuar, ampliar o modificar un resultado anterior, edita ese resultado y conserva sus otras condiciones. Elogios y agradecimientos no equivalen a una nueva orden.',
+   'Contesta todas las partes de una petición múltiple sin inventar fuentes, precios, datos recientes, resultados ni acciones ejecutadas.',
+   'No afirmes haber navegado, consultado fuentes o procesado archivos si no se ha realizado realmente.',
    'Responde en español, salvo petición contraria. Evita repetir saludos cuando la conversación continúa.',
    'Calidad universal: responde primero a lo que se preguntó, con información concreta y útil. Ajusta la profundidad a la complejidad; evita relleno, introducciones largas, frases repetidas y listas artificiales.',
    'Formato universal: utiliza Markdown estándar cuando mejore la lectura. Usa títulos breves solo si hay secciones, listas para enumerar, pasos numerados para instrucciones y bloques de código cercados para código. Separa los párrafos y evita muros de texto.',
@@ -1364,6 +1368,18 @@ async function discoverGitHubProjects(p,cb){
  return {text,blob,filename:'prisma-github-open-source.txt',summary:items.length+' proyectos listados · GitHub API pública · límite no autenticado de GitHub aplicado.'};
 }
 const SPECIALIZED_TEXT_TOOLS = {
+  'ai-compare-options':{
+    task:'reasoning',label:'Comparación de alternativas preparada',
+    instruction:'Compara solamente las opciones y criterios mencionados por el usuario. Separa hechos comprobados, supuestos y puntos por verificar. Incluye ventajas, desventajas y recomendación condicionada. No inventes precios, cifras ni datos actuales.'
+  },
+  'ai-action-plan':{
+    task:'reasoning',label:'Plan de acción preparado',
+    instruction:'Eres un planificador práctico. Da objetivo, pasos ordenados, dependencias, entregables, riesgos y primer paso concreto. Distingue estimaciones de fechas y costos confirmados. Evita acciones imposibles.'
+  },
+  'ai-text-review':{
+    task:'reasoning',label:'Revisión crítica del texto preparada',
+    instruction:'Revisa exclusivamente el texto aportado. Detecta contradicciones, ambigüedades, fallos de estructura y afirmaciones sin respaldo. Propón cambios priorizados. Solo reescribe el texto completo si se solicita; no inventes fuentes ni verificación.'
+  },
  'ai-youtube-kit':{
   task:'creative',label:'Kit de contenido creado',
   instruction:'Actúa como productor profesional de YouTube y redes sociales. A partir de la idea, entrega 5 títulos atractivos sin clickbait engañoso, una descripción lista para publicar, 7 hashtags relevantes, un guion por secciones, 3 ideas de shorts y un prompt visual para miniatura con texto muy corto. No inventes estadísticas de rendimiento.'
@@ -1393,7 +1409,8 @@ async function runSpecializedTextTool(id,p,cb){
 
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
- if(id==='text-file-convert')return convertTextFile(files,p,cb);
+ if(['text-redact-local','json-compare-local','citation-ids-local'].includes(id))return runAdvancedTextTool(id,p);
+  if(id==='text-file-convert')return convertTextFile(files,p,cb);
  if(id==='table-file-convert')return convertTabularFile(files,p,cb);
  if(id==='csv-profile-local')return profileCsvLocally(files,p,cb);
  if(id==='json-schema-validate')return validateJsonSchema(p,cb);
@@ -1428,7 +1445,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
  if(SPECIALIZED_TEXT_TOOLS[id])return runSpecializedTextTool(id,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
- if(id==='music-lyrics')return generateText({...p,task:'songwriting',prompt:'Compón una canción completamente original. Entrega título, concepto, género, tempo aproximado, versos, pre-coro, coro, puente y un prompt de producción musical. No copies letras existentes ni imites exactamente a un artista. No afirmes que has generado audio.\n\nIdea del usuario: '+String(p.prompt||p.text||'') ,tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);
+ if(id==='music-lyrics')return generateText({...p,task:'songwriting',prompt:'Responde a la solicitud musical actual y utiliza el contexto anterior de esta conversación. Si pide crear, compón una canción original completa. Si pide corregir, acortar, ampliar o cambiar una parte, revisa la canción previa sin inventar otra distinta. No copies letras existentes ni imites exactamente a un artista. No afirmes haber generado audio.\n\nSolicitud: '+String(p.prompt||p.text||''),tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);
  if(id==='ai-voice')return generateSpeech(p,cb);
  if(id==='ai-transcribe')return transcribeAudio(files,p,cb);
  if(id==='barcode')return makeBarcode(p);
