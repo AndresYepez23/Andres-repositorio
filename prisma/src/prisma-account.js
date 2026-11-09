@@ -19,14 +19,28 @@ function showAuth(show){
  document.body.classList.toggle('prisma-auth-open',show);
 }
 export function openPrismaAuth(){
- const signed=!!user;
+ const signed=!!user,enabled=!!config.enabled;
+ const providerReady=['google','apple','phone'].some(name=>!!config.features?.[name]);
  $('#auth-title').textContent=signed?'Tu cuenta de Prisma Space':'Bienvenido a Prisma Space';
- for(const selector of ['.auth-provider-grid','.auth-divider','.auth-tabs','#auth-form','#auth-reset']){
-  const element=$(selector);if(element)element.classList.toggle('hidden',signed);
+ const visibility={
+  '.auth-provider-grid':signed||!enabled||!providerReady,
+  '.auth-divider':signed||!enabled,
+  '.auth-tabs':signed||!enabled,
+  '#auth-form':signed||!enabled,
+  '#auth-phone-form':signed||!enabled||!config.features?.phone,
+  '#auth-reset':signed||!enabled,
+ };
+ for(const [selector,hidden] of Object.entries(visibility)){
+  const element=$(selector);if(element)element.classList.toggle('hidden',hidden);
  }
+ const guest=$('#auth-guest');
+ if(guest)guest.textContent=signed?'Cerrar':'Seguir usando Prisma sin cuenta';
+ const availability=$('#auth-availability');
+ if(availability&&!enabled)availability.textContent='El acceso con cuenta todavía no está habilitado. Puedes seguir utilizando Prisma gratis, sin registrarte ni perder tus conversaciones locales.';
+ const message=$('#auth-message');
+ if(message)message.textContent='';
  showAuth(true);
  if(signed)info('Sesión iniciada con '+(user.email||'tu cuenta')+'. Puedes sincronizar tus conversaciones desde el panel Tu espacio.','success');
- else if(!config.enabled)info('El registro se habilitará con un proyecto Supabase independiente. Prisma sigue siendo gratuito sin cuenta.');
 }
 function updateTabs(){
  const login=authMode==='login';
