@@ -102,7 +102,9 @@ function renderMessages({forceBottom=false}={}){
   });
 }
 function status(text,kind='info'){
-  const el=$('#core-status');if(!el)return;el.textContent=text;el.dataset.kind=kind;
+  const el=$('#core-status');if(el){el.textContent=text;el.dataset.kind=kind;}
+  const thinking=$('#core-thinking-label');
+  if(thinking&&busy)thinking.textContent=String(text||'Prisma está preparando tu respuesta…').slice(0,180);
 }
 function setProgress(value,label){
   const wrap=$('#core-progress');if(!wrap)return;
@@ -113,6 +115,17 @@ function setProgress(value,label){
 }
 function setBusy(value){
   busy=value;
+  const list=$('#core-messages');
+  if(list){
+    const existing=$('#core-thinking');
+    if(value&&!existing){
+      const indicator=document.createElement('div');indicator.id='core-thinking';indicator.className='core-thinking';
+      const dot=document.createElement('span');dot.className='core-thinking-dot';dot.setAttribute('aria-hidden','true');dot.textContent='✦';
+      const label=document.createElement('span');label.id='core-thinking-label';label.textContent='Prisma está preparando tu respuesta…';
+      indicator.append(dot,label);list.append(indicator);
+      if(userPinnedToBottom)list.scrollTop=list.scrollHeight;
+    }else if(!value&&existing)existing.remove();
+  }
   $('#core-send').disabled=value;
   $('#core-input').disabled=value;
   $('#core-file-button').disabled=value;
