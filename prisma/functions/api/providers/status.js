@@ -1,6 +1,7 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
+import { getAmdFreeModels } from "../../_lib/amd-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
@@ -25,7 +26,7 @@ export async function onRequestGet({ env }) {
   ));
   const usageEntries = await Promise.all(poolProviders
     .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
-    .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider))]));
+    .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider), provider === "aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE === "1" ? 10 : null)]));
   const usage = Object.fromEntries(usageEntries);
   if (limited && env.AI?.run) {
     usage.cloudflare = await getProviderUsage(env, "cloudflare", getProviderDailyLimit(env, "cloudflare"));
@@ -34,10 +35,12 @@ export async function onRequestGet({ env }) {
     const daily = usage[provider]?.daily;
     return !daily || daily.remaining > 0;
   };
-  const aihubmixLifetime = limited ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
+  const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
+  const amdModels = configured.amd > 0 ? await getAmdFreeModels(env) : [];
   const available = Object.fromEntries(poolProviders.map(provider =>
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
-      dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0)]
+      dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
+      !(provider === "amd" && amdModels.length === 0)]
   ));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
@@ -68,6 +71,7 @@ export async function onRequestGet({ env }) {
     if (holds[provider]) warnings[provider] = holds[provider].reason;
     else if (provider === "kilo" && !configured[provider]) warnings[provider] = "Acceso gratuito anónimo activo; KILO_API_KEY es opcional.";
     else if (provider === "aihubmix" && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
+    else if (provider === "amd" && configured[provider] > 0 && amdModels.length === 0) warnings[provider] = "No se pudo validar un modelo gratuito de texto en el catálogo actual de AMD; permanece desactivado.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
@@ -75,6 +79,9 @@ export async function onRequestGet({ env }) {
   if (env.AI?.run && usage.cloudflare?.daily?.remaining === 0) warnings.cloudflare = "Prisma alcanzó su presupuesto interno diario para Cloudflare Workers AI. Se renovará en el siguiente día UTC.";
   if (blockedSpeech) warnings.pollinationsAudio = blockedSpeech.reason;
   if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
+
+  const modelCatalog = modelsForUI();
+  if (amdModels.length) modelCatalog.chat.amd = amdModels;
 
   return new Response(JSON.stringify({
     ok: true,
@@ -88,11 +95,11 @@ export async function onRequestGet({ env }) {
       max: credentialSlots[provider].max,
       available: available[provider],
       paused: Boolean(holds[provider]),
-      state: holds[provider]?.state || (usage[provider]?.daily?.remaining === 0 ? "daily_limit" : configured[provider] ? "configured" : "missing"),
+      state: holds[provider]?.state || (usage[provider]?.daily?.remaining === 0 ? "daily_limit" : provider === "kilo" && !configured[provider] ? "anonymous" : configured[provider] ? "configured" : "missing"),
       reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 ? warnings[provider] : null),
       retryAt: holds[provider]?.valid_until || null,
       dailyUsage: usage[provider]?.daily || null,
-      lifetimeUsage: provider === "aihubmix" ? aihubmixLifetime : null,
+      lifetimeUsage: provider === "aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? aihubmixLifetime : null,
     }])),
     providers: {
       pollinations: pollinationsReady,
@@ -133,7 +140,7 @@ export async function onRequestGet({ env }) {
       configuredCredentials: Object.values(configured).reduce((sum,count) => sum + count, 0) + (env.AI?.run ? 1 : 0),
     },
     usage,
-    modelCatalog: modelsForUI(),
+    modelCatalog,
     features: {
       pollinationsAudio: speechReady,
       pollinationsImages: pollinationsReady,
