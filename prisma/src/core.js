@@ -45,6 +45,8 @@ function save(){
       const item={role:message.role,content:message.content,time:message.time};
       if(message.engine)item.engine=message.engine;
       if(message.model)item.model=message.model;
+      if(message.fallbackFrom)item.fallbackFrom=message.fallbackFrom;
+      if(message.fallbackReason)item.fallbackReason=message.fallbackReason;
       if(message.files?.length)item.files=message.files.slice(0,8);
       if(message.partial)item.partial=true;
       if(message.results?.length)item.results=message.results.map(entry=>({
@@ -88,7 +90,13 @@ function renderMessages({forceBottom=false}={}){
     const label=document.createElement('span');label.className='core-message-label';label.textContent=message.role==='user'?'TÚ':'PRISMA CORE';
     const body=document.createElement('div');body.className='core-message-body';body.textContent=message.content;
     bubble.append(label,body);
-    if(message.role==='assistant'&&message.engine){const source=document.createElement('small');source.className='core-message-engine';source.textContent='Respondió '+({gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'}[message.engine]||message.engine);bubble.append(source);}
+    if(message.role==='assistant'&&message.engine){
+      const names={gemini:'Gemini',groq:'Groq',pollinations:'Pollinations',cloudflare:'Cloudflare',huggingface:'Hugging Face'};
+      const source=document.createElement('small');source.className='core-message-engine';
+      source.textContent='Respondió '+(names[message.engine]||message.engine)+(message.model?' · '+String(message.model).slice(0,60):'')+(message.fallbackFrom?' · Respaldo después de '+(names[message.fallbackFrom]||message.fallbackFrom):'');
+      if(message.fallbackReason)source.title=String(message.fallbackReason).slice(0,240);
+      bubble.append(source);
+    }
     if(message.files?.length){const files=document.createElement('div');files.className='core-message-files';files.textContent=message.files.join(' · ');bubble.append(files);}
     if(message.results?.length){bubble.classList.add('has-results');bubble.append(createExecutionResults(message.results,!!message.partial));}
     list.append(bubble);
@@ -475,8 +483,11 @@ function buildPdfEditPlan(userText){
  const number=/(numer|enumer|foliar|numero de pagina|numeros de pagina)/.test(q);
  const watermark=/marca de agua/.test(q);
  if(!(select||number||watermark))return null;
- const pages=pdfPagesFromText(request);
- const mark=pdfWatermarkFromText(request);
+ const pages=pdfPagesFromText(userText)||pdfPagesFromText(request);
+ const directMark=pdfWatermarkFromText(userText);
+ const standaloneMark=/^[\p{L}][\p{L}\s-]{1,45}$/u.test(String(userText||'').trim())&&!/\b(pdf|pagina|archivo|documento|marca|numero|numerar)\b/.test(normalizeCoreIntent(userText))
+   ?String(userText).trim():'';
+ const mark=directMark||pdfWatermarkFromText(request)||(watermark&&standaloneMark?standaloneMark:'');
  const lacking=[];
  if(!pdfAttached) {
   return {type:'missing-file',message:'Sí. Prisma tiene herramientas locales para extraer páginas específicas, numerarlas y añadir una marca de agua; también puede aplicar las tres operaciones y entregarte un único PDF. Sube el archivo PDF'+(select&&!pages?', dime qué páginas quieres conservar (por ejemplo, 2-4, 7)':'')+(watermark&&!mark?' e indica qué texto llevará la marca de agua':'')+'. No hace falta conectar ningún modelo para editar el documento.'};
@@ -546,7 +557,7 @@ async function answerConversation(text,creds,task='conversation'){
  },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
  const answer=String(response?.text||'').trim();
  if(!answer)throw Error('El motor seleccionado no devolvió contenido. Intenta nuevamente.');
- addMessage('assistant',answer,{engine:response.provider,model:response.model});
+ addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
  status('Listo. Puedes continuar la conversación o pedir ajustes.','success');
 }
 async function requestPlan(userText){
@@ -752,7 +763,7 @@ async function executePlan(){
     }else{
       const single=executed.length===1?executed[0]:null;
       if(single&&['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id)&&single.result?.text&&!single.result?.blob){
-        addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model});
+        addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
       }else{
         const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
         const label=plan.combineFinalFiles?'PDF terminado. Incluye las páginas y modificaciones solicitadas; descarga el documento final.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
