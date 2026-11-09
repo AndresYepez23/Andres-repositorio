@@ -65,14 +65,6 @@ export const CHAT_MODELS = {
   ],
   // Filled from the live AIHubMix free catalogue after validating its request weights.
   aihubmix: [],
-  amd: [
-    {id:"DeepSeek-V4-Flash",name:"DeepSeek V4 Flash",specialty:"Razonamiento · Token Factory de evaluación"},
-    {id:"DeepSeek-V4.1-Flash",name:"DeepSeek V4.1 Flash",specialty:"Razonamiento · Token Factory de evaluación"},
-    {id:"Qwen3.8-Flash-Next",name:"Qwen 3.8 Flash Next",specialty:"Razonamiento rápido · evaluación"},
-    {id:"Qwen3.8-27B",name:"Qwen 3.8 27B",specialty:"Chat y programación · evaluación"},
-    {id:"GLM-5.3-Flash",name:"GLM-5.3 Flash",specialty:"Razonamiento y código · evaluación"},
-    {id:"MiMo-V2.6-Flash",name:"MiMo V2.6 Flash",specialty:"Conversación · evaluación"}
-  ]
 };
 export const IMAGE_MODELS = {
   pollinations: [
