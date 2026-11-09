@@ -83,7 +83,7 @@ function readStoredArray(key){
 }
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
-let activeCategory='all',activeView='core',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
+let activeCategory='all',activeView='core',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,outputUrls=[],lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
 const popularToolIds=['pdf-extract','image-bg','image-gen','ai-transcribe','pdf-merge','image-social-kit'];
 const toolFamilies=[
  {id:'docs',name:'Documentos',icon:'file-text',categories:['pdf','office']},
@@ -141,6 +141,8 @@ const queryToolAliases={
   'crear imagen':['image-gen'],'generar imagen':['image-gen'],'imagen ia':['image-gen'],
   'texto a voz':['ai-voice'],'voz a texto':['ai-transcribe'],'audio a texto':['ai-transcribe'],'transcribir audio':['ai-transcribe'],
   'recortar video':['video-trim'],'extraer audio':['video-audio'],
+  'youtube':['youtube-media-kit'],'miniatura youtube':['youtube-media-kit'],'descargar miniatura youtube':['youtube-media-kit'],
+  'mp3 youtube':['youtube-media-kit'],'convertir video a mp3':['youtube-media-kit'],
   'crear qr':['qr'],'generar qr':['qr'],'leer qr':['qr-scan'],'escanear qr':['qr-scan'],
   'contar palabras':['word-count'],'generar contraseña':['password'],
   'excel a json':['excel-json'],'json a csv':['json-csv'],'csv a json':['csv-json']
@@ -453,6 +455,8 @@ function buildFields(t){
     case 'image-ocr':return selectField('Idioma del documento','language',[['spa','Español'],['eng','Inglés'],['spa+eng','Español e inglés']],'spa','La primera ejecución descarga los datos de idioma.');
     case 'video-trim':return '<div class="inline-fields">'+field('Inicio (segundos)','start','number','0','Desde qué segundo iniciar.','min="0" step="0.1"')+field('Duración (segundos)','duration','number','10','Duración del fragmento.','min="0.1" step="0.1"')+'</div>';
     case 'video-thumbnail':return field('Segundo del video','second','number','1','Elige el instante que quieres capturar.','min="0" step="0.1"');
+    case 'youtube-media-kit':return field('Enlace del video de YouTube','url','url','','Pega un enlace youtube.com, youtu.be, Shorts o Live.')+
+      '<div class="tool-hint">La miniatura se obtiene directamente del enlace. Para generar el MP3, adjunta opcionalmente el archivo de video original que tengas derecho a convertir. Prisma procesa ese archivo en tu navegador; no descarga ni extrae audio directamente desde YouTube.</div>';
     case 'video-gif':case 'audio-trim':return '<div class="inline-fields">'+field('Inicio (segundos)','start','number','0','Punto de inicio.','min="0" step="0.1"')+field('Duración (segundos)','duration','number',t.id==='video-gif'?'5':'10','GIF: máximo 12 segundos.','min="0.1" max="12" step="0.1"')+'</div><div class="tool-hint">El motor multimedia se descarga al ejecutar la primera vez. Los archivos se procesan en tu navegador.</div>';
     case 'qr-scan':return '<div class="tool-hint">Sube una imagen que contenga un código QR. Prisma Space intentará leerlo en tu navegador.</div>';
     case 'barcode':return field('Contenido','value','text','123456789012','Para EAN-13 utiliza exactamente 12 o 13 dígitos.')+selectField('Formato','format',[['CODE128','Code 128'],['EAN13','EAN-13'],['CODE39','Code 39']],'CODE128');
@@ -835,7 +839,8 @@ function openTool(t){
   let html='<p class="modal-description">'+t.description+'</p>';
   if(t.file){
     const privacy=t.mode==='byok'?'El contenido se envía al proveedor de IA con tu token personal.':'El archivo se procesa en tu navegador; no se sube a Prisma Space.';
-    html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(t.multiple?'multiple':'')+' accept="'+(t.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Arrastra y suelta tus archivos aquí</strong><p>o haz clic para seleccionar desde tu dispositivo</p><small class="file-drop-note">'+(t.multiple?'Puedes añadir varios archivos. ':'')+privacy+'</small><span class="file-drop-formats">Formatos admitidos: '+escapeHtml(t.accept||'cualquier archivo')+'</span></label><div class="file-list" id="file-list"></div>';
+    const fileNote=t.id==='youtube-media-kit'?'Opcional: adjunta el video original para extraer su audio a MP3. Solo convierte contenido propio o autorizado.':privacy;
+    html+='<label class="file-drop" id="file-drop"><input id="file-input" type="file" '+(t.multiple?'multiple':'')+' accept="'+(t.accept||'*/*')+'"><span class="file-drop-icon">'+icon('upload')+'</span><strong>Arrastra y suelta tus archivos aquí</strong><p>o haz clic para seleccionar desde tu dispositivo</p><small class="file-drop-note">'+(t.multiple?'Puedes añadir varios archivos. ':'')+fileNote+'</small><span class="file-drop-formats">Formatos admitidos: '+escapeHtml(t.accept||'cualquier archivo')+'</span></label><div class="file-list" id="file-list"></div>';
   }
   html+=buildFields(t);
   html+='<div class="progress-wrap hidden" id="progress-wrap"><div class="progress-label"><span id="progress-message">Preparando...</span><span id="progress-value">0%</span></div><div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div></div><div id="tool-output" aria-live="polite"></div>';
@@ -1125,9 +1130,10 @@ function renderWorkflowOutput(result){
 async function executeCurrentTool(){
   if(currentWorkflow)return executeCurrentWorkflow();
   if(!currentTool||running)return;
-  if(currentTool.file&&!selectedFiles.length){toast('Selecciona al menos un archivo.','error');return;}
+  if(currentTool.file&&!selectedFiles.length&&currentTool.id!=='youtube-media-kit'){toast('Selecciona al menos un archivo.','error');return;}
   const operationId=++activeOperation,toolAtStart=currentTool,filesAtStart=[...selectedFiles];
   const progressForOperation=(progress,message)=>{if(operationId===activeOperation&&currentTool===toolAtStart)updateProgress(progress,message);};
+  clearOutputObjects();
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
@@ -1136,7 +1142,9 @@ async function executeCurrentTool(){
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     recordRecentTool(toolAtStart.id);
     if($('#field-hfToken'))$('#field-hfToken').value='';
-    if(result?.blob){if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=result.previewUrl&&result.previewUrl.startsWith('blob:')?result.previewUrl:URL.createObjectURL(result.blob);if(!result.previewUrl)result.previewUrl=outputUrl;}
+    if(Array.isArray(result?.artifacts)){
+      result.artifacts.forEach(artifact=>{if(artifact.blob){artifact.previewUrl=URL.createObjectURL(artifact.blob);outputUrls.push(artifact.previewUrl);}});
+    }else if(result?.blob){outputUrl=result.previewUrl&&result.previewUrl.startsWith('blob:')?result.previewUrl:URL.createObjectURL(result.blob);if(!result.previewUrl)result.previewUrl=outputUrl;}
     renderOutput(result);updateProgress(1,'Proceso completado');toast('La operación terminó correctamente.','success');
   }catch(error){
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
@@ -1150,8 +1158,30 @@ async function executeCurrentTool(){
   }
 }
 
+function clearOutputObjects(){
+  if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}
+  outputUrls.forEach(url=>URL.revokeObjectURL(url));outputUrls=[];
+}
 function renderOutput(result){
   const panel=document.createElement('div');panel.className='output-panel';
+  if(Array.isArray(result.artifacts)){
+    const heading=document.createElement('div');heading.className='output-head';
+    const headingText=document.createElement('strong');headingText.textContent='✓ Archivos listos';heading.append(headingText);panel.append(heading);
+    result.artifacts.forEach(artifact=>{
+      const row=document.createElement('div');row.className='workflow-artifact';
+      const copy=document.createElement('div');copy.className='workflow-artifact-copy';
+      const name=document.createElement('strong');name.textContent=artifact.name||artifact.filename||'Archivo generado';
+      const filename=document.createElement('small');filename.textContent=artifact.filename||'Archivo listo';copy.append(name,filename);row.append(copy);
+      const button=document.createElement('button');button.type='button';button.className='mini-button';button.innerHTML=icon('download')+' Descargar';
+      button.addEventListener('click',()=>downloadBlob(artifact.blob,artifact.filename||'prisma-resultado'));
+      row.append(button);panel.append(row);
+      const type=artifact.type||artifact.blob?.type||'';
+      if(artifact.previewUrl&&type.startsWith('image/')){const preview=document.createElement('img');preview.className='output-preview';preview.src=artifact.previewUrl;preview.alt=artifact.name||'Vista previa';panel.append(preview);}
+      if(artifact.previewUrl&&type.startsWith('audio/')){const player=document.createElement('audio');player.className='output-audio';player.controls=true;player.preload='metadata';player.src=artifact.previewUrl;panel.append(player);}
+    });
+    if(result.summary){const summary=document.createElement('p');summary.className='tool-hint';summary.style.margin='10px 0 0';summary.textContent=result.summary;panel.append(summary);}
+    $('#tool-output').append(panel);return;
+  }
   let html='<div class="output-head"><strong>✓ Resultado listo</strong><div class="output-actions">';
   if(result.blob)html+='<button class="mini-button" id="download-output">'+icon('download')+' Descargar</button>';
   if(result.text)html+='<button class="mini-button" id="copy-output">'+icon('copy')+' Copiar</button>';
@@ -1174,7 +1204,7 @@ function closeTool(){
   const modal=$('#tool-modal');
   if(!modal||modal.classList.contains('hidden'))return;
   if($('#field-hfToken'))$('#field-hfToken').value='';
-  if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}
+  clearOutputObjects();
   $('#modal-body').innerHTML='';$('#modal-body').setAttribute('aria-busy','false');
   modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');
   document.body.classList.remove('modal-open');
