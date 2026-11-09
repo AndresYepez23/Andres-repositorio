@@ -61,7 +61,7 @@ function readJsonCredentialPool(env, provider) {
       variable,
       configured: true,
       valid: true,
-      values: parsed.map(value => value.trim()).filter(Boolean),
+      values: parsed.map(value => value.trim()),
     };
   } catch {
     return { variable, configured: true, valid: false, values: [] };
