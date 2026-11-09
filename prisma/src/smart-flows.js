@@ -37,7 +37,7 @@ function imageTasks(text){
   steps.push(step('image-resize',{width:target[0],height:target[1],keep:!/\bexact[oa]|deformar\b/.test(q)},'Redimensionar a '+target.join(' × ')+' px'));
  }
  if(watermark){
-  const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|con\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i).replace(/\\s+y\\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim();
+  const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|con\s+texto|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i).replace(/\\s+y\\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim().replace(/\s+y\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim();
   if(!mark)return result('Puedo añadir una marca de agua. ¿Qué texto debe aparecer en la imagen?');
   steps.push(step('image-watermark',{watermark:mark,position:'bottom-right',size:36,opacity:45,color:'#ffffff'},'Añadir marca de agua'));
  }
@@ -65,7 +65,7 @@ function videoTasks(text){
   const second=Number(capture(q,/(?:segundo|en|en el segundo|del segundo)\s*(\d+(?:\.\d+)?)/))||1;
   steps.push(step('video-thumbnail',{second},'Capturar fotograma del vídeo'));
   if(watermark){
-   const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i).replace(/\\s+y\\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim();
+   const mark=capture(text,/marca\s+de\s+agua\s*(?:que\s+diga|:|=)\s*["“'«]?([^"”'»\n,.!?]{2,50})/i).replace(/\\s+y\\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim().replace(/\s+y\s+(?:comprim|convert|redimension|quita|elimina|optimiza|recorta).*$/i,'').trim();
    if(!mark)return result('¿Qué texto debe llevar la marca de agua de la miniatura?');
    steps.push(step('image-watermark',{watermark:mark,position:'bottom-right'},'Marcar la miniatura'));
   }
