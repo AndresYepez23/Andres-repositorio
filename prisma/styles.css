@@ -1532,3 +1532,17 @@ body.is-core-view.is-prisma-standalone:not(.is-keyboard-open) .core-composer{
     min-height:0!important;
   }
 }
+
+
+/* iOS PWA: the WKWebView already reserves the home-indicator region outside
+ * the usable content area. Applying env(safe-area-inset-bottom) again to the
+ * composer double-counts that region and leaves ~34px of dead space.
+ * Keep a small 6–12px optical cushion without stretching the viewport. */
+@media (display-mode: standalone) {
+  body.is-core-view:not(.is-keyboard-open) .core-composer {
+    padding-bottom: clamp(6px, calc(env(safe-area-inset-bottom, 0px) - 26px), 12px) !important;
+  }
+}
+body.is-core-view.is-prisma-standalone:not(.is-keyboard-open) .core-composer {
+  padding-bottom: clamp(6px, calc(env(safe-area-inset-bottom, 0px) - 26px), 12px) !important;
+}
