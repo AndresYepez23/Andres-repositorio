@@ -112,12 +112,16 @@ const cooled=rankProviders({task:'planner',available:availableAll,now,health:{
  'groq:planner':{at:now,failures:3,coolingUntil:now+60000,averageMs:22000}
 }});
 assert.equal(cooled[0],'cloudflare','a cooled provider must move behind healthy alternatives');
-assert.equal(cooled.at(-1),'openrouter','OpenRouter stays the final independent reserve');
+assert.ok(cooled.indexOf('openrouter')<cooled.indexOf('groq'),'OpenRouter must be tried before a cooling primary');
+assert.equal(cooled.at(-1),'groq','the cooling primary stays last until its retry window expires');
 assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
 assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
 assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
+assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter',now,health:{
+ 'groq:planner':{at:now,failures:1,coolingUntil:now+3600000}
+}}),['openrouter','groq'],'OpenRouter must bypass a Groq engine cooling down for a visitor quota');
 
 // Mock D1 provider-health storage. Tests make no network requests and spend no quotas.
 function mockCredentialEnv(values={}) {
