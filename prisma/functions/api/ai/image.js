@@ -27,7 +27,7 @@ export async function onRequestPost({request,env}){
   if(provider==="gemini"&&(env.GEMINI_IMAGE_ENABLED!=="1"||!env.GEMINI_API_KEY))
    return errorResponse("Gemini Image es un motor de pago opcional. Requiere GEMINI_IMAGE_ENABLED=1 y una clave autorizada.",503);
  const quota=await checkLimits(env,request,provider+"-image");
- if(quota)return Response.json({error:quota.error,code:quota.code||'LIMIT'},{status:quota.status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+ if(quota)return Response.json({error:quota.error,code:quota.code||'LIMIT',retryAfter:quota.retryAfter,scope:quota.scope},{status:quota.status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
  if(provider==="gemini"){
   try{
    const ratios={square:"1:1",landscape:"4:3",portrait:"3:4",wide:"16:9"};
