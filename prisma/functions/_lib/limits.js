@@ -63,11 +63,15 @@ export async function checkLimits(env,request,provider){
   const reset=(start+(isMinute?1:1440))*60;
   return {status:429,code,scope:scope.split(":")[0],
    retryAfter:Math.max(1,reset-Math.floor(Date.now()/1000)),
-   error:code==="PROVIDER_MINUTE_LIMIT"
-    ?"OpenRouter alcanzó su límite de solicitudes por minuto. Espera un momento y vuelve a intentarlo."
-    :code==="PROVIDER_LIMIT"
-     ?(provider==="openrouter"?"OpenRouter alcanzó la cuota diaria de respaldo o el límite de seguridad de este visitante.":"Este proveedor alcanzó su límite diario de solicitudes.")
-     :"Prisma alcanzó su límite temporal gratuito global. Las herramientas locales siguen disponibles."};
+   error:scope.startsWith("ip-minute:")
+    ?"Esta conexión alcanzó el límite gratuito de Prisma por minuto. OpenRouter sigue disponible como respaldo."
+    :scope.startsWith("ip-day:")
+     ?"Esta conexión alcanzó el límite gratuito diario de Prisma (30 solicitudes por IP). OpenRouter sigue disponible como respaldo."
+     :code==="PROVIDER_MINUTE_LIMIT"
+      ?"OpenRouter alcanzó su límite de solicitudes por minuto. Espera un momento y vuelve a intentarlo."
+      :code==="PROVIDER_LIMIT"
+       ?(provider==="openrouter"?"OpenRouter alcanzó la cuota diaria de respaldo o el límite de seguridad de este visitante.":"Este proveedor alcanzó su límite diario de solicitudes.")
+       :"Prisma alcanzó su límite temporal gratuito global. Las herramientas locales siguen disponibles."};
  };
  const sql=String.raw`INSERT INTO ai_rate_limits(scope,window_start,request_count)
 VALUES(?,?,1) ON CONFLICT(scope,window_start) DO UPDATE
