@@ -1,0 +1,26 @@
+name: Prisma Core checks
+
+on:
+  pull_request:
+    paths:
+      - 'prisma/**'
+      - '.github/workflows/prisma-core.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'prisma/**'
+      - '.github/workflows/prisma-core.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  core-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Prisma Core routing, tools and quotas
+        run: node --test prisma/tests/core-agent-routing.test.mjs
