@@ -10,7 +10,7 @@ import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { mountCoreWelcomeGrid } from './core-welcome-grid.js';
 import { isPrismaAuthenticated, openPrismaAuthForGuestLimit } from './prisma-account.js';
-import { GUEST_TASK_LIMIT, readGuestTaskCount, canGuestSubmit, recordGuestTask } from './core-guest-limit.js';
+import { GUEST_TASK_LIMIT, readGuestTaskCount, canGuestSubmit, recordGuestTask, isGuestFileTask } from './core-guest-limit.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
@@ -465,15 +465,15 @@ function status(text,kind='info'){
   const thinking=$('#core-thinking-label');
   if(thinking&&busy)thinking.textContent=String(text||'Prisma está preparando tu respuesta…').slice(0,180);
 }
-function recordCompletedCoreTask(){
-  if(isPrismaAuthenticated())return;
+function recordCompletedCoreTask({fileTask=false}={}){
+  if(!fileTask||isPrismaAuthenticated())return;
   const {count,justReachedLimit}=recordGuestTask(localStorage);
   if(justReachedLimit){
     // Keep the fourth result downloadable; gate only the NEXT user request.
-    status('Completaste tus 4 tareas de prueba. Regístrate gratis para continuar.','info');
+    status('Completaste 4 trabajos con archivos. Regístrate gratis para procesar más; el chat de texto sigue disponible.','info');
   }else if(count>0&&count<GUEST_TASK_LIMIT){
     const remaining=GUEST_TASK_LIMIT-count;
-    status('Tarea completada · '+remaining+' '+(remaining===1?'tarea gratuita restante':'tareas gratuitas restantes')+'.','success');
+    status('Archivo procesado · '+remaining+' '+(remaining===1?'trabajo con archivos restante':'trabajos con archivos restantes')+'.','success');
   }
 }
 function setProgress(value,label){
@@ -1040,7 +1040,7 @@ async function generateVisualRequest(text,creds,kind){
   results:[{name:'Resultado: '+label,reason:'Generación visual solicitada',result}]
  });
  status('Imagen lista para descargar y editar.','success');
- recordCompletedCoreTask();
+ recordCompletedCoreTask({fileTask:true});
 }
 // Local intent check first: capability questions never spend an AI request.
 // A real brief uses exactly one web-generation task; no hosting is simulated.
@@ -1085,7 +1085,7 @@ async function handleWebsiteConversation(text){
    results:[{name:'Página web HTML',reason:'Archivo generado para '+route.description.slice(0,130),result}]
   });
   status('Página creada y lista para descargar.','success');
-  recordCompletedCoreTask();
+  recordCompletedCoreTask({fileTask:true});
  }catch(error){
   const detail=String(error?.message||'Falló la generación.').slice(0,300);
   addMessage('assistant','Entendí qué tipo de página quieres, pero el motor no pudo completar el HTML. No voy a presentarte código incompleto como un sitio terminado. '+detail+' Puedes repetir tu solicitud cuando haya un motor disponible.');
@@ -1107,7 +1107,7 @@ async function handleImageCreationRequest(text){
     results:[{name:'Imagen editada',reason:'Edición gratuita y local',result:output}]
    });
    attachments=[];renderAttachments();
-   recordCompletedCoreTask();
+   recordCompletedCoreTask({fileTask:true});
   }});
   status('Editor de imágenes abierto, sin consumir créditos.','success');return true;
  }
@@ -1194,7 +1194,7 @@ async function answerConversation(text,creds,task='conversation'){
   if(!answer)throw Error('El motor seleccionado no devolvió contenido.');
   addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
   status('Respuesta lista. Puedes continuar esta conversación.','success');
-  recordCompletedCoreTask();
+  /* Chat de texto: no consume tareas con archivos. */
 }
 
 function speechIntent(message){
@@ -1280,7 +1280,7 @@ async function fulfillSpeechRequest(userText){
  });
  attachments=[];renderAttachments();$('#core-file-input').value='';
  status('Audio listo para escuchar y descargar.','success');
- recordCompletedCoreTask();
+ recordCompletedCoreTask({fileTask:true});
 }
 async function requestPlan(userText){
   // Simple greetings must work instantly, even when every external inference
@@ -1654,7 +1654,7 @@ async function executePlan(){
       else if(executed.some(entry=>entry?.result?.blob&&entry.result?.fileKey))
         status('Archivo terminado y guardado en este dispositivo. Descárgalo desde el resultado.','success');
       else status('Ejecución completada.','success');
-      recordCompletedCoreTask();
+      recordCompletedCoreTask({fileTask:attachments.length>0||isGuestFileTask({text:plan.userRequest})||executed.some(entry=>!!(entry.result?.blob||entry.result?.artifacts?.some(item=>item.blob)))});
     }
   }catch(error){
     console.error(error);
@@ -1837,8 +1837,9 @@ async function sendMessage(){
   if(!text&&!attachments.length)return;
   // Preserve both the draft and attached files when a fifth guest task is
   // requested. The onboarding gate is cumulative across local chats.
-  if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage)})){
-    status('Para continuar, crea una cuenta gratuita o inicia sesión. Tu solicitud y tus archivos siguen aquí.','info');
+  if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage),
+    fileTask:isGuestFileTask({text,attachments})})){
+    status('Los 4 trabajos con archivos de prueba terminaron. Regístrate para procesar o generar más archivos; puedes seguir chateando gratis.','info');
     input.blur();
     openPrismaAuthForGuestLimit();
     return;
@@ -2001,8 +2002,18 @@ export function initPrismaCore(){
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&imageSettings?.open)imageSettings.open=false;
   });
-  $('#core-file-button').addEventListener('click',()=>$('#core-file-input').click());
+  $('#core-file-button').addEventListener('click',()=>{
+    if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage),fileTask:true})){
+      status('Para adjuntar más archivos necesitas una cuenta gratuita. El chat de texto sigue disponible.','info');
+      openPrismaAuthForGuestLimit();return;
+    }
+    $('#core-file-input').click();
+  });
   $('#core-file-input').addEventListener('change',event=>{
+    if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage),fileTask:true})){
+      event.target.value='';
+      openPrismaAuthForGuestLimit();return;
+    }
     const incoming=[...event.target.files];const total=attachments.reduce((sum,file)=>sum+file.size,0)+incoming.reduce((sum,file)=>sum+file.size,0);
     if(total>100*1024*1024){status('El total de archivos no puede superar 100 MB.','warning');event.target.value='';return;}
     attachments=[...attachments,...incoming].slice(0,8);renderAttachments();event.target.value='';
