@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { reconcileIosPwaViewport } from './pwa-viewport.js';
 import { readInferenceUsage } from './core-economy.js';
 import { initPrismaExperience } from './prisma-experience.js';
 import { initPrismMotion } from './prism-motion.js';
@@ -1398,6 +1399,12 @@ function setupPrismaCoreViewport(){
   const isIOS=()=>/iPad|iPhone|iPod/i.test(navigator.userAgent)||
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   document.body.classList.toggle('is-prisma-ios',isIOS());
+  // CSS dvh is a browser-measured, paintable viewport, unlike screen.height.
+  // Keep a harmless zero-width probe to read it without changing app layout.
+  const dvhProbe=document.createElement('div');
+  dvhProbe.setAttribute('aria-hidden','true');
+  dvhProbe.style.cssText='position:fixed;left:-9999px;top:0;width:0;height:100dvh;visibility:hidden;pointer-events:none';
+  document.body.append(dvhProbe);
   let raf=0,lastUnfocusedHeight=0;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
@@ -1410,7 +1417,16 @@ function setupPrismaCoreViewport(){
       // composer *behind* the home-indicator region. Never size to screen.height.
       // innerHeight corresponds to the actual web content viewport while the
       // visual viewport shrinks/pans on keyboard focus.
-      const layoutHeight=Math.max(240,Math.round(window.innerHeight||root.clientHeight||visible));
+      const primaryHeight=Math.max(240,Math.round(window.innerHeight||root.clientHeight||visible));
+      const cssDvhHeight=parseFloat(getComputedStyle(dvhProbe).height)||0;
+      // The old "innerHeight || ..." discarded a larger visual viewport or
+      // CSS dvh value. That could leave a real empty strip BELOW the composer.
+      const layoutHeight=standalone&&isIOS()
+        ?reconcileIosPwaViewport({
+          innerHeight:window.innerHeight,documentHeight:root.clientHeight,
+          visualHeight:visible,cssDvhHeight
+        })
+        :primaryHeight;
       const focused=document.activeElement===input;
       const fullHeight=Math.max(layoutHeight,visible);
       // Track the unoccluded height instead of comparing against innerHeight,
@@ -1421,9 +1437,12 @@ function setupPrismaCoreViewport(){
       // The PWA may under-report visualViewport.height even with no keyboard.
       // Never infer an open keyboard once the composer has lost focus.
       const keyboardOpen=focused&&keyboardGap>110;
-      // An installed PWA must never extend below its webview. The previous
-      // Math.max(..., screen.height) caused the clipped input reported on iPhone.
+      // Only reclaim browser-confirmed space; physical screen.height includes
+      // the protected system home indicator and must NOT drive the chat height.
+      const searchFocused=document.activeElement===document.querySelector('#core-history-search');
       const height=standalone&&!keyboardOpen?layoutHeight:visible;
+      const recovery=standalone&&isIOS()&&!keyboardOpen
+        ?Math.max(0,layoutHeight-primaryHeight):0;
       // pageTop is measured in document coordinates. Unlike offsetTop alone
       // it also follows Safari's implicit focus scrolling on WebKit.
       const pageTop=Number.isFinite(vv?.pageTop)?vv.pageTop:
@@ -1431,9 +1450,9 @@ function setupPrismaCoreViewport(){
       const top=standalone&&!keyboardOpen?0:Math.max(0,Math.round(pageTop));
       root.style.setProperty('--prisma-core-viewport',Math.round(height)+'px');
       root.style.setProperty('--prisma-vp-top',top+'px');
+      root.style.setProperty('--prisma-pwa-bottom-recovery',recovery+'px');
       // Size the temporary search surface to the visible screen when the
       // software keyboard opens; never hide search matches behind it.
-      const searchFocused=document.activeElement===document.querySelector('#core-history-search');
       const searchHeight=searchFocused?visible:(standalone?layoutHeight:visible);
       const searchTop=standalone?0:Math.max(0,Math.round(vv?.offsetTop||0));
       root.style.setProperty('--prisma-search-viewport',Math.round(searchHeight)+'px');

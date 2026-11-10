@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { reconcileIosPwaViewport } from '../src/pwa-viewport.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
@@ -707,5 +708,33 @@ assert.match(uiMain,/searchFocused\?visible/,'Keyboard-open search must shrink')
 assert.match(uiMain,/event\.target===searchInput/,'Search focus must recalculate viewport');
 assert.match(stylesSource,/\.conversation-search-layer:not\(\.hidden\)/);
 assert.match(stylesSource,/height:var\(--prisma-search-viewport,100dvh\)/);
+
+
+// A previous iPhone PWA layout used innerHeight || visualViewport.height:
+// when innerHeight was truthy but SHORTER, the visual viewport was ignored.
+assert.equal(reconcileIosPwaViewport({
+ innerHeight:759,documentHeight:759,visualHeight:790,cssDvhHeight:780
+}),790,'PWA should reclaim 31 paintable CSS pixels');
+assert.equal(reconcileIosPwaViewport({
+ innerHeight:790,documentHeight:770,visualHeight:754,cssDvhHeight:768
+}),790,'Never shorten a larger legitimate layout');
+assert.equal(reconcileIosPwaViewport({
+ innerHeight:775,documentHeight:775,visualHeight:759,cssDvhHeight:815
+}),815,'Use CSS dynamic viewport when the JS metrics under-report');
+assert.equal(reconcileIosPwaViewport({
+ innerHeight:852,documentHeight:852,visualHeight:852,cssDvhHeight:852
+}),852,'Do not add unverified margins or screen-height correction');
+assert.equal(reconcileIosPwaViewport({
+ innerHeight:759,documentHeight:759,visualHeight:350,cssDvhHeight:759
+}),759,'Keyboard sizing remains controlled separately by visualViewport');
+assert.equal(reconcileIosPwaViewport({innerHeight:0,visualHeight:0}),240);
+assert.match(uiMain,/reconcileIosPwaViewport\(\{/);
+assert.match(uiMain,/getComputedStyle\(dvhProbe\)\.height/,'Measure actual CSS 100dvh');
+assert.match(uiMain,/standalone&&!keyboardOpen\?layoutHeight:visible/,
+ 'Keyboard must keep a separate viewport height');
+assert.doesNotMatch(uiMain,/\bMath\.max\([^\n]*screen\.height/,
+ 'Never expand the PWA to physical screen.height and cover the home indicator');
+assert.match(stylesSource,/PWA screen reconciliation:/);
+assert.match(stylesSource,/height:var\(--prisma-core-viewport,100dvh\)/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');

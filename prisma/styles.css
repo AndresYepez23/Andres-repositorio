@@ -2176,3 +2176,16 @@ body.is-core-view #core-thinking {
   max-height:var(--prisma-search-viewport,100dvh);
  }
 }
+
+/* PWA screen reconciliation: the JS viewport is the largest *paintable*
+   browser measurement, never the hardware screen. Align the fixed navigation
+   drawer with that same height so it cannot appear to end above the chat. */
+@media(max-width:620px){
+ body.is-core-view.is-prisma-ios.is-prisma-standalone:not(.is-keyboard-open) .sidebar{
+  bottom:auto;
+  height:var(--prisma-core-viewport,100dvh);
+  max-height:var(--prisma-core-viewport,100dvh);
+  min-height:0;
+  box-sizing:border-box;
+ }
+}
