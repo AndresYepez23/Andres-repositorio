@@ -967,7 +967,7 @@ async function handleWebsiteConversation(text){
    setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Diseñando tu página…');});
   if(!result?.blob||!String(result.blob.type||'').startsWith('text/html'))
    throw Error('No se recibió un archivo HTML verificable.');
-  addMessage('assistant','Preparé una primera versión funcional de tu página web. Puedes previsualizarla y descargar el HTML. No está publicada en Internet: para ponerla en un dominio se requiere un paso posterior.',{
+  addMessage('assistant','Preparé una primera versión HTML de tu página web. Puedes previsualizarla y descargar el HTML. No está publicada en Internet: para ponerla en un dominio se requiere un paso posterior.',{
    engine:result.provider,model:result.model,
    fallbackFrom:result.fallbackFrom,fallbackReason:result.fallbackReason,
    results:[{name:'Página web HTML',reason:'Archivo generado para '+route.description.slice(0,130),result}]
@@ -1579,7 +1579,7 @@ function createExecutionResults(executed,partial){
         // Preview only: block network requests and remote resources. The user's
         // download is the original self-contained HTML.
         const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; base-uri \'none\'; form-action \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; font-src data:; connect-src \'none\'">';
-        frame.srcdoc=String(result.previewHtml).replace(/<head\\b[^>]*>/i,head=>head+csp);
+        frame.srcdoc=String(result.previewHtml).replace(/<head\b[^>]*>/i,head=>head+csp);
         panel.append(frame);
         previewButton.addEventListener('click',()=>{
           const visible=panel.classList.toggle('hidden')===false;
