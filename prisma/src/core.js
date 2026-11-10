@@ -1792,11 +1792,18 @@ export function initPrismaCore(){
   document.addEventListener('prisma:core-export-request',exportActiveChat);
   document.addEventListener('prisma:core-rename-request',renameActiveChat);
   document.addEventListener('prisma:core-delete-request',deleteActiveChat);
-  document.addEventListener('prisma:remote-chats-ready',()=>{
+  document.addEventListener('prisma:remote-chats-ready',event=>{
     if(busy||executionActive)return;
-    loadChatHistory();
+    const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
+    if(remote){
+      const current=conversations.filter(chat=>chat.messages?.length||chat.titled||chat.pinned);
+      conversations=mergeConversationLists(current,remote);
+      const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
+      if(active){activeConversationId=active.id;messages=active.messages.slice();}
+      try{localStorage.setItem(CHATS_KEY,JSON.stringify(conversations));}catch{}
+    }else loadChatHistory();
     saveConversationSnapshot(conversations).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
-    userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
+    renderConversationList();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
   });
   document.addEventListener('prisma:clear-local-history',()=>{
     clearConversationSnapshot().catch(error=>console.warn('Prisma: no se pudo limpiar IndexedDB.',error?.message||error));
