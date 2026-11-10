@@ -3102,3 +3102,91 @@ body.is-core-view #core-messages{
   margin:0 auto 12px;
  }
 }
+
+
+/* Prisma personal identity — native, lightweight, no photo uploads required.
+   Uses the existing brand palette and stays readable in both themes. */
+.profile-chip>.prisma-avatar-face,
+#auth-modal .auth-account-avatar.prisma-avatar-face,
+#auth-modal .auth-personal-preview-avatar.prisma-avatar-face,
+#auth-modal .auth-avatar-choice .prisma-avatar-face{
+ display:grid;place-items:center;flex:none;
+ overflow:hidden;position:relative;isolation:isolate;
+ background:var(--prisma-avatar-bg,#151b2b);
+ color:var(--prisma-avatar-fg,#e5f7fb);
+ border-radius:50%;
+}
+.prisma-avatar-face[data-prisma-avatar="prism"]{--prisma-avatar-bg:#151b2b;--prisma-avatar-fg:#98e6df}
+.prisma-avatar-face[data-prisma-avatar="aurora"]{--prisma-avatar-bg:linear-gradient(145deg,#356d80,#8273b5);--prisma-avatar-fg:#f2fdff}
+.prisma-avatar-face[data-prisma-avatar="orbit"]{--prisma-avatar-bg:linear-gradient(145deg,#25385b,#5b76a9);--prisma-avatar-fg:#b7eff6}
+.prisma-avatar-face[data-prisma-avatar="nova"]{--prisma-avatar-bg:linear-gradient(145deg,#684da4,#a987ce);--prisma-avatar-fg:#fff5ff}
+.prisma-avatar-face[data-prisma-avatar="bloom"]{--prisma-avatar-bg:linear-gradient(145deg,#806aa6,#c88d9d);--prisma-avatar-fg:#fff7fa}
+.prisma-avatar-face[data-prisma-avatar="spark"]{--prisma-avatar-bg:linear-gradient(145deg,#166c74,#5bb7a5);--prisma-avatar-fg:#efffff}
+.prisma-avatar-face img{
+ width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;
+}
+.prisma-avatar-face .prisma-avatar-glyph{
+ font:800 1.2em/1 Manrope,system-ui,sans-serif;
+ display:grid;place-items:center;min-width:0;min-height:0;
+ color:inherit;text-shadow:0 1px 8px rgba(0,0,0,.12);
+}
+.profile-chip>.prisma-avatar-face{width:100%;height:100%;font-size:20px}
+.profile-chip>.prisma-avatar-face .prisma-avatar-glyph{font-size:19px}
+#auth-modal .auth-account-avatar.prisma-avatar-face{
+ width:46px;height:46px;font-size:29px;
+ box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+}
+#auth-modal .auth-signup-personalization{
+ display:grid;gap:11px;margin:0;
+}
+#auth-modal .auth-personal-preview{
+ display:flex;align-items:center;gap:11px;
+ padding:10px 12px;border-radius:13px;
+ background:linear-gradient(115deg,color-mix(in srgb,var(--accent) 11%,var(--panel-2)),var(--panel-2));
+ border:1px solid color-mix(in srgb,var(--accent) 26%,var(--line));
+}
+#auth-modal .auth-personal-preview-avatar{
+ width:43px;height:43px;font-size:28px;
+ border:1px solid rgba(255,255,255,.13);
+}
+#auth-modal .auth-personal-preview>span:last-child{display:grid;gap:3px;min-width:0}
+#auth-modal .auth-personal-preview strong{
+ color:var(--text);font-size:13px;
+ overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+#auth-modal .auth-personal-preview small{color:var(--muted);font-size:10px}
+#auth-modal .auth-avatar-field{
+ border:0;min-width:0;margin:0;padding:0;
+}
+#auth-modal .auth-avatar-field legend{
+ margin:0 0 10px;padding:0;
+ font:700 11px/1.5 Manrope,system-ui,sans-serif;color:var(--text);
+}
+#auth-modal .auth-avatar-field legend small{font-size:10px;font-weight:400;color:var(--muted)}
+#auth-modal .auth-avatar-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#auth-modal .auth-avatar-choice{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+ border:1px solid var(--line-strong);background:var(--panel-2);
+ border-radius:11px;color:var(--muted);padding:9px 5px;min-height:70px;
+ cursor:pointer;transition:border-color .15s ease,background .15s ease;
+}
+#auth-modal .auth-avatar-choice .prisma-avatar-face{width:35px;height:35px;font-size:25px}
+#auth-modal .auth-avatar-choice small{font-size:10px;line-height:1.2}
+#auth-modal .auth-avatar-choice[aria-checked="true"]{
+ background:color-mix(in srgb,var(--accent) 11%,var(--panel-2));
+ border-color:color-mix(in srgb,var(--accent) 66%,var(--line));
+ box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 12%,transparent);
+ color:var(--text);
+}
+#auth-modal .auth-avatar-choice:focus-visible,.profile-chip:focus-visible{
+ outline:2px solid var(--accent);outline-offset:3px;
+}
+#auth-modal .auth-avatar-choice:hover{border-color:var(--accent)}
+@media(max-width:390px){
+ #auth-modal .auth-avatar-choices{gap:6px}
+ #auth-modal .auth-avatar-choice{min-height:65px;padding:7px 4px}
+ #auth-modal .auth-avatar-choice small{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ #auth-modal .auth-avatar-choice{transition:none}
+}
