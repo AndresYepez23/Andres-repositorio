@@ -13,6 +13,7 @@ import { mountCoreWelcomeGrid } from './core-welcome-grid.js';
 import { isPrismaAuthenticated, openPrismaAuthForGuestLimit } from './prisma-account.js';
 import { GUEST_TASK_LIMIT, readGuestTaskCount, canGuestSubmit, recordGuestTask, isGuestFileTask } from './core-guest-limit.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
+import { resolveIndependentCoreRequest } from './core-independent-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
@@ -1489,6 +1490,16 @@ async function requestPlan(userText){
     const productAnswer=resolvePrismaProductQuestion(userText,messages.slice(-16,-1),centralProviders);
     if(productAnswer){addMessage('assistant',productAnswer);status('Información de Prisma.','success');return;}
   }
+  // Independent Prisma Core reasoning: verified deterministic answers without
+  // external models. Keep it separate from Prisma Mini and generated-file jobs.
+  if(!attachments.length){
+    const independent=resolveIndependentCoreRequest(userText);
+    if(independent){
+      addMessage('assistant',independent.text,{engine:'prisma-core-local'});
+      status('Resuelto directamente por Prisma Core, sin proveedores externos.','success');
+      return;
+    }
+  }
   // Before tools or models, distinguish a question about what Core CAN do
   // from permission to execute it. Retain one missing website detail per chat.
   if(await handleWebsiteConversation(userText))return;
@@ -1665,9 +1676,9 @@ async function requestPlan(userText){
       }
       if(extracted.length)attachmentContext='\n\nCONTENIDO LEÍDO LOCALMENTE (no enviado a ningún modelo):\n'+extracted.join('\n\n').slice(0,18000);
     }
-    status('Comprobando si el navegador ofrece un modelo de IA local…');
-    const nativePlan=await requestNativeBrowserPlan(userText,attachmentContext);
-    const localPlan=nativePlan||buildLocalPlan(userText);
+    // Prisma Mini / browser-based models are deliberately excluded from the
+    // independent Core fallback. Only deterministic, shipped operations apply.
+    const localPlan=buildLocalPlan(userText);
     let localSteps;
     try{localSteps=validatePlan(localPlan);}catch(error){addMessage('assistant','No pude preparar una operación local segura: '+error.message);status('No se pudo preparar el trabajo.','warning');return;}
     if(!localSteps.length){addMessage('assistant',localPlan.message);status('Sin conexión de IA: capacidad local no disponible para esta solicitud.','warning');return;}
