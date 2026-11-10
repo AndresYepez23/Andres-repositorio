@@ -2316,11 +2316,14 @@ body.is-core-view #core-thinking {
  color:transparent;background-clip:text;
  text-align:center;
 }
-#auth-modal .auth-provider-grid .auth-provider-apple{
- font-size:21px;line-height:1;text-align:center;
-}
+#auth-modal .auth-provider-grid .auth-provider-apple,
 #auth-modal .auth-provider-grid .auth-provider-phone{
- font-size:28px;line-height:1;text-align:center;
+ display:grid;place-items:center;
+ width:26px;height:26px;color:var(--text);
+}
+#auth-modal .auth-provider-grid .auth-provider-apple svg,
+#auth-modal .auth-provider-grid .auth-provider-phone svg{
+ display:block;width:22px;height:22px;
 }
 #auth-modal .auth-divider{margin:3px 0;font-size:12px}
 #auth-modal .auth-email-choice{
