@@ -108,7 +108,7 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       status===400?"INVALID_MODEL":
       status===401||status===403?"PROVIDER_AUTH":
       [408,500,502,503,504].includes(status)?"PROVIDER_UNAVAILABLE":"PROVIDER_ERROR";
-    return json({error:message,provider,status,code,retryAfter:[408,500,502,503,504].includes(status)?45:null},[400,401,402,403,429,503].includes(status)?status:502);
+    return json({error:message,provider,status,code,retryAfter:[408,500,502,503,504].includes(status)?45:null},[400,401,402,403,429].includes(status)?status:status===503?503:502);
   }
   const content=data.choices?.[0]?.message?.content;
   const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
