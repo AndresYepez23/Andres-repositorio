@@ -596,7 +596,7 @@ assert.match(resolveGeneralCapabilityQuestion('¿Puedes hacer una canción?'),/t
 assert.match(resolveGeneralCapabilityQuestion('¿Puedes hacer una imagen?'),/Qué quieres/);
 assert.equal(resolveGeneralCapabilityQuestion('Crea una canción sobre esperanza'),null,
  'A clear creation request must not be mistaken for a general capability question');
-assert.match(resolvePrismaProductQuestion('¿Tienes memoria?'),/historial reciente en este navegador/);
+assert.match(resolvePrismaProductQuestion('¿Tienes memoria?'),/IndexedDB/);
 assert.match(resolvePrismaProductQuestion('¿Qué recuerdas de mí?'),/esta conversación activa/);
 assert.ok(!resolvePrismaProductQuestion('¿Tienes memoria?').includes('No guardo información una vez que la sesión termina'));
 const webHTML='<!DOCTYPE html><html lang="es"><head><title>Prueba</title></head><body><h1>Hola</h1></body></html>';
