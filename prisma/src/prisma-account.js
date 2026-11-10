@@ -215,6 +215,14 @@ function openAccount(){
 }
 export function openPrismaAuth(){openAccount();}
 export function isPrismaAuthenticated(){return Boolean(user?.id);}
+export async function getPrismaSessionAccessToken(){
+ if(!api)return '';
+ try{
+  const {data,error}=await api.auth.getSession();
+  if(error)return '';
+  return String(data?.session?.access_token||'');
+ }catch{return '';}
+}
 export function openPrismaAuthForGuestLimit(mode='intro'){
  if(user?.id)return false;
  guestGateModalActive=true;
