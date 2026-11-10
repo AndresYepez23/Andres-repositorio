@@ -8,7 +8,8 @@ const {pages}=JSON.parse(await readFile(new URL('seo/pages.json',root),'utf8'));
 
 test('40 pages configured with unique slugs and real tool IDs',async()=>{
   assert.equal(pages.length,40);
-  assert.equal(new Set(pages.map(page=>page.slug)).size,20);
+  assert.equal(new Set(pages.map(page=>page.slug)).size,40);
+  assert.equal(new Set(pages.map(page=>page.tool)).size,40,'a tool may only have one SEO landing page');
   const registry=await import('../src/registry.js');
   for(const page of pages){
     const tool=registry.tools.find(t=>t.id===page.tool);
