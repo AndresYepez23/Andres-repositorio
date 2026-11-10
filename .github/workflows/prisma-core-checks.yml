@@ -27,3 +27,7 @@ jobs:
           node-version: "22"
       - name: Run Prisma Core provider and workflow regressions
         run: node --test prisma/tests/core-agent-routing.test.mjs
+      - name: Build Prisma and test SEO output
+        run: |
+          node prisma/build.mjs
+          node --test prisma/tests/seo-build.test.mjs
