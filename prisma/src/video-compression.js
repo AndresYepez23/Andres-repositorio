@@ -2,6 +2,14 @@
 // workers are unavailable (notably iOS standalone Safari). No uploads, no AI.
 // MediaRecorder availability and actual output size are checked, never assumed.
 const MB=1024*1024;
+async function withTimeout(promise,ms,message){
+ let timer;
+ try{return await Promise.race([
+  promise,
+  new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(message)),ms);})
+ ]);}
+ finally{clearTimeout(timer);}
+}
 const fold=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 
 export function isVideoCompressionIntent(message){
@@ -114,7 +122,7 @@ export async function compressVideoNative(file,opts={},cb){
   const tracks=destination.stream.getAudioTracks();
   if(!tracks.length)throw Error('No se pudo preparar una pista para conservar el audio.');
   stream.addTrack(tracks[0]);
-  await ctx.resume();
+  await withTimeout(ctx.resume(),8000,'iOS no permitió iniciar el audio para la compresión.');
   if(ctx.state!=='running')throw Object.assign(Error('El audio no pudo iniciarse.'),{name:'NotAllowedError'});
   cb?.(.12,'Codificando vídeo localmente; mantén Prisma abierto…');
   recorder=new MediaRecorder(stream,{mimeType:mime,
@@ -144,7 +152,7 @@ export async function compressVideoNative(file,opts={},cb){
    frame=requestAnimationFrame(paint);
   }
   // Record only after video playback begins, to avoid an empty file.
-  await video.play();
+  await withTimeout(video.play(),12000,'Safari no permitió iniciar la reproducción del archivo.');
   try{draw.drawImage(video,0,0,canvas.width,canvas.height);}
   catch(error){throw Object.assign(Error(error?.message||'No se pudieron leer los fotogramas.'),{name:error?.name||'SecurityError'});}
   recorder.start(1000);
@@ -175,7 +183,7 @@ export async function compressVideoNative(file,opts={},cb){
   cb?.(1,'Vídeo comprimido y listo para descargar.');
   const percent=Math.round((1-blob.size/file.size)*100);
   return {blob,filename:(file.name||'video').replace(/\.[^.]+$/,'')+'-comprimido.'+(isMp4?'mp4':'webm'),
-   summary:'Compresión local · '+percent+' % menos · '+(file.size/MB).toFixed(1)+' MB → '+(blob.size/MB).toFixed(1)+' MB · audio incluido en el flujo de grabación.'};
+   summary:'Compresión local · '+percent+' % menos · '+(file.size/MB).toFixed(1)+' MB → '+(blob.size/MB).toFixed(1)+' MB · audio transferido mediante Web Audio (comprueba la pista al reproducir).'};
  }catch(error){throw Error(localizedVideoError(error));}
  finally{
   if(frame)cancelAnimationFrame(frame);
