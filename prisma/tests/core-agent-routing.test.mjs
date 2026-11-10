@@ -200,7 +200,7 @@ assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===
 assert.match(welcomeGridSource,/container\.append\(layer\)/,'The ambient canvas must be attached to the full chat column container');
 assert.match(welcomeGridSource,/dotsDesktop=15,dotsTablet=17,dotsMobile=18/,'Dot density must be increased consistently across desktop, tablet and mobile');
 assert.match(welcomeGridSource,/width<=580\?dotsMobile:width<=900\?dotsTablet:dotsDesktop/,'Dot spacing must adapt to viewport width');
-assert.match(coreSource,/disposeWelcomeGrid\?\.\(\)/,'Chat changes must dispose the previous dot matrix animation');
+assert.match(coreSource,/if\(!disposeWelcomeGrid\)\{[\s\S]*?disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\)/,'The animated background must be mounted once and persist across chat updates');
 assert.match(coreSource,/if\(!messages\.length\)/,'The welcome content must remain restricted to the empty chat state');
 assert.match(welcomeGridSource,/pointermove/,'Desktop cursor must illuminate nearby dots');
 assert.match(welcomeGridSource,/pointerleave/,'Cursor reaction must fade on exit');
