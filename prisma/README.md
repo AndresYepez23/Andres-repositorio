@@ -37,6 +37,17 @@ La producción se publica en **Cloudflare Pages**, conectado al repositorio GitH
 
 Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. Prisma Space ya no depende de Wix ni Netlify para su alojamiento.
 
+## SEO: 20 páginas iniciales
+
+- `seo/pages.json` contiene contenido original para 20 páginas, vinculado a herramientas reales en `src/registry.js`.
+- `seo/generate.mjs` produce HTML indexable en `dist/herramientas/<slug>/index.html`, un índice `dist/herramientas/index.html`, `dist/sitemap.xml` y `dist/robots.txt`.
+- `seo/landing.css` conserva Aurora y no modifica la estética de Prisma Core; la publicación requiere `node build.mjs`.
+- Cada página utiliza título y descripción propios, canonical, enlaces internos, Open Graph, datos estructurados, instrucciones, advertencias y preguntas frecuentes.
+- Los botones abren la herramienta real con `/?tool=<id>`; PDF a JPG y PNG a JPG preseleccionan el formato de salida correcto. El visitante debe elegir los archivos y confirmar la operación.
+- Dominio SEO canónico inicial: `https://prismaspace.pages.dev/`; debe actualizarse si se adopta un dominio propio.
+- En Google Search Console registrar la propiedad y enviar `https://prismaspace.pages.dev/sitemap.xml`. Publicar un sitemap no garantiza indexación ni tráfico.
+- Comprobación automatizada: `node prisma/build.mjs` seguida de `node --test prisma/tests/seo-build.test.mjs`.
+
 ## Prisma Core
 
 - Una conversación central para describir objetivos en lenguaje natural.

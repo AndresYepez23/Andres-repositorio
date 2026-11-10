@@ -1563,6 +1563,22 @@ $('#app-startup')?.classList.add('hidden');
 document.body.classList.remove('app-booting');
 document.body.classList.add('app-ready');
 document.dispatchEvent(new Event('prisma:app-ready'));
+// SEO pages launch the real tool. Nothing is executed until the user acts.
+safeStartup('enlaces SEO a herramientas',()=>{
+  const params=new URLSearchParams(window.location.search);
+  const id=params.get('tool');
+  if(!id)return;
+  const target=tools.find(item=>item.id===id&&item.status!=='soon');
+  if(!target)return;
+  showView('explore');
+  openTool(target);
+  const preset=params.get('format');
+  const allowed={'pdf-to-image':['png','jpeg'],'image-convert':['image/png','image/jpeg','image/webp']};
+  if(preset&&allowed[target.id]?.includes(preset)){
+    const selector=$('#field-format');
+    if(selector&&[...selector.options].some(option=>option.value===preset))selector.value=preset;
+  }
+});
 document.addEventListener('keydown',event=>{
   if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){
     event.preventDefault();
