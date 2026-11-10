@@ -1690,7 +1690,7 @@ export function initPrismaCore(){
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     const creds=credentials();
-    const ready=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
+    const ready=Object.values(centralProviders).some(Boolean);
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
   });
   status('Listo. Escribe una tarea o adjunta un archivo.','info');
