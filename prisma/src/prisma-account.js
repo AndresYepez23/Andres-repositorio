@@ -242,6 +242,7 @@ async function doSync(){
  const activeUserId=user.id;
  try{
   await (window.__prismaHistoryReady||Promise.resolve());
+  await (window.__prismaHistoryWrite||Promise.resolve());
   let local=sanitizeChats();
   try{
    const indexed=await readConversationSnapshot();
