@@ -1657,7 +1657,9 @@ function releaseResultObjectUrls(){
 function createExecutionResults(executed,partial){
   const wrapper=document.createElement('div');wrapper.className='core-message-results';
   const heading=document.createElement('div');heading.className='core-results-heading';
-  heading.textContent=partial?'Resultados parciales · ejecución detenida':'✓ Trabajo completado';
+  const legacyUnavailable=!partial&&executed.some(entry=>entry.result?.hasFile&&!entry.result?.blob&&!entry.result?.fileKey);
+  heading.textContent=partial?'Resultados parciales · ejecución detenida':
+    legacyUnavailable?'Archivos anteriores no disponibles':'✓ Trabajo completado';
   wrapper.append(heading);
   executed.forEach((entry,index)=>{
     const result=entry.result||{};
@@ -1713,8 +1715,26 @@ function createExecutionResults(executed,partial){
       const row=document.createElement('div');row.className='core-result-download';
       const label=document.createElement('span');label.textContent=result.filename||'Archivo generado';
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
-      button.addEventListener('click',()=>{const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';a.click();});
+      button.addEventListener('click',()=>{
+        const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';
+        document.body.appendChild(a);a.click();a.remove();
+        status('Descarga solicitada. Revisa los archivos o descargas de tu dispositivo.','success');
+      });
       row.append(label,button);
+      if(typeof navigator !== 'undefined' && typeof navigator.canShare==='function' && typeof navigator.share==='function'){
+        const nativeFile=new File([result.blob],result.filename||'prisma-resultado',{type:result.blob.type||'application/octet-stream'});
+        if(navigator.canShare({files:[nativeFile]})){
+          const share=document.createElement('button');share.type='button';share.className='mini-button';
+          share.textContent='Guardar / Compartir';
+          share.addEventListener('click',async()=>{
+            try{await navigator.share({files:[nativeFile]});}
+            catch(error){
+              if(error?.name!=='AbortError')status('No fue posible abrir el panel para guardar el archivo. Utiliza Descargar.','warning');
+            }
+          });
+          row.append(share);
+        }
+      }
       if(String(result.blob.type||'').startsWith('image/')){
        const edit=document.createElement('button');edit.type='button';edit.className='mini-button core-edit-thumb';edit.textContent='Añadir texto / Editar';
        edit.addEventListener('click',async()=>{
@@ -1749,7 +1769,32 @@ function createExecutionResults(executed,partial){
       }
       card.append(row);
     }else if(result.hasFile){
-      const note=document.createElement('p');note.className='core-result-expired';note.textContent='Este archivo se generó en una sesión anterior y ya no está disponible para descargar. Puedes volver a ejecutar la tarea para obtenerlo.';card.append(note);
+      const note=document.createElement('p');note.className='core-result-expired';
+      if(result.fileKey){
+        note.textContent='Recuperando archivo generado en este dispositivo…';
+        loadGeneratedFile(result.fileKey).then(blob=>{
+          if(blob){
+            result.blob=blob;
+            result.fileSize=blob.size;
+            result.fileType=blob.type;
+            if(card.isConnected){
+              const restored=createExecutionResults([{...entry,result}],partial)
+               .querySelector('.core-result-card');
+              if(restored)card.replaceWith(restored);
+            }
+          }else{
+            note.textContent='El archivo se guardó en otro dispositivo o su almacenamiento local fue eliminado. Si aún tienes ese dispositivo, abre Prisma allí para descargarlo.';
+            if(card.isConnected)heading.textContent='Resultado guardado · descarga no disponible aquí';
+          }
+        }).catch(error=>{
+          console.warn('Prisma: no se pudo restaurar el archivo local:',error?.message||error);
+          note.textContent='No se pudo acceder al almacenamiento local. Comprueba el espacio disponible o abre esta conversación en el dispositivo donde se generó.';
+          if(card.isConnected)heading.textContent='Resultado guardado · descarga no disponible aquí';
+        });
+      }else{
+        note.textContent='Esta versión anterior de Prisma guardó el mensaje pero no conservó el archivo descargable. Adjunta de nuevo el original y ejecuta la tarea una vez más.';
+      }
+      card.append(note);
     }
     if(result.html){const pre=document.createElement('pre');pre.textContent=String(result.html).slice(0,8000);card.append(pre);}
     wrapper.append(card);
