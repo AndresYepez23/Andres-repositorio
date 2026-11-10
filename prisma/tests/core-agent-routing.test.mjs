@@ -110,7 +110,7 @@ assert.match(coreSource,/recordCompletedCoreTask\(\{fileTask:true\}\)/,'Successf
 assert.match(coreSource,/successful=true;[\s\S]*?recordCompletedCoreTask\(\{fileTask:attachments\.length>0/,'Only file-related workflows count once after successful completion');
 const guestAccountSource=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
 assert.match(guestAccountSource,/export function isPrismaAuthenticated\(\)/,'Auth check must use live Supabase session state');
-assert.match(guestAccountSource,/export function openPrismaAuthForGuestLimit\(\)/,'Guest gate must open account signup or login');
+assert.match(guestAccountSource,/export function openPrismaAuthForGuestLimit\(mode='intro'\)/,'Guest gate must open account signup or login');
 assert.match(guestAccountSource,/prisma:guest-gate-closed/,'Auth modal closing must notify the chat');
 assert.match(guestAccountSource,/prisma:guest-gate-open/,'Auth modal opening must temporarily hide the in-chat banner');
 assert.match(guestAccountSource,/if\(mode==='signup'\|\|mode==='login'\)/,'Signup and login must use the existing account screens');
