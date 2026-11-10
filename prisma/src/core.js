@@ -7,7 +7,7 @@ import { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTo
 import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
-import { imageAnalysisIntent } from './core-image-analysis.js';
+import { imageAnalysisIntent, isBatchImageTranscription } from './core-image-analysis.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { mountCoreWelcomeGrid } from './core-welcome-grid.js';
 import { isPrismaAuthenticated, openPrismaAuthForGuestLimit } from './prisma-account.js';
@@ -1365,6 +1365,39 @@ async function fulfillSpeechRequest(userText){
  status('Audio listo para escuchar y descargar.','success');
  recordCompletedCoreTask({fileTask:true});
 }
+async function transcribeAttachedImageBatch(userText){
+ const sourceFiles=[...attachments];
+ const images=sourceFiles.filter(file=>String(file.type||'').startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp|heic|heif)$/i.test(String(file.name||'')));
+ const skipped=sourceFiles.filter(file=>!images.includes(file));
+ const outputs=[];
+ let successCount=0;
+ for(let i=0;i<images.length;i++){
+  const file=images[i];
+  status('Reconociendo texto de la imagen '+(i+1)+' de '+images.length+': '+file.name);
+  try{
+   const result=await runTool('image-ocr',[file],{language:'spa'},(progress,msg)=>{
+    status('Imagen '+(i+1)+'/'+images.length+' · '+(msg||'Extrayendo texto…'));
+    setProgress((i+Math.max(0,Math.min(1,Number(progress)||0)))/images.length,'Procesando imágenes…');
+   });
+   const recognized=String(result?.text||'').trim();
+   if(recognized&&recognized!=='No se detectó texto.'){
+    successCount++;
+    outputs.push('### '+file.name+'\n\n'+recognized);
+   }else outputs.push('### '+file.name+'\n\nNo se detectó texto legible.');
+  }catch(error){
+   console.warn('Prisma OCR: no se pudo procesar',file.name,error?.message||error);
+   outputs.push('### '+file.name+'\n\nNo se pudo extraer el texto: '+String(error?.message||'error de lectura').slice(0,180));
+  }
+ }
+ if(skipped.length)outputs.push('**Archivos no procesados como imágenes:** '+skipped.map(f=>f.name).join(', ')+'. Para un video, indica si deseas transcribir su audio o analizar fotogramas.');
+ addMessage('assistant',[
+  '**Resultado OCR: '+successCount+' de '+images.length+' imágenes procesadas con texto legible.**',
+  'Los resultados están separados por archivo y corresponden a los adjuntos de esta solicitud.',
+  ...outputs
+ ].join('\n\n'));
+ status(successCount===images.length?'Texto de todas las imágenes extraído.':'Se terminó el lote con algunos archivos sin texto legible.',successCount?'success':'warning');
+ if(successCount)recordCompletedCoreTask({fileTask:true});
+}
 async function interpretAttachedImageText(userText){
  const images=attachments.filter(file=>String(file.type||'').startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp|heic|heif)$/i.test(String(file.name||''))).slice(0,3);
  const extracted=[];
@@ -1480,6 +1513,12 @@ async function requestPlan(userText){
     pendingPlan={plan,steps};
     addMessage('assistant',plan.message);
     await executePlan();
+    return;
+  }
+  // Every attached image is processed separately; video files are reported,
+  // never silently treated as still images or discarded.
+  if(isBatchImageTranscription(userText,attachments)){
+    await transcribeAttachedImageBatch(userText);
     return;
   }
   // Interpreting text in an image is not the same as copying OCR output.
@@ -2017,7 +2056,15 @@ async function sendMessage(){
       status('El motor no respondió.','warning');
     }
   }
-  finally{setBusy(false);}
+  finally{
+    setBusy(false);
+    // The submitted files belong to this one request, not the next message.
+    // The requestPlan pipeline has already completed or failed at this point.
+    // This also prevents the same image being sent repeatedly by accident.
+    attachments=[];renderAttachments();
+    const fileInput=$('#core-file-input');
+    if(fileInput)fileInput.value='';
+  }
 }
 function renameActiveChat(){
  if(busy||executionActive)return;
