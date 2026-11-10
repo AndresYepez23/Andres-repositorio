@@ -749,6 +749,10 @@ assert.match(stylesSource,/body\.is-core-view\.is-prisma-ios\.is-prisma-standalo
 
 
 assert.match(uiMain,/--prisma-search-viewport/,'Search must track mobile viewport');
+assert.match(uiMain,/if\(list\?\.classList\.contains\('is-empty'\)\)list\.scrollTop=0/,'Keyboard opening must not scroll away the empty-chat background');
+assert.match(stylesSource,/body\.is-core-view\.is-keyboard-open #core-messages\.is-empty > \.core-welcome\{\s*display:none!important/,'Hide oversized welcome shortcuts only when keyboard is open');
+assert.match(stylesSource,/body\.is-core-view\.is-keyboard-open #core-messages\.is-empty > \.core-welcome-ambient\{[\s\S]*?display:block!important/,'Keep grid visible while typing');
+
 assert.match(uiMain,/searchFocused\?visible/,'Keyboard-open search must shrink');
 assert.match(uiMain,/event\.target===searchInput/,'Search focus must recalculate viewport');
 assert.match(stylesSource,/\.conversation-search-layer:not\(\.hidden\)/);
