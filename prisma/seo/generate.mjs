@@ -5,8 +5,12 @@ const BASE = 'https://prismaspace.pages.dev';
 const GROUPS = {
   pdf: { name: 'PDF y documentos', order: 1 },
   image: { name: 'Imágenes', order: 2 },
-  text: { name: 'Texto y escritura', order: 3 },
-  utility: { name: 'Utilidades', order: 4 }
+  media: { name: 'Audio y vídeo', order: 3 },
+  ai: { name: 'Inteligencia artificial', order: 4 },
+  creator: { name: 'Creación de contenido', order: 5 },
+  study: { name: 'Estudio e investigación', order: 6 },
+  text: { name: 'Texto y escritura', order: 7 },
+  utility: { name: 'Utilidades', order: 8 }
 };
 const esc = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const safeJson = object => JSON.stringify(object).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
@@ -91,7 +95,7 @@ function landing(page, pages, toolMap) {
     '<h1>' + esc(page.h1) + '</h1>',
     '<p class="seo-lead">' + esc(page.description) + '</p>',
     '<div class="seo-actions"><a class="seo-cta" href="' + esc(toolUrl(page)) + '">Abrir herramienta gratis <span aria-hidden="true">↗</span></a><a class="seo-subtle" href="#como-funciona">Cómo funciona ↓</a></div>',
-    '<p class="seo-privacy"><span aria-hidden="true">◇</span> ' + esc(['local','browser'].includes(tool.mode) ? 'Procesamiento en el navegador · Sin registro' : 'Consulta las condiciones de uso de la herramienta') + '</p></div>',
+    '<p class="seo-privacy"><span aria-hidden="true">◇</span> ' + esc(page.privacyNote || (['local','browser'].includes(tool.mode) ? 'Procesamiento en el navegador · Sin registro' : 'Consulta las condiciones de uso de la herramienta')) + '</p></div>',
     '<div class="seo-preview" aria-hidden="true"><div class="seo-preview-orb"></div><div class="seo-preview-label">PRISMA SPACE / ' + esc(page.slug.toUpperCase().replaceAll('-', ' ')) + '</div>',
     '<div class="seo-preview-content"><div class="seo-preview-symbol"><img src="/assets/prisma-mark.svg" width="46" height="46" alt=""></div><strong>' + esc(tool.name) + '</strong><span>' + (beta ? 'Función en beta' : 'Lista para usar') + '</span></div>',
     '<div class="seo-preview-foot"><span>Una tarea, una solución</span><span>GRATIS</span></div></div></section>',
@@ -108,8 +112,8 @@ function landing(page, pages, toolMap) {
 }
 function directory(pages,toolMap) {
   const url=BASE+'/herramientas/';
-  const title='20 herramientas online gratis para PDF, imágenes y texto | Prisma Space';
-  const description='20 herramientas gratuitas de Prisma Space para convertir PDF, editar imágenes, contar palabras y crear códigos QR. Empieza sin registrarte.';
+  const title='40 herramientas online gratis para PDF, imágenes, vídeo y audio | Prisma Space';
+  const description='Explora 40 herramientas de Prisma Space para PDF, imágenes, vídeo, audio, IA, estudio y productividad. Abre cada función desde el navegador.';
   const categories=[...new Set(pages.map(p=>toolMap.get(p.tool).category))].sort((a,b)=>categoryFor({category:a}).order-categoryFor({category:b}).order);
   const tags=categories.map(c=>'<a href="#'+esc(c)+'">'+esc(categoryFor({category:c}).name)+' ↓</a>').join('');
   const sections=categories.map(c=>{
@@ -119,7 +123,7 @@ function directory(pages,toolMap) {
   const body=[
     '<main class="seo-main"><nav class="seo-breadcrumb" aria-label="Ruta de navegación"><a href="/">Inicio</a><span>/</span><span aria-current="page">Herramientas gratuitas</span></nav>',
     '<section class="seo-directory-hero"><div class="seo-eyebrow"><i></i>GRATIS · PRISMA SPACE</div><h1>Herramientas online gratuitas para resolver tareas al instante</h1>',
-    '<p>Convierte documentos, prepara archivos PDF, trabaja con imágenes y analiza texto desde Prisma Space. Explora estas 20 opciones y abre la herramienta que necesitas en un clic.</p><div class="seo-tags">'+tags+'</div></section>',
+    '<p>Convierte documentos, edita imágenes, procesa vídeo y audio, crea contenido y resuelve tareas de estudio desde Prisma Space. Explora 40 herramientas y abre la que necesitas en un clic.</p><div class="seo-tags">'+tags+'</div></section>',
     sections,
     '<aside class="seo-note"><span class="seo-note-icon">i</span><div><strong>Disponibilidad y privacidad</strong><p>Las funciones beta pueden tener limitaciones. No se promocionan aquí herramientas todavía en preparación. Revisa las indicaciones de privacidad y funcionamiento de cada operación.</p></div></aside>',
     '</main>'
@@ -128,7 +132,7 @@ function directory(pages,toolMap) {
 }
 export async function generateSeoPages(output) {
   const {pages}=JSON.parse(await readFile(new URL('./pages.json',import.meta.url),'utf8'));
-  if (!Array.isArray(pages)||pages.length!==20) throw Error('SEO: se esperaban exactamente 20 páginas');
+  if (!Array.isArray(pages)||pages.length!==40) throw Error('SEO: se esperaban exactamente 40 páginas');
   if (new Set(pages.map(page=>page.slug)).size!==pages.length) throw Error('SEO: slugs duplicados');
   const toolMap=new Map(tools.map(t=>[t.id,t]));
   for (const page of pages) {
@@ -147,5 +151,5 @@ export async function generateSeoPages(output) {
   const sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(url=>'  <url><loc>'+esc(url)+'</loc></url>').join('\n')+'\n</urlset>\n';
   await writeFile(new URL('sitemap.xml',output),sitemap,'utf8');
   await writeFile(new URL('robots.txt',output),'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /functions/\nSitemap: '+BASE+'/sitemap.xml\n','utf8');
-  console.log('PRISMA SEO: 20 páginas, índice, sitemap.xml y robots.txt generados.');
+  console.log('PRISMA SEO: 40 páginas, índice, sitemap.xml y robots.txt generados.');
 }
