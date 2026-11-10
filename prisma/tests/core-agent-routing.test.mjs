@@ -81,6 +81,9 @@ assert.match(coreSource,/clearGeneratedFiles\(\)/,'Clearing local history must a
 const stylesSource=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
 // The animated matrix is purely decorative and restricted to Core's empty state.
 const welcomeGridSource=readFileSync(new URL('../src/core-welcome-grid.js',import.meta.url),'utf8');
+assert.match(coreSource,/Cuéntame qué necesitas o adjunta un archivo\. Prisma organiza el resto\./,'Welcome helper copy must stay concise and explain the assistant flow');
+assert.match(stylesSource,/max-width:680px;\s*margin:0 auto 17px;\s*color:color-mix\(in srgb,var\(--text\) 76%,var\(--accent\) 24%\);\s*font-weight:500;\s*line-height:1\.5/,'Welcome helper copy must be more readable without increasing its footprint');
+assert.match(stylesSource,/body\.is-core-view \.core-welcome p\{\s*margin-bottom:14px;\s*line-height:1\.45;/,'Mobile welcome helper copy must remain compact');
 assert.match(coreSource,/mountCoreWelcomeGrid\(list\)/,'The reactive dot matrix must cover the full chat viewport');
 assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===0\)/,'Core must mark its empty state for dedicated scroll behavior');
 assert.match(welcomeGridSource,/container\.append\(layer\)/,'The ambient canvas must be attached to the full-width messages container');
