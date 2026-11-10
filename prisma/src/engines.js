@@ -774,8 +774,15 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   const all=getRouteMemory(),key=provider+':'+task;
   const previous=all[key]||{},stamp=Date.now();
   const status=Number(error?.status)||0;
-  const delay=success?0:status===401||status===403?15*60000:status===402?10*60000:
-   status===429?90000:error?.name==='AbortError'?120000:60000;
+  const retryAfterMs=Math.max(30,Math.min(86400,Number(error?.retryAfter)||90))*1000;
+  const delay=success?0:
+   status===401?2*60000:
+   status===403?60000:
+   status===402?10*60000:
+   status===429?retryAfterMs:
+   error?.code==='CREDENTIALS_PAUSED'||error?.code==='PROVIDER_COOLDOWN'?Math.max(30,Math.min(3600,Number(error?.retryAfter)||60))*1000:
+   error?.name==='AbortError'?120000:
+   [408,500,502,503,504].includes(status)?45000:60000;
   all[key]={
    at:stamp,
    successes:success?Math.min(12,(previous.successes||0)+1):0,
@@ -916,7 +923,7 @@ async function generateText(p,cb){
       maxOutputTokens:outputTokens
      })
     },requestDeadline);
-    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status,code:data.code||'',scope:data.scope||'',retryAfter:data.retryAfter||null});
+    if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:Number(data.status)||response.status,code:data.code||'',scope:data.scope||'',retryAfter:data.retryAfter||null});
     text=String(data.text||'').trim();model=data.model||model;
     usage=data.usage||null;
    }
