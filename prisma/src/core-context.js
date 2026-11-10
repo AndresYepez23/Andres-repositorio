@@ -79,10 +79,10 @@ export function buildConversationContext(history = [], query = '', options = {})
  * Explicit revisions keep sufficient budget for the previous artifact.
  */
 export function chooseCoreContextOptions(task='conversation',text=''){
- const q=fold(text).replace(/^[¿?¡!\\s]+/,'').trim();
- const revision=/\\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\\b/.test(q);
- const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\\b/.test(q);
- if(revision||task==='songwriting'&&/\\b(?:revisa|cambia|edita|corrige|version)\\b/.test(q))
+ const q=fold(text).replace(/^[¿?¡!\s]+/,'').trim();
+ const revision=/\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\b/.test(q);
+ const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\b/.test(q);
+ if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
   return {maxMessages:13,maxChars:14500};
  if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500};
  if(['coding','reasoning'].includes(task))return {maxMessages:11,maxChars:11500};
