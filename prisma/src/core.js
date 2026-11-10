@@ -11,6 +11,7 @@ import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
+import { findConversations } from './conversation-search.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 
@@ -146,8 +147,46 @@ function loadChatHistory(){
  messages=conversations[0].messages.slice();
  renderConversationList();
 }
+function renderConversationSearch(){
+ const results=$('#conversation-search-results');
+ if(!results)return;
+ const q=String(conversationSearch||'').trim();
+ const matches=findConversations(conversations,q,q?35:14);
+ const count=$('#conversation-search-count');
+ if(count)count.textContent=q?(matches.length+' resultado'+(matches.length===1?'':'s')):'Abierto recientemente';
+ results.replaceChildren();
+ if(!matches.length){
+  const empty=document.createElement('p');
+  empty.className='conversation-search-empty';
+  empty.textContent=q?'No se encontraron conversaciones para esta búsqueda.':'Todavía no hay conversaciones.';
+  results.append(empty);
+  return;
+ }
+ const fragment=document.createDocumentFragment();
+ for(const match of matches){
+  const button=document.createElement('button');
+  button.type='button';button.className='conversation-search-result';
+  button.setAttribute('aria-label','Abrir conversación: '+match.title);
+  const icon=document.createElement('span');
+  icon.className='conversation-search-result-icon';
+  icon.setAttribute('aria-hidden','true');
+  icon.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8.5 8.5 0 0 1-8.5 8.5 8.8 8.8 0 0 1-4-.95L3 20l.95-5A8.8 8.8 0 0 1 3 11a8.5 8.5 0 1 1 17.5.5Z"/></svg>';
+  const copy=document.createElement('span');copy.className='conversation-search-result-copy';
+  const title=document.createElement('strong');title.textContent=match.title;
+  const snippet=document.createElement('small');
+  snippet.textContent=match.preview||'Conversación sin mensajes';
+  copy.append(title,snippet);
+  const meta=document.createElement('span');meta.className='conversation-search-result-count';
+  meta.textContent=match.count+' msj.';
+  button.append(icon,copy,meta);
+  button.addEventListener('click',()=>openConversation(match.id));
+  fragment.append(button);
+ }
+ results.append(fragment);
+}
 function renderConversationList(){
  const list=$('#core-conversation-list');if(!list)return;
+ renderConversationSearch();
  const sorted=conversations.slice().sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||b.updated-a.updated);
  const visible=sorted.filter(chat=>!conversationSearch||
   chat.title.toLocaleLowerCase('es').includes(conversationSearch)||
@@ -195,6 +234,7 @@ function openConversation(id){
  const chat=conversations.find(item=>item.id===id);if(!chat)return;
  speechSynthesisStop();
  activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();
+ document.dispatchEvent(new Event('prisma:close-conversation-search'));
  pendingPlan=null;$('#core-plan')?.classList.add('hidden');
  userPinnedToBottom=true;renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();
  updateChatScreen();status('Conversación cargada.','success');
@@ -205,6 +245,7 @@ function startNewConversation(){
  const active=conversations.find(chat=>chat.id===activeConversationId);
  if(active&&!active.messages.length){closeConversationDrawer();$('#core-input')?.focus();return;}
  const record=newChatRecord();conversations.unshift(record);activeConversationId=record.id;
+ document.dispatchEvent(new Event('prisma:close-conversation-search'));
  messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');
  persistChatHistory();renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
  status('Nueva conversación. El historial anterior sigue disponible.','success');
@@ -1697,14 +1738,15 @@ export function initPrismaCore(){
   const root=$('#core-section');if(!root)return;
   const integratedHistory=$('#core-history');
   const mainSidebarSlot=$('#core-sidebar-conversations');
-  const sidebarSearchSlot=$('#sidebar-search-slot');
+  const searchOverlaySlot=$('#conversation-search-field-slot');
   const sidebarNewChatSlot=$('#sidebar-new-chat-slot');
   if(integratedHistory&&mainSidebarSlot)mainSidebarSlot.replaceChildren(integratedHistory);
-  // The chat search and new-chat action live in the persistent sidebar shell,
-  // not inside the Core-only history list. They remain available on every view.
+  // Chat search lives in a temporary overlay; only the new-chat action
+  // occupies the persistent sidebar. No empty row remains in the drawer.
   const chatSearch=$('#core-history-search');
+  const searchField=chatSearch?.closest('.core-history-search');
   const newChatButton=$('#core-history-new');
-  if(chatSearch&&sidebarSearchSlot)sidebarSearchSlot.append(chatSearch);
+  if(searchField&&searchOverlaySlot)searchOverlaySlot.append(searchField);
   if(newChatButton&&sidebarNewChatSlot)sidebarNewChatSlot.append(newChatButton);
   initImageEditor();
   initPrismaVoice();
@@ -1714,7 +1756,16 @@ export function initPrismaCore(){
   document.addEventListener('prisma:core-rename-request',renameActiveChat);
   document.addEventListener('prisma:core-delete-request',deleteActiveChat);
   document.addEventListener('prisma:remote-chats-ready',()=>{if(busy||executionActive)return;loadChatHistory();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();});
-  $('#core-history-search')?.addEventListener('input',event=>{conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();renderConversationList();});
+  $('#core-history-search')?.addEventListener('input',event=>{
+    conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();
+    renderConversationList();
+  });
+  $('#core-history-search')?.addEventListener('keydown',event=>{
+    if(event.key==='Enter'){
+      const first=$('#conversation-search-results .conversation-search-result');
+      if(first){event.preventDefault();first.click();}
+    }
+  });
   $('#core-history-toggle')?.addEventListener('click',()=>$('#core-workspace')?.classList.toggle('history-open'));
   $('#core-history-close')?.addEventListener('click',closeConversationDrawer);
   $('#core-history-backdrop')?.addEventListener('click',closeConversationDrawer);
