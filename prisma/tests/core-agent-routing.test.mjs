@@ -196,7 +196,7 @@ const welcomeGridSource=readFileSync(new URL('../src/core-welcome-grid.js',impor
 assert.match(coreSource,/Cuéntame qué necesitas o adjunta un archivo\. Prisma organiza el resto\./,'Welcome helper copy must stay concise and explain the assistant flow');
 assert.match(stylesSource,/max-width:680px;\s*margin:0 auto 17px;\s*color:color-mix\(in srgb,var\(--text\) 76%,var\(--accent\) 24%\);\s*font-weight:500;\s*line-height:1\.5/,'Welcome helper copy must be more readable without increasing its footprint');
 assert.match(stylesSource,/body\.is-core-view \.core-welcome p\{\s*margin-bottom:14px;\s*line-height:1\.45;/,'Mobile welcome helper copy must remain compact');
-assert.match(coreSource,/const chatSurface=document\.getElementById\('page-content'\)\|\|list\.closest\('\.core-chat-column'\)\|\|list;\s*disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\)/,'The reactive dot matrix must be mounted on the full chat viewport');
+assert.match(coreSource,/const chatSurface=document\.querySelector\('\.main-area'\)\|\|document\.getElementById\('page-content'\)\|\|list;\s*disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\)/,'The reactive dot matrix must be mounted on the full main area');
 assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===0\)/,'Core must mark its empty state for dedicated scroll behavior');
 assert.match(welcomeGridSource,/container\.append\(layer\)/,'The ambient canvas must be attached to the full chat viewport container');
 assert.match(welcomeGridSource,/dotsDesktop=15,dotsTablet=17,dotsMobile=18/,'Dot density must be increased consistently across desktop, tablet and mobile');
@@ -213,14 +213,13 @@ assert.match(welcomeGridSource,/cancelAnimationFrame/,'Release animation resourc
 assert.doesNotMatch(welcomeGridSource,/\bfetch\s*\(|XMLHttpRequest|\bgetContext\(['"]webgl|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
 assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty/,'Empty Core state must receive dedicated layout styles');assert.match(stylesSource,/overflow-y:auto!important;\s*scrollbar-width:none!important/,'Empty welcome must not show a limiting scrollbar but remain scrollable if needed');
 assert.match(stylesSource,/core-messages\.is-empty::\-webkit-scrollbar/,'Empty welcome must hide WebKit scrollbars');
-assert.match(stylesSource,/inset:0!important;\s*z-index:0!important;\s*width:100%!important;\s*height:100%!important/,'Ambient canvas must fill the whole chat area');
-assert.match(stylesSource,/body\.is-core-view #page-content\{\s*position:relative!important;\s*isolation:isolate;/,'The full content viewport must establish the background layer');
-assert.match(stylesSource,/body\.is-core-view #page-content > \.core-welcome-ambient\{\s*position:absolute!important;\s*inset:0!important;\s*z-index:0!important;\s*display:block!important;\s*width:100%!important;\s*height:100%!important;/,'The animated dots must span the complete content viewport');
-assert.match(stylesSource,/body\.is-core-view #page-content > #core-section\{\s*position:relative!important;\s*z-index:1!important;/,'Core content must stay above the animated background');
-assert.match(stylesSource,/body\.is-core-view #page-content #core-messages\{\s*background:transparent!important;/,'The message area must not hide the full-width background');
-assert.match(stylesSource,/html\[data-theme="light"\] body\.is-core-view \.core-welcome-ambient/,'Dot matrix must support light mode');
-assert.match(stylesSource,/body\.is-core-view #page-content > \.core-welcome-ambient\{[\s\S]*?-webkit-mask-image:none!important;\s*mask-image:none!important;/,'Full chat background must not be clipped by the welcome-card mask');
-assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view #page-content > \.core-welcome-ambient/,'Full-width background must also be styled in light mode');
+assert.match(stylesSource,/body\.is-core-view \.main-area\{\s*position:relative!important;\s*isolation:isolate!important;/,'The full main area must establish the background layer');
+assert.match(stylesSource,/body\.is-core-view \.main-area > \.core-welcome-ambient\{\s*position:absolute!important;\s*inset:76px 0 0 0!important;\s*z-index:0!important;/,'The animated dots must span the full width below the top app bar');
+assert.match(stylesSource,/body\.is-core-view \.main-area > \.core-welcome-ambient > \.core-welcome-dots\{\s*position:absolute!important;\s*inset:0!important;\s*display:block!important;\s*width:100%!important;\s*height:100%!important;/,'The animated canvas must fill the complete background layer');
+assert.match(stylesSource,/body\.is-core-view \.main-area > \.topbar\{\s*position:relative!important;\s*z-index:15!important;/,'The top app bar must remain above the decorative layer');
+assert.match(stylesSource,/body\.is-core-view \.main-area > #page-content\{\s*position:relative!important;\s*z-index:1!important;/,'Chat content must remain above the full-width animated background');
+assert.match(stylesSource,/body\.is-core-view #core-section,[\s\S]*?background-color:transparent!important;/,'Core sections must not obscure the full-width background');
+assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view \.main-area > \.core-welcome-ambient/,'Full-width background must also be styled in light mode');
 assert.match(stylesSource,/pointer-events:none/,'Welcome background must not intercept taps');
 
 // A short compliment about a previous song is a conversational turn, not a

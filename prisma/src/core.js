@@ -451,10 +451,10 @@ function renderMessages({forceBottom=false}={}){
   list.classList.toggle('is-empty',messages.length===0);
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
-  // Mount the animated field across the full Core content viewport, not the
-  // centered welcome card or the narrower chat column. The top app bar stays clear.
+  // Anchor the animated field to the full main area so it reaches both screen
+  // edges beside the sidebar, independent of page-content's content width.
   if(!disposeWelcomeGrid){
-    const chatSurface=document.getElementById('page-content')||list.closest('.core-chat-column')||list;
+    const chatSurface=document.querySelector('.main-area')||document.getElementById('page-content')||list;
     disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
   }
   if(answerRevealFrame){cancelAnimationFrame(answerRevealFrame);answerRevealFrame=0;}

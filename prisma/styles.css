@@ -3020,20 +3020,20 @@ body:not(.is-core-view) .tool-card{border-radius:16px;min-height:170px}
 @media(prefers-reduced-motion:reduce){body:not(.is-core-view) .hero-art *,body:not(.is-core-view) .goal-card,body:not(.is-core-view) .workflow-card{animation:none!important;transition:none!important}}
 
 
-/* Prisma Core: animated Aurora field across the entire chat viewport below the top bar.
-   The canvas is mounted on #page-content so it spans the empty side margins too. */
-body.is-core-view #page-content{
+/* Prisma Core: full-width animated field across the entire chat stage.
+   Anchor it to .main-area, never to a centered content container. */
+body.is-core-view .main-area{
   position:relative!important;
-  isolation:isolate;
+  isolation:isolate!important;
 }
-body.is-core-view #page-content > .core-welcome-ambient{
+body.is-core-view .main-area > .core-welcome-ambient{
   position:absolute!important;
-  inset:0!important;
+  inset:76px 0 0 0!important;
   z-index:0!important;
   display:block!important;
-  width:100%!important;
-  height:100%!important;
-  min-height:100%!important;
+  width:auto!important;
+  height:auto!important;
+  min-height:0!important;
   overflow:hidden!important;
   border-radius:0!important;
   opacity:.96!important;
@@ -3045,7 +3045,7 @@ body.is-core-view #page-content > .core-welcome-ambient{
   -webkit-mask-image:none!important;
   mask-image:none!important;
 }
-body.is-core-view #page-content > .core-welcome-ambient > .core-welcome-dots{
+body.is-core-view .main-area > .core-welcome-ambient > .core-welcome-dots{
   position:absolute!important;
   inset:0!important;
   display:block!important;
@@ -3053,14 +3053,19 @@ body.is-core-view #page-content > .core-welcome-ambient > .core-welcome-dots{
   height:100%!important;
   pointer-events:none!important;
 }
-body.is-core-view #page-content > #core-section{
+body.is-core-view .main-area > .topbar{
+  position:relative!important;
+  z-index:15!important;
+}
+body.is-core-view .main-area > #page-content{
   position:relative!important;
   z-index:1!important;
   background:transparent!important;
 }
-body.is-core-view #page-content #core-messages{
-  background:transparent!important;
+body.is-core-view #core-section,
+body.is-core-view #core-messages{
+  background-color:transparent!important;
 }
 @media(prefers-reduced-motion:reduce){
-  body.is-core-view #page-content > .core-welcome-ambient{animation:none!important}
+  body.is-core-view .main-area > .core-welcome-ambient{animation:none!important}
 }
