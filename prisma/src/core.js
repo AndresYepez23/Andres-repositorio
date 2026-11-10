@@ -451,10 +451,13 @@ function renderMessages({forceBottom=false}={}){
   list.classList.toggle('is-empty',messages.length===0);
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
-  // Re-rendering the chat must remove canvas listeners and its animation loop.
+  // Keep one animated dot field attached to the whole chat column.
+  // It must remain behind the transcript and composer, including after messages arrive.
+  if(!disposeWelcomeGrid){
+    const chatSurface=list.closest('.core-chat-column')||list;
+    disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
+  }
   if(answerRevealFrame){cancelAnimationFrame(answerRevealFrame);answerRevealFrame=0;}
-  disposeWelcomeGrid?.();
-  disposeWelcomeGrid=null;
   list.replaceChildren();
   if(!messages.length){
     const welcome=document.createElement('div');welcome.className='core-welcome';
@@ -462,7 +465,6 @@ function renderMessages({forceBottom=false}={}){
     const examples=document.createElement('div');examples.className='core-examples';
     examples.innerHTML=['Editar una imagen','Trabajar con un PDF','Crear algo nuevo'].map((x,i)=>'<button type="button" data-example="'+i+'">'+escapeHtml(x)+'</button>').join('');
     welcome.append(examples);list.append(welcome);
-    disposeWelcomeGrid=mountCoreWelcomeGrid(list);
     examples.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{const input=$('#core-input');input.value=button.textContent;input.focus();}));
   }
   for(const message of messages){
