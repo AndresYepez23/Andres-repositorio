@@ -807,9 +807,9 @@ assert.equal(shouldCommitSidebarSwipe({distance:50,drawerWidth:320,elapsed:70}),
  'Fast flicks should work without requiring a long drag');
 assert.equal(shouldCommitSidebarSwipe({distance:22,drawerWidth:320,elapsed:200}),false,
  'Small touches must not open the menu');
-const sidebarHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-assert.match(sidebarHtml,/id="sidebar-scroll-region"/);
-assert.match(sidebarHtml,/sidebar-scroll-region[\s\S]*?<\/div>\s*<div class="sidebar-bottom"/,
+const sidebarGestureHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(sidebarGestureHtml,/id="sidebar-scroll-region"/);
+assert.match(sidebarGestureHtml,/sidebar-scroll-region[\s\S]*?<\/div>\s*<div class="sidebar-bottom"/,
  'Footer is outside the independently scrollable navigation area');
 assert.match(stylesSource,/\.sidebar-scroll-region\s*\{/);
 assert.match(stylesSource,/-webkit-overflow-scrolling:touch/);
