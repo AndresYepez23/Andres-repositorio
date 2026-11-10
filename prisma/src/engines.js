@@ -174,6 +174,7 @@ async function imageTool(id,files,p,cb){
 }
 async function runVideo(id,files,p,cb){
  const {FFmpeg}=await load(FF),{fetchFile,toBlobURL}=await load(UTIL);const ff=new FFmpeg();
+ try{
  const base='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
  progress(cb,.12,'Cargando motor multimedia...');
  await ff.load({coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')});
@@ -231,6 +232,7 @@ async function runVideo(id,files,p,cb){
  }
  progress(cb,1,'Archivo listo.');
  return {...download(blob,fileName(files[0])+'-'+output),summary:'Procesamiento local en el navegador · '+formatBytesEngine(blob.size)};
+ }finally{try{ff.terminate();}catch{}}
 }
 function convertUnits(p){
  const v=Number(p.value);if(!Number.isFinite(v))throw Error('Introduce un valor válido.');
@@ -1532,11 +1534,13 @@ export async function runTool(id,files=[],p={},cb){
     return native();
   try{return await runVideo(id,files,p,cb);}
   catch(error){
-   if(error?.name==='SecurityError'||/the operation is insecure|worker|ffmpeg-core|failed to import ffmpeg|securityerror/i.test(String(error?.message||''))){
-    progress(cb,.09,'Motor WebAssembly restringido. Probando codificación nativa del navegador…');
-    return native();
+   // Failed codec/worker initialization should not cause a generic error:
+   // try the browser's local encoder once, without remote uploads or AI.
+   progress(cb,.09,'Motor WebAssembly no disponible. Probando codificación nativa…');
+   try{return await native();}
+   catch(nativeError){
+    throw Error('FFmpeg no pudo comprimir el archivo ('+localizedVideoError(error)+'). El codificador nativo tampoco completó el trabajo: '+localizedVideoError(nativeError));
    }
-   throw Error(localizedVideoError(error));
   }
  }
  if(id==='ai-webpage')return generateWebsite(p,cb);
