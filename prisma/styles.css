@@ -2189,3 +2189,57 @@ body.is-core-view #core-thinking {
   box-sizing:border-box;
  }
 }
+
+/* Mobile sidebar gestures and ChatGPT-like independent inertial scrolling.
+   The native vertical scroll never competes with horizontal edge gestures.
+   Do not adjust the app viewport or iPhone home-indicator geometry. */
+.sidebar-scroll-region{
+ flex:1 1 0;
+ min-height:0;
+ min-width:0;
+ overflow-y:auto;
+ overflow-x:hidden;
+ overscroll-behavior-y:contain;
+ -webkit-overflow-scrolling:touch;
+ touch-action:pan-y;
+}
+.sidebar-scroll-region>.side-label{
+ font-size:8px;
+ letter-spacing:.13em;
+ padding:0 10px 6px;
+}
+.sidebar-scroll-region>.side-label-spaced{margin-top:15px;padding-bottom:6px}
+.sidebar>.sidebar-bottom{
+ flex:0 0 auto;
+ margin-top:0!important;
+ padding-top:10px;
+ background:var(--panel);
+}
+@media(max-width:850px){
+ .sidebar{
+  overflow:hidden;
+  overscroll-behavior:contain;
+  transition:transform .24s cubic-bezier(.22,.7,.2,1),background .18s ease;
+ }
+ .sidebar-scroll-region{
+  scroll-behavior:auto;
+  overscroll-behavior-y:contain;
+ }
+ .sidebar.sidebar-gesture-preview{
+  pointer-events:none;
+  will-change:transform;
+ }
+ .sidebar-backdrop.sidebar-gesture-preview{
+  display:block;
+  position:fixed;
+  inset:0;
+  z-index:19;
+  background:rgba(4,6,11,.62);
+  border:0;
+  pointer-events:none;
+ }
+ .sidebar .sidebar-bottom{margin-top:0!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .sidebar{transition:none!important}
+}
