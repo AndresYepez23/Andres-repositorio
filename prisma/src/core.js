@@ -11,6 +11,7 @@ import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
+import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
 import { findConversations } from './conversation-search.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
@@ -524,6 +525,7 @@ function toolParamsHint(id){
     'image-blur':'Usa blur 1-30.',
     'image-pixelate':'Usa block 4-80; valor predeterminado 16.',
     'image-watermark':'Usa watermark con el texto real; si falta, pregunta.',
+    'video-compress':'Usa quality: small, balanced (por defecto) o quality. Necesita un vídeo real. Devuelve un archivo más ligero o informa claramente si el navegador no permite la compresión.',
     'video-speed':'Usa speed entre 0.5 y 2.0.',
     'video-resize':'Usa resolution: vertical, portrait, square, landscape o hd.',
     'video-rotate':'Usa direction: cw, ccw o 180.',
@@ -600,6 +602,7 @@ function validatePlan(plan){
    'video-thumbnail':['fotograma.jpg','image/jpeg'],
    'video-audio':['audio.wav','audio/wav'],
    'video-trim':['video.mp4','video/mp4'],
+   'video-compress':['video.mp4','video/mp4'],
    'video-mute':['video.mp4','video/mp4'],
    'video-speed':['video.mp4','video/mp4'],
    'video-resize':['video.mp4','video/mp4'],
@@ -693,6 +696,8 @@ function buildLocalPlan(userText){
       else if(has('imagen','imagenes','png'))selected=[pick('pdf-to-image')];
       else if(has('word','editable','docx','convierte'))selected=[pick('pdf-to-word')];
       else selected=[pick('pdf-text')];
+    }else if(isVideoFile(f)){
+      if(isVideoCompressionIntent(userText))selected=[pick('video-compress',{quality:'balanced'})];
     }else if(image){
       if(has('fondo','quitar fondo','transparente'))selected=[pick('image-bg')];
       else if(has('texto','leer','extraer','ocr','transcribir'))selected=[pick('image-ocr',{language:'spa'})];
@@ -1247,6 +1252,26 @@ async function requestPlan(userText){
     status('Herramientas relacionadas identificadas sin usar IA.','success');
     return;
   }
+  // Explicit compression of an uploaded video must NEVER be delegated to a
+  // text-model planner or an unrelated trim/resize tool. The user asked for a
+  // smaller downloadable video, not a chat explanation or arbitrary clipping.
+  if(isVideoCompressionIntent(userText)){
+    const videos=attachments.filter(isVideoFile);
+    if(!videos.length){
+      addMessage('assistant','Sí, puedo intentar comprimir el vídeo sin subirlo a ningún servidor. Adjunta el MP4, MOV o WebM y lo procesaré aquí. En iPhone la compatibilidad depende del codificador de Safari.');
+      status('Adjunta el vídeo que quieres comprimir.','info');
+      return;
+    }
+    const plan={message:'Voy a comprimir '+videos[0].name+' localmente, conservar el audio y comprobar que el archivo final sea más pequeño.',
+      steps:[{tool_id:'video-compress',params:{quality:'balanced'},
+        reason:'Compresión real del archivo de vídeo, sin IA ni subida'}],
+      userRequest:userText,needs_clarification:false,combineFinalFiles:true};
+    const steps=validatePlan(plan);
+    pendingPlan={plan,steps};
+    addMessage('assistant',plan.message);
+    await executePlan();
+    return;
+  }
   // Existing-image edits must be handled before generative-visual intent.
   // In particular, "prepara ESTA imagen para mi web" must never spend a
   // remote image-generation request, with or without the attachment.
@@ -1555,7 +1580,11 @@ async function executePlan(){
     }
   }catch(error){
     console.error(error);
-    addMessage('assistant','No pude completar toda la tarea: '+(error?.message||'error inesperado')+'.'+(executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.'),{results:executed,partial:true});
+    const videoError=steps.some(({tool})=>tool.id.startsWith('video-'));
+    const detail=videoError?localizedVideoError(error):String(error?.message||'error inesperado');
+    const extra=videoError?' El vídeo original sigue disponible para reintentar; no se ha generado un archivo comprimido falso.':
+      executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.';
+    addMessage('assistant','No pude completar la tarea: '+detail+'.'+extra,{results:executed,partial:true});
     status('Ejecución detenida.','error');
   }finally{
     executionActive=false;setBusy(false);
@@ -1689,7 +1718,9 @@ async function sendMessage(){
   const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
     messages.slice(-9,-1).some(item=>item.role==='user'&&isPdfEditIntent(item.content));
   const priorRequest=messages.slice(-9,-1).reverse().find(m=>m.role==='user'&&String(m.content||'').trim())?.content||'';
-  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':priorRequest?'Aquí está el archivo para la tarea anterior.':'Analiza los archivos adjuntos y recomienda operaciones útiles.');
+  const requestText=text||(awaitingPdfEdit?'Aquí está el archivo PDF para editar.':
+    priorRequest?'Continúa esta solicitud anterior con el archivo adjunto: '+priorRequest:
+    'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
   try{await requestPlan(requestText);}
   catch(error){

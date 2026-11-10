@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { localizedVideoError } from './video-compression.js';
 import { reconcileIosPwaViewport } from './pwa-viewport.js';
 import { readInferenceUsage } from './core-economy.js';
 import { initPrismaExperience } from './prisma-experience.js';
@@ -529,6 +530,7 @@ function buildFields(t){
     case 'citation-generator':return field('Autor o autores','author','text','Apellido, N.','Usa los datos tal como aparecen en la publicación.')+field('Año','year','text','2026')+field('Título','title','text','','Título del artículo, libro o recurso.')+field('Revista, editorial o sitio','source','text','','Nombre de la fuente.')+field('DOI (opcional)','doi','text','','Puedes pegar el DOI o su URL.')+field('URL (opcional)','url','url','','Enlace directo a la fuente.')+selectField('Formato de salida principal','style',[['apa','APA 7'],['vancouver','Vancouver'],['mla','MLA 9']],'apa');
     case 'flashcards-export':return textareaField('Conceptos y definiciones','text','Caries | Enfermedad multifactorial que afecta los tejidos duros del diente.\\nPulpa | Tejido conectivo vascularizado e inervado del diente.','Una tarjeta por línea. Separa el concepto y la definición con |, tabulación o ::. Descarga CSV compatible con Anki.');
     case 'qr-vcard':return field('Nombre completo','name','text','Andrés Simón Yépez')+field('Teléfono','phone','tel','','Incluye el indicativo del país.')+field('Correo electrónico','email','email','','')+field('Empresa u organización','organization','text','','Opcional.');
+    case 'video-compress':return selectField('Nivel de compresión','quality',[[ 'small','Archivo pequeño · máximo 720 px'],['balanced','Equilibrado · máximo 960 px'],['quality','Mayor calidad · máximo 1280 px']],'balanced')+'<div class="tool-hint">Se vuelve a codificar el vídeo localmente (puede tardar aproximadamente lo mismo que su duración en iPhone). Se intenta conservar el audio. Solo se ofrece el archivo si realmente pesa menos; ningún vídeo se envía a una API.</div>';
     case 'video-speed':return selectField('Velocidad de reproducción','speed',[['0.5','0,5× · Cámara lenta'],['0.75','0,75×'],['1.25','1,25×'],['1.5','1,5×'],['2','2× · Rápido']],'1.5')+'<div class="tool-hint">El video se vuelve a codificar para sincronizar imagen y audio. La duración final cambiará.</div>';
     case 'video-resize':return selectField('Formato de salida','resolution',[['vertical','Vertical · 1080 × 1920'],['portrait','Retrato · 1080 × 1350'],['square','Cuadrado · 1080 × 1080'],['landscape','Horizontal · 1920 × 1080'],['hd','HD · 1280 × 720']],'vertical')+'<div class="tool-hint">Conserva la proporción del video y completa el espacio sobrante con bandas. No estira la imagen.</div>';
     case 'video-rotate':return selectField('Orientación','direction',[['cw','90° a la derecha'],['ccw','90° a la izquierda'],['180','180°']],'cw');
@@ -1188,7 +1190,10 @@ async function executeCurrentTool(){
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
-    const params=await attachProviderCredentials(readParams());
+    // Video compression is entirely local. Do not wait for an unrelated
+    // provider-status fetch: iOS needs the user's gesture to unlock audio.
+    const params=toolAtStart.id==='video-compress'
+      ?readParams():await attachProviderCredentials(readParams());
     const result=await runTool(toolAtStart.id,filesAtStart,params,progressForOperation);
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     recordRecentTool(toolAtStart.id);
@@ -1198,8 +1203,10 @@ async function executeCurrentTool(){
   }catch(error){
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     console.error(error);
-    $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
-    toast(error?.message||'Ocurrió un error.','error');
+    const reason=toolAtStart.id.startsWith('video-')?localizedVideoError(error):
+      (error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.');
+    $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(reason)+'</div>';
+    toast(reason,'error');
   }finally{
     if(operationId!==activeOperation||currentTool!==toolAtStart)return;
     if($('#field-hfToken'))$('#field-hfToken').value='';
@@ -1213,8 +1220,10 @@ function renderOutput(result){
   if(result.blob)html+='<button class="mini-button" id="download-output">'+icon('download')+' Descargar</button>';
   if(result.text)html+='<button class="mini-button" id="copy-output">'+icon('copy')+' Copiar</button>';
   html+='</div></div>';
-  if(result.previewUrl&&!result.audio)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
-  if(result.audio&&result.previewUrl)html+='<audio class="output-audio" controls src="'+result.previewUrl+'"></audio>';
+  const mime=String(result.blob?.type||'');
+  if(result.previewUrl&&mime.startsWith('video/'))html+='<video class="output-preview" controls playsinline preload="metadata" src="'+result.previewUrl+'"></video>';
+  else if(result.previewUrl&&(result.audio||mime.startsWith('audio/')))html+='<audio class="output-audio" controls src="'+result.previewUrl+'"></audio>';
+  else if(result.previewUrl&&!result.audio)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
   if(result.printHtml)html+='<button class="mini-button" id="print-output">Abrir vista para guardar como PDF</button>';
   if(result.text)html+='<pre class="output-text" id="output-text">'+escapeHtml(result.text)+'</pre>';
   if(result.html)html+='<pre class="output-text">'+escapeHtml(result.html)+'</pre>';
