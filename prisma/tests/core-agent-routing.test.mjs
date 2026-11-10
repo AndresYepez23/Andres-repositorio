@@ -652,8 +652,9 @@ assert.match(resolveGeneralCapabilityQuestion('¿Puedes crear una imagen?')||'',
 assert.equal(resolveGeneralCapabilityQuestion('Crea una imagen de un paisaje'),null);
 const memoryReply=resolvePrismaProductQuestion('¿Tienes memoria?',[],{});
 assert.match(memoryReply,/navegador/);
-assert.match(memoryReply,/50 conversaciones/);
-assert.match(memoryReply,/60 mensajes/);
+assert.match(memoryReply,/IndexedDB/);
+assert.match(memoryReply,/sincronización/);
+assert.doesNotMatch(memoryReply,/50 conversaciones|60 mensajes/);
 assert.doesNotMatch(memoryReply,/no guardo información una vez que la sesión termina/i);
 assert.match(resolvePrismaProductQuestion('¿Qué recuerdas de mí?',[],{}),/conversación activa/);
 const sampleWeb='<!doctype html><html lang="es"><head><title>Mi web</title></head><body><main>Hola</main></body></html>';
