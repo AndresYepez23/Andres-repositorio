@@ -81,7 +81,11 @@ assert.match(coreSource,/clearGeneratedFiles\(\)/,'Clearing local history must a
 const stylesSource=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
 // The animated matrix is purely decorative and restricted to Core's empty state.
 const welcomeGridSource=readFileSync(new URL('../src/core-welcome-grid.js',import.meta.url),'utf8');
-assert.match(coreSource,/mountCoreWelcomeGrid\(welcome\)/,'Empty Core must mount its reactive dot matrix');
+assert.match(coreSource,/mountCoreWelcomeGrid\(list\)/,'The reactive dot matrix must cover the full chat viewport');
+assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===0\)/,'Core must mark its empty state for dedicated scroll behavior');
+assert.match(welcomeGridSource,/container\.append\(layer\)/,'The ambient canvas must be attached to the full-width messages container');
+assert.match(welcomeGridSource,/dotsDesktop=15,dotsTablet=17,dotsMobile=18/,'Dot density must be increased consistently across desktop, tablet and mobile');
+assert.match(welcomeGridSource,/width<=580\?dotsMobile:width<=900\?dotsTablet:dotsDesktop/,'Dot spacing must adapt to viewport width');
 assert.match(coreSource,/disposeWelcomeGrid\?\.\(\)/,'Chat changes must dispose the previous dot matrix animation');
 assert.match(coreSource,/if\(!messages\.length\)/,'The matrix must be restricted to the empty chat state');
 assert.match(welcomeGridSource,/pointermove/,'Desktop cursor must illuminate nearby dots');
@@ -92,6 +96,10 @@ assert.match(welcomeGridSource,/IntersectionObserver/,'Pause the matrix when off
 assert.match(welcomeGridSource,/visibilitychange/,'Pause when the page is hidden');
 assert.match(welcomeGridSource,/cancelAnimationFrame/,'Release animation resources on unmount');
 assert.doesNotMatch(welcomeGridSource,/\bfetch\s*\(|XMLHttpRequest|\bgetContext\(['"]webgl|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
+assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty/,'Empty Core state must receive dedicated layout styles');
+assert.match(stylesSource,/overflow-y:auto!important;\s*scrollbar-width:none!important/,'Empty welcome must not show a limiting scrollbar but remain scrollable if needed');
+assert.match(stylesSource,/core-messages\.is-empty::\-webkit-scrollbar/,'Empty welcome must hide WebKit scrollbars');
+assert.match(stylesSource,/inset:0!important;\s*z-index:0!important;\s*width:100%!important;\s*height:100%!important/,'Ambient canvas must fill the whole chat area');
 assert.match(stylesSource,/body\.is-core-view \.core-welcome-ambient/,'Dot matrix must be styled only inside Core');
 assert.match(stylesSource,/html\[data-theme="light"\] body\.is-core-view \.core-welcome-ambient/,'Dot matrix must support light mode');
 assert.match(stylesSource,/-webkit-mask-image:radial-gradient/,'Dot matrix must fade gently into the surrounding chat');
