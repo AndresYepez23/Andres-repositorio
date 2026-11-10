@@ -6,6 +6,7 @@ import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-rou
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { findConversations } from '../src/conversation-search.js';
+import { validateAccountPassword, accountAuthMessage, isAccountProviderAvailable } from '../src/prisma-account.js';
 import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX, installMobileSidebarGestures } from '../src/sidebar-gestures.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
@@ -883,5 +884,49 @@ dispatchTouch('touchend',touchPoint(100,265));
 assert.equal(mockSidebar.classList.contains('open'),false,'Swipe left must close sidebar');
 cleanupGestures();
 globalThis.window=previousWindow;
+
+
+// Account security + UX: independent Prisma Supabase Auth, genuine provider
+// gates and successful profile persistence. No real users are created by CI.
+assert.equal(validateAccountPassword('secure-pass-123'),null);
+assert.match(validateAccountPassword('1234567'),/8 caracteres/);
+assert.match(validateAccountPassword('secure-pass-123','secure-pass-124'),/no coinciden/);
+assert.equal(validateAccountPassword('secure-pass-123','secure-pass-123'),null);
+assert.match(accountAuthMessage({message:'Invalid login credentials'}),/incorrectos/);
+assert.match(accountAuthMessage({message:'Email not confirmed'}),/Confirma tu correo/);
+assert.match(accountAuthMessage({message:'The operation is insecure'}),/The operation is insecure|no se pudo/i);
+assert.equal(isAccountProviderAvailable({email:true,google:false,apple:false,phone:false},'google'),false);
+assert.equal(isAccountProviderAvailable({email:true,google:true},'google'),true);
+const prismaAccountCode=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
+const authConfigCode=readFileSync(new URL('../functions/api/auth/config.js',import.meta.url),'utf8');
+const accountHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+for(const method of ['signUp','signInWithPassword','signInWithOAuth','signInWithOtp','verifyOtp','resetPasswordForEmail','updateUser','onAuthStateChange']){
+ assert.ok(prismaAccountCode.includes('auth.'+method),method+' must call the real Supabase Auth SDK');
+}
+assert.match(prismaAccountCode,/api\.from\('prisma_profiles'\)/,'Profiles are stored in actual protected database');
+assert.match(prismaAccountCode,/onConflict:'user_id'/);
+assert.match(prismaAccountCode,/localStorage\.setItem\(SYNC_KEY,user\.id\)/,'Sync stays opt-in');
+assert.match(prismaAccountCode,/if\(!agreed\)return/,'Consent rejection must not sync');
+assert.match(prismaAccountCode,/if\(event==='PASSWORD_RECOVERY'\)/,'Recovery redirects must show password-change form');
+assert.match(prismaAccountCode,/if\(event==='SIGNED_OUT'\)/);
+assert.doesNotMatch(prismaAccountCode,/service_role|SUPABASE_SERVICE_ROLE_KEY/,'Never expose private DB key in browser');
+assert.match(authConfigCode,/PRISMA_AUTH_GOOGLE_ENABLED==='1'/);
+assert.match(authConfigCode,/PRISMA_AUTH_APPLE_ENABLED==='1'/);
+assert.match(authConfigCode,/PRISMA_AUTH_PHONE_ENABLED==='1'/);
+for(const id of ['auth-intro','auth-email-screen','auth-phone-screen','auth-reset-screen',
+ 'auth-recovery-screen','auth-confirm-screen','auth-welcome-screen','auth-account-screen',
+ 'auth-profile-form','auth-account-sync','auth-account-signout']){
+ assert.ok(accountHtml.includes('id="'+id+'"'),id+' must exist in the account experience');
+}
+assert.match(accountHtml,/id="auth-google" disabled/);
+assert.match(accountHtml,/id="auth-apple" disabled/);
+assert.match(accountHtml,/id="auth-phone" disabled/);
+assert.match(accountHtml,/autocomplete="one-time-code"/);
+assert.match(accountHtml,/autocomplete="new-password"/);
+assert.match(accountHtml,/aria-label="Acceso a Prisma Space"/);
+const accountStyles=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+assert.match(accountStyles,/#auth-modal \.auth-account-identity/);
+assert.match(accountStyles,/#auth-modal \.auth-password-wrap/);
+assert.match(accountStyles,/#auth-modal \.auth-screen\.hidden/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
