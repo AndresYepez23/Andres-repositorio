@@ -2889,3 +2889,58 @@ body.is-core-view .core-message-body.is-revealing::after{
 @media(prefers-reduced-motion:reduce){
  body.is-core-view .core-message-body.is-revealing::after{animation:none;opacity:0}
 }
+
+/* Prisma Core: prismatic welcome hero. Only affects the empty chat. */
+body.is-core-view #core-messages.is-empty > .core-welcome{
+ position:relative!important;z-index:1;display:flex;flex-direction:column;align-items:center;
+ width:min(100%,760px);max-width:760px!important;box-sizing:border-box;
+ padding:clamp(12px,2.4vh,25px) clamp(12px,3vw,28px)!important;
+}
+body.is-core-view #core-messages.is-empty{
+ background:radial-gradient(ellipse 75% 58% at 50% 47%,rgba(49,121,168,.11),transparent 75%);
+}
+body.is-core-view #core-messages.is-empty > .core-welcome-ambient{
+ background:radial-gradient(ellipse 70% 67% at 50% 45%,rgba(65,177,187,.12),transparent 76%),linear-gradient(160deg,rgba(11,23,39,.23),rgba(23,29,55,.23))!important;
+}
+body.is-core-view .core-prism-scene{
+ width:min(100%,330px);height:clamp(132px,23vh,210px);margin:5px auto 2px;
+ display:grid;place-items:center;pointer-events:none;filter:drop-shadow(0 0 22px rgba(88,162,226,.16));
+}
+body.is-core-view .core-prism-svg{display:block;width:100%;height:100%;overflow:visible}
+body.is-core-view .core-prism-shape{transform-origin:160px 103px;animation:core-prism-float 7s ease-in-out infinite}
+@keyframes core-prism-float{0%,100%{transform:translateY(2px) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+body.is-core-view #core-messages.is-empty .core-welcome-eyebrow{
+ color:#96dcd7;letter-spacing:.17em;font-size:clamp(9px,1.2vw,11px);
+}
+body.is-core-view #core-messages.is-empty .core-welcome h2{
+ font-size:clamp(26px,4vw,43px);line-height:1.16;letter-spacing:-.045em;
+ margin:4px auto 12px;max-width:100%;
+}
+body.is-core-view #core-messages.is-empty .core-welcome p{
+ max-width:450px;font-size:clamp(11px,1.3vw,13px);line-height:1.5;margin:0 auto 16px;
+}
+body.is-core-view #core-messages.is-empty .core-examples{
+ display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:560px;
+}
+body.is-core-view #core-messages.is-empty .core-examples button{
+ background:rgba(24,29,43,.88);border:1px solid rgba(147,171,204,.22);
+ color:#e5e9f5;border-radius:999px;padding:10px 14px;
+ font:600 clamp(10px,1.15vw,12px)/1.25 'DM Sans',sans-serif;
+ min-height:37px;transition:border-color .18s,background .18s,transform .18s;
+}
+body.is-core-view #core-messages.is-empty .core-examples button:hover{border-color:#8fded8;background:rgba(35,49,65,.95);transform:translateY(-1px)}
+body.is-core-view #core-messages.is-empty .core-examples button:focus-visible{outline:2px solid #91dfdb;outline-offset:3px}
+@media(max-width:620px){
+ body.is-core-view #core-messages.is-empty > .core-welcome{padding:10px 12px!important}
+ body.is-core-view .core-prism-scene{width:min(74vw,260px);height:clamp(116px,20dvh,168px);margin:4px auto 0}
+ body.is-core-view #core-messages.is-empty .core-welcome h2{font-size:clamp(26px,7vw,35px);margin:4px auto 10px}
+ body.is-core-view #core-messages.is-empty .core-welcome p{max-width:330px;margin-bottom:14px}
+ body.is-core-view #core-messages.is-empty .core-examples{gap:7px}
+ body.is-core-view #core-messages.is-empty .core-examples button{font-size:10px;min-height:35px;padding:8px 11px}
+}
+@media(max-height:690px){
+ body.is-core-view .core-prism-scene{height:110px}
+ body.is-core-view #core-messages.is-empty .core-welcome h2{font-size:clamp(24px,5vw,34px)}
+ body.is-core-view #core-messages.is-empty .core-welcome p{margin-bottom:10px}
+}
+@media(prefers-reduced-motion:reduce){body.is-core-view .core-prism-shape{animation:none}}
