@@ -88,13 +88,21 @@ async function captureWithRecorder(token){
    feedback('Transcribiendo tu voz…');
    const ext=type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm';
    try{
-    const body=new FormData();
-    body.append('file',new File([blob],'prisma-voz.'+ext,{type}));
-    body.append('provider','groq');body.append('model','whisper-large-v3-turbo');body.append('language','es');
-    const response=await fetch('/api/ai/transcribe',{method:'POST',body});
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(result.error||'La transcripción no está disponible ahora.');
-    if(token===generation)setTranscript(result.text);
+    let lastError='No hay motor de transcripción disponible.';
+    for(const option of [{provider:'groq',model:'whisper-large-v3-turbo'},{provider:'cloudflare',model:'@cf/openai/whisper-large-v3-turbo'}]){
+     if(token!==generation)return;
+     const body=new FormData();
+     body.append('file',new File([blob],'prisma-voz.'+ext,{type}));
+     body.append('provider',option.provider);body.append('model',option.model);body.append('language','es');
+     try{
+      const response=await fetch('/api/ai/transcribe',{method:'POST',body,signal:AbortSignal.timeout(45000)});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok||!result.text){lastError=result.error||'La transcripción no está disponible ahora.';continue;}
+      if(token===generation)setTranscript(result.text);
+      return;
+     }catch(error){lastError=String(error?.message||'motor no disponible');}
+    }
+    throw new Error(lastError);
    }catch(error){
     if(token===generation)feedback('No pude transcribir el audio: '+String(error?.message||'motor no disponible').slice(0,175)+'. Puedes dictar con el teclado.');
    }

@@ -13,19 +13,43 @@ export async function onRequestPost({request,env}){
  let form;
  try{form=await request.formData()}catch{return json({error:"Debes enviar un audio válido."},400);}
  const provider=String(form.get("provider")||"groq");
- const model=String(form.get("model")||(provider==="groq"?"whisper-large-v3-turbo":"openai/whisper-large-v3"));
- if(!["groq","huggingface"].includes(provider)||!allowedModel(provider,"audio",model))return json({error:"Modelo de transcripción no autorizado."},400);
+ const model=String(form.get("model")||(provider==="groq"?"whisper-large-v3-turbo":provider==="cloudflare"?"@cf/openai/whisper-large-v3-turbo":"openai/whisper-large-v3"));
+ if(!["groq","cloudflare","huggingface"].includes(provider)||!allowedModel(provider,"audio",model))return json({error:"Modelo de transcripción no autorizado."},400);
  const file=form.get("file");
  if(!file||typeof file.arrayBuffer!=="function")return json({error:"Adjunta un archivo de audio."},400);
  if(file.size<=0||file.size>10*1024*1024)return json({error:"Audio vacío o superior a 10 MB."},413);
  if(provider==="groq"&&!getCredentialSlots(env,"groq").length)return json({error:"Groq todavía no está conectado."},503);
+ if(provider==="cloudflare"&&!env.AI?.run)return json({error:"Cloudflare Whisper no está disponible en este entorno."},503);
+ if(provider==="cloudflare"&&file.size>4*1024*1024)return json({error:"Cloudflare Whisper admite audios de hasta 4 MB en este respaldo."},413);
  if(provider==="groq"){
   const hold=await getProviderHold(env,"groq-audio");
   if(hold)return json({error:hold.reason,provider:"groq",status:429},429);
  }
+ if(provider==="cloudflare"){
+  const hold=await getProviderHold(env,"cloudflare-audio");
+  if(hold)return json({error:hold.reason,provider:"cloudflare",status:429},429);
+ }
  if(provider==="huggingface"&&(env.HF_MEDIA_ENABLED!=="1"||!getCredentialSlots(env,"huggingface").length))return json({error:"La transcripción de Hugging Face está desactivada para proteger los créditos gratuitos."},503);
- const limit=await checkLimits(env,request,provider==="groq"?"groq-audio":"huggingface-image");
+ const limit=await checkLimits(env,request,provider==="groq"?"groq-audio":provider==="cloudflare"?"cloudflare-audio":"huggingface-image");
  if(limit)return json({error:limit.error,code:limit.code,retryAfter:limit.retryAfter},limit.status);
+ if(provider==="cloudflare"){
+  try{
+   const bytes=new Uint8Array(await file.arrayBuffer());
+   let binary="";
+   for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
+   const input={audio:btoa(binary),task:"transcribe"};
+   const language=String(form.get("language")||"");
+   if(/^[a-z]{2,8}$/i.test(language))input.language=language;
+   const result=await env.AI.run(model,input);
+   const transcript=String(result?.text||"").trim();
+   if(!transcript)return json({error:"Cloudflare Whisper no devolvió una transcripción.",provider:"cloudflare"},502);
+   return json({ok:true,provider:"cloudflare",model,text:transcript,word_count:result?.word_count||null});
+  }catch(error){
+   const quota=/quota|neuron|billing|credit|payment|insufficient/i.test(String(error?.message||""));
+   await setProviderHold(env,"cloudflare-audio",quota?"quota_exhausted":"provider_unavailable","Cloudflare Whisper está temporalmente indisponible.",quota?3600:60);
+   return json({error:"Cloudflare Whisper no pudo transcribir este audio. Puedes utilizar otro motor.",provider:"cloudflare"},502);
+  }
+ }
  let response;
  try{
   if(provider==="groq"){

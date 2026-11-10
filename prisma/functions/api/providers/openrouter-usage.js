@@ -1,5 +1,5 @@
 import { getOpenRouterLimits } from "../../_lib/openrouter.js";
-import { getProviderUsage } from "../../_lib/limits.js";
+import { getProviderUsage, OPENROUTER_VISITOR_LIMITS } from "../../_lib/limits.js";
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { getCredentialSlots } from "../../_lib/credential-pool.js";
 
@@ -47,6 +47,8 @@ export async function onRequestGet({ env }) {
     controls: {
       dailyVariable: "OPENROUTER_DAILY_LIMIT",
       perMinuteVariable: "OPENROUTER_PER_MINUTE_LIMIT",
+      perIpMinuteLimit: OPENROUTER_VISITOR_LIMITS.perMinute,
+      perIpDailyLimit: OPENROUTER_VISITOR_LIMITS.perDay,
       note: "Los topes internos pueden reducir, nunca superar, el límite gratuito real de la cuenta.",
     },
   }), { status: 200, headers });

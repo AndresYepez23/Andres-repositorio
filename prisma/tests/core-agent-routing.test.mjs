@@ -234,6 +234,13 @@ assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view #core-
 assert.match(stylesSource,/@media \(min-width:851px\) and \(pointer:fine\)\{\s*body\.is-core-view \.core-prism-scene\{\s*height:clamp\(132px,18vh,154px\);\s*margin:4px auto 24px;\s*display:flex;\s*align-items:flex-start;\s*justify-content:center;\s*flex:0 0 auto;/,'Desktop welcome prism must be compact and separated from the title');
 assert.match(stylesSource,/body\.is-core-view \.core-prism-svg\{\s*display:block;\s*width:min\(100%,232px\);\s*height:100%;\s*flex:0 0 auto;/,'Desktop prism artwork must be smaller without distortion');
 assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty \.core-welcome h2\{\s*margin:0 auto 12px;/,'Desktop welcome heading must begin below the compact prism');
+assert.match(readFileSync(new URL('../functions/_lib/limits.js',import.meta.url),'utf8'),/OPENROUTER_VISITOR_LIMITS=Object\.freeze\(\{perMinute:5,perDay:20\}\)/,'OpenRouter user ceilings must remain 5/min and 20/day');
+assert.match(readFileSync(new URL('../functions/_lib/limits.js',import.meta.url),'utf8'),/"cloudflare-audio":3/,'Cloudflare audio must have a separate daily quota');
+assert.match(readFileSync(new URL('../functions/api/ai/transcribe.js',import.meta.url),'utf8'),/provider==="cloudflare"\?"cloudflare-audio"/,'Whisper must use dedicated D1 limits');
+assert.match(readFileSync(new URL('../functions/api/ai/transcribe.js',import.meta.url),'utf8'),/env\.AI\.run\(model,input\)/,'Cloudflare Whisper must execute on a server-only AI binding');
+assert.match(readFileSync(new URL('../src/engines.js',import.meta.url),'utf8'),/hasCloudflareAudio\?\['cloudflare'\]/,'Transcription must allow Cloudflare as an automatic fallback');
+assert.match(readFileSync(new URL('../src/prisma-voice.js',import.meta.url),'utf8'),/\{provider:'cloudflare',model:'@cf\/openai\/whisper-large-v3-turbo'\}/,'Dictation must have a Cloudflare speech fallback');
+assert.match(readFileSync(new URL('../functions/api/providers/openrouter-usage.js',import.meta.url),'utf8'),/perIpDailyLimit: OPENROUTER_VISITOR_LIMITS\.perDay/,'OpenRouter limits UI must read live server safety ceilings');
 assert.match(stylesSource,/pointer-events:none/,'Welcome background must not intercept taps');
 
 // A short compliment about a previous song is a conversational turn, not a

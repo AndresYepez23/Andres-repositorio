@@ -63,6 +63,8 @@ export async function onRequestGet({ env }) {
   ));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
+  const blockedCloudflareAudio = limited ? await getProviderHold(env, "cloudflare-audio") : null;
+  const cloudflareAudioUsage = limited && env.AI?.run ? await getProviderUsage(env,"cloudflare-audio",Math.min(3,getProviderDailyLimit(env,"cloudflare-audio"))) : null;
   const pollinationsReady = Boolean(available.pollinations);
   const groqReady = Boolean(available.groq);
   const huggingfaceReady = Boolean(available.huggingface);
@@ -70,6 +72,7 @@ export async function onRequestGet({ env }) {
   const openrouterReady = Boolean(available.openrouter);
   const speechReady = pollinationsReady && !blockedSpeech;
   const groqAudioReady = groqReady && !blockedGroqAudio;
+  const cloudflareAudioReady = limited && Boolean(env.AI?.run) && !blockedCloudflareAudio && cloudflareAudioUsage?.daily?.remaining>0;
   const cloudflareReady = limited && Boolean(env.AI?.run) && dailyAvailable("cloudflare");
 
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
@@ -105,6 +108,8 @@ export async function onRequestGet({ env }) {
   if (env.AI?.run && usage.cloudflare?.daily?.remaining === 0) warnings.cloudflare = "Prisma alcanzó su presupuesto interno diario para Cloudflare Workers AI. Se renovará en el siguiente día UTC.";
   if (blockedSpeech) warnings.pollinationsAudio = blockedSpeech.reason;
   if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
+  if (blockedCloudflareAudio) warnings.cloudflareAudio = blockedCloudflareAudio.reason;
+  else if (cloudflareAudioUsage?.daily?.remaining===0) warnings.cloudflareAudio = "Cloudflare Whisper alcanzó las tres transcripciones compartidas del día.";
 
   const modelCatalog = modelsForUI();
   modelCatalog.chat.kilo = kiloModels;
@@ -176,6 +181,8 @@ export async function onRequestGet({ env }) {
       geminiImages: imageReady("gemini") && env.GEMINI_IMAGE_ENABLED === "1",
       huggingfaceAudio: huggingfaceReady && env.HF_MEDIA_ENABLED === "1",
       groqAudio: groqAudioReady,
+      cloudflareAudio: cloudflareAudioReady,
+      cloudflareAudioDaily: cloudflareAudioUsage?.daily||null,
       openrouterChat: openrouterReady,
     },
     models: {

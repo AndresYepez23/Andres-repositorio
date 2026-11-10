@@ -2,11 +2,12 @@ import { getOpenRouterLimits } from "./openrouter.js";
 import { getCredentialSlots } from "./credential-pool.js";
 
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
+export const OPENROUTER_VISITOR_LIMITS=Object.freeze({perMinute:5,perDay:20});
 export const LIMITS=Object.freeze({
  gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
  kilo:20,requesty:25,sensenova:25,zai:25,aihubmix:10,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
- "groq-audio":3,"pollinations-audio":2,"gemini-image":2
+ "groq-audio":3,"cloudflare-audio":3,"pollinations-audio":2,"gemini-image":2
 });
 
 const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,aihubmix:10});
@@ -88,14 +89,14 @@ export async function checkLimits(env,request,provider){
  const key=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("").slice(0,32);
  const {minute,day}=windows();
  const openrouterLimits=provider==="openrouter"?await getOpenRouterLimits(env):null;
- const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:getProviderDailyLimit(env,provider);
+ const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:provider==="cloudflare-audio"?Math.min(3,getProviderDailyLimit(env,provider)):getProviderDailyLimit(env,provider);
  // Distinct per-visitor anti-abuse limits allow the backup to respond
  // even if this visitor has already used their daily/minute allowance
  // with Prisma's main providers. Neither allowance is unlimited.
  const isBackup=provider==="openrouter";
  const scopes=[
-  [isBackup?"ip-minute:openrouter:"+key:"ip-minute:"+key,minute,isBackup?5:20,isBackup?"PROVIDER_MINUTE_LIMIT":"GLOBAL_LIMIT"],
-  [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?20:getVisitorDailyLimit(env),isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
+  [isBackup?"ip-minute:openrouter:"+key:"ip-minute:"+key,minute,isBackup?OPENROUTER_VISITOR_LIMITS.perMinute:20,isBackup?"PROVIDER_MINUTE_LIMIT":"GLOBAL_LIMIT"],
+  [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?OPENROUTER_VISITOR_LIMITS.perDay:getVisitorDailyLimit(env),isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
   ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
   ...(PROVIDER_MINUTE_LIMITS[provider] ? [["provider-minute:"+provider,minute,PROVIDER_MINUTE_LIMITS[provider],"PROVIDER_MINUTE_LIMIT"]] : []),

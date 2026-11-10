@@ -1015,32 +1015,34 @@ async function transcribeAudio(files,p,cb){
  const selected=p.provider||'auto';
  const hasGroqAudio=p.centralFeatures?.groqAudio===true||(p.centralFeatures?.groqAudio!==false&&!!p.centralProviders?.groq);
  const hasHfAudio=!!p.centralFeatures?.huggingfaceAudio;
+ const hasCloudflareAudio=!!p.centralFeatures?.cloudflareAudio;
  const personalToken=String(p.polliToken||'').trim();
  let order;
  if(selected==='auto'){
-  order=[...(hasGroqAudio?['groq']:[]),...(hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
+  order=[...(hasGroqAudio?['groq']:[]),...(hasCloudflareAudio?['cloudflare']:[]),...(hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
  }else if(selected==='pollinations'){
-  order=['pollinations',...(hasGroqAudio?['groq']:[]),...(hasHfAudio?['huggingface']:[])];
+  order=['pollinations',...(hasGroqAudio?['groq']:[]),...(hasCloudflareAudio?['cloudflare']:[]),...(hasHfAudio?['huggingface']:[])];
  }else{
-  order=[selected,...(selected!=='groq'&&hasGroqAudio?['groq']:[]),...(selected!=='huggingface'&&hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
+  order=[selected,...(selected!=='groq'&&hasGroqAudio?['groq']:[]),...(selected!=='cloudflare'&&hasCloudflareAudio?['cloudflare']:[]),...(selected!=='huggingface'&&hasHfAudio?['huggingface']:[]),...(personalToken?['pollinations']:[])];
  }
  const errors=[];
  for(const provider of [...new Set(order)]){
   try{
-   if(provider==='groq'||provider==='huggingface'){
+   if(provider==='groq'||provider==='cloudflare'||provider==='huggingface'){
     if(provider==='huggingface'&&!hasHfAudio)throw Error('Hugging Face Audio está desactivado para proteger los créditos.');
     if(provider==='groq'&&p.centralFeatures?.groqAudio===false)throw Error('Groq Whisper está temporalmente en pausa.');
+    if(provider==='cloudflare'&&!hasCloudflareAudio)throw Error('Cloudflare Whisper no tiene cuota disponible.');
     const form=new FormData();
     form.append('file',files[0]);
     form.append('provider',provider);
-    form.append('model',provider==='groq'?'whisper-large-v3-turbo':'openai/whisper-large-v3');
+    form.append('model',provider==='groq'?'whisper-large-v3-turbo':provider==='cloudflare'?'@cf/openai/whisper-large-v3-turbo':'openai/whisper-large-v3');
     if(p.language&&p.language!=='auto')form.append('language',p.language);
     progress(cb,.2,'Transcribiendo con '+provider+' mediante el backend protegido de Prisma…');
     const response=await fetch('/api/ai/transcribe',{method:'POST',body:form});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Object.assign(Error(data.error||'La transcripción no está disponible ('+response.status+').'),{status:response.status});
     progress(cb,1,'Transcripción lista.');
-    return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+provider+' · '+data.model};
+    return {text:data.text,summary:'Archivo: '+files[0].name+' · motor '+(data.provider||provider)+' · '+data.model};
    }
    if(provider==='pollinations'){
     if(!personalToken)continue;

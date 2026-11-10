@@ -96,7 +96,7 @@ export async function getCentralProviderStatus({ force = false } = {}) {
     warnings: {},
     configured: {},
     credentialSlots: {},
-    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,openrouterChat:false}
+    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,cloudflareAudio:false,openrouterChat:false}
   };
   const work = (async () => {
     const controller = new AbortController();
