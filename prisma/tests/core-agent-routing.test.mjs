@@ -13,7 +13,7 @@ import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX, instal
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
-import { imageAnalysisIntent } from '../src/core-image-analysis.js';
+import { imageAnalysisIntent, isBatchImageTranscription } from '../src/core-image-analysis.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHtml, WEBSITE_FOLLOWUP } from '../src/core-intent.js';
 import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
 import { validateAgentStepResult } from '../src/core-agent-guard.js';
@@ -103,9 +103,17 @@ assert.equal(imageAnalysisIntent('¿Qué significa esto?',uploadedPhoto),'interp
 assert.equal(imageAnalysisIntent('Extrae el texto de esta imagen',uploadedPhoto),'transcribe');
 assert.equal(imageAnalysisIntent('Transcribe el texto literalmente',uploadedPhoto),'transcribe');
 assert.equal(imageAnalysisIntent('Analiza este texto',[]),'','Un chat sin imágenes no debe activar OCR');
+assert.equal(isBatchImageTranscription('Sácame el texto de todas esas imágenes',[{name:'IMG_6717.png',type:'image/png'},{name:'IMG_6715.png',type:'image/png'},{name:'IMG_6716.png',type:'image/png'},{name:'IMG_6713.png',type:'image/png'},{name:'ScreenRecording.mp4',type:'video/mp4'}]),true,'Process every still image in a mixed upload');
+assert.equal(isBatchImageTranscription('Analiza esta foto',[{name:'foto.jpg',type:'image/jpeg'}]),false,'Analysis is not literal OCR');
+
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 assert.match(coreSource,/imageAnalysisIntent\(userText,attachments\)==='interpret'/,'Contextual image reading is routed before generic tool planning');
 assert.match(coreSource,/async function interpretAttachedImageText\(userText\)/,'OCR is interpreted using a dedicated model reasoning path');
+assert.match(coreSource,/async function transcribeAttachedImageBatch\(userText\)/,'Batch OCR must process each attached image');
+assert.match(coreSource,/for\(let i=0;i<images\.length;i\+\+\)/,'Every image is processed independently');
+assert.match(coreSource,/Archivos no procesados como imágenes/,'Video must be reported separately, not silently dropped');
+assert.match(coreSource,/attachments=\[\];renderAttachments\(\);\s*const fileInput=\$\('#core-file-input'\)/,'Submitted attachments must be removed from composer after processing');
+
 assert.match(coreSource,/No te limites a transcribir/,'Contextual analysis must not merely echo OCR');
 assert.match(coreSource,/no inventes elementos visuales/,'OCR analysis must not hallucinate unseen visual elements');
 assert.match(coreSource,/recordCompletedCoreTask\(\{fileTask:true\}\)/,'Successful file analysis consumes a file task');
@@ -138,6 +146,12 @@ assert.match(guestAccountSource,/prisma-guest-gate-open/,'Only the guest-limit d
 
 
 const generatedFileStorageSource=readFileSync(new URL('../src/core-result-storage.js',import.meta.url),'utf8');
+const engineCode=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(engineCode,/dimensiones:dimensions/,'Image metadata must use the declared dimensions variable');
+const chatBackendSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
+assert.match(chatBackendSource,/PROVIDER_AUTH/,'Provider authentication failures must be distinguished from 502 network errors');
+assert.match(chatBackendSource,/\[400,401,402,403,429\]\.includes\(status\)/,'Original authentication status must propagate to the client');
+
 assert.match(generatedFileStorageSource,/indexedDB\.open\(DB_NAME, 1\)/,'Generated videos must be retained in a dedicated IndexedDB store');
 assert.match(generatedFileStorageSource,/files\.createIndex\('chatId'/,'Results must be associated with their conversation for cleanup');
 assert.match(generatedFileStorageSource,/blob\s*\n\s*\}\)/,'Generated file storage must preserve binary Blob bytes');
