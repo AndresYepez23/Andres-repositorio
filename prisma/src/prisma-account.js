@@ -374,7 +374,7 @@ function withBusy(button,action){
  }).finally(()=>{button.disabled=false;});
 }
 async function signInProvider(provider){
- if(!api||!config.enabled||!isAccountProviderAvailable(config.features,provider)){
+ if(provider==='apple'||!api||!config.enabled||!isAccountProviderAvailable(config.features,provider)){
   info('Este método todavía no está configurado. Usa correo y contraseña.','error');
   return;
  }
