@@ -1190,7 +1190,10 @@ async function executeCurrentTool(){
   running=true;$('#modal-body').setAttribute('aria-busy','true');$('#modal-run').disabled=true;$('#modal-run').textContent='Procesando...';$('#tool-output').innerHTML='';
   updateProgress(.02,'Preparando herramienta...');
   try{
-    const params=await attachProviderCredentials(readParams());
+    // Video compression is entirely local. Do not wait for an unrelated
+    // provider-status fetch: iOS needs the user's gesture to unlock audio.
+    const params=toolAtStart.id==='video-compress'
+      ?readParams():await attachProviderCredentials(readParams());
     const result=await runTool(toolAtStart.id,filesAtStart,params,progressForOperation);
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     recordRecentTool(toolAtStart.id);
