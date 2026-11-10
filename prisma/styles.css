@@ -2650,3 +2650,19 @@ body.is-core-view #core-messages.is-empty .core-welcome-ambient{
   }
 }
 
+
+
+/* Prisma Core welcome: shorter helper copy with a clearer, softer foreground. */
+body.is-core-view .core-welcome p{
+  max-width:680px;
+  margin:0 auto 17px;
+  color:color-mix(in srgb,var(--text) 76%,var(--accent) 24%);
+  font-weight:500;
+  line-height:1.5;
+}
+@media(max-width:620px){
+  body.is-core-view .core-welcome p{
+    margin-bottom:14px;
+    line-height:1.45;
+  }
+}
