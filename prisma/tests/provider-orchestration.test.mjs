@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rankProviders, ROUTE_ORDER } from '../src/provider-routing.js';
+import { rankProviders, adaptiveProviderDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialHealthSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
 
@@ -40,6 +40,15 @@ function mockD1() {
     }
   };
 }
+
+assert.equal(adaptiveProviderDeadline({baseMs:21000,minMs:12000}),21000,
+  'Providers without history retain the normal timeout');
+assert.equal(adaptiveProviderDeadline({averageMs:1000,baseMs:21000,minMs:12000}),12000,
+  'Fast engines receive a shorter deadline so slow fallback can start sooner');
+assert.equal(adaptiveProviderDeadline({averageMs:5000,baseMs:21000,minMs:12000}),15500,
+  'Observed latency informs the per-engine deadline');
+assert.equal(adaptiveProviderDeadline({averageMs:60000,baseMs:21000,minMs:12000}),21000,
+  'A deadline never exceeds the task safety ceiling');
 
 const now=Date.now();
 const healthyOrder=rankProviders({task:'general',available:()=>true,now});

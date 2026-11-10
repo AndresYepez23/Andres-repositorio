@@ -135,6 +135,14 @@ export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_O
   }).sort((a,b)=>a.score-b.score).map(item=>item.name);
 }
 
+export function adaptiveProviderDeadline({averageMs=0,baseMs=21000,minMs=12000,multiplier=2.5,overheadMs=3000}={}) {
+  const base=Number.isFinite(Number(baseMs))?Math.max(1000,Number(baseMs)):21000;
+  const minimum=Number.isFinite(Number(minMs))?Math.max(1000,Math.min(base,Number(minMs))):Math.min(base,12000);
+  const observed=Math.max(0,Number(averageMs)||0);
+  if(!observed)return base;
+  return Math.max(minimum,Math.min(base,Math.round(observed*multiplier+overheadMs)));
+}
+
 export function selectTaskModel(provider,task="general",tier="balanced",catalog=[]) {
   const selectedTier=["fast","balanced","smart"].includes(tier)?tier:"balanced";
   const desired=(MODEL_BY_TASK[task]?.[provider]||DEFAULT_MODELS[provider]||{})[selectedTier]||"";

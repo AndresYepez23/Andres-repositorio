@@ -1,4 +1,4 @@
-import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
+import { rankProviders, selectTaskModel, adaptiveProviderDeadline, ROUTE_ORDER } from './provider-routing.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { extractWebsiteHtml } from './core-intent.js';
 import { compressVideoNative, preferNativeVideoCompression, localizedVideoError } from './video-compression.js';
@@ -787,7 +787,7 @@ function reportModelAttempt(provider,task,success,elapsed,error){
    at:stamp,
    successes:success?Math.min(12,(previous.successes||0)+1):0,
    failures:success?0:Math.min(4,(previous.failures||0)+1),
-   averageMs:Math.round(success?(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed):(previous.averageMs||elapsed)),
+   averageMs:Math.round(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed),
    coolingUntil:success?0:stamp+delay
   };
   // Expire stale health observations to avoid keeping old failures indefinitely.
@@ -845,6 +845,7 @@ async function generateText(p,cb){
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
  const errors=[],attempted=[];
  let lastLimitError=null;
+ const routeMemory=getRouteMemory();
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>{
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
     preferred!=='auto'&&String(p.polliToken||'').trim());
@@ -858,7 +859,7 @@ async function generateText(p,cb){
    p.centralModelCatalog?.chat?.kilo?.some(model=>!String(model.id||'').toLowerCase().startsWith('nvidia/'))
   );
   return true;
- },getRouteMemory());
+ },routeMemory);
  // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
  const ordered=rankedCandidates.filter(provider=>provider!=='openrouter');
  if(rankedCandidates.includes('openrouter'))ordered.push('openrouter');
@@ -879,7 +880,14 @@ async function generateText(p,cb){
   const provider=candidates[candidateIndex];
   const remaining=totalDeadline-(Date.now()-startedAt);
   if(remaining<=2500){errors.push('La búsqueda de un motor superó el tiempo total de espera.');break;}
-  let requestDeadline=Math.min(individualDeadline,remaining);
+  const routeRecord=routeMemory[provider+':'+task]||{};
+  const minDeadline=task==='planner'?10000:task==='songwriting'?16000:12000;
+  const adaptiveDeadline=adaptiveProviderDeadline({
+   averageMs:Number(routeRecord.averageMs)||0,
+   baseMs:individualDeadline,
+   minMs:minDeadline
+  });
+  let requestDeadline=Math.min(adaptiveDeadline,remaining);
   if(!['gemini','huggingface','groq','cloudflare','pollinations','openrouter','kilo','requesty','sensenova','zai','aihubmix'].includes(provider))continue;
   if(provider==='pollinations'&&!p.centralProviders?.pollinations&&!String(p.polliToken||'').trim())continue;
   if(provider!=='pollinations'&&!p.centralProviders?.[provider]){
