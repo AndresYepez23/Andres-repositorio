@@ -15,3 +15,4 @@ binding = "AI"
 [vars]
 PRISMA_SUPABASE_URL = "https://hyoxywiwhnhfekakhivp.supabase.co"
 PRISMA_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3I8riH969aihitAxy_qC4w_Vfpuacpd"
+PRISMA_AUTH_GOOGLE_ENABLED = "1"
