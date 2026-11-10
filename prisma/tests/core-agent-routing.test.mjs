@@ -187,6 +187,11 @@ assert.match(stylesSource,/body\.is-core-view \.core-guest-register-card\{/,'Sig
 assert.match(stylesSource,/flex:0 0 auto/,'Signup banner occupies its own flow area without covering the messages');
 assert.match(stylesSource,/body\.prisma-guest-gate-open #auth-modal\.auth-backdrop/,'Mobile limit modal uses a bottom-sheet variant');
 const chatHtmlSource=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const buildSource=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
+// The welcome visuals must be shipped in production, not merely referenced locally.
+assert.match(chatHtmlSource,/<link rel="stylesheet" href="\.\/aurora-system\.css">/,'Aurora stylesheet must be referenced by the application');
+assert.match(buildSource,/"styles\.css", "aurora-system\.css"/,'Production build must publish the Aurora stylesheet');
+
 assert.match(chatHtmlSource,/id="core-guest-register-card"[\s\S]*?id="core-guest-register-login"[\s\S]*?id="core-guest-register-signup"/,'Signup card has accessible distinct account actions');
 assert.ok(chatHtmlSource.indexOf('id="core-guest-register-card"')<chatHtmlSource.indexOf('id="core-composer"'),'Signup card must be above composer');
 assert.ok(chatHtmlSource.indexOf('id="core-guest-register-card"')>chatHtmlSource.indexOf('id="core-messages"'),'Signup card must not appear inside message-scrolling region');
@@ -222,6 +227,10 @@ assert.match(stylesSource,/body\.is-core-view \.main-area > \.topbar\{\s*positio
 assert.match(stylesSource,/body\.is-core-view \.main-area > #page-content\{\s*position:relative!important;\s*z-index:1!important;/,'Chat content must remain above the full-width animated background');
 assert.match(stylesSource,/body\.is-core-view #core-section,[\s\S]*?background-color:transparent!important;/,'Core sections must not obscure the full-width background');
 assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view \.main-area > \.core-welcome-ambient/,'Full-width background must also be styled in light mode');
+assert.match(auroraSource,/:root\[data-theme="light"\] body:not\(\.is-core-view\) \.hero-section\{[\s\S]*?linear-gradient\(145deg,#f9fcff/,'Explore hero must use an actual light background when light mode is active');
+assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view #core-messages\.is-empty \.core-welcome-eyebrow\{\s*color:#277e82;/,'Light mode Core kicker must have readable contrast');
+assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view #core-messages\.is-empty \.core-examples button\{\s*background:linear-gradient/,'Light mode Core actions must not retain their dark buttons');
+
 assert.match(stylesSource,/@media \(min-width:851px\) and \(pointer:fine\)\{\s*body\.is-core-view \.core-prism-scene\{\s*height:clamp\(132px,18vh,154px\);\s*margin:4px auto 24px;\s*display:flex;\s*align-items:flex-start;\s*justify-content:center;\s*flex:0 0 auto;/,'Desktop welcome prism must be compact and separated from the title');
 assert.match(stylesSource,/body\.is-core-view \.core-prism-svg\{\s*display:block;\s*width:min\(100%,232px\);\s*height:100%;\s*flex:0 0 auto;/,'Desktop prism artwork must be smaller without distortion');
 assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty \.core-welcome h2\{\s*margin:0 auto 12px;/,'Desktop welcome heading must begin below the compact prism');

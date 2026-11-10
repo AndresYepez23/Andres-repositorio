@@ -591,3 +591,57 @@ body:not(.is-core-view) .main-footer{margin-top:40px;border-top-color:rgba(146,1
 @media(max-width:370px){
  body:not(.is-core-view) .tool-grid{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* Light-mode continuity: Explore hero and Prisma Core welcome use the same
+   cyan / sky / lavender design language. Dark mode remains unchanged. */
+:root[data-theme="light"] body:not(.is-core-view) .hero-section{
+ background:
+  radial-gradient(ellipse 64% 75% at 77% 52%,rgba(84,174,219,.16),transparent 84%),
+  radial-gradient(ellipse 60% 76% at 93% 86%,rgba(158,135,215,.13),transparent 85%),
+  linear-gradient(145deg,#f9fcff 0%,#eaf5fc 54%,#f2edfb 100%);
+ border-color:rgba(69,129,162,.22);
+ box-shadow:0 14px 42px rgba(43,92,142,.09),inset 0 1px rgba(255,255,255,.94);
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-copy h1{
+ color:#1c293d;
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-copy h1 em{
+ background:linear-gradient(100deg,#167c79 0%,#367cb0 51%,#755cb2 100%);
+ background-clip:text;-webkit-background-clip:text;
+ color:transparent;-webkit-text-fill-color:transparent;
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-actions .button-quiet{
+ background:rgba(255,255,255,.78);
+ color:#28526f;
+ border-color:rgba(71,126,164,.25);
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-actions .button-quiet:hover{
+ background:#fff;
+ border-color:#5c9cb2;
+}
+:root[data-theme="light"] body:not(.is-core-view) .orbit{
+ border-color:rgba(65,119,171,.24);
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-aurora-particles{
+ opacity:.18;
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-eyebrow{
+ color:#277e82;
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-gradient{
+ background:linear-gradient(105deg,#188380,#397faf 52%,#7661b3);
+ background-clip:text;-webkit-background-clip:text;
+ color:transparent;-webkit-text-fill-color:transparent;
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-examples button{
+ background:linear-gradient(125deg,rgba(255,255,255,.94),rgba(239,247,252,.94));
+ color:#29415b;
+ border:1px solid rgba(79,128,163,.24);
+ box-shadow:0 3px 12px rgba(55,106,153,.065);
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-examples button:hover{
+ background:linear-gradient(125deg,#fff,#e5f4f5);
+ color:#1d696c;
+ border-color:rgba(38,135,133,.42);
+}
