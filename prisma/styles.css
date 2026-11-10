@@ -3020,31 +3020,32 @@ body:not(.is-core-view) .tool-card{border-radius:16px;min-height:170px}
 @media(prefers-reduced-motion:reduce){body:not(.is-core-view) .hero-art *,body:not(.is-core-view) .goal-card,body:not(.is-core-view) .workflow-card{animation:none!important;transition:none!important}}
 
 
-/* Prisma Core: persistent animated Aurora dot field across the complete chat surface.
-   The canvas is mounted once on .core-chat-column, not inside the empty-state welcome. */
-body.is-core-view .core-chat-column{
-  position:relative;
+/* Prisma Core: animated Aurora field across the entire chat viewport below the top bar.
+   The canvas is mounted on #page-content so it spans the empty side margins too. */
+body.is-core-view #page-content{
+  position:relative!important;
   isolation:isolate;
 }
-body.is-core-view .core-chat-column > .core-welcome-ambient{
+body.is-core-view #page-content > .core-welcome-ambient{
   position:absolute!important;
   inset:0!important;
   z-index:0!important;
+  display:block!important;
   width:100%!important;
   height:100%!important;
   min-height:100%!important;
-  overflow:hidden;
+  overflow:hidden!important;
   border-radius:0!important;
   opacity:.96!important;
   pointer-events:none!important;
-  user-select:none;
+  user-select:none!important;
   background:
     radial-gradient(ellipse 76% 70% at 50% 43%,rgba(58,157,216,.12),transparent 88%),
     radial-gradient(ellipse 52% 66% at 66% 57%,rgba(115,101,205,.075),transparent 90%);
   -webkit-mask-image:none!important;
   mask-image:none!important;
 }
-body.is-core-view .core-chat-column > .core-welcome-ambient > .core-welcome-dots{
+body.is-core-view #page-content > .core-welcome-ambient > .core-welcome-dots{
   position:absolute!important;
   inset:0!important;
   display:block!important;
@@ -3052,15 +3053,14 @@ body.is-core-view .core-chat-column > .core-welcome-ambient > .core-welcome-dots
   height:100%!important;
   pointer-events:none!important;
 }
-body.is-core-view .core-chat-column > #core-messages{
-  position:relative;
-  z-index:1;
+body.is-core-view #page-content > #core-section{
+  position:relative!important;
+  z-index:1!important;
   background:transparent!important;
 }
-body.is-core-view .core-chat-column > .core-composer{
-  position:relative;
-  z-index:1;
+body.is-core-view #page-content #core-messages{
+  background:transparent!important;
 }
 @media(prefers-reduced-motion:reduce){
-  body.is-core-view .core-chat-column > .core-welcome-ambient{animation:none!important}
+  body.is-core-view #page-content > .core-welcome-ambient{animation:none!important}
 }
