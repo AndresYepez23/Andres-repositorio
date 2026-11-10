@@ -1290,7 +1290,11 @@ function renderOutput(result){
   const mime=String(result.blob?.type||'');
   if(result.previewUrl&&mime.startsWith('video/'))html+='<video class="output-preview" controls playsinline preload="metadata" src="'+result.previewUrl+'"></video>';
   else if(result.previewUrl&&(result.audio||mime.startsWith('audio/')))html+='<audio class="output-audio" controls src="'+result.previewUrl+'"></audio>';
-  else if(result.previewUrl&&!result.audio)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
+  // ZIP/PDF downloads cannot be rendered as images.
+  else if(result.previewUrl&&(mime.startsWith('image/')||(!result.blob&&!result.audio)))
+   html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
+  else if(result.blob&&['application/pdf','application/zip','application/x-zip-compressed'].includes(mime))
+   html+='<p class="tool-hint">Archivo descargable listo. Selecciona Descargar para guardarlo.</p>';
   if(result.printHtml)html+='<button class="mini-button" id="print-output">Abrir vista para guardar como PDF</button>';
   if(result.text)html+='<pre class="output-text" id="output-text">'+escapeHtml(result.text)+'</pre>';
   if(result.html)html+='<pre class="output-text">'+escapeHtml(result.html)+'</pre>';
