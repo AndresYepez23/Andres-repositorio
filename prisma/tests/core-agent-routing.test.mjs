@@ -79,6 +79,23 @@ assert.match(coreSource,/document\.body\.appendChild\(a\);a\.click\(\);a\.remove
 assert.match(coreSource,/navigator\.share\(\{files:\[nativeFile\]\}\)/,'Mobile users should have a native save/share fallback');
 assert.match(coreSource,/clearGeneratedFiles\(\)/,'Clearing local history must also clear locally generated files');
 const stylesSource=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+// The animated matrix is purely decorative and restricted to Core's empty state.
+const welcomeGridSource=readFileSync(new URL('../src/core-welcome-grid.js',import.meta.url),'utf8');
+assert.match(coreSource,/mountCoreWelcomeGrid\(welcome\)/,'Empty Core must mount its reactive dot matrix');
+assert.match(coreSource,/disposeWelcomeGrid\?\.\(\)/,'Chat changes must dispose the previous dot matrix animation');
+assert.match(coreSource,/if\(!messages\.length\)/,'The matrix must be restricted to the empty chat state');
+assert.match(welcomeGridSource,/pointermove/,'Desktop cursor must illuminate nearby dots');
+assert.match(welcomeGridSource,/pointerleave/,'Cursor reaction must fade on exit');
+assert.match(welcomeGridSource,/pointerdown/,'Mobile touch must have a lightweight interaction');
+assert.match(welcomeGridSource,/prefers-reduced-motion: reduce/,'Respect reduced-motion accessibility');
+assert.match(welcomeGridSource,/IntersectionObserver/,'Pause the matrix when offscreen');
+assert.match(welcomeGridSource,/visibilitychange/,'Pause when the page is hidden');
+assert.match(welcomeGridSource,/cancelAnimationFrame/,'Release animation resources on unmount');
+assert.doesNotMatch(welcomeGridSource,/fetch\(|XMLHttpRequest|WebGL|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
+assert.match(stylesSource,/body\.is-core-view \.core-welcome-ambient/,'Dot matrix must be styled only inside Core');
+assert.match(stylesSource,/html\[data-theme="light"\] body\.is-core-view \.core-welcome-ambient/,'Dot matrix must support light mode');
+assert.match(stylesSource,/-webkit-mask-image:radial-gradient/,'Dot matrix must fade gently into the surrounding chat');
+assert.match(stylesSource,/pointer-events:none/,'Welcome background must not intercept taps');
 
 // A short compliment about a previous song is a conversational turn, not a
 // new songwriting request. Explicitly asking for another song remains an action.
