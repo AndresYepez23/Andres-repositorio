@@ -286,6 +286,7 @@ function setupProfileMenu(){
     if(!window.confirm('Esto borrará tus conversaciones, favoritos y preferencias locales de este dispositivo. No se puede deshacer. ¿Continuar?'))return;
     ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
     ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
+    document.dispatchEvent(new Event('prisma:clear-local-history'));
     closeProfileMenu();location.reload();
   });
 }
