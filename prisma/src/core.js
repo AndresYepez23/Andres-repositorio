@@ -1743,8 +1743,9 @@ export function initPrismaCore(){
   // Chat search lives in a temporary overlay; only the new-chat action
   // occupies the persistent sidebar. No empty row remains in the drawer.
   const chatSearch=$('#core-history-search');
+  const searchField=chatSearch?.closest('.core-history-search');
   const newChatButton=$('#core-history-new');
-  if(chatSearch&&searchOverlaySlot)searchOverlaySlot.append(chatSearch);
+  if(searchField&&searchOverlaySlot)searchOverlaySlot.append(searchField);
   if(newChatButton&&sidebarNewChatSlot)sidebarNewChatSlot.append(newChatButton);
   initImageEditor();
   initPrismaVoice();
