@@ -98,12 +98,24 @@ assert.equal(readGuestTaskCount({getItem:()=>{throw Error('Storage disabled');}}
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 assert.match(coreSource,/fileTask:isGuestFileTask\(\{text,attachments\}\)/,'Only requests involving files are blocked after trial');
 assert.match(coreSource,/openPrismaAuthForGuestLimit\(\)/,'Core must open its real Supabase login/sign-up modal when the trial ends');
+assert.match(coreSource,/prisma:guest-gate-closed/,'Returning from registration should show in-chat invitation');
+assert.match(coreSource,/guestNoticeDismissed=true/,'In-chat invitation must be dismissible');
+assert.match(coreSource,/core-guest-register-card/,'In-chat invitation must be separately rendered');
+assert.match(coreSource,/openPrismaAuthForGuestLimit\('signup'\)/,'Banner registration action opens real signup flow');
+assert.match(coreSource,/openPrismaAuthForGuestLimit\('login'\)/,'Banner login action opens real login flow');
+assert.match(coreSource,/card\.classList\.toggle\('hidden',!visible\)/,'Banner must disappear when authenticated or dismissed');
+
 assert.match(coreSource,/input\.blur\(\);\s*openPrismaAuthForGuestLimit\(\);\s*return/,'Blocked task must keep the message and attachments untouched');
 assert.match(coreSource,/recordCompletedCoreTask\(\{fileTask:true\}\)/,'Successful file creations count toward the trial');
 assert.match(coreSource,/successful=true;[\s\S]*?recordCompletedCoreTask\(\{fileTask:attachments\.length>0/,'Only file-related workflows count once after successful completion');
 const guestAccountSource=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
 assert.match(guestAccountSource,/export function isPrismaAuthenticated\(\)/,'Auth check must use live Supabase session state');
 assert.match(guestAccountSource,/export function openPrismaAuthForGuestLimit\(\)/,'Guest gate must open account signup or login');
+assert.match(guestAccountSource,/prisma:guest-gate-closed/,'Auth modal closing must notify the chat');
+assert.match(guestAccountSource,/prisma:guest-gate-open/,'Auth modal opening must temporarily hide the in-chat banner');
+assert.match(guestAccountSource,/if\(mode==='signup'\|\|mode==='login'\)/,'Signup and login must use the existing account screens');
+assert.match(guestAccountSource,/prisma-guest-gate-open/,'Only the guest-limit dialog should use mobile sheet styling');
+
 
 const generatedFileStorageSource=readFileSync(new URL('../src/core-result-storage.js',import.meta.url),'utf8');
 assert.match(generatedFileStorageSource,/indexedDB\.open\(DB_NAME, 1\)/,'Generated videos must be retained in a dedicated IndexedDB store');
@@ -116,6 +128,14 @@ assert.match(coreSource,/document\.body\.appendChild\(a\);a\.click\(\);a\.remove
 assert.match(coreSource,/navigator\.share\(\{files:\[nativeFile\]\}\)/,'Mobile users should have a native save/share fallback');
 assert.match(coreSource,/clearGeneratedFiles\(\)/,'Clearing local history must also clear locally generated files');
 const stylesSource=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+assert.match(stylesSource,/body\.is-core-view \.core-guest-register-card\{/,'Signup banner is styled within the Core chat');
+assert.match(stylesSource,/flex:0 0 auto/,'Signup banner occupies its own flow area without covering the messages');
+assert.match(stylesSource,/body\.prisma-guest-gate-open #auth-modal\.auth-backdrop/,'Mobile limit modal uses a bottom-sheet variant');
+const chatHtmlSource=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(chatHtmlSource,/id="core-guest-register-card"[\s\S]*?id="core-guest-register-login"[\s\S]*?id="core-guest-register-signup"/,'Signup card has accessible distinct account actions');
+assert.ok(chatHtmlSource.indexOf('id="core-guest-register-card"')<chatHtmlSource.indexOf('id="core-composer"'),'Signup card must be above composer');
+assert.ok(chatHtmlSource.indexOf('id="core-guest-register-card"')>chatHtmlSource.indexOf('id="core-messages"'),'Signup card must not appear inside message-scrolling region');
+
 // The animated matrix is purely decorative and restricted to Core's empty state.
 const welcomeGridSource=readFileSync(new URL('../src/core-welcome-grid.js',import.meta.url),'utf8');
 assert.match(coreSource,/Cuéntame qué necesitas o adjunta un archivo\. Prisma organiza el resto\./,'Welcome helper copy must stay concise and explain the assistant flow');
