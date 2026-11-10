@@ -45,3 +45,16 @@
 - Mantener disponible el planificador multimodelo y el ranking semántico local opcional, pero no convertir una operación gratuita en una llamada obligatoria a un modelo.
 
 **Meta de producto:** Prisma Core debe actuar como un agente que entiende el trabajo completo y usa el mejor conjunto de herramientas, con el menor consumo que mantenga resultados correctos, verificables y seguros.
+
+
+## Core 4: contexto adaptativo, respaldos y uso verificable (noviembre de 2026)
+
+- Para preguntas breves e independientes, Core envía un historial acotado; para correcciones de letras, código y borradores previos, conserva un tramo más largo del resultado anterior. El historial sigue aislado por conversación y navegador.
+- La lista de los 11 proveedores y el catálogo de herramientas no se reenvían en cada conversación normal: solo se incluyen al preguntar específicamente por capacidades de Prisma.
+- El modo automático prueba **un solo modelo en condiciones normales**. Tras fallos auténticos, utiliza un máximo de cinco proveedores primarios por defecto, o seis en razonamiento y código, y conserva OpenRouter al final cuando esté disponible. Los cupos de cada proveedor, los límites globales y la duración máxima siguen aplicándose.
+- La selección manual respeta el proveedor elegido. Solo se habilitan respaldos de otros proveedores cuando el usuario permite explícitamente `allowFallback`.
+- No se retransmiten solicitudes claramente inválidas a múltiples proveedores. Los fallos de cuota de un proveedor sí pueden ir a otro autorizado dentro del presupuesto general.
+- Las claves personales de Pollinations Connect **no se consumen en el chat automático de Core**. Su uso permanece deliberado en los flujos que permitan elegir Pollinations como motor personal.
+- El Laboratorio IA presenta, además de los presupuestos globales de Cloudflare, un contador en la sesión actual del navegador. Solo se almacenan cantidades de respuestas y tokens realmente informados por los proveedores. **No se guardan prompts, archivos, respuestas ni credenciales** en esa métrica. Tokens no equivalen a dólares facturados.
+- Un balance económico real entre proveedores requerirá tarifas verificadas, coste por modalidad/modelo y datos agregados del backend; esta versión no simula esos precios ni afirma optimización de dinero en todos los proveedores.
+- Pruebas automáticas: `node --test prisma/tests/core-agent-routing.test.mjs`. Antes de certificar, comprobar inferencias reales y móvil sin gastar cuotas o saldo no autorizados.

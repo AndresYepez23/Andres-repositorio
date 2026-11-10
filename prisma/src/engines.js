@@ -1,4 +1,5 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
+import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { selectImageCandidates, imageFailureDecision } from './image-routing.js';
 import { runAdvancedTextTool } from './advanced-text-tools.js';
 import { LOCAL_CREATOR_TOOL_IDS, runLocalCreatorTool } from './local-creator-tools.js';
@@ -804,7 +805,8 @@ async function generateText(p,cb){
  const errors=[],attempted=[];
  let lastLimitError=null;
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>{
-  if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||String(p.polliToken||'').trim());
+  if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
+    preferred!=='auto'&&String(p.polliToken||'').trim());
   if(!p.centralProviders?.[provider])return false;
   // Preserve AIHubMix's ten lifetime trial calls unless the owner confirms the
   // provider's one-time top-up. Manual selection still allows deliberate tests.
@@ -817,8 +819,11 @@ async function generateText(p,cb){
   return true;
  },getRouteMemory());
  // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
- const candidates=rankedCandidates.filter(provider=>provider!=='openrouter');
- if(rankedCandidates.includes('openrouter'))candidates.push('openrouter');
+ const ordered=rankedCandidates.filter(provider=>provider!=='openrouter');
+ if(rankedCandidates.includes('openrouter'))ordered.push('openrouter');
+ const candidates=selectInferenceCandidates(ordered,{
+  preferred,allowFallback:p.allowFallback===true,task
+ });
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
  const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
@@ -852,7 +857,7 @@ async function generateText(p,cb){
   else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
   const attemptStart=Date.now();
   try{
-   let text='',model='';
+   let text='',model='',usage=null;
    if(provider==='pollinations'&&!p.centralProviders?.pollinations){
     model=p.model||selectTaskModel('pollinations',task,tier,p.centralModelCatalog?.chat?.pollinations||[]);
     const {response,data}=await fetchJsonWithDeadline('https://gen.pollinations.ai/v1/chat/completions',{
@@ -862,6 +867,7 @@ async function generateText(p,cb){
     },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error?.message||data.message||'Pollinations respondió '+response.status+'.'),{status:response.status});
     text=data.choices?.[0]?.message?.content||data.output_text||'';
+    usage=data.usage||null;
    }else{
     model=provider===preferred&&p.model?p.model:modelFor(provider);
     const {response,data}=await fetchJsonWithDeadline('/api/ai/chat',{
@@ -878,6 +884,7 @@ async function generateText(p,cb){
     },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:response.status,code:data.code||'',scope:data.scope||'',retryAfter:data.retryAfter||null});
     text=String(data.text||'').trim();model=data.model||model;
+    usage=data.usage||null;
    }
    if(!text)throw Error(providerNames[provider]+' no devolvió texto.');
    if(task==='songwriting'&&!isRestrictedSongRequest(prompt)&&isGenericModelRefusal(text)){
@@ -885,12 +892,14 @@ async function generateText(p,cb){
    }
    progress(cb,1,'Respuesta lista.');
    reportModelAttempt(provider,task,true,Date.now()-attemptStart);
+   recordInferenceUsage(provider,usage);
    const firstAttempt=attempted[0];
    const firstPreferred=preferred==='auto'?baseOrder[0]:preferred;
    const fallbackFrom=firstAttempt&&firstAttempt!==provider?firstAttempt:(preferred!=='auto'&&preferred!==provider?preferred:null);
    const summary='Respuesta generada con '+providerNames[provider]+' · modelo '+(model||'predeterminado')+(fallbackFrom?' · respaldo automático tras fallo de '+providerNames[fallbackFrom]:'.');
    return {text,provider,model:model||'predeterminado',fallbackFrom,
-    fallbackReason:fallbackFrom?errors[0]||'El motor preferido no estuvo disponible.':'',summary};
+    fallbackReason:fallbackFrom?errors[0]||'El motor preferido no estuvo disponible.':'',
+    usage:normalizeInferenceUsage(usage),summary};
   }catch(error){
    reportModelAttempt(provider,task,false,Date.now()-attemptStart,error);
    const code=error?.status?' HTTP '+error.status:'';
@@ -905,6 +914,8 @@ async function generateText(p,cb){
     }
     throw Object.assign(new Error('La cuota gratuita compartida de Prisma está agotada temporalmente.'),{code:'GLOBAL_LIMIT',scope:error?.scope||'',status:429,retryAfter:error?.retryAfter||null});
    }
+   if(stopInferenceFallback(error))
+    throw Error('Prisma detuvo los respaldos porque la solicitud es inválida o no está autorizada. '+detail);
    if(error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT')lastLimitError=error;
    if(attempted.length<candidates.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
   }

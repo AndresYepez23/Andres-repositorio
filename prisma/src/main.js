@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { readInferenceUsage } from './core-economy.js';
 import { initPrismaExperience } from './prisma-experience.js';
 import { initPrismMotion } from './prism-motion.js';
 import { categories, tools, statusLabels } from './registry.js';
@@ -706,6 +707,14 @@ async function refreshProviderConnectionStatuses(){
   if(summary){
     const capacity=central.capacity||{};
     summary.textContent=count+' motores disponibles · '+Number(capacity.configuredCredentials||0)+' credenciales · pool '+Number(capacity.dailyBudget||0)+'/día · '+Number(capacity.visitorDailyLimit||0)+'/día por IP';
+  }
+  const usageNote=$('#inference-usage-summary');
+  if(usageNote){
+    const used=readInferenceUsage();
+    usageNote.textContent=used.requests
+      ?'Esta sesión: '+used.requests+' respuestas de IA · '+used.totalTokens.toLocaleString('es')+
+       ' tokens reportados en '+used.measuredRequests+' respuestas. No es una cifra de facturación.'
+      :'Esta sesión: todavía no se han registrado respuestas de IA.';
   }
 }
 async function connectPollinations(){

@@ -6,7 +6,8 @@ import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
-import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength } from '../src/core-context.js';
+import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from '../src/core-context.js';
+import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage, readInferenceUsage, INFERENCE_USAGE_KEY } from '../src/core-economy.js';
 import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
 import { compareJsonDocuments, extractAcademicIdentifiers, redactSensitiveText } from '../src/advanced-text-tools.js';
@@ -73,6 +74,8 @@ const directTaskEnd=coreSource.indexOf('async function answerConversation',direc
 assert.ok(directTaskStart>=0&&directTaskEnd>directTaskStart,'Core conversation task router not found');
 const directTask=new Function('attachments',coreSource.slice(directTaskStart,directTaskEnd)+';return directCoreTask;')([]);
 assert.equal(directTask('Muy buena canción'),'conversation');
+assert.equal(directTask('Explica qué es la fotosíntesis'),'conversation','Simple explanations should not use expensive reasoning route');
+assert.equal(directTask('Analiza las consecuencias de tres estrategias'),'reasoning');
 assert.equal(directTask('Me encanta la canción'),'conversation');
 assert.equal(directTask('Crea una canción original'),'songwriting');
 assert.equal(directTask('Una canción sobre esperanza'),'songwriting');
@@ -508,5 +511,57 @@ assert.match(connectionsSource,/central\.imageUsage\?\.\[provider\]/);
 assert.match(connectionsSource,/cloudflare-image-usage/);
 assert.match(connectionsSource,/pollinations-image-usage/);
 assert.match(connectionsSource,/const count=Object\.values\(central\.providers\|\|\{\}\)\.filter\(Boolean\)\.length/);
+
+
+// Core 4: bounded API budget, no hidden personal credits, and observable usage.
+const rankedEngines=['groq','cloudflare','gemini','requesty','sensenova','zai','kilo','openrouter'];
+assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'conversation'}),['groq','cloudflare','gemini','requesty','sensenova','openrouter']);
+assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'reasoning'}),['groq','cloudflare','gemini','requesty','sensenova','zai','openrouter']);
+assert.deepEqual(selectInferenceCandidates(rankedEngines,{preferred:'gemini'}),['gemini']);
+assert.deepEqual(selectInferenceCandidates(['groq'],{preferred:'gemini'}),[],'Manual selection never substitutes another provider');
+assert.deepEqual(selectInferenceCandidates(rankedEngines,{preferred:'gemini',allowFallback:true}),rankedEngines);
+assert.equal(stopInferenceFallback({status:400}),true,'Permanent invalid requests must not be retried');
+assert.equal(stopInferenceFallback({status:429}),false,'Provider quota failures may use a different authorized backend');
+assert.equal(stopInferenceFallback({status:503}),false);
+assert.equal(stopInferenceFallback({code:'INVALID_REQUEST'}),true);
+assert.deepEqual(normalizeInferenceUsage({prompt_tokens:43,completion_tokens:12,total_tokens:55}),{
+ inputTokens:43,outputTokens:12,totalTokens:55
+});
+assert.deepEqual(normalizeInferenceUsage({input_tokens:10,output_tokens:8}),{
+ inputTokens:10,outputTokens:8,totalTokens:18
+});
+assert.equal(normalizeInferenceUsage({}),null,'Never invent token metrics');
+const usageValues=new Map();
+const usageStorage={
+ getItem:key=>usageValues.get(key)||null,
+ setItem:(key,value)=>usageValues.set(key,value)
+};
+recordInferenceUsage('groq',{prompt_tokens:100,completion_tokens:50},usageStorage);
+recordInferenceUsage('cloudflare',null,usageStorage);
+assert.deepEqual(readInferenceUsage(usageStorage),{
+ requests:2,measuredRequests:1,totalTokens:150
+});
+assert.ok(!usageValues.get(INFERENCE_USAGE_KEY).includes('secret'),'No secret values recorded in usage');
+assert.deepEqual(chooseCoreContextOptions('conversation','Hola'),{maxMessages:3,maxChars:3500});
+assert.deepEqual(chooseCoreContextOptions('songwriting','Cambia el coro de esa canción'),{maxMessages:13,maxChars:14500});
+assert.deepEqual(chooseCoreContextOptions('coding','Implementa una función segura'),{maxMessages:11,maxChars:11500});
+const entireSong='TÍTULO\\n'+('Verso de la canción '.repeat(220))+'FIN DEL CORO';
+const revisionContext=buildConversationContext([
+ {role:'user',content:'Compón una canción sobre esperanza.'},
+ {role:'assistant',content:entireSong}
+],'Cambia el coro de esa canción',{maxChars:14500,maxMessages:13});
+assert.ok(revisionContext.some(item=>item.role==='assistant'&&item.content.includes('FIN DEL CORO')),
+ 'An explicit revision must preserve the complete previous draft, not just 1900 chars.');
+const economyEngine=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(economyEngine,/selectInferenceCandidates\(/);
+assert.match(economyEngine,/stopInferenceFallback\(/);
+assert.match(economyEngine,/recordInferenceUsage\(provider,usage\)/);
+assert.match(economyEngine,/preferred!=='auto'/,'Personal keys cannot be spent by Core automatic text routing');
+const economyCore=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(economyCore,/chooseCoreContextOptions\(task,taskText\)/);
+assert.match(economyCore,/asksAboutPrisma/,'Provider catalog must not be sent with every question');
+const economyMain=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+assert.match(economyMain,/readInferenceUsage\(\)/);
+assert.match(economyMain,/tokens reportados/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
