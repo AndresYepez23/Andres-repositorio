@@ -5,7 +5,7 @@ export const INFERENCE_USAGE_KEY='prisma-core-inference-usage-v1';
 
 export function selectInferenceCandidates(ranked=[],{preferred='auto',allowFallback=false,task='conversation'}={}){
  const names=[...new Set((Array.isArray(ranked)?ranked:[]).filter(Boolean))];
- if(preferred!=='auto'&&!allowFallback)return names.slice(0,1);
+ if(preferred!=='auto'&&!allowFallback)return names.includes(preferred)?[preferred]:[];
  if(preferred!=='auto')return names; // Explicit fallback was authorized.
  // Normally one model answers. Only real errors trigger a sequential retry.
  // Restrict cascading calls when several services are unhealthy. OpenRouter
@@ -49,11 +49,11 @@ export function recordInferenceUsage(provider,raw,storage=typeof sessionStorage!
   const totals=normalizeInferenceUsage(raw);
   const row=prev[provider]||{requests:0,measuredRequests:0,inputTokens:0,outputTokens:0,totalTokens:0};
   prev[provider]={
-   requests:Math.min(100000,row.requests+1),
-   measuredRequests:Math.min(100000,row.measuredRequests+(totals?1:0)),
-   inputTokens:Math.min(1000000000,row.inputTokens+(totals?.inputTokens??0)),
-   outputTokens:Math.min(1000000000,row.outputTokens+(totals?.outputTokens??0)),
-   totalTokens:Math.min(1000000000,row.totalTokens+(totals?.totalTokens??0)),
+   requests:Math.min(100000,(Number(row.requests)||0)+1),
+   measuredRequests:Math.min(100000,(Number(row.measuredRequests)||0)+(totals?1:0)),
+   inputTokens:Math.min(1000000000,(Number(row.inputTokens)||0)+(totals?.inputTokens??0)),
+   outputTokens:Math.min(1000000000,(Number(row.outputTokens)||0)+(totals?.outputTokens??0)),
+   totalTokens:Math.min(1000000000,(Number(row.totalTokens)||0)+(totals?.totalTokens??0)),
   };
   const value={date:today,providers:prev};
   storage.setItem(INFERENCE_USAGE_KEY,JSON.stringify(value));
