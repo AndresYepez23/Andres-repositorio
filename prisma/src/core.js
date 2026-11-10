@@ -9,6 +9,8 @@ import { openImageEditor, initImageEditor, applyImageText } from './core-image-e
 import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { mountCoreWelcomeGrid } from './core-welcome-grid.js';
+import { isPrismaAuthenticated, openPrismaAuthForGuestLimit } from './prisma-account.js';
+import { GUEST_TASK_LIMIT, readGuestTaskCount, canGuestSubmit, recordGuestTask } from './core-guest-limit.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
@@ -462,6 +464,17 @@ function status(text,kind='info'){
   const el=$('#core-status');if(el){el.textContent=text;el.dataset.kind=kind;}
   const thinking=$('#core-thinking-label');
   if(thinking&&busy)thinking.textContent=String(text||'Prisma está preparando tu respuesta…').slice(0,180);
+}
+function recordCompletedCoreTask(){
+  if(isPrismaAuthenticated())return;
+  const {count,justReachedLimit}=recordGuestTask(localStorage);
+  if(justReachedLimit){
+    // Keep the fourth result downloadable; gate only the NEXT user request.
+    status('Completaste tus 4 tareas de prueba. Regístrate gratis para continuar.','info');
+  }else if(count>0&&count<GUEST_TASK_LIMIT){
+    const remaining=GUEST_TASK_LIMIT-count;
+    status('Tarea completada · '+remaining+' '+(remaining===1?'tarea gratuita restante':'tareas gratuitas restantes')+'.','success');
+  }
 }
 function setProgress(value,label){
   const wrap=$('#core-progress');if(!wrap)return;
@@ -1027,6 +1040,7 @@ async function generateVisualRequest(text,creds,kind){
   results:[{name:'Resultado: '+label,reason:'Generación visual solicitada',result}]
  });
  status('Imagen lista para descargar y editar.','success');
+ recordCompletedCoreTask();
 }
 // Local intent check first: capability questions never spend an AI request.
 // A real brief uses exactly one web-generation task; no hosting is simulated.
@@ -1071,6 +1085,7 @@ async function handleWebsiteConversation(text){
    results:[{name:'Página web HTML',reason:'Archivo generado para '+route.description.slice(0,130),result}]
   });
   status('Página creada y lista para descargar.','success');
+  recordCompletedCoreTask();
  }catch(error){
   const detail=String(error?.message||'Falló la generación.').slice(0,300);
   addMessage('assistant','Entendí qué tipo de página quieres, pero el motor no pudo completar el HTML. No voy a presentarte código incompleto como un sitio terminado. '+detail+' Puedes repetir tu solicitud cuando haya un motor disponible.');
@@ -1092,6 +1107,7 @@ async function handleImageCreationRequest(text){
     results:[{name:'Imagen editada',reason:'Edición gratuita y local',result:output}]
    });
    attachments=[];renderAttachments();
+   recordCompletedCoreTask();
   }});
   status('Editor de imágenes abierto, sin consumir créditos.','success');return true;
  }
@@ -1178,6 +1194,7 @@ async function answerConversation(text,creds,task='conversation'){
   if(!answer)throw Error('El motor seleccionado no devolvió contenido.');
   addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
   status('Respuesta lista. Puedes continuar esta conversación.','success');
+  recordCompletedCoreTask();
 }
 
 function speechIntent(message){
@@ -1263,6 +1280,7 @@ async function fulfillSpeechRequest(userText){
  });
  attachments=[];renderAttachments();$('#core-file-input').value='';
  status('Audio listo para escuchar y descargar.','success');
+ recordCompletedCoreTask();
 }
 async function requestPlan(userText){
   // Simple greetings must work instantly, even when every external inference
@@ -1636,6 +1654,7 @@ async function executePlan(){
       else if(executed.some(entry=>entry?.result?.blob&&entry.result?.fileKey))
         status('Archivo terminado y guardado en este dispositivo. Descárgalo desde el resultado.','success');
       else status('Ejecución completada.','success');
+      recordCompletedCoreTask();
     }
   }catch(error){
     console.error(error);
@@ -1816,6 +1835,14 @@ async function sendMessage(){
   if(busy)return;
   const input=$('#core-input'),text=input.value.trim();
   if(!text&&!attachments.length)return;
+  // Preserve both the draft and attached files when a fifth guest task is
+  // requested. The onboarding gate is cumulative across local chats.
+  if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage)})){
+    status('Para continuar, crea una cuenta gratuita o inicia sesión. Tu solicitud y tus archivos siguen aquí.','info');
+    input.blur();
+    openPrismaAuthForGuestLimit();
+    return;
+  }
   const filesNow=[...attachments];
   addMessage('user',text||'Procesa los archivos adjuntos.',{files:filesNow.map(file=>file.name)});
   input.value='';input.style.height='39px';
