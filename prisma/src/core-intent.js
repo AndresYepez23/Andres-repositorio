@@ -27,7 +27,7 @@ export function routeWebsiteRequest(text,pending=null,hasAttachments=false,now=D
  const active=pending&&Number(pending.started)>0&&now-Number(pending.started)<24*60*60*1000;
  const mentioned=WEB.test(q);
  if(active&&CANCEL.test(q))return {type:'cancel',message:'Entendido. Cancelé la página web pendiente.'};
- if(active&&(UNRELATED.test(q)||/^(?:dame|crea|haz|necesito|quiero).{0,40}\b(?:imagen|miniatura|video|cancion|audio|pdf|otra cosa)\b/.test(q))&&!mentioned)
+ if(active&&(UNRELATED.test(q)||/^(?:ahora\s+)?(?:dame|crea|haz|necesito|quiero).{0,40}\b(?:imagen|miniatura|video|cancion|audio|pdf|otra cosa)\b/.test(q))&&!mentioned)
   return {type:'abandon'};
  // Secondary mentions of a website inside a song/image request are not
  // website-generation instructions. Actual page requests take priority.
