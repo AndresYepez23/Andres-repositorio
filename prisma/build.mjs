@@ -1,4 +1,5 @@
 import { cp, copyFile, mkdir, rm, readFile, writeFile } from "node:fs/promises";
+import { generateSeoPages } from "./seo/generate.mjs";
 // Abort publication if Core can no longer discover or safely chain its tools.
 import "./tests/core-agent-routing.test.mjs";
 import "./tests/cloudflare-whisper.test.mjs";
@@ -11,6 +12,8 @@ for (const file of ["index.html", "styles.css", "aurora-system.css", "_headers",
   await copyFile(new URL("./" + file, import.meta.url), new URL("./dist/" + file, import.meta.url));
 }
 
+await copyFile(new URL("./seo/landing.css", import.meta.url), new URL("./dist/seo.css", import.meta.url));
+
 for (const dir of ["src", "assets"]) {
   await cp(new URL("./" + dir, import.meta.url), new URL("./dist/" + dir, import.meta.url), { recursive: true });
 }
@@ -18,4 +21,5 @@ for (const dir of ["src", "assets"]) {
 // Cache version changes on every deploy; prevent stale PWA shells and exclude API/auth responses.
 const sw = await readFile(new URL("./sw.js", import.meta.url), "utf8");
 await writeFile(new URL("./dist/sw.js", import.meta.url), sw.replace("__BUILD_VERSION__", Date.now().toString(36)));
-console.log("PRISMA build complete: dist/ contains the public application and PWA shell.");
+await generateSeoPages(output);
+console.log("PRISMA build complete: dist/ contains the public application, 20 SEO landings and PWA shell.");
