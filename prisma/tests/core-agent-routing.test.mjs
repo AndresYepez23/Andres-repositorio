@@ -914,7 +914,7 @@ assert.doesNotMatch(prismaAccountCode,/service_role|SUPABASE_SERVICE_ROLE_KEY/,'
 assert.match(authConfigCode,/PRISMA_AUTH_GOOGLE_ENABLED==='1'/);
 assert.match(authConfigCode,/PRISMA_AUTH_APPLE_ENABLED==='1'/);
 assert.match(authConfigCode,/PRISMA_AUTH_PHONE_ENABLED==='1'/);
-for(const id of ['auth-intro','auth-email-screen','auth-phone-screen','auth-reset-screen',
+for(const id of ['auth-intro-screen','auth-email-screen','auth-phone-screen','auth-reset-screen',
  'auth-recovery-screen','auth-confirm-screen','auth-welcome-screen','auth-account-screen',
  'auth-profile-form','auth-account-sync','auth-account-signout']){
  assert.ok(accountHtml.includes('id="'+id+'"'),id+' must exist in the account experience');
@@ -925,6 +925,13 @@ assert.match(accountHtml,/id="auth-phone" disabled/);
 assert.match(accountHtml,/autocomplete="one-time-code"/);
 assert.match(accountHtml,/autocomplete="new-password"/);
 assert.match(accountHtml,/aria-label="Acceso a Prisma Space"/);
+const allAuthScreenIds=[...accountHtml.matchAll(/id="auth-([a-z-]+)-screen"/g)].map(m=>m[1]);
+for(const id of ['intro','email','phone','reset','recovery','confirm','welcome','account']){
+ assert.ok(allAuthScreenIds.includes(id),'Navigation state '+id+' must have a corresponding visible screen');
+}
+assert.match(prismaAccountCode,/for\(const item of SCREENS\)/,'State manager must hide other screens');
+assert.match(prismaAccountCode,/for\(const selector of \['#auth-submit'/,'Email submit must be enabled once auth is configured');
+
 const accountStyles=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
 assert.match(accountStyles,/#auth-modal \.auth-account-identity/);
 assert.match(accountStyles,/#auth-modal \.auth-password-wrap/);
