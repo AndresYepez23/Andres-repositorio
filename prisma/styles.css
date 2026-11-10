@@ -2226,7 +2226,7 @@ body.is-core-view #core-thinking {
   overscroll-behavior-y:contain;
  }
  .sidebar.sidebar-gesture-preview{
-  pointer-events:none;
+  pointer-events:auto;
   will-change:transform;
  }
  .sidebar-backdrop.sidebar-gesture-preview{
