@@ -1,12 +1,15 @@
 // Prisma Space account and session management. Separate Supabase project;
 // OAuth and SMS are never presented as active without backend configuration.
 // No passwords, OTP codes or tokens enter application analytics.
+import { mergeConversationLists, normalizeConversation, serializeConversation } from './conversation-sync.js';
+import { readConversationSnapshot, saveConversationSnapshot } from './conversation-storage.js';
 const $=selector=>document.querySelector(selector);
 let api=null,user=null,profile=null;
 let config={enabled:false,features:{}},screen='intro',authMode='login';
-let syncTimer=0,pendingAuth=false,recovering=false,handledWelcome=false;
+let syncTimer=0,syncInterval=0,syncInFlight=false,syncQueued=false,pendingAuth=false,recovering=false,handledWelcome=false;
 const STORAGE='prisma-core-chats-v2';
 const SYNC_KEY='prisma-user-sync-consent-v1';
+const DELETED_KEY='prisma-sync-deleted-conversations-v1';
 const OAUTH_PENDING='prisma-account-oauth-pending';
 const SIGNUP_PENDING='prisma-account-signup-confirm-pending';
 const SCREENS=['intro','email','phone','reset','recovery','confirm','welcome','account'];
@@ -136,7 +139,7 @@ function refreshIdentity(){
  $('#account-sync')?.classList.toggle('hidden',!user);
  const helper=$('#profile-menu-privacy');
  if(helper)helper.textContent=user
-  ?'Tu cuenta está activa. Solo sincronizaremos conversaciones cuando lo autorices.'
+  ?(selectedSync()?'Tus conversaciones se mantienen sincronizadas entre tus dispositivos.':'Activa una sola vez la sincronización para continuar tus chats en otros dispositivos.')
   :'Puedes seguir usando Prisma gratis sin cuenta. Registrarte es opcional.';
  if(!user)return;
  const name=displayName();
@@ -152,22 +155,32 @@ function refreshIdentity(){
   :(user.phone_confirmed_at?'Teléfono verificado':'Sesión activa');
  const profileInput=$('#auth-profile-name');
  if(profileInput&&document.activeElement!==profileInput)profileInput.value=fullName(profile?.display_name)||'';
+ const syncButton=$('#auth-account-sync');
+ if(syncButton)syncButton.textContent=selectedSync()?'Sincronizar ahora':'Activar sincronización en todos mis dispositivos';
+ const profileSync=$('#account-sync');
+ const profileSyncLabel=profileSync?.querySelector('span:last-child');
+ if(profileSyncLabel)profileSyncLabel.textContent=selectedSync()?'Sincronizar ahora':'Activar sincronización';
  const syncStatus=$('#auth-account-sync-status');
  if(syncStatus)syncStatus.textContent=selectedSync()
-  ?'Sincronización autorizada en este dispositivo.'
-  :'El historial permanece local hasta que autorices la sincronización.';
+  ?'Sincronización activada para todos tus dispositivos. Tus chats se actualizan automáticamente.'
+  :'Tus conversaciones siguen en este dispositivo. Activa la sincronización una sola vez para compartirlas entre tus dispositivos.';
 }
 async function ensureProfile(){
  if(!api||!user?.id)return;
  const current=user.id;
  const {data,error}=await api.from('prisma_profiles')
-  .select('user_id,display_name,theme').eq('user_id',current).maybeSingle();
+  .select('user_id,display_name,theme,sync_enabled').eq('user_id',current).maybeSingle();
  if(user?.id!==current||error)return;
- if(data){profile=data;refreshIdentity();return;}
+ if(data){
+  profile=data;
+  if(profile.sync_enabled===true)localStorage.setItem(SYNC_KEY,current);
+  else localStorage.removeItem(SYNC_KEY);
+  refreshIdentity();return;
+ }
  const suggested=fullName(user.user_metadata?.full_name||user.user_metadata?.name);
  const {data:created,error:createError}=await api.from('prisma_profiles')
   .insert({user_id:current,display_name:suggested||null})
-  .select('user_id,display_name,theme').single();
+  .select('user_id,display_name,theme,sync_enabled').single();
  if(user?.id!==current)return;
  if(created&&!createError){profile=created;refreshIdentity();}
  else if(createError)console.warn('Prisma: perfil pendiente de sincronizar');
@@ -183,80 +196,153 @@ function openAccount(){
  showAuth(true,{focus:true});
 }
 export function openPrismaAuth(){openAccount();}
-function selectedSync(){return !!user&&localStorage.getItem(SYNC_KEY)===user.id;}
+function selectedSync(){
+ return !!user&&profile?.sync_enabled===true&&localStorage.getItem(SYNC_KEY)===user.id;
+}
 function sanitizeChats(){
  let chats=[];
  try{chats=JSON.parse(localStorage.getItem(STORAGE)||'[]');}catch{}
- return Array.isArray(chats)
-  ?chats.filter(x=>x&&typeof x.id==='string'&&Array.isArray(x.messages)).slice(0,50):[];
+ return Array.isArray(chats)?chats.map(serializeConversation).filter(Boolean):[];
+}
+function readDeletedIds(){
+ try{
+  const ids=JSON.parse(localStorage.getItem(DELETED_KEY)||'[]');
+  return Array.isArray(ids)?[...new Set(ids.map(value=>String(value||'').slice(0,120)).filter(Boolean))]:[];
+ }catch{return [];}
+}
+function queueDeletedId(id){
+ const ids=new Set(readDeletedIds());ids.add(String(id).slice(0,120));
+ try{localStorage.setItem(DELETED_KEY,JSON.stringify([...ids]));}
+ catch(error){console.error('Prisma: no se pudo guardar la marca local de eliminación.',error?.message||error);}
+}
+function startSyncWatchers(){
+ if(syncInterval||!selectedSync())return;
+ const refresh=()=>{
+  if(document.visibilityState==='visible'&&selectedSync())doSync().catch(error=>console.warn('Prisma sync:',error?.message||error));
+ };
+ syncInterval=window.setInterval(refresh,30000);
+ window.addEventListener('focus',refresh);
+ window.addEventListener('online',refresh);
+ document.addEventListener('visibilitychange',refresh);
+}
+function conversationNeedsUpload(merged,remote){
+ if(!remote||remote.deleted_at)return true;
+ const previous=normalizeConversation({
+  ...(remote.data&&typeof remote.data==='object'?remote.data:{}),
+  id:remote.id,title:remote.title,pinned:remote.pinned
+ });
+ if(!previous)return true;
+ if(merged.title!==previous.title||merged.pinned!==previous.pinned||merged.updated>previous.updated||merged.messages.length!==previous.messages.length)return true;
+ return merged.messages.some((message,index)=>JSON.stringify(message)!==JSON.stringify(previous.messages[index]));
 }
 async function doSync(){
  if(!api||!user||!selectedSync())return;
+ if(syncInFlight){syncQueued=true;return;}
+ syncInFlight=true;
  const activeUserId=user.id;
- const local=sanitizeChats();
- const {data:remote,error}=await api.from('prisma_conversations')
-  .select('id,title,pinned,updated_at,data')
-  .order('updated_at',{ascending:false}).limit(50);
- if(error)throw error;
- if(activeUserId!==user?.id)return;
- const map=new Map((remote||[]).filter(x=>x.data&&typeof x.data==='object')
-  .map(x=>[x.id,x.data]));
- const changes=[];
- for(const chat of local){
-  const normalized={
-   id:String(chat.id).slice(0,120),title:String(chat.title||'Nueva conversación').slice(0,70),
-   pinned:!!chat.pinned,created:Number(chat.created)||Date.now(),
-   updated:Number(chat.updated)||Date.now(),titled:!!chat.titled,
-   thumbnailBrief:null,
-   messages:chat.messages.slice(-30).map(m=>({
-    id:m.id,role:m.role,content:String(m.content||'').slice(0,5000),
-    time:m.time,engine:m.engine,model:m.model,feedback:m.feedback
-   }))
-  };
-  const existing=map.get(normalized.id);
-  if(!existing||normalized.updated>(Number(existing.updated)||0)){
-   map.set(normalized.id,normalized);
-   changes.push({
-    user_id:activeUserId,id:normalized.id,title:normalized.title,
-    pinned:normalized.pinned,updated_at:new Date(normalized.updated).toISOString(),
-    data:normalized
-   });
+ try{
+  await (window.__prismaHistoryReady||Promise.resolve());
+  let local=sanitizeChats();
+  try{
+   const indexed=await readConversationSnapshot();
+   if(indexed.length)local=mergeConversationLists(local,indexed);
+  }catch(error){console.warn('Prisma: no se pudo leer la copia IndexedDB antes de sincronizar.',error?.message||error);}
+  const remoteRows=[];
+  const pageSize=200;
+  for(let offset=0;;offset+=pageSize){
+   const {data,error}=await api.from('prisma_conversations')
+    .select('id,title,pinned,updated_at,data,deleted_at')
+    .order('updated_at',{ascending:false}).range(offset,offset+pageSize-1);
+   if(error)throw error;
+   remoteRows.push(...(data||[]));
+   if(!data||data.length<pageSize)break;
   }
+  if(user?.id!==activeUserId)return;
+  const remoteById=new Map(remoteRows.map(row=>[row.id,row]));
+  const remoteDeleted=new Set(remoteRows.filter(row=>row.deleted_at).map(row=>row.id));
+  const queuedDeleted=new Set(readDeletedIds());
+  const deleted=new Set([...remoteDeleted,...queuedDeleted]);
+  const remoteActive=remoteRows.filter(row=>!row.deleted_at).map(row=>normalizeConversation({
+   ...(row.data&&typeof row.data==='object'?row.data:{}),
+   id:row.id,title:row.title,pinned:row.pinned
+  })).filter(Boolean);
+  const localActive=local.filter(chat=>!deleted.has(chat.id));
+  const merged=mergeConversationLists(remoteActive,localActive);
+  const upserts=merged.filter(chat=>conversationNeedsUpload(chat,remoteById.get(chat.id))).map(chat=>({
+   user_id:activeUserId,id:chat.id,title:chat.title,pinned:!!chat.pinned,
+   updated_at:new Date(Math.max(1,chat.updated)).toISOString(),deleted_at:null,data:chat
+  }));
+  for(let offset=0;offset<upserts.length;offset+=10){
+   const {error}=await api.from('prisma_conversations')
+    .upsert(upserts.slice(offset,offset+10),{onConflict:'user_id,id'});
+   if(error){
+    if(/prisma_conversation_payload_limit|check constraint|octet_length/i.test(error.message||'')){
+     throw new Error('Una conversación supera el límite seguro de 5 MB para sincronizarse. Prisma no recortó ni borró su historial local.');
+    }
+    throw error;
+   }
+  }
+  const pendingTombstones=[...queuedDeleted].filter(id=>!remoteDeleted.has(id));
+  if(pendingTombstones.length){
+   const now=new Date().toISOString();
+   const tombstones=pendingTombstones.map(id=>{
+    const existing=remoteById.get(id);
+    const data=normalizeConversation(existing?.data||{id,title:'Conversación eliminada',created:Date.now(),updated:Date.now(),messages:[]})||
+     {id,title:'Conversación eliminada',created:Date.now(),updated:Date.now(),messages:[]};
+    return {user_id:activeUserId,id,title:existing?.title||'Conversación eliminada',pinned:false,updated_at:now,deleted_at:now,data};
+   });
+   const {error}=await api.from('prisma_conversations').upsert(tombstones,{onConflict:'user_id,id'});
+   if(error)throw error;
+   try{localStorage.removeItem(DELETED_KEY);}catch{}
+  }else if(queuedDeleted.size){
+   try{localStorage.removeItem(DELETED_KEY);}catch{}
+  }
+  if(user?.id!==activeUserId||!selectedSync())return;
+  try{localStorage.setItem(STORAGE,JSON.stringify(merged));}
+  catch(error){console.warn('Prisma: historial remoto conservado en IndexedDB; localStorage lleno.',error?.message||error);}
+  try{await saveConversationSnapshot(merged);}
+  catch(error){console.error('Prisma: fallo al guardar la copia local del historial sincronizado.',error?.message||error);}
+  document.dispatchEvent(new CustomEvent('prisma:remote-chats-ready',{detail:{conversations:merged}}));
+ }finally{
+  syncInFlight=false;
+  if(syncQueued){syncQueued=false;scheduleSync();}
  }
- if(changes.length){
-  const {error:writeError}=await api.from('prisma_conversations')
-   .upsert(changes,{onConflict:'user_id,id'});
-  if(writeError)throw writeError;
- }
- if(user?.id!==activeUserId||!selectedSync())return;
- const merged=[...map.values()].sort((a,b)=>(Number(b.updated)||0)-(Number(a.updated)||0)).slice(0,50);
- localStorage.setItem(STORAGE,JSON.stringify(merged));
- document.dispatchEvent(new CustomEvent('prisma:remote-chats-ready'));
 }
 function scheduleSync(){
  if(!selectedSync()||!api)return;
  clearTimeout(syncTimer);
- syncTimer=setTimeout(()=>doSync().catch(e=>console.warn('Prisma sincronización:',e?.message)),1400);
+ syncTimer=setTimeout(()=>doSync().catch(error=>console.warn('Prisma sincronización:',error?.message||error)),900);
 }
 async function performSync(){
  if(!api||!user)return;
- if(!selectedSync()){
-  const agreed=window.confirm('¿Guardar el texto de los chats de este navegador en tu cuenta Prisma? No se enviarán archivos adjuntos ni contraseñas.');
+ if(!profile)await ensureProfile();
+ if(!profile?.sync_enabled){
+  const agreed=window.confirm('¿Activar la sincronización de conversaciones en todos tus dispositivos? El texto de tus chats se guardará en tu cuenta Prisma. No se sincronizan archivos adjuntos ni contraseñas. Puedes seguir usando Prisma sin activar esta opción.');
   if(!agreed)return;
-  localStorage.setItem(SYNC_KEY,user.id);
+  const {data,error}=await api.from('prisma_profiles').update({
+   sync_enabled:true,updated_at:new Date().toISOString()
+  }).eq('user_id',user.id).select('user_id,display_name,theme,sync_enabled').single();
+  if(error)throw error;
+  profile=data;
  }
- info('Sincronizando conversaciones…');
- try{await doSync();info('Conversaciones sincronizadas.','success');}
+ localStorage.setItem(SYNC_KEY,user.id);
+ startSyncWatchers();
+ refreshIdentity();
+ info('Sincronizando todo tu historial…');
+ try{await doSync();info('Historial sincronizado. Desde ahora se actualizará en tus dispositivos.','success');}
  catch(error){info('La sincronización no se completó: '+accountAuthMessage(error),'error');}
  refreshIdentity();
 }
 async function signOut(){
  if(!api||!user)return;
  const synced=selectedSync();
- if(synced&&!window.confirm('Cerrarás sesión y se quitarán de este dispositivo las copias locales sincronizadas para proteger tu privacidad. ¿Continuar?'))return;
+ if(synced&&!window.confirm('Cerrarás sesión y se quitará de este dispositivo la copia local sincronizada. Tu historial seguirá guardado en Prisma y volverá a aparecer al iniciar sesión. ¿Continuar?'))return;
  const {error}=await api.auth.signOut();
  if(error){info(accountAuthMessage(error),'error');return;}
- if(synced){localStorage.removeItem(STORAGE);localStorage.removeItem(SYNC_KEY);}
+ if(synced){
+  localStorage.removeItem(STORAGE);localStorage.removeItem(SYNC_KEY);
+  document.dispatchEvent(new Event('prisma:clear-local-history'));
+ }
  user=null;profile=null;
  document.dispatchEvent(new Event('prisma:close-profile'));
  showAuth(false);location.reload();
@@ -291,8 +377,12 @@ async function onSignedIn(newUser,{fromInteraction=false}={}){
  user=newUser;
  if(changed)profile=null;
  refreshIdentity();
- ensureProfile().catch(()=>{});
- if(selectedSync())setTimeout(()=>doSync().catch(()=>{}),750);
+ await ensureProfile();
+ if(selectedSync()){
+  startSyncWatchers();
+  await (window.__prismaHistoryReady||Promise.resolve());
+  try{await doSync();}catch(error){console.warn('Prisma: no se pudo completar la sincronización inicial.',error?.message||error);}
+ }
  const oauth=sessionStorage.getItem(OAUTH_PENDING);
  const signupPending=Number(sessionStorage.getItem(SIGNUP_PENDING)||0);
  const pendingSignupValid=signupPending>0&&Date.now()-signupPending<86400000;
@@ -471,13 +561,12 @@ function bindForms(){
  });
  $('#account-signout')?.addEventListener('click',signOut);
  document.addEventListener('prisma:chats-changed',scheduleSync);
- document.addEventListener('prisma:chat-deleted',async event=>{
+ document.addEventListener('prisma:chat-deleted',event=>{
   if(!api||!selectedSync())return;
   const id=String(event.detail?.id||'');
   if(!id)return;
-  const {error}=await api.from('prisma_conversations')
-   .delete().eq('id',id).eq('user_id',user.id);
-  if(error)console.warn('No se pudo borrar conversación remota:',error.message);
+  queueDeletedId(id);
+  scheduleSync();
  });
 }
 export async function initPrismaAccount(){
