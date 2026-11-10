@@ -1809,6 +1809,12 @@ export function initPrismaCore(){
   document.addEventListener('prisma:clear-local-history',()=>{
     clearConversationSnapshot().catch(error=>console.warn('Prisma: no se pudo limpiar IndexedDB.',error?.message||error));
   });
+  document.addEventListener('prisma:history-storage-warning',()=>{
+    status('El historial necesita almacenamiento ampliado. Prisma está guardando una copia completa en este dispositivo.','info');
+  },{once:true});
+  document.addEventListener('prisma:history-storage-error',()=>{
+    status('No se pudo guardar una copia local ampliada. Mantén la sesión abierta y comprueba el espacio disponible del dispositivo.','warning');
+  },{once:true});
   $('#core-history-search')?.addEventListener('input',event=>{
     conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();
     renderConversationList();
