@@ -763,6 +763,10 @@ assert.equal(mobileSettings.height%2,0);
 assert.throws(()=>videoCompressionSettings({width:1000,height:720,fileSize:100,duration:200}),/3 minutos/);
 const recordingTypes=['video/mp4;codecs="avc1.42E01E,mp4a.40.2"','video/mp4'];
 assert.match(chooseNativeRecordingType({isTypeSupported:type=>recordingTypes.includes(type)}),/video\/mp4/);
+assert.match(chooseNativeRecordingType({isTypeSupported:type=>type==='video/mp4'||type==='video/webm'},
+  {preferMp4:false}),/video\/webm/,'Chrome fallback should prefer a WebM container');
+assert.match(chooseNativeRecordingType({isTypeSupported:type=>type==='video/mp4'||type==='video/webm'},
+  {preferMp4:true}),/video\/mp4/,'Safari should prefer MP4');
 assert.equal(chooseNativeRecordingType({isTypeSupported:()=>false}),null);
 assert.match(localizedVideoError({name:'SecurityError',message:'The operation is insecure.'}),/restricción de seguridad/);
 assert.doesNotMatch(localizedVideoError({name:'SecurityError',message:'The operation is insecure.'}),/the operation is insecure/i);
