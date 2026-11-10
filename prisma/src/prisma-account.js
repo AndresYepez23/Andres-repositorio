@@ -13,6 +13,7 @@ const DELETED_KEY='prisma-sync-deleted-conversations-v1';
 const OAUTH_PENDING='prisma-account-oauth-pending';
 const SIGNUP_PENDING='prisma-account-signup-confirm-pending';
 const SCREENS=['intro','email','phone','reset','recovery','confirm','welcome','account'];
+let guestGateModalActive=false;
 
 export function validateAccountPassword(password,confirmation=null){
  const value=String(password||'');
@@ -62,7 +63,12 @@ function showAuth(show,{focus=false}={}){
  modal.classList.toggle('hidden',!show);
  modal.setAttribute('aria-hidden',String(!show));
  document.body.classList.toggle('prisma-auth-open',show);
+ document.body.classList.toggle('prisma-guest-gate-open',show&&guestGateModalActive);
  if(show&&focus)requestAnimationFrame(()=>focusScreen(screen));
+ if(!show&&guestGateModalActive){
+  guestGateModalActive=false;
+  document.dispatchEvent(new Event('prisma:guest-gate-closed'));
+ }
 }
 function fullName(value){
  return String(value||'').trim().replace(/\s+/g,' ').slice(0,60);
@@ -137,6 +143,7 @@ function updateTabs(){
  info('');
 }
 function refreshIdentity(){
+ document.dispatchEvent(new CustomEvent('prisma:auth-session-changed',{detail:{authenticated:Boolean(user?.id)}}));
  const label=$('#account-menu-state'),login=$('#profile-login-label');
  if(label)label.textContent=user?(user.email||user.phone||displayName()):'Modo invitado · gratis';
  if(login)login.textContent=user?'Mi cuenta de Prisma':'Iniciar sesión o crear cuenta';
@@ -191,6 +198,7 @@ async function ensureProfile(){
  else if(createError)console.warn('Prisma: perfil pendiente de sincronizar');
 }
 function openAccount(){
+ guestGateModalActive=false;
  if(user){
   showScreen('account');
   refreshIdentity();
@@ -198,6 +206,8 @@ function openAccount(){
   showScreen('intro');
   const title=$('#auth-title');
   if(title)title.textContent='Bienvenido a Prisma';
+  const description=$('#auth-intro-screen .auth-description');
+  if(description)description.textContent='Entra a tu espacio. Guarda tus preferencias y decide cuándo sincronizar tus conversaciones.';
   $('#auth-guest')?.classList.remove('hidden');
  }
  info('');
@@ -205,15 +215,23 @@ function openAccount(){
 }
 export function openPrismaAuth(){openAccount();}
 export function isPrismaAuthenticated(){return Boolean(user?.id);}
-export function openPrismaAuthForGuestLimit(){
+export function openPrismaAuthForGuestLimit(mode='intro'){
  if(user?.id)return false;
+ guestGateModalActive=true;
  showScreen('intro');
  const title=$('#auth-title');
  if(title)title.textContent='Continúa creando con Prisma';
- // A dismissed dialog may be revisited. The send button stays gated until
- // a real account session exists; browsing and downloads remain accessible.
+ const description=$('#auth-intro-screen .auth-description');
+ if(description)description.textContent='Ya probaste 4 trabajos con archivos. Crea una cuenta gratis para seguir adjuntando, procesando y generando resultados. Puedes seguir chateando sin cuenta.';
+ // Never block dismissing the modal or reading previous conversations.
  $('#auth-guest')?.classList.add('hidden');
- info('Ya completaste 4 trabajos con archivos. Regístrate gratis o inicia sesión para seguir adjuntando, procesando o generando archivos. El chat de texto sigue disponible sin cuenta.','info');
+ info('Registro gratuito para seguir trabajando con archivos. El chat de texto sigue disponible.','info');
+ if(mode==='signup'||mode==='login'){
+  authMode=mode==='signup'?'signup':'login';
+  updateTabs();
+  showScreen('email');
+ }
+ document.dispatchEvent(new Event('prisma:guest-gate-open'));
  showAuth(true,{focus:false});
  return true;
 }
