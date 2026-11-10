@@ -4,7 +4,7 @@ import { getCredentialSlots } from "./credential-pool.js";
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
 export const OPENROUTER_VISITOR_LIMITS=Object.freeze({perMinute:5,perDay:20});
 export const LIMITS=Object.freeze({
- gemini:50,huggingface:10,groq:30,pollinations:10,cloudflare:30,
+ gemini:50,huggingface:10,groq:80,pollinations:10,cloudflare:30,
  kilo:20,requesty:25,sensenova:25,zai:25,aihubmix:10,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
  "groq-audio":3,"cloudflare-audio":3,"pollinations-audio":2,"gemini-image":2
@@ -78,6 +78,47 @@ export async function getProviderLifetimeUsage(env,provider,limit=10){
  }catch(error){
   console.error("Prisma provider lifetime usage lookup",error?.message||error);
   return {available:false,used:0,limit,remaining:limit};
+ }
+}
+
+// Provider and shared-day counters track completed inference, not failed
+// upstream probes. Visitor minute/day counters still charge every attempt to
+// prevent repeated abuse when upstream providers are returning errors.
+export async function refundFailedProviderUsage(env,provider){
+ const db=env?.PRISMA_RATE_DB;
+ if(!db?.prepare)return false;
+ const {minute,day}=windows();
+ const scopes=[
+  ["provider-day:"+provider,day],
+  ...(PROVIDER_MINUTE_LIMITS[provider]?[["provider-minute:"+provider,minute]]:[]),
+  ...(provider==="openrouter"?[["provider-minute:openrouter",minute]]:[["total-day",day]]),
+  ...(provider==="aihubmix"&&env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1"?[["provider-lifetime:aihubmix",0]]:[])
+ ];
+ let refunded=true;
+ for(const [scope,windowStart] of scopes){
+  try{
+   await db.prepare("UPDATE ai_rate_limits SET request_count=request_count-1 WHERE scope=? AND window_start=? AND request_count>0")
+    .bind(scope,windowStart).run();
+  }catch(error){
+   refunded=false;
+   console.warn("Prisma: no se pudo liberar el presupuesto de una inferencia fallida.",error?.message||error);
+  }
+ }
+ return refunded;
+}
+export async function getSharedDailyUsage(env){
+ const db=env?.PRISMA_RATE_DB;
+ if(!db?.prepare)return {available:false,daily:null};
+ const {day}=windows();
+ const limit=getSharedDailyBudget(env);
+ try{
+  const row=await db.prepare("SELECT request_count FROM ai_rate_limits WHERE scope=? AND window_start=?")
+   .bind("total-day",day).first();
+  const used=Math.max(0,Number(row?.request_count)||0);
+  return {available:true,daily:{used,limit,remaining:Math.max(0,limit-used),resetAt:new Date((day+1440)*60000).toISOString()}};
+ }catch(error){
+  console.warn("Prisma: no se pudo consultar el presupuesto global.",error?.message||error);
+  return {available:false,daily:null};
  }
 }
 

@@ -1,6 +1,6 @@
 import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js";
 import { allowedModel } from "../../_lib/model-catalog.js";
-import { checkLimits } from "../../_lib/limits.js";
+import { checkLimits, refundFailedProviderUsage } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
@@ -94,11 +94,11 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
   return json({ok:true,provider,model:data.model||model,text,usage:data.usage||null});
 }
 
-export async function onRequestPost({ request, env }) {
+async function executeChatRequest({ request, env }, markReserved) {
   const requestUrl = new URL(request.url);
   const origin = request.headers.get("Origin");
   if (origin !== requestUrl.origin) {
-    return json({ error: "Solicitud no autorizada para este origen." }, 403);
+    return json({ error: "Solicitud no autorizada para este origen.", code:"INVALID_REQUEST" }, 403);
   }
 
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
@@ -110,7 +110,7 @@ export async function onRequestPost({ request, env }) {
     if (raw.length > 50000) return json({ error: "La solicitud supera el tamaño permitido." }, 413);
     payload = JSON.parse(raw);
   } catch {
-    return json({ error: "El cuerpo de la solicitud no es JSON válido." }, 400);
+    return json({ error: "El cuerpo de la solicitud no es JSON válido.", code:"INVALID_REQUEST" }, 400);
   }
 
   const provider = String(payload.provider || "gemini");
@@ -139,7 +139,7 @@ export async function onRequestPost({ request, env }) {
       : !requestedModel || allowedModel(provider, "chat", requestedModel);
   if (requestedModel && !requestedModelAllowed) {
     const message=provider==="kilo"?"Kilo ya no publica ese modelo como gratuito; actualiza el catálogo y elige uno con precio cero.":provider==="aihubmix"?"AIHubMix ya no publica ese modelo como gratuito de texto con peso de cuota 1; actualiza el catálogo.":"Modelo no permitido para el proveedor seleccionado.";
-    return json({error:message},400);
+    return json({error:message,code:"MODEL_NOT_ALLOWED",provider},400);
   }
   if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
   if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
@@ -161,6 +161,7 @@ export async function onRequestPost({ request, env }) {
   }
   const limitError = await checkLimits(env, request, provider);
   if (limitError) return json({error:limitError.error,code:limitError.code,scope:limitError.scope,retryAfter:limitError.retryAfter},limitError.status);
+  markReserved(provider);
 
   if (provider === "openrouter") {
     const model = requestedModel || "openrouter/free";
@@ -324,7 +325,9 @@ export async function onRequestPost({ request, env }) {
       else if([500,502,503,504].includes(status))holdSeconds=60;
       if(holdSeconds&&status!==403&&getCredentialSlots(env,"groq").length<=1)await setProviderHold(env,"groq",status===429?"rate_limited":status===401||status===403?"auth_error":"provider_unavailable",status===429?"Groq alcanzó un límite temporal; Prisma utilizará otro motor durante la pausa.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq está temporalmente indisponible; Prisma probará otro motor.",holdSeconds);
       const message=status===429?"Groq alcanzó un límite temporal. Prisma cambiará automáticamente a otro proveedor.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq respondió con un error ("+status+").";
-      return json({error:message,provider:"groq",status,retryAfter:holdSeconds||null},status===429?429:status===400?400:502);
+      return json({error:message,provider:"groq",status,
+       code:status===400?"INVALID_MODEL":status===429?"PROVIDER_LIMIT":"PROVIDER_ERROR",
+       retryAfter:holdSeconds||null},status===429?429:status===400?400:502);
     }
     const text=String(data.choices?.[0]?.message?.content||"").trim();
     if(!text)return json({error:"Groq no devolvió texto."},502);
@@ -464,4 +467,21 @@ export async function onRequestPost({ request, env }) {
     text,
     usage: data.usageMetadata || null,
   });
+}
+
+// Keep provider/shared budget for successful inference only. Upstream failures
+// release their reservation, while per-visitor attempt caps continue to apply.
+// Invalid or throttled requests never reserve anything, so nothing is refunded.
+export async function onRequestPost(context){
+ let reservedProvider=null;
+ let response;
+ try{
+  response=await executeChatRequest(context,provider=>{reservedProvider=provider;});
+ }catch(error){
+  if(reservedProvider)await refundFailedProviderUsage(context.env,reservedProvider);
+  throw error;
+ }
+ if(reservedProvider&&!response?.ok)
+  await refundFailedProviderUsage(context.env,reservedProvider);
+ return response;
 }

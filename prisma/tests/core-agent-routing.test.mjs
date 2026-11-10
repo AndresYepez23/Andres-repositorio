@@ -647,10 +647,10 @@ const capacityWithMoreKeys = {
  GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GROQ_API_KEY_2:'q2', GROQ_API_KEY_3:'q3', GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5',
 };
-assert.equal(getProviderDailyLimit(capacityEnv,'groq'),30);
+assert.equal(getProviderDailyLimit(capacityEnv,'groq'),80);
 assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
-assert.equal(getSharedDailyBudget(capacityEnv),150);
-assert.equal(getVisitorDailyLimit(capacityEnv),75);
+assert.equal(getSharedDailyBudget(capacityEnv),200);
+assert.equal(getVisitorDailyLimit(capacityEnv),90);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
 assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),15);
 assert.equal(getProviderMinuteLimit('aihubmix'),10);
@@ -662,6 +662,8 @@ assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}
 assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
 const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
 assert.match(statusSource, /dailyUsage: usage/);
+assert.match(statusSource, /sharedDailyUsage/);
+assert.match(statusSource, /sharedReady/);
 assert.match(statusSource, /dailyAvailable/);
 assert.match(statusSource, /perMinutePerVisitor: 20/);
 assert.match(statusSource, /aihubmixLifetime/);
@@ -777,12 +779,17 @@ assert.match(connectionsSource,/const count=Object\.values\(central\.providers\|
 
 // Core 4: bounded API budget, no hidden personal credits, and observable usage.
 const rankedEngines=['groq','cloudflare','gemini','requesty','sensenova','zai','kilo','openrouter'];
-assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'conversation'}),['groq','cloudflare','gemini','requesty','sensenova','openrouter']);
-assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'reasoning'}),['groq','cloudflare','gemini','requesty','sensenova','zai','openrouter']);
+assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'conversation'}),rankedEngines,
+ 'Automatic routing must not discard healthy providers outside the old first-five cutoff');
+assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'reasoning'}),rankedEngines);
 assert.deepEqual(selectInferenceCandidates(rankedEngines,{preferred:'gemini'}),['gemini']);
 assert.deepEqual(selectInferenceCandidates(['groq'],{preferred:'gemini'}),[],'Manual selection never substitutes another provider');
 assert.deepEqual(selectInferenceCandidates(rankedEngines,{preferred:'gemini',allowFallback:true}),rankedEngines);
 assert.equal(stopInferenceFallback({status:400}),true,'Permanent invalid requests must not be retried');
+assert.equal(stopInferenceFallback({status:400,code:'INVALID_MODEL'}),false,
+ 'A provider-specific invalid model must not stop the next provider');
+assert.equal(stopInferenceFallback({status:400,code:'MODEL_NOT_ALLOWED'}),false,
+ 'Model permissions are provider-specific, not a global failure');
 assert.equal(stopInferenceFallback({status:429}),false,'Provider quota failures may use a different authorized backend');
 assert.equal(stopInferenceFallback({status:503}),false);
 assert.equal(stopInferenceFallback({code:'INVALID_REQUEST'}),true);
@@ -819,6 +826,10 @@ assert.match(economyEngine,/selectInferenceCandidates\(/);
 assert.match(economyEngine,/stopInferenceFallback\(/);
 assert.match(economyEngine,/recordInferenceUsage\(provider,usage\)/);
 assert.match(economyEngine,/preferred!=='auto'/,'Personal keys cannot be spent by Core automatic text routing');
+assert.match(economyEngine,/failures\.every\(item=>item\.limited\)/,
+ 'Do not report all providers rate-limited when some failed for other reasons');
+assert.match(chatSource,/refundFailedProviderUsage\(context\.env,reservedProvider\)/,
+ 'Failed provider responses must refund only the provider and shared-day quotas');
 const economyCore=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 assert.match(economyCore,/chooseCoreContextOptions\(task,taskText\)/);
 assert.match(economyCore,/asksAboutPrisma/,'Provider catalog must not be sent with every question');

@@ -3,7 +3,7 @@ import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, getHealthyCredentialCount, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
-import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
+import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
   "Cache-Control": "no-store",
@@ -13,6 +13,8 @@ const headers = {
 
 export async function onRequestGet({ env }) {
   const limited = Boolean(env.PRISMA_RATE_DB?.prepare);
+  const sharedUsage=limited?await getSharedDailyUsage(env):null;
+  const sharedReady=!sharedUsage?.daily||sharedUsage.daily.remaining>0;
   const poolProviders = Object.keys(CREDENTIAL_ROOTS);
   const holds = {};
   if (limited) {
@@ -56,6 +58,7 @@ export async function onRequestGet({ env }) {
   const senseNovaHealthySlots=await getHealthyCredentialCount(env,"sensenova");
   const available = Object.fromEntries(poolProviders.map(provider =>
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
+      (provider === "openrouter" || sharedReady) &&
       (provider !== "sensenova" || senseNovaHealthySlots > 0) &&
       dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
       !(provider === "kilo" && kiloModels.length === 0) &&
@@ -73,7 +76,7 @@ export async function onRequestGet({ env }) {
   const speechReady = pollinationsReady && !blockedSpeech;
   const groqAudioReady = groqReady && !blockedGroqAudio;
   const cloudflareAudioReady = limited && Boolean(env.AI?.run) && !blockedCloudflareAudio && cloudflareAudioUsage?.daily?.remaining>0;
-  const cloudflareReady = limited && Boolean(env.AI?.run) && dailyAvailable("cloudflare");
+  const cloudflareReady = limited && sharedReady && Boolean(env.AI?.run) && dailyAvailable("cloudflare");
 
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
     const hold = holds[provider];
@@ -102,6 +105,7 @@ export async function onRequestGet({ env }) {
       warnings[provider] = "Las claves de SenseNova están temporalmente inhabilitadas por respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; el chat seguirá usando otros motores.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
+    else if (!sharedReady && provider !== "openrouter") warnings[provider] = "Se agotó el presupuesto global de modelos principales; OpenRouter puede seguir disponible como respaldo.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
     else if (usage[provider]?.minute?.remaining === 0) warnings[provider] = "Prisma alcanzó el límite interno por minuto para este motor. Se renovará en el siguiente minuto.";
   }
@@ -163,6 +167,7 @@ export async function onRequestGet({ env }) {
     warnings,
     capacity: {
       dailyBudget: getSharedDailyBudget(env),
+      sharedDailyUsage: sharedUsage?.daily || null,
       visitorDailyLimit: getVisitorDailyLimit(env),
       perMinutePerVisitor: 20,
       configuredProviders: poolProviders.filter(provider => configured[provider] > 0 || (provider === "kilo" && available.kilo)).concat(env.AI?.run ? ["cloudflare"] : []),

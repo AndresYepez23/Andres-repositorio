@@ -8,20 +8,23 @@ export function selectInferenceCandidates(ranked=[],{preferred='auto',allowFallb
  if(preferred!=='auto'&&!allowFallback)return names.includes(preferred)?[preferred]:[];
  if(preferred!=='auto')return names; // Explicit fallback was authorized.
  // Normally one model answers. Only real errors trigger a sequential retry.
- // Restrict cascading calls when several services are unhealthy. OpenRouter
- // remains the final independent fallback, never an additional primary.
- const limit=['coding','reasoning'].includes(task)?6:5;
+ // Automatic mode may reach any eligible provider after actual failures.
+ // The engine enforces an overall deadline and per-attempt timeouts, so
+ // additional configured providers do not cause unbounded retries.
+ // OpenRouter remains the last, independently capped reserve.
  const backup=names.includes('openrouter')?'openrouter':null;
- const primaries=names.filter(name=>name!=='openrouter').slice(0,limit);
+ const primaries=names.filter(name=>name!=='openrouter');
  return backup?[...primaries,backup]:primaries;
 }
 
 export function stopInferenceFallback(error={}){
  const status=Number(error?.status)||0;
  const code=String(error?.code||'');
- if(code==='LIMITS_UNAVAILABLE'||code==='INVALID_REQUEST'||code==='MODEL_NOT_ALLOWED')return true;
- // Provider rate limits and upstream failures MAY succeed elsewhere. A bad
- // payload, however, should not be sent repeatedly to other providers.
+ if(code==='LIMITS_UNAVAILABLE'||code==='INVALID_REQUEST')return true;
+ // Bad model identifiers are specific to a provider: another provider can
+ // still answer the same valid user prompt. Preserve stops for malformed
+ // requests and payload limits instead of retrying them everywhere.
+ if(code==='INVALID_MODEL'||code==='MODEL_NOT_ALLOWED')return false;
  return [400,413,415,422].includes(status);
 }
 

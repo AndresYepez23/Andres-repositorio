@@ -836,7 +836,7 @@ async function generateText(p,cb){
  const preferred=p.provider||'auto';
  const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
- const errors=[],attempted=[];
+ const errors=[],attempted=[],failures=[];
  let lastLimitError=null;
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>{
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
@@ -859,8 +859,8 @@ async function generateText(p,cb){
   preferred,allowFallback:p.allowFallback===true,task
  });
  const startedAt=Date.now();
- const totalDeadline=task==='planner'?38000:task==='songwriting'?62000:52000;
- const individualDeadline=task==='planner'?16000:task==='songwriting'?26000:21000;
+ const totalDeadline=task==='planner'?48000:task==='songwriting'?78000:65000;
+ const individualDeadline=task==='planner'?11000:task==='songwriting'?22000:16000;
  const modelFor=provider=>{
   let catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(provider==='kilo'&&preferred==='auto')catalog=catalog.filter(model=>
@@ -882,9 +882,13 @@ async function generateText(p,cb){
   if(provider!=='openrouter'&&candidates.includes('openrouter')&&p.centralProviders?.openrouter){
    // Reserve enough of the total deadline to actually reach the independent backup
    // if one or more primary providers hang instead of returning a quick 429/5xx.
-   const reserve=task==='songwriting'?14000:task==='planner'?10000:11000;
+   const reserve=task==='songwriting'?18000:task==='planner'?10000:14000;
    if(remaining<=reserve+2500){errors.push('Se reserva tiempo para probar OpenRouter como último respaldo.');continue;}
-   requestDeadline=Math.min(individualDeadline,remaining-reserve);
+   // Avoid spending the entire budget waiting on one unresponsive provider.
+   // Several alternative providers can be attempted if the first models hang.
+   const primarySlots=Math.max(1,Math.min(5,candidates.slice(candidateIndex).filter(id=>id!=='openrouter').length));
+   const fairSlice=Math.max(5500,Math.floor((remaining-reserve)/primarySlots));
+   requestDeadline=Math.min(individualDeadline,remaining-reserve,fairSlice);
   }
   attempted.push(provider);
   if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
@@ -939,6 +943,9 @@ async function generateText(p,cb){
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
+   failures.push({provider,status:Number(error?.status)||0,
+    limited:error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT'||
+     error?.status===402||error?.status===429});
    // Main-provider daily and visitor limits must not block OpenRouter.
    // OpenRouter has its own capped per-visitor and provider D1 counters.
    if(error?.code==='GLOBAL_LIMIT'||error?.status===429&&/Prisma alcanzó su límite temporal gratuito global/i.test(String(error?.message||''))){
@@ -955,8 +962,14 @@ async function generateText(p,cb){
   }
  }
  if(errors.length){
-  const message='Los motores disponibles no pudieron responder: '+errors.slice(0,3).join(' | ');
-  if(lastLimitError)throw Object.assign(Error(message),{code:lastLimitError.code,scope:lastLimitError.scope||'',retryAfter:lastLimitError.retryAfter||null});
+  const allRateLimited=failures.length>0&&failures.length===attempted.length&&failures.every(item=>item.limited);
+  const names=attempted.map(id=>providerNames[id]||id).join(', ');
+  const detail=errors.slice(0,3).join(' | ');
+  const message=allRateLimited
+   ?'Los motores intentados alcanzaron límites temporales ('+names+'). '+detail
+   :'Prisma no pudo obtener respuesta de los motores probados ('+names+'). No significa que todos hayan agotado sus cuotas. '+detail;
+  if(allRateLimited&&lastLimitError)
+   throw Object.assign(Error(message),{code:lastLimitError.code,scope:lastLimitError.scope||'',retryAfter:lastLimitError.retryAfter||null});
   throw Error(message);
  }
  throw Error('No hay un motor de texto disponible para esta tarea. Revisa las conexiones del Laboratorio IA.');
