@@ -117,6 +117,14 @@ export function getCredentialStatus(env, provider) {
   };
 }
 
+async function credentialHealthKey(provider, slot) {
+  // Cooldowns belong to the actual credential, not just its slot position.
+  // Updating a secret must not inherit the previous invalid key's one-hour hold.
+  const bytes=new TextEncoder().encode(slot.value);
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  const tag=Array.from(new Uint8Array(digest).slice(0,8),b=>b.toString(16).padStart(2,'0')).join('');
+  return "credential-slot:" + provider + ":" + slot.number + ":" + tag;
+}
 function retryHoldSeconds(status, headers) {
   if (status === 401 || status === 403) return 3600;
   if (status === 402) return 3600;
@@ -161,7 +169,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
 
   for (let offset = 0; offset < slots.length && attempted < maxAttempts; offset++) {
     const slot = slots[(startIndex + offset) % slots.length];
-    const healthKey = "credential-slot:" + provider + ":" + slot.number;
+    const healthKey = await credentialHealthKey(provider, slot);
     const hold = await getProviderHold(env, healthKey);
     if (hold) continue;
 
@@ -189,7 +197,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       if (sweepAuthSlots && response.status !== 401 && response.status !== 403 && attempted >= 2) return response;
       await setProviderHold(env, healthKey,
         response.status === 401 || response.status === 403 ? "auth_error" : "provider_error",
-        "Esta credencial requiere una pausa temporal; se probará como máximo una clave alternativa.", retryHoldSeconds(response.status, response.headers));
+        "La credencial recibió HTTP " + response.status + "; esta clave permanecerá temporalmente en pausa.", retryHoldSeconds(response.status, response.headers));
     } catch (error) {
       lastError = error;
       await setProviderHold(env, healthKey, "network_error",
