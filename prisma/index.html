@@ -337,17 +337,123 @@
       <footer><button type="button" class="mini-button" id="core-editor-reset">Restablecer</button><button type="button" class="button button-primary" id="core-editor-save">Guardar imagen en el chat</button></footer>
     </section>
   </div>
-<div class="auth-backdrop hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-  <section class="auth-panel"><button type="button" class="auth-close" id="auth-close" aria-label="Cerrar">×</button><img src="./assets/prisma-app-icon.svg" alt="" width="55" height="55"><h2 id="auth-title">Bienvenido a Prisma Space</h2>
-    <p>Úsalo gratis sin registrarte. Con una cuenta podrás sincronizar conversaciones y preferencias cuando activemos la conexión segura.</p>
-    <button type="button" class="auth-guest" id="auth-guest">Seguir usando Prisma sin cuenta</button>
-    <p class="auth-availability" id="auth-availability">Preparando autenticación independiente de OdontoUdeC.</p>
-    <div class="auth-provider-grid"><button type="button" id="auth-google" disabled>Continuar con Google <small>Por configurar</small></button><button type="button" id="auth-apple" disabled>Continuar con Apple <small>Por configurar</small></button><button type="button" id="auth-phone" disabled>Continuar con teléfono <small>Requiere SMS</small></button></div>
-    <div class="auth-divider"><span>o con tu correo</span></div>
-    <div class="auth-tabs"><button type="button" id="auth-tab-login" class="active">Iniciar sesión</button><button type="button" id="auth-tab-signup">Crear cuenta</button></div>
-    <form id="auth-form"><label>Correo electrónico<input type="email" id="auth-email" autocomplete="email" required placeholder="correo@ejemplo.com"></label><label>Contraseña<input type="password" id="auth-password" autocomplete="current-password" minlength="6" required placeholder="Mínimo 6 caracteres"></label><button type="submit" class="auth-submit" id="auth-submit" disabled>Continuar</button></form>
-    <form class="hidden" id="auth-phone-form"><label>Teléfono internacional<input type="tel" id="auth-phone-number" autocomplete="tel" placeholder="+57 300 000 0000"></label><button type="button" id="auth-send-code">Enviar SMS</button><label>Código<input type="text" id="auth-otp-code" inputmode="numeric" maxlength="8"></label><button type="submit">Verificar código</button></form>
-    <button type="button" class="auth-reset" id="auth-reset" disabled>Recuperar contraseña</button><p class="auth-message" id="auth-message" role="status"></p>
+<div class="auth-backdrop hidden" id="auth-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Acceso a Prisma Space">
+  <section class="auth-panel" tabindex="-1">
+    <button type="button" class="auth-close" id="auth-close" aria-label="Cerrar y continuar como invitado">×</button>
+    <div class="auth-identity">
+      <img src="./assets/prisma-app-icon.svg" alt="" width="46" height="46">
+      <span>PRISMA SPACE <small>UNA CUENTA. TODAS TUS HERRAMIENTAS.</small></span>
+    </div>
+    <div id="auth-intro" class="auth-screen">
+      <h2 id="auth-title">Bienvenido a Prisma</h2>
+      <p class="auth-description">Entra a tu espacio. Guarda tus preferencias y decide cuándo sincronizar tus conversaciones.</p>
+      <div class="auth-provider-grid" aria-label="Métodos para continuar">
+        <button type="button" id="auth-google" disabled><span class="auth-provider-g" aria-hidden="true">G</span><span>Continuar con Google</span><small>Próximamente</small></button>
+        <button type="button" id="auth-apple" disabled><span class="auth-provider-apple" aria-hidden="true">●</span><span>Continuar con Apple</span><small>Próximamente</small></button>
+        <button type="button" id="auth-phone" disabled><span class="auth-provider-phone" aria-hidden="true">▯</span><span>Continuar con teléfono</span><small>Requiere SMS</small></button>
+      </div>
+      <div class="auth-divider"><span>o</span></div>
+      <button type="button" class="auth-email-choice" id="auth-email-choice">Continuar con correo electrónico <span aria-hidden="true">→</span></button>
+      <p class="auth-availability" id="auth-availability">Comprobando conexión segura…</p>
+      <button type="button" class="auth-guest" id="auth-guest">Seguir sin iniciar sesión</button>
+    </div>
+    <div id="auth-email-screen" class="auth-screen hidden">
+      <button class="auth-back" type="button" data-auth-back="intro">← Todos los métodos</button>
+      <h2 id="auth-email-title">Accede a tu cuenta</h2>
+      <p class="auth-description" id="auth-email-description">Usa tu correo electrónico y contraseña.</p>
+      <div class="auth-tabs" role="group" aria-label="Acceso por correo">
+        <button type="button" id="auth-tab-login" class="active">Iniciar sesión</button>
+        <button type="button" id="auth-tab-signup">Crear cuenta</button>
+      </div>
+      <form id="auth-form" autocomplete="on">
+        <label id="auth-name-label" class="hidden">Nombre para mostrar
+          <input type="text" id="auth-display-name" autocomplete="nickname" maxlength="60" placeholder="¿Cómo quieres que te llamemos?">
+        </label>
+        <label>Correo electrónico
+          <input type="email" id="auth-email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="tu@correo.com">
+        </label>
+        <label>Contraseña
+          <span class="auth-password-wrap"><input type="password" id="auth-password" autocomplete="current-password" minlength="8" required placeholder="Mínimo 8 caracteres"><button type="button" class="auth-password-toggle" data-password-target="auth-password" aria-label="Mostrar contraseña">Mostrar</button></span>
+        </label>
+        <label id="auth-password-confirm-label" class="hidden">Repite la contraseña
+          <span class="auth-password-wrap"><input type="password" id="auth-password-confirm" autocomplete="new-password" minlength="8" placeholder="Confirma la contraseña"><button type="button" class="auth-password-toggle" data-password-target="auth-password-confirm" aria-label="Mostrar contraseña">Mostrar</button></span>
+        </label>
+        <p class="auth-validation" id="auth-password-hint">Usa al menos 8 caracteres. No compartas tu contraseña.</p>
+        <button type="submit" class="auth-submit" id="auth-submit" disabled>Iniciar sesión</button>
+      </form>
+      <button type="button" class="auth-reset" id="auth-reset">¿Olvidaste tu contraseña?</button>
+    </div>
+    <div id="auth-phone-screen" class="auth-screen hidden">
+      <button type="button" class="auth-back" data-auth-back="intro">← Todos los métodos</button>
+      <h2>Continuar con teléfono</h2>
+      <p class="auth-description">Recibirás un código por SMS. Tu operador puede aplicar cargos.</p>
+      <form id="auth-phone-form">
+        <label>Teléfono con código de país
+          <input type="tel" id="auth-phone-number" autocomplete="tel" required placeholder="+57 300 000 0000">
+        </label>
+        <button type="button" id="auth-send-code" class="auth-submit">Enviar SMS</button>
+        <label>Código de verificación
+          <input type="text" id="auth-otp-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4,8}" maxlength="8" placeholder="Código SMS">
+        </label>
+        <button type="submit" class="auth-submit" id="auth-verify-phone">Verificar teléfono</button>
+      </form>
+    </div>
+    <div id="auth-reset-screen" class="auth-screen hidden">
+      <button type="button" class="auth-back" data-auth-back="email">← Volver al correo</button>
+      <h2>Recupera tu cuenta</h2>
+      <p class="auth-description">Enviaremos un enlace de recuperación si existe una cuenta con ese correo.</p>
+      <form id="auth-reset-form">
+        <label>Correo electrónico
+          <input type="email" id="auth-reset-email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com">
+        </label>
+        <button type="submit" class="auth-submit" id="auth-reset-submit">Enviar enlace</button>
+      </form>
+    </div>
+    <div id="auth-recovery-screen" class="auth-screen hidden">
+      <h2>Establecer contraseña</h2>
+      <p class="auth-description">Crea una contraseña nueva para proteger tu cuenta.</p>
+      <form id="auth-recovery-form">
+        <label>Nueva contraseña
+          <input type="password" id="auth-new-password" autocomplete="new-password" minlength="8" required placeholder="Mínimo 8 caracteres">
+        </label>
+        <label>Confirma la nueva contraseña
+          <input type="password" id="auth-new-password-confirm" autocomplete="new-password" minlength="8" required>
+        </label>
+        <button type="submit" class="auth-submit" id="auth-recovery-submit">Guardar contraseña</button>
+      </form>
+    </div>
+    <div id="auth-confirm-screen" class="auth-screen hidden">
+      <span class="auth-state-icon" aria-hidden="true">✉</span>
+      <h2 id="auth-confirm-title">Revisa tu correo</h2>
+      <p class="auth-description" id="auth-confirm-description">Te enviamos un enlace para continuar.</p>
+      <p class="auth-confirm-email" id="auth-confirm-email"></p>
+      <button type="button" class="auth-resend" id="auth-resend-signup">Reenviar confirmación</button>
+      <button type="button" class="auth-submit" id="auth-confirm-done">Entendido</button>
+    </div>
+    <div id="auth-welcome-screen" class="auth-screen hidden">
+      <span class="auth-state-icon" aria-hidden="true">✓</span>
+      <h2 id="auth-welcome-title">¡Tu espacio está listo!</h2>
+      <p class="auth-description">Ya has iniciado sesión. Tus conversaciones de este dispositivo siguen siendo privadas y solo se sincronizarán si tú lo autorizas.</p>
+      <button type="button" class="auth-submit" id="auth-welcome-continue">Empezar a usar Prisma</button>
+    </div>
+    <div id="auth-account-screen" class="auth-screen hidden">
+      <h2>Tu cuenta de Prisma</h2>
+      <div class="auth-account-identity"><span class="auth-account-avatar" id="auth-account-avatar">P</span><span><strong id="auth-account-name">Mi cuenta</strong><small id="auth-account-email">Sesión iniciada</small></span></div>
+      <p class="auth-account-verification" id="auth-account-verification"></p>
+      <form id="auth-profile-form">
+        <label>Nombre visible
+          <input type="text" id="auth-profile-name" autocomplete="nickname" maxlength="60" placeholder="Tu nombre en Prisma">
+        </label>
+        <button type="submit" class="auth-submit" id="auth-profile-save">Guardar cambios</button>
+      </form>
+      <div class="auth-account-actions">
+        <button type="button" id="auth-account-sync">Sincronizar mis conversaciones</button>
+        <button type="button" id="auth-account-signout">Cerrar sesión</button>
+      </div>
+      <p class="auth-validation" id="auth-account-sync-status">La sincronización del historial es opcional.</p>
+    </div>
+    <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+    <p class="auth-legal">Consulta la <a href="./privacy.html#privacidad" target="_blank" rel="noopener">política de privacidad</a> de Prisma antes de crear tu cuenta. Nunca compartas contraseñas ni códigos de verificación.</p>
   </section>
 </div>
 <div class="voice-backdrop hidden" id="voice-modal" role="dialog" aria-modal="true" aria-labelledby="voice-title"><section class="voice-panel"><button class="auth-close" type="button" id="voice-close" aria-label="Cerrar voz">×</button><span class="voice-orb" aria-hidden="true">✦</span><h2 id="voice-title">Conversación por voz</h2><p>Habla por turnos con Prisma. La IA responde y tu dispositivo puede leer su mensaje. No es una llamada continua en tiempo real.</p><div class="voice-transcript" id="voice-transcript" role="status">Pulsa el micrófono para hablar.</div><div class="voice-controls"><button type="button" id="voice-record">Hablar</button><button type="button" id="voice-stop">Detener voz</button><button type="button" class="hidden" id="voice-play-reply">Escuchar respuesta</button></div><small>La transcripción puede usar el servicio de voz del dispositivo o Groq, según disponibilidad y permiso.</small></section></div>
