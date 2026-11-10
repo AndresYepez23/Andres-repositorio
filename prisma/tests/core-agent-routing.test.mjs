@@ -18,7 +18,7 @@ import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHt
 import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
 import { validateAgentStepResult } from '../src/core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions, isCoreFollowUp } from '../src/core-context.js';
-import { resolveIndependentCoreRequest, solveOfflineArithmetic, getOfflineExtractiveSummary, INDEPENDENT_CORE_KNOWLEDGE_COUNT } from '../src/core-independent-intelligence.js';
+import { resolveIndependentCoreRequest, resolveContextualCoreRequest, solveOfflineArithmetic, getOfflineExtractiveSummary, INDEPENDENT_CORE_KNOWLEDGE_COUNT } from '../src/core-independent-intelligence.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage, readInferenceUsage, INFERENCE_USAGE_KEY } from '../src/core-economy.js';
 import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
@@ -112,6 +112,12 @@ assert.equal(imageAnalysisIntent('Explícame la imagen',picture),'interpret');
 assert.equal(imageAnalysisIntent('Describe esta foto',picture),'interpret');
 assert.equal(imageAnalysisIntent('Muéstrame los metadatos EXIF',picture),'','Explicit metadata requests remain local');
 
+assert.equal(resolveContextualCoreRequest('¿Y para qué sirve?',[{role:'user',content:'¿Qué es una API?'}])?.kind,'context');
+assert.equal(resolveContextualCoreRequest('¿Y para qué sirve?',[{role:'user',content:'¿Qué es un agujero negro?'}]),null,'Unknown history should not invent a local answer');
+assert.equal(resolveContextualCoreRequest('Diferencia entre autenticación y autorización')?.kind,'comparison');
+assert.equal(resolveContextualCoreRequest('Diferencia entre autenticación y agujeros negros'),null);
+assert.equal(resolveContextualCoreRequest('Tengo 200 y aplica un aumento del 10% y luego un descuento del 10%')?.kind,'plan');
+assert.match(resolveContextualCoreRequest('Tengo 200 y aplica un aumento del 10% y luego un descuento del 10%')?.text||'',/198/);
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 assert.match(coreSource,/const explanation=\/\^/,'Explanatory questions must bypass the tool planner');
 assert.match(coreSource,/if\(explanation&&!explicitExecution\)/,'Questions mentioning file formats should remain in ordinary chat');
