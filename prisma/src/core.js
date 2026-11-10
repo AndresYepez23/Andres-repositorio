@@ -476,6 +476,21 @@ function recordCompletedCoreTask({fileTask=false}={}){
     status('Archivo procesado · '+remaining+' '+(remaining===1?'trabajo con archivos restante':'trabajos con archivos restantes')+'.','success');
   }
 }
+let guestGateWasRequested=false;
+let guestNoticeDismissed=false;
+function refreshGuestRegisterCard(){
+ const card=$('#core-guest-register-card');
+ if(!card)return;
+ const exhausted=readGuestTaskCount(localStorage)>=GUEST_TASK_LIMIT;
+ const visible=guestGateWasRequested&&!guestNoticeDismissed&&!isPrismaAuthenticated()&&exhausted;
+ card.classList.toggle('hidden',!visible);
+ card.setAttribute('aria-hidden',String(!visible));
+}
+function guestGateRequested(){
+ guestGateWasRequested=true;
+ guestNoticeDismissed=false;
+ refreshGuestRegisterCard();
+}
 function setProgress(value,label){
   const wrap=$('#core-progress');if(!wrap)return;
   wrap.classList.remove('hidden');
@@ -2002,6 +2017,30 @@ export function initPrismaCore(){
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&imageSettings?.open)imageSettings.open=false;
   });
+  // The signup card is in the chat-column flow (not on top of messages).
+  // Opening the account panel keeps the card hidden until the user returns.
+  document.addEventListener('prisma:guest-gate-open',()=>{
+    guestGateWasRequested=true;
+    guestNoticeDismissed=false;
+    $('#core-guest-register-card')?.classList.add('hidden');
+  });
+  document.addEventListener('prisma:guest-gate-closed',()=>{
+    guestGateWasRequested=true;
+    guestNoticeDismissed=false;
+    refreshGuestRegisterCard();
+  });
+  document.addEventListener('prisma:auth-session-changed',refreshGuestRegisterCard);
+  $('#core-guest-register-login')?.addEventListener('click',()=>{
+    openPrismaAuthForGuestLimit('login');
+  });
+  $('#core-guest-register-signup')?.addEventListener('click',()=>{
+    openPrismaAuthForGuestLimit('signup');
+  });
+  $('#core-guest-register-close')?.addEventListener('click',()=>{
+    guestNoticeDismissed=true;
+    refreshGuestRegisterCard();
+  });
+  refreshGuestRegisterCard();
   $('#core-file-button').addEventListener('click',()=>{
     if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage),fileTask:true})){
       status('Para adjuntar más archivos necesitas una cuenta gratuita. El chat de texto sigue disponible.','info');
