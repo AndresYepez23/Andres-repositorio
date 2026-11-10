@@ -8,6 +8,7 @@ import { planFileConversion } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
+import { mountCoreWelcomeGrid } from './core-welcome-grid.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
@@ -27,6 +28,7 @@ let activeConversationId = '';
 let conversationSearch = '';
 const MAX_STEPS = 10;
 let messages = [];
+let disposeWelcomeGrid = null;
 let attachments = [];
 let pendingPlan = null;
 let busy = false;
@@ -412,6 +414,9 @@ function renderMessages({forceBottom=false}={}){
   const list=$('#core-messages');if(!list)return;
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
+  // Re-rendering the chat must remove canvas listeners and its animation loop.
+  disposeWelcomeGrid?.();
+  disposeWelcomeGrid=null;
   list.replaceChildren();
   if(!messages.length){
     const welcome=document.createElement('div');welcome.className='core-welcome';
@@ -419,6 +424,7 @@ function renderMessages({forceBottom=false}={}){
     const examples=document.createElement('div');examples.className='core-examples';
     examples.innerHTML=['Divide este PDF y guarda cada página por separado','Convierte este PDF en un Word editable','Analiza este documento y resume lo importante','Prepara esta imagen para Instagram','Crea una página web para mi negocio'].map((x,i)=>'<button type="button" data-example="'+i+'">'+escapeHtml(x)+'</button>').join('');
     welcome.append(examples);list.append(welcome);
+    disposeWelcomeGrid=mountCoreWelcomeGrid(welcome);
     examples.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{const input=$('#core-input');input.value=button.textContent;input.focus();}));
   }
   for(const message of messages){
