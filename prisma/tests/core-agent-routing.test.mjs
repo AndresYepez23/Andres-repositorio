@@ -1193,7 +1193,7 @@ for(const method of ['signUp','signInWithPassword','signInWithOAuth','signInWith
  assert.ok(prismaAccountCode.includes('auth.'+method),method+' must call the real Supabase Auth SDK');
 }
 assert.match(prismaAccountCode,/api\.from\('prisma_profiles'\)/,'Profiles are stored in actual protected database');
-assert.match(prismaAccountCode,/onConflict:'user_id'/);
+assert.match(prismaAccountCode,/\.update\(fields\)\.eq\('user_id',id\)/,'Profile edits preserve existing sync settings');
 assert.match(prismaAccountCode,/localStorage\.setItem\(SYNC_KEY,user\.id\)/,'Sync consent is remembered on each device');
 assert.match(prismaAccountCode,/sync_enabled/,'Sync preference is account-wide in the protected profile');
 assert.match(prismaAccountCode,/\.range\(offset,offset\+pageSize-1\)/,'Remote history must be fetched with pagination');
