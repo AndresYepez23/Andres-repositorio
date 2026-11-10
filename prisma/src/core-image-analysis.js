@@ -11,3 +11,12 @@ export function imageAnalysisIntent(text,files=[]){
     !q||/\b(?:lee|leer|revisa|revisar|entiende|entender)\b/.test(q))return 'interpret';
  return '';
 }
+
+export function isBatchImageTranscription(text,files=[]){
+ const q=normalize(text);
+ const images=Array.isArray(files)?files.filter(file=>String(file?.type||'').startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp|heic|heif)$/i.test(String(file?.name||''))):[];
+ if(!images.length)return false;
+ const wantsText=/\b(?:texto|ocr|transcrib|transcrip|palabras|escrito)\b/.test(q);
+ const wantsExtract=/\b(?:saca|sacame|extrae|extraer|pasame|pasa|transcribe|transcribir|copia|copiar|reconoce|reconocer|lee|leer|obten|obtener)\b/.test(q);
+ return wantsText&&wantsExtract;
+}
