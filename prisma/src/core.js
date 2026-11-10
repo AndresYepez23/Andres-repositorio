@@ -180,7 +180,12 @@ function loadChatHistory(){
  conversations.sort((a,b)=>b.updated-a.updated);
  activeConversationId=conversations[0]?.id||'';
  messages=conversations[0]?.messages?.slice()||[];
- if(needsCleanup)persistChatHistory();
+ if(needsCleanup){
+  // Prune localStorage now, but let IndexedDB restoration finish before replacing
+  // its snapshot so a valid backup is never erased by an empty legacy cache.
+  const persisted=conversations.filter(hasConversationMessages);
+  try{localStorage.setItem(CHATS_KEY,JSON.stringify(persisted));}catch{}
+ }
  renderConversationList();
 }
 async function restoreIndexedHistory(){
@@ -189,7 +194,11 @@ async function restoreIndexedHistory(){
   if(!Array.isArray(indexedRaw)||!indexedRaw.length)return;
   const indexed=indexedRaw.map(serializeConversation).filter(Boolean).filter(hasConversationMessages);
   // Older builds could snapshot an empty draft. Remove those records from IndexedDB.
-  if(!indexed.length){await saveConversationSnapshot([]);return;}
+  if(!indexed.length){
+   const current=conversations.filter(hasConversationMessages);
+   await saveConversationSnapshot(current);
+   return;
+  }
   const current=conversations.filter(hasConversationMessages);
   const merged=mergeConversationLists(current,indexed).filter(hasConversationMessages);
   if(!merged.length){await saveConversationSnapshot([]);return;}

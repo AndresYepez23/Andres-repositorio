@@ -16,6 +16,13 @@ const core=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 const account=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
 const aurora=readFileSync(new URL('../aurora-system.css',import.meta.url),'utf8');
 
+const loadStart=core.indexOf('function loadChatHistory(){');
+const loadEnd=core.indexOf('async function restoreIndexedHistory(){',loadStart);
+const loadSource=core.slice(loadStart,loadEnd);
+assert.match(loadSource,/if\(needsCleanup\)\{[\s\S]*localStorage\.setItem\(CHATS_KEY,JSON\.stringify\(persisted\)\)/,
+  'Pruning localStorage must not overwrite IndexedDB before its valid backup is restored');
+assert.doesNotMatch(loadSource,/persistChatHistory\(\)/,
+  'Boot-time cleanup must not erase a valid IndexedDB backup');
 assert.match(core,/filter\(hasConversationMessages\)/,'Core must filter empty chats before persisting or rendering history');
 assert.match(core,/const persisted=conversations\.filter\(hasConversationMessages\)/,'Remote history hydration must not save an empty draft');
 assert.match(account,/filter\(hasConversationMessages\)/,'Account sync must filter empty local, IndexedDB and remote chats');
