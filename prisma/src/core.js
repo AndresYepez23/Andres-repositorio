@@ -33,6 +33,25 @@ let conversationSearch = '';
 const MAX_STEPS = 10;
 let messages = [];
 let disposeWelcomeGrid = null;
+let coreViewActive = true;
+
+function syncWelcomeGrid(){
+  const shouldMount=coreViewActive&&messages.length===0;
+  if(shouldMount&&!disposeWelcomeGrid){
+    // Preserve the full-width chat background, but never leave its canvas
+    // attached to the page after the user switches to another section.
+    const chatSurface=document.querySelector('.main-area')||document.getElementById('page-content')||document.querySelector('#core-messages');
+    disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
+  }else if(!shouldMount&&disposeWelcomeGrid){
+    disposeWelcomeGrid();
+    disposeWelcomeGrid=null;
+  }
+}
+
+export function setPrismaCoreViewActive(active){
+  coreViewActive=Boolean(active);
+  syncWelcomeGrid();
+}
 let attachments = [];
 let pendingPlan = null;
 let busy = false;
@@ -451,18 +470,8 @@ function renderMessages({forceBottom=false}={}){
   list.classList.toggle('is-empty',messages.length===0);
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
-  // The full-width animated matrix belongs to the empty welcome screen only.
-  // Remove its canvas and event listeners as soon as a conversation has messages,
-  // and recreate it when opening a fresh empty chat.
-  if(!messages.length){
-    if(!disposeWelcomeGrid){
-      const chatSurface=document.querySelector('.main-area')||document.getElementById('page-content')||list;
-      disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
-    }
-  }else if(disposeWelcomeGrid){
-    disposeWelcomeGrid();
-    disposeWelcomeGrid=null;
-  }
+  // Mount only for the empty welcome state while Prisma Core is actually visible.
+  syncWelcomeGrid();
   if(answerRevealFrame){cancelAnimationFrame(answerRevealFrame);answerRevealFrame=0;}
   list.replaceChildren();
   if(!messages.length){

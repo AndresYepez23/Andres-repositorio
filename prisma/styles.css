@@ -2785,6 +2785,11 @@ body.is-core-view .core-guest-register-actions button:focus-visible{
 }
 
 
+/* Keep the application viewport bounded. Intentional horizontal scrollers
+   (tables, attachments and media controls) retain their own local overflow. */
+html,body{overflow-x:hidden}
+.app-shell,.main-area,.page-content{min-width:0}
+
 /* Attached files: compact, accessible previews that never expand the composer. */
 body.is-core-view .core-attachments{
   display:flex;
@@ -3022,6 +3027,11 @@ body:not(.is-core-view) .tool-card{border-radius:16px;min-height:170px}
 
 /* Prisma Core: full-width animated field across the entire chat stage.
    Anchor it to .main-area, never to a centered content container. */
+/* Safety net: if a view transition or browser restore delays JS cleanup,
+   the decorative canvas must never become a normal-flow block in Explore. */
+body:not(.is-core-view) .main-area > .core-welcome-ambient{
+  display:none!important;
+}
 body.is-core-view .main-area{
   position:relative!important;
   isolation:isolate!important;

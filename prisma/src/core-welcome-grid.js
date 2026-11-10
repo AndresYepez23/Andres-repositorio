@@ -23,8 +23,9 @@ export function mountCoreWelcomeGrid(container){
  let destroyed=false,inView=true,theme='';
  let pointerX=-1000,pointerY=-1000,targetX=-1000,targetY=-1000;
  let strength=0,targetStrength=0,touchUntil=0;
- const nominalInterval=precise?1000/27:1000/22;
- const dotsDesktop=15,dotsTablet=17,dotsMobile=18;
+ // The ambience is decorative: cap its drawing budget so it never competes with chat.
+ const nominalInterval=precise?1000/22:1000/18;
+ const dotsDesktop=17,dotsTablet=18,dotsMobile=20;
 
  function currentTheme(){
   return document.documentElement.dataset.theme==='light'?'light':'dark';
@@ -34,7 +35,7 @@ export function mountCoreWelcomeGrid(container){
   const bounds=layer.getBoundingClientRect();
   const nextWidth=Math.round(bounds.width),nextHeight=Math.round(bounds.height);
   if(nextWidth<5||nextHeight<5)return;
-  const nextRatio=Math.min(window.devicePixelRatio||1,1.5);
+  const nextRatio=Math.min(window.devicePixelRatio||1,1.25);
   if(width!==nextWidth||height!==nextHeight||ratio!==nextRatio){
    width=nextWidth;height=nextHeight;ratio=nextRatio;
    canvas.width=Math.round(width*ratio);

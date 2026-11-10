@@ -1,4 +1,4 @@
-import { initPrismaCore } from './core.js';
+import { initPrismaCore, setPrismaCoreViewActive } from './core.js';
 import { installMobileSidebarGestures } from './sidebar-gestures.js';
 import { localizedVideoError } from './video-compression.js';
 import { reconcileIosPwaViewport } from './pwa-viewport.js';
@@ -220,6 +220,8 @@ function render(){
   $('#section-description').textContent=activeView==='favorites'?'Tus accesos guardados en este dispositivo.':activeView==='recent'?'Retoma rápidamente una herramienta que utilizaste antes.':searchTerm?'Resultados relacionados con tu búsqueda, incluidos sinónimos.':'Elige una herramienta y empieza a trabajar al instante.';
   $$('.nav-item').forEach(button=>{const active=button.dataset.view===activeView;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
   document.body.classList.toggle('is-core-view',core);
+  // Keep the full-width Core ambience alive only while the empty Core view is active.
+  setPrismaCoreViewActive(core);
   $('#category-label').classList.remove('hidden');
   $('#category-label').textContent=core?'TUS CONVERSACIONES':'EXPLORAR POR CATEGORÍA';
   $('#category-nav').classList.toggle('hidden',core);
