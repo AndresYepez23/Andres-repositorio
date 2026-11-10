@@ -94,7 +94,12 @@ function updateTabs(){
  const confirm=$('#auth-password-confirm');
  if(confirm)confirm.required=signup;
  const password=$('#auth-password');
- if(password)password.autocomplete=signup?'new-password':'current-password';
+ if(password){
+  password.autocomplete=signup?'new-password':'current-password';
+  // Accounts created by the previous Prisma form accepted 6-character
+  // passwords. Do not lock them out when increasing signup standards.
+  password.minLength=signup?8:6;
+ }
  const title=$('#auth-email-title');
  if(title)title.textContent=signup?'Crear cuenta en Prisma':'Accede a tu cuenta';
  const description=$('#auth-email-description');
@@ -322,7 +327,9 @@ function bindForms(){
    if(!api||!config.enabled)throw Error('El sistema de cuentas todavía no está disponible.');
    const email=String($('#auth-email')?.value||'').trim().toLowerCase();
    const password=String($('#auth-password')?.value||'');
-   const error=validateAccountPassword(password,authMode==='signup'?$('#auth-password-confirm')?.value||'':null);
+   const error=authMode==='signup'
+    ?validateAccountPassword(password,$('#auth-password-confirm')?.value||'')
+    :password?'':'Introduce tu contraseña.';
    if(error){info(error,'error');return;}
    info(authMode==='signup'?'Creando tu cuenta…':'Comprobando tus credenciales…');
    const signup=authMode==='signup';
