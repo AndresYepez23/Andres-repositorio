@@ -2649,3 +2649,35 @@ body.is-core-view #core-messages.is-empty .core-welcome-ambient{
     scroll-behavior:auto!important;
   }
 }
+
+
+/* Prisma Core welcome v3: let the empty-state matrix bleed through page gutters. */
+body.is-core-view #core-messages.is-empty{
+  width:calc(100% + clamp(24px,4vw,56px))!important;
+  max-width:none!important;
+  margin-left:calc(0px - clamp(12px,2vw,28px))!important;
+  margin-right:calc(0px - clamp(12px,2vw,28px))!important;
+}
+body.is-core-view #core-messages.is-empty .core-welcome-gradient{
+  background:linear-gradient(100deg,#a4f2e3 0%,#9bdcf7 48%,#c8b9ff 100%)!important;
+  font-weight:850;
+  letter-spacing:-.038em;
+  font-size:1.04em;
+  filter:drop-shadow(0 2px 13px rgba(117,207,229,.24));
+  -webkit-text-stroke:.2px rgba(222,250,255,.16);
+}
+html[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-gradient{
+  background:linear-gradient(100deg,#287f79 0%,#397fb5 48%,#7664b5 100%)!important;
+  filter:none;
+  -webkit-text-stroke:0;
+}
+@media(max-width:620px){
+  body.is-core-view #core-messages.is-empty{
+    width:calc(100% + 20px)!important;
+    margin-left:-10px!important;
+    margin-right:-10px!important;
+  }
+  body.is-core-view #core-messages.is-empty .core-welcome-gradient{
+    font-size:1.025em;
+  }
+}
