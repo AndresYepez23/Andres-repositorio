@@ -1,6 +1,7 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { extractWebsiteHtml } from './core-intent.js';
+import { compressVideoNative, preferNativeVideoCompression, localizedVideoError } from './video-compression.js';
 import { selectImageCandidates, imageFailureDecision } from './image-routing.js';
 import { runAdvancedTextTool } from './advanced-text-tools.js';
 import { LOCAL_CREATOR_TOOL_IDS, runLocalCreatorTool } from './local-creator-tools.js';
@@ -179,7 +180,15 @@ async function runVideo(id,files,p,cb){
  const ext=(files[0].name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4';
  const input='input.'+ext;await ff.writeFile(input,await fetchFile(files[0]));
  let output='prisma-video.mp4',args=['-i',input];
- if(id==='video-speed'){
+ if(id==='video-compress'){
+  const quality=['small','balanced','quality'].includes(p.quality)?p.quality:'balanced';
+  const maxWidth={small:720,balanced:960,quality:1280}[quality];
+  const crf={small:'35',balanced:'31',quality:'27'}[quality];
+  output='video-comprimido.mp4';
+  args=['-i',input,'-vf',"scale='min(iw,"+maxWidth+")':-2",
+   '-c:v','libx264','-preset','ultrafast','-crf',crf,
+   '-c:a','aac','-b:a','96k','-movflags','+faststart',output];
+ }else if(id==='video-speed'){
   const speed=Math.max(.5,Math.min(2,Number(p.speed)||1.5));
   output='video-velocidad-'+speed+'x.mp4';
   args=['-i',input,'-filter:v','setpts='+(1/speed).toFixed(5)+'*PTS','-filter:a','atempo='+speed,'-c:v','libx264','-preset','ultrafast','-crf','24','-c:a','aac',output];
@@ -206,12 +215,20 @@ async function runVideo(id,files,p,cb){
   output='video-recortado.mp4';args=['-ss',String(p.start||0),'-i',input,'-t',String(p.duration||10),'-c','copy',output];
  }
  progress(cb,.38,'Procesando archivo...');
- await ff.exec(args);
+ const exitCode=await ff.exec(args);
+ if(exitCode!==0)throw Error('El codificador FFmpeg no pudo convertir este vídeo (código '+exitCode+').');
  progress(cb,.9,'Preparando el resultado...');
  const data=await ff.readFile(output);
  const audio=id.startsWith('audio-')||id==='video-audio';
  const mime=output.endsWith('.mp3')?'audio/mpeg':output.endsWith('.wav')?'audio/wav':output.endsWith('.ogg')?'audio/ogg':output.endsWith('.m4a')?'audio/mp4':'video/mp4';
  const blob=makeBlob(data,mime);
+ if(id==='video-compress'){
+  if(blob.size>=files[0].size)throw Error('La codificación no consiguió reducir el tamaño del archivo. Conservamos el original.');
+  const reduction=Math.round((1-blob.size/files[0].size)*100);
+  progress(cb,1,'Vídeo comprimido '+reduction+' %.');
+  return {...download(blob,fileName(files[0])+'-comprimido.mp4'),
+   summary:'Vídeo comprimido localmente: '+formatBytesEngine(files[0].size)+' → '+formatBytesEngine(blob.size)+' ('+reduction+' % menos).'};
+ }
  progress(cb,1,'Archivo listo.');
  return {...download(blob,fileName(files[0])+'-'+output),summary:'Procesamiento local en el navegador · '+formatBytesEngine(blob.size)};
 }
@@ -1506,6 +1523,22 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='excel-json')return excelToJson(files[0],p,cb);
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
  if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
+ if(id==='video-compress'){
+  const file=files?.[0];
+  if(!file)throw Error('Adjunta el vídeo que quieres comprimir.');
+  const native=()=>compressVideoNative(file,p,cb);
+  if(preferNativeVideoCompression({userAgent:navigator.userAgent,
+    standalone:window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true}))
+    return native();
+  try{return await runVideo(id,files,p,cb);}
+  catch(error){
+   if(error?.name==='SecurityError'||/the operation is insecure|worker|ffmpeg-core|failed to import ffmpeg|securityerror/i.test(String(error?.message||''))){
+    progress(cb,.09,'Motor WebAssembly restringido. Probando codificación nativa del navegador…');
+    return native();
+   }
+   throw Error(localizedVideoError(error));
+  }
+ }
  if(id==='ai-webpage')return generateWebsite(p,cb);
  if(SPECIALIZED_TEXT_TOOLS[id])return runSpecializedTextTool(id,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
