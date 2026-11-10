@@ -16,7 +16,7 @@ function siteDetail(q){
  // The subject or purpose is enough for a safe prototype with placeholders.
  const match=q.match(/\b(?:para|sobre|de|dedicada a|destinada a|que venda|que muestre|donde pueda|tipo)\s+(.+)$/);
  const purpose=match?.[1]?.trim()||'';
- if(!purpose||/^(?:mi negocio|un negocio|una empresa|lo que sea|algo|una pagina|un sitio|mi proyecto|una web|un sitio web)$/.test(purpose))return '';
+ if(!purpose||/^(?:mi negocio|mi empresa|un negocio|una empresa|lo que sea|algo|una pagina|un sitio|mi proyecto|una web|un sitio web)$/.test(purpose))return '';
  if(purpose.length<3)return '';
  return purpose;
 }
@@ -29,7 +29,10 @@ export function routeWebsiteRequest(text,pending=null,hasAttachments=false,now=D
  if(active&&CANCEL.test(q))return {type:'cancel',message:'Entendido. Cancelé la página web pendiente.'};
  if(active&&(UNRELATED.test(q)||/^(?:dame|crea|haz|necesito|quiero).{0,40}\b(?:imagen|miniatura|video|cancion|audio|pdf|otra cosa)\b/.test(q))&&!mentioned)
   return {type:'abandon'};
- if(/\b(?:imagen|foto|video|audio|miniatura|logo|banner|texto|pdf)\b.{0,45}\b(?:para|en)\s+(?:mi|la|una)\s+web\b/.test(q))
+ // Secondary mentions of a website inside a song/image request are not
+ // website-generation instructions. Actual page requests take priority.
+ if(/\b(?:cancion|poema|musica|imagen|foto|video|audio|miniatura|logo|banner|texto|pdf)\b/.test(q)&&
+    !/\b(?:pagina(?:s)? web|sitio(?:s)? web|website|landing(?: page)?)\b/.test(q))
   return null;
  if(mentioned){
   // Questions about cost, definitions and tutorials are not a creation task.
