@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { localizedVideoError } from './video-compression.js';
 import { reconcileIosPwaViewport } from './pwa-viewport.js';
 import { readInferenceUsage } from './core-economy.js';
 import { initPrismaExperience } from './prisma-experience.js';
@@ -1199,8 +1200,10 @@ async function executeCurrentTool(){
   }catch(error){
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
     console.error(error);
-    $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.')+'</div>';
-    toast(error?.message||'Ocurrió un error.','error');
+    const reason=toolAtStart.id.startsWith('video-')?localizedVideoError(error):
+      (error?.message||'Error inesperado. Prueba con otro archivo o vuelve a intentarlo.');
+    $('#tool-output').innerHTML='<div class="tool-hint"><strong>No se pudo completar la operación.</strong><br>'+escapeHtml(reason)+'</div>';
+    toast(reason,'error');
   }finally{
     if(operationId!==activeOperation||currentTool!==toolAtStart)return;
     if($('#field-hfToken'))$('#field-hfToken').value='';
@@ -1214,8 +1217,10 @@ function renderOutput(result){
   if(result.blob)html+='<button class="mini-button" id="download-output">'+icon('download')+' Descargar</button>';
   if(result.text)html+='<button class="mini-button" id="copy-output">'+icon('copy')+' Copiar</button>';
   html+='</div></div>';
-  if(result.previewUrl&&!result.audio)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
-  if(result.audio&&result.previewUrl)html+='<audio class="output-audio" controls src="'+result.previewUrl+'"></audio>';
+  const mime=String(result.blob?.type||'');
+  if(result.previewUrl&&mime.startsWith('video/'))html+='<video class="output-preview" controls playsinline preload="metadata" src="'+result.previewUrl+'"></video>';
+  else if(result.previewUrl&&(result.audio||mime.startsWith('audio/')))html+='<audio class="output-audio" controls src="'+result.previewUrl+'"></audio>';
+  else if(result.previewUrl&&!result.audio)html+='<img class="output-preview" src="'+result.previewUrl+'" alt="Vista previa del resultado">';
   if(result.printHtml)html+='<button class="mini-button" id="print-output">Abrir vista para guardar como PDF</button>';
   if(result.text)html+='<pre class="output-text" id="output-text">'+escapeHtml(result.text)+'</pre>';
   if(result.html)html+='<pre class="output-text">'+escapeHtml(result.html)+'</pre>';
