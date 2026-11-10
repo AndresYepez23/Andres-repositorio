@@ -7,14 +7,7 @@ const TEXT=new Set([
 const FILE={
  'ai-webpage':'text/html',
  'image-gen':'image/',
- 'ai-voice':'audio/',
- 'audio-waveform':'image/',
- 'image-palette':null,
- 'image-favicon':'application/zip',
- 'pdf-merge':'application/pdf',
- 'pdf-compress':'application/pdf',
- 'pdf-split':'application/zip',
- 'pdf-to-word':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+ 'ai-voice':'audio/'
 };
 export function validateAgentStepResult(id,result){
  if(!result||typeof result!=='object')throw Error('La herramienta no devolvió un resultado utilizable.');
