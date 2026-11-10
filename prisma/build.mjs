@@ -22,4 +22,6 @@ for (const dir of ["src", "assets"]) {
 const sw = await readFile(new URL("./sw.js", import.meta.url), "utf8");
 await writeFile(new URL("./dist/sw.js", import.meta.url), sw.replace("__BUILD_VERSION__", Date.now().toString(36)));
 await generateSeoPages(output);
+// Validate the generated static HTML as part of the Cloudflare deployment gate.
+await import("./tests/seo-build.test.mjs");
 console.log("PRISMA build complete: dist/ contains the public application, 20 SEO landings and PWA shell.");
