@@ -6,6 +6,7 @@ import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-rou
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { findConversations } from '../src/conversation-search.js';
+import { mergeConversationLists, normalizeConversation } from '../src/conversation-sync.js';
 import { validateAccountPassword, accountAuthMessage, isAccountProviderAvailable } from '../src/prisma-account.js';
 import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX, installMobileSidebarGestures } from '../src/sidebar-gestures.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
@@ -898,6 +899,21 @@ assert.match(accountAuthMessage({message:'Email not confirmed'}),/Confirma tu co
 assert.match(accountAuthMessage({message:'The operation is insecure'}),/The operation is insecure|no se pudo/i);
 assert.equal(isAccountProviderAvailable({email:true,google:false,apple:false,phone:false},'google'),false);
 assert.equal(isAccountProviderAvailable({email:true,google:true},'google'),true);
+
+// Cross-device history must merge all messages and conversations, not just a
+// recent slice. Message IDs are deduplicated while messages from both devices survive.
+const longMessages=Array.from({length:85},(_,index)=>({
+ id:'message-'+index,role:index%2?'assistant':'user',content:'Mensaje completo '+index,time:index+1
+}));
+const mergedHistory=mergeConversationLists(
+ [{id:'chat-shared',title:'Conversación',updated:200,messages:longMessages.slice(45)}],
+ [{id:'chat-shared',title:'Conversación',updated:100,messages:longMessages.slice(0,60)},
+  {id:'chat-local-only',title:'Solo en este dispositivo',updated:150,messages:[{id:'only-local',role:'user',content:'Local',time:1}]}]
+);
+assert.equal(mergedHistory.find(chat=>chat.id==='chat-shared').messages.length,85,'All messages from both devices must be merged');
+assert.equal(mergedHistory.length,2,'Conversations from both devices must be retained');
+assert.equal(normalizeConversation({id:'long',messages:longMessages}).messages.length,85,'Normalization must not truncate messages');
+assert.equal(normalizeConversation({id:'clean',messages:[{id:'x',role:'assistant',content:'ok',blob:{private:true},previewUrl:'blob:local'}]}).messages[0].blob,undefined,'Binary artifacts must not be sent to cloud sync');
 const prismaAccountCode=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
 const authConfigCode=readFileSync(new URL('../functions/api/auth/config.js',import.meta.url),'utf8');
 const accountHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
@@ -906,8 +922,18 @@ for(const method of ['signUp','signInWithPassword','signInWithOAuth','signInWith
 }
 assert.match(prismaAccountCode,/api\.from\('prisma_profiles'\)/,'Profiles are stored in actual protected database');
 assert.match(prismaAccountCode,/onConflict:'user_id'/);
-assert.match(prismaAccountCode,/localStorage\.setItem\(SYNC_KEY,user\.id\)/,'Sync stays opt-in');
+assert.match(prismaAccountCode,/localStorage\.setItem\(SYNC_KEY,user\.id\)/,'Sync consent is remembered on each device');
+assert.match(prismaAccountCode,/sync_enabled/,'Sync preference is account-wide in the protected profile');
+assert.match(prismaAccountCode,/\.range\(offset,offset\+pageSize-1\)/,'Remote history must be fetched with pagination');
+assert.match(prismaAccountCode,/setInterval\(refresh,30000\)/,'Other devices refresh automatically');
+assert.match(prismaAccountCode,/deleted_at/,'Conversation deletions use cloud tombstones');
+assert.doesNotMatch(prismaAccountCode,/messages\.slice\(-30\)/,'Cloud sync must not truncate a conversation to 30 messages');
+assert.doesNotMatch(prismaAccountCode,/slice\(0,50\)/,'Cloud sync must not cap the account history at 50 chats');
 assert.match(prismaAccountCode,/if\(!agreed\)return/,'Consent rejection must not sync');
+const coreConversationCode=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(coreConversationCode,/readConversationSnapshot/,'IndexedDB preserves local history beyond localStorage quota');
+assert.doesNotMatch(coreConversationCode,/messages=messages\.slice\(-60\)/,'The active conversation must not discard messages after 60 turns');
+assert.doesNotMatch(coreConversationCode,/slice\(0,MAX_CHATS\)/,'The local history must not silently cap the number of chats');
 assert.match(prismaAccountCode,/if\(event==='PASSWORD_RECOVERY'\)/,'Recovery redirects must show password-change form');
 assert.match(prismaAccountCode,/if\(event==='SIGNED_OUT'\)/);
 assert.doesNotMatch(prismaAccountCode,/service_role|SUPABASE_SERVICE_ROLE_KEY/,'Never expose private DB key in browser');
