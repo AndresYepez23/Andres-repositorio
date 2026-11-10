@@ -698,7 +698,7 @@ function toolPolicy(tool){
 }
 function toolParamsHint(id){
   const hints={
-    'pdf-split':'Opcional: params.parts para dividir en 2-20 bloques; params.chunkSize para grupos de N páginas. Sin parámetros, una página por PDF dentro de un ZIP. Después de extraer o editar, debe ser el último paso.',
+    'pdf-split':'Opcional: params.pages="2, 4-6" para separar solo esas páginas; params.ranges="1-3; 5-7" para un PDF por rango; params.parts=2-20 o params.chunkSize=N. Sin parámetros, una página por PDF en ZIP.',
     'pdf-to-word':'No requiere parámetros. Genera params.docx desde un PDF digital; requiere texto seleccionable.',
     'pdf-compress':'No requiere parámetros.',
     'pdf-merge':'No requiere parámetros; acepta varios PDF.',
@@ -1010,7 +1010,10 @@ function buildPdfEditPlan(userText){
   const shortReply=normalizeCoreIntent(userText).trim();
   const attachmentReply=/^(?:aqui|ahi|adjunto|te envio|ya|este|listo|ese|el archivo|el pdf|subi|cargue|por favor|\d|marca de agua|paginas?\s*\d)/.test(shortReply);
   const labelReply=/^[\p{Lu}][\p{Lu}\s-]{2,45}$/u.test(String(userText).trim())||/^(?:el texto es|que diga|quiero que diga)\s+.{2,45}$/i.test(String(userText).trim());
-  if(previous&&(attachmentReply||labelReply)&&previous.content!==userText){
+  // Explicit new PDF operations take priority over an earlier edit.
+  const newPdfCommand=isPdfEditIntent(userText)&&
+   /(?:extrae|extraer|extraccion|seleccion|conservar|sacar|divid|separ|partir|fragment|marca de agua|numerar|enumerar|elimin|quitar|rota)/.test(shortReply);
+  if(previous&&(attachmentReply||labelReply)&&!newPdfCommand&&previous.content!==userText){
    request=previous.content+'\n'+userText;
   }
  }
