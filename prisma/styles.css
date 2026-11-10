@@ -2666,3 +2666,24 @@ body.is-core-view .core-welcome p{
     line-height:1.45;
   }
 }
+
+/* iOS keyboard: keep the ambient matrix visible while composing a new chat.
+   The tall welcome shortcuts would otherwise be cropped in the reduced
+   viewport. Collapse only that empty-state content, never actual messages. */
+body.is-core-view.is-keyboard-open #core-messages.is-empty{
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  min-height:0!important;
+  scroll-behavior:auto!important;
+}
+body.is-core-view.is-keyboard-open #core-messages.is-empty > .core-welcome{
+  display:none!important;
+}
+body.is-core-view.is-keyboard-open #core-messages.is-empty > .core-welcome-ambient{
+  display:block!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  opacity:1!important;
+  pointer-events:none!important;
+}
