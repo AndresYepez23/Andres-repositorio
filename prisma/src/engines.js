@@ -133,7 +133,7 @@ async function imageTool(id,files,p,cb){
  if(id==='image-metadata'){
   const exifr=await import('https://esm.sh/exifr@7.1.3');
   const meta=await exifr.parse(f).catch(()=>null);
-  const bitmap=await createImageBitmap(f);const dimensions=bitmap.width+' × '+bitmap.height+' px';bitmap.close?.();const info={archivo:f.name,tamaño:formatBytesEngine(f.size),tipo:f.type||'desconocido',dimensiones,metadatos:meta||'No se encontraron metadatos EXIF'};
+  const bitmap=await createImageBitmap(f);const dimensions=bitmap.width+' × '+bitmap.height+' px';bitmap.close?.();const info={archivo:f.name,tamaño:formatBytesEngine(f.size),tipo:f.type||'desconocido',dimensiones:dimensions,metadatos:meta||'No se encontraron metadatos EXIF'};
   return {text:JSON.stringify(info,null,2),summary:'Lectura local. Si existen datos GPS, podrían aparecer en los metadatos.'};
  }
  if(id==='image-ocr'){
