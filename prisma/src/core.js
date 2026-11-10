@@ -15,6 +15,7 @@ import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './vi
 import { findConversations } from './conversation-search.js';
 import { mergeConversationLists, serializeConversation } from './conversation-sync.js';
 import { readConversationSnapshot, saveConversationSnapshot, clearConversationSnapshot } from './conversation-storage.js';
+import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 
@@ -78,6 +79,9 @@ function save(){
           text:typeof entry.result?.text==='string'?entry.result.text:'',
           filename:String(entry.result?.filename||''),
           html:typeof entry.result?.html==='string'?entry.result.html:'',
+          fileKey:String(entry.result?.fileKey||''),
+          fileSize:Number(entry.result?.blob?.size||entry.result?.fileSize||0),
+          fileType:String(entry.result?.blob?.type||entry.result?.fileType||''),
           hasFile:!!(entry.result?.blob||entry.result?.hasFile)
         }
       }));
@@ -259,7 +263,40 @@ function startNewConversation(){
  $('#core-input')?.focus();
 }
 function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';}
+async function persistGeneratedResults(results){
+ let allSaved=true;
+ for(const entry of results||[]){
+  const result=entry?.result;
+  if(!(result?.blob instanceof Blob)||!result.blob.size)continue;
+  if(!result.fileKey)result.fileKey=createGeneratedFileKey();
+  result.fileSize=result.blob.size;
+  result.fileType=result.blob.type;
+  result.hasFile=true;
+  try{await saveGeneratedFile({key:result.fileKey,blob:result.blob,filename:result.filename,chatId:activeConversationId});}
+  catch(error){
+   allSaved=false;
+   console.warn('Prisma: fallo al conservar el archivo descargable:',error?.message||error);
+  }
+ }
+ return allSaved;
+}
 function addMessage(role,content,extra={}){
+  // Other tool routes also generate images, audio and PDFs. Retain their
+  // downloads even when the conversation is reloaded or synced.
+  for(const entry of extra.results||[]){
+    const result=entry?.result;
+    if(result?.blob instanceof Blob && result.blob.size && !result.fileKey){
+      result.fileKey=createGeneratedFileKey();
+      result.fileSize=result.blob.size;
+      result.fileType=result.blob.type;
+      result.hasFile=true;
+      saveGeneratedFile({key:result.fileKey,blob:result.blob,filename:result.filename,chatId:activeConversationId})
+       .catch(error=>{
+        console.warn('Prisma: el resultado solo está disponible en esta sesión:',error?.message||error);
+        status('El archivo se generó, pero no pudo guardarse en el dispositivo. Descárgalo ahora antes de salir.','warning');
+       });
+    }
+  }
   messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
   save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
   document.dispatchEvent(new CustomEvent('prisma:core-message',{detail:{role,content:String(content||'')}}));
@@ -1570,7 +1607,9 @@ async function executePlan(){
       }
     }
     if(cancelRequested){
-      addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.',{results:executed,partial:true});
+      const filesSaved=await persistGeneratedResults(executed);
+      addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.'+
+       (!filesSaved?' Los archivos solo están disponibles para descargar en esta sesión.':''),{results:executed,partial:true});
       status('Ejecución detenida por ti.','warning');
     }else{
       const single=executed.length===1?executed[0]:null;
@@ -1578,11 +1617,14 @@ async function executePlan(){
         addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
       }else{
         const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
+        const filesSaved=await persistGeneratedResults(visibleResults);
         const label=plan.conversion?'Conversión preparada. Descarga el archivo resultante o sigue las instrucciones de impresión si aparecen.':plan.combineFinalFiles?'Proceso completado. Aquí tienes el archivo final con las modificaciones solicitadas.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
-        addMessage('assistant',label,{results:visibleResults,partial:false});
+        addMessage('assistant',label+(!filesSaved?' Atención: el vídeo está listo para descargar ahora, pero este dispositivo no permitió guardar una copia. Descárgalo antes de salir.':''),{results:visibleResults,partial:!filesSaved});
       }
       successful=true;
-      status('Ejecución completada.','success');
+      if(executed.some(entry=>entry?.result?.blob)&&executed.some(entry=>entry.result?.fileKey))
+        status('Archivo terminado y guardado en este dispositivo. Descárgalo desde el resultado.','success');
+      else status('Ejecución completada.','success');
     }
   }catch(error){
     console.error(error);
@@ -1590,7 +1632,9 @@ async function executePlan(){
     const detail=videoError?localizedVideoError(error):String(error?.message||'error inesperado');
     const extra=videoError?' El vídeo original sigue disponible para reintentar; no se ha generado un archivo comprimido falso.':
       executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.';
-    addMessage('assistant','No pude completar la tarea: '+detail+'.'+extra,{results:executed,partial:true});
+    const filesSaved=await persistGeneratedResults(executed);
+    addMessage('assistant','No pude completar la tarea: '+detail+'.'+extra+
+      (!filesSaved?' Algunos archivos solo pueden descargarse antes de cerrar la sesión.':''),{results:executed,partial:true});
     status('Ejecución detenida.','error');
   }finally{
     executionActive=false;setBusy(false);
