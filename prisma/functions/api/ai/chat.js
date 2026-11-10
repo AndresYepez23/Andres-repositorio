@@ -196,7 +196,7 @@ export async function onRequestPost({ request, env }) {
       let holdSeconds = 0;
       if (status === 429) holdSeconds = dailyLimit ? 21600 : Math.max(30, Math.min(300, Number(response.headers.get("retry-after") || 60)));
       else if (status === 402) holdSeconds = 21600;
-      else if (status === 401 || status === 403) holdSeconds = 3600;
+      else if (status === 401) holdSeconds = 120;
       else if ([500, 502, 503, 504].includes(status)) holdSeconds = 60;
       if (holdSeconds) {
         const state = status === 429 ? "rate_limited" : status === 402 ? "quota_exhausted" : status === 401 || status === 403 ? "auth_error" : "provider_unavailable";
@@ -204,7 +204,7 @@ export async function onRequestPost({ request, env }) {
           status === 402 ? "OpenRouter no tiene saldo o la cuenta no puede usar modelos gratuitos." :
           status === 401 || status === 403 ? "OpenRouter rechazó la clave. Revisa OPENROUTER_API_KEY en Cloudflare." :
           "OpenRouter está temporalmente indisponible.";
-        if(getCredentialSlots(env,"openrouter").length<=1)await setProviderHold(env, "openrouter", state, reason, holdSeconds);
+        if(getCredentialSlots(env,"openrouter").length<=1 && status !== 403)await setProviderHold(env, "openrouter", state, reason, holdSeconds);
       }
       const message = status === 429 ? "OpenRouter alcanzó su límite temporal." :
         status === 402 ? "OpenRouter no tiene saldo disponible para esta solicitud." :
@@ -235,7 +235,7 @@ export async function onRequestPost({ request, env }) {
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
       if(response.status===402&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations","quota_exhausted","Pollinations no dispone de saldo autorizado. Prisma usará los demás motores.",21600);
-      if((response.status===401||response.status===403)&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations","auth_error","La clave central Pollinations no está autorizada. Revisa el secreto en Cloudflare.",3600);
+      if(response.status===401&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations","auth_error","La clave central Pollinations no está autorizada. Revisa el secreto en Cloudflare.",3600);
       const message=response.status===429?"Pollinations alcanzó su límite temporal.":response.status===402?"Pollinations no dispone de saldo autorizado.":"Pollinations respondió con un error ("+response.status+").";
       return json({error:message,provider:"pollinations",status:response.status},response.status===429?429:response.status===402?402:502);
     }
@@ -275,7 +275,7 @@ export async function onRequestPost({ request, env }) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       if(response.status===402&&getCredentialSlots(env,"huggingface").length<=1)await setProviderHold(env,"huggingface","quota_exhausted","Hugging Face no tiene créditos disponibles (HTTP 402).",21600);
-      if((response.status===401||response.status===403)&&getCredentialSlots(env,"huggingface").length<=1)await setProviderHold(env,"huggingface","auth_error","Revisa el token de Hugging Face y sus permisos de Inference Providers.",3600);
+      if(response.status===401&&getCredentialSlots(env,"huggingface").length<=1)await setProviderHold(env,"huggingface","auth_error","Revisa el token de Hugging Face y sus permisos de Inference Providers.",3600);
       const providerMessage = String(data.error?.message || data.error || "").slice(0, 240);
       let message = "Hugging Face respondió con un error (" + response.status + ").";
       if (response.status === 401 || response.status === 403) {
@@ -320,9 +320,9 @@ export async function onRequestPost({ request, env }) {
       const status=response.status;
       let holdSeconds=0;
       if(status===429)holdSeconds=Math.max(30,Math.min(300,Number(response.headers.get("retry-after")||90)));
-      else if(status===401||status===403)holdSeconds=3600;
+      else if(status===401)holdSeconds=120;
       else if([500,502,503,504].includes(status))holdSeconds=60;
-      if(holdSeconds&&getCredentialSlots(env,"groq").length<=1)await setProviderHold(env,"groq",status===429?"rate_limited":status===401||status===403?"auth_error":"provider_unavailable",status===429?"Groq alcanzó un límite temporal; Prisma utilizará otro motor durante la pausa.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq está temporalmente indisponible; Prisma probará otro motor.",holdSeconds);
+      if(holdSeconds&&status!==403&&getCredentialSlots(env,"groq").length<=1)await setProviderHold(env,"groq",status===429?"rate_limited":status===401||status===403?"auth_error":"provider_unavailable",status===429?"Groq alcanzó un límite temporal; Prisma utilizará otro motor durante la pausa.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq está temporalmente indisponible; Prisma probará otro motor.",holdSeconds);
       const message=status===429?"Groq alcanzó un límite temporal. Prisma cambiará automáticamente a otro proveedor.":status===401||status===403?"Groq rechazó la clave configurada. Revisa GROQ_API_KEY en Cloudflare.":"Groq respondió con un error ("+status+").";
       return json({error:message,provider:"groq",status,retryAfter:holdSeconds||null},status===429?429:status===400?400:502);
     }
