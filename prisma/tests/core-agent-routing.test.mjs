@@ -920,6 +920,9 @@ assert.equal(normalizeConversation({id:'clean',messages:[{id:'x',role:'assistant
 const prismaAccountCode=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
 const authConfigCode=readFileSync(new URL('../functions/api/auth/config.js',import.meta.url),'utf8');
 const accountHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(accountHtml,/<button type="button" id="auth-apple" disabled title="Próximamente"/,'Apple sign-in must be visibly locked');
+assert.match(prismaAccountCode,/provider!=='apple'/,'Apple sign-in must remain disabled even if an environment flag is enabled');
+assert.match(prismaAccountCode,/provider==='apple'\?'Próximamente'/,'Apple button must retain its coming-soon label');
 for(const method of ['signUp','signInWithPassword','signInWithOAuth','signInWithOtp','verifyOtp','resetPasswordForEmail','updateUser','onAuthStateChange']){
  assert.ok(prismaAccountCode.includes('auth.'+method),method+' must call the real Supabase Auth SDK');
 }
