@@ -1,4 +1,5 @@
 import { initPrismaCore, setPrismaCoreViewActive } from './core.js';
+import { planPdfSplit } from './pdf-split-options.js';
 import { installMobileSidebarGestures } from './sidebar-gestures.js';
 import { localizedVideoError } from './video-compression.js';
 import { reconcileIosPwaViewport } from './pwa-viewport.js';
@@ -369,7 +370,19 @@ function buildFields(t){
       '<div class="tool-hint">Acepta CSV, JSON y Excel XLS/XLSX. Procesa los datos en el navegador y genera el archivo convertido.</div>';
     case 'text-file-convert':return selectField('Formato de destino','output',[['pdf','PDF de texto'],['docx','Word editable (.docx)'],['txt','Texto (.txt)'],['html','Página HTML (.html)']],'pdf')+
       '<div class="tool-hint">TXT, Markdown, HTML y Word DOCX. Conserva el texto; el diseño y las imágenes del original pueden simplificarse.</div>';
-    case 'pdf-split':return '<div class="tool-hint">Divide el documento en un PDF por página y descarga todos los archivos en un ZIP. Se procesa en tu dispositivo, sin subir el documento ni necesitar una API.</div>';
+    case 'pdf-split':return selectField('Cómo quieres dividir el PDF','mode',[
+      ['all','Cada página por separado'],
+      ['selected','Elegir páginas concretas'],
+      ['ranges','Crear un PDF por rango'],
+      ['parts','Dividir en un número de partes'],
+      ['chunk','Agrupar cada N páginas']
+     ],'all')+
+      field('Páginas específicas','pages','text','','Ejemplo: 2, 4-6. Se crea un PDF por página.')+
+      field('Rangos independientes','ranges','text','','Ejemplo: 1-3; 4-6; 8-10. Cada rango es un PDF.')+
+      field('Número de partes','parts','number','2','Entre 2 y 20, sin superar el número de páginas.','min="2" max="20" step="1"')+
+      field('Páginas por bloque','chunkSize','number','3','Cada bloque contiene páginas consecutivas.','min="1" max="200" step="1"')+
+      '<div class="tool-hint" id="pdf-split-preview" aria-live="polite">Selecciona un PDF para revisar las páginas y preparar la división.</div>'+
+      '<div class="tool-hint">Funciona sin API. Los archivos seleccionados se descargan como PDF o en un ZIP. El original se conserva.</div>';
     case 'pdf-compress':return '<div class="tool-hint">Optimiza la estructura interna del PDF sin convertir las páginas en imágenes. No necesita API y conserva el texto seleccionable. La reducción depende del documento; si el peso está en fotografías, esta técnica puede no reducirlo. La compresión avanzada de imágenes se incorporará por separado.</div>';
     case 'pdf-to-word':return '<div class="tool-hint">Convierte PDF digitales con texto seleccionable en un archivo DOCX editable. No requiere cuenta ni API: el procesamiento ocurre en tu navegador. Los PDFs escaneados necesitan OCR y la maquetación compleja puede requerir ajustes en Word.</div>';
     case 'docx-pdf':return '<div class="tool-hint">Prisma Space convertirá el documento a una vista HTML de impresión. Desde la ventana que se abre, selecciona <strong>Guardar como PDF</strong> en el diálogo de impresión del navegador. El diseño puede variar respecto a Microsoft Word.</div>';
@@ -919,6 +932,7 @@ function openTool(t){
   }
   if(['image-gen','ai-assistant','music-lyrics','ai-voice','ai-transcribe','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper','ai-compare-options','ai-action-plan','ai-text-review'].includes(t.id))setupAIAuthorization(t);
   if(t.id==='api-explorer')setupApiExplorer();
+  if(t.id==='pdf-split')setupPdfSplitOptions();
   if(t.id==='units')$('#field-kind').addEventListener('change',updateUnitOptions);
   if(t.id==='timestamp')$('#field-mode').addEventListener('change',updateTimestampField);
   $('#modal-close').focus({preventScroll:true});
@@ -1112,9 +1126,56 @@ function acceptsFile(file,accept){
 }
 function renderFileList(){
   const list=$('#file-list');if(!list)return;
-  if(!selectedFiles.length){list.innerHTML='';return;}
+  if(!selectedFiles.length){list.innerHTML='';if(currentTool?.id==='pdf-split')void refreshPdfSplitPreview();return;}
   const total=selectedFiles.reduce((sum,file)=>sum+file.size,0);
   list.innerHTML='<div class="upload-list-head"><strong>'+selectedFiles.length+' archivo'+(selectedFiles.length===1?'':'s')+'</strong><span>'+formatBytes(total)+' en total</span><button type="button" data-clear-files>Vaciar</button></div>'+selectedFiles.map((f,i)=>'<div class="file-row">'+icon('file-text')+'<span title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</span><small>'+formatBytes(f.size)+'</small><button class="remove-file" type="button" data-remove-file="'+i+'" aria-label="Quitar '+escapeHtml(f.name)+'">'+icon('x')+'</button></div>').join('');
+  if(currentTool?.id==='pdf-split')void refreshPdfSplitPreview();
+}
+
+const pdfSplitPageCache=new WeakMap();
+async function getPdfSplitPageCount(file){
+ if(pdfSplitPageCache.has(file))return pdfSplitPageCache.get(file);
+ const pending=(async()=>{
+  const {PDFDocument}=await import('https://esm.sh/pdf-lib@1.17.1');
+  return (await PDFDocument.load(await file.arrayBuffer())).getPageCount();
+ })();
+ pdfSplitPageCache.set(file,pending);
+ try{return await pending;}
+ catch(error){pdfSplitPageCache.delete(file);throw error;}
+}
+function setupPdfSplitOptions(){
+ const selector=$('#field-mode');if(!selector)return;
+ const update=()=>{
+  for(const [key,enabled] of [
+   ['pages',selector.value==='selected'],
+   ['ranges',selector.value==='ranges'],
+   ['parts',selector.value==='parts'],
+   ['chunkSize',selector.value==='chunk']
+  ])$('#field-'+key)?.closest('.form-field')?.classList.toggle('hidden',!enabled);
+  void refreshPdfSplitPreview();
+ };
+ selector.addEventListener('change',update);
+ for(const key of ['pages','ranges','parts','chunkSize'])
+  $('#field-'+key)?.addEventListener('input',()=>{void refreshPdfSplitPreview();});
+ update();
+}
+async function refreshPdfSplitPreview(){
+ if(currentTool?.id!=='pdf-split')return;
+ const notice=$('#pdf-split-preview'),file=selectedFiles[0];
+ if(!notice)return;
+ if(!file){notice.textContent='Adjunta un PDF para consultar sus páginas.';return;}
+ notice.textContent='Leyendo el PDF…';
+ try{
+  const count=await getPdfSplitPageCount(file);
+  if(currentTool?.id!=='pdf-split'||selectedFiles[0]!==file||!notice.isConnected)return;
+  const plan=planPdfSplit(readParams(),count);
+  const pieces=plan.groups.length;
+  notice.textContent=count+' páginas en el documento. Se generará'+(pieces===1?' 1 PDF.':'n '+pieces+' PDFs dentro de un ZIP.')+
+   (plan.selectedCount<count?' Se utilizarán '+plan.selectedCount+' páginas.':'');
+ }catch(error){
+  if(currentTool?.id!=='pdf-split'||selectedFiles[0]!==file||!notice.isConnected)return;
+  notice.textContent='Revisa los parámetros: '+String(error?.message||'No se pudo leer el PDF.');
+ }
 }
 function formatBytes(bytes){if(!bytes)return '0 B';const u=['B','KB','MB','GB'];const i=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),3);return (bytes/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];}
 async function attachProviderCredentials(params){
@@ -1197,7 +1258,8 @@ async function executeCurrentTool(){
   try{
     // Video compression is entirely local. Do not wait for an unrelated
     // provider-status fetch: iOS needs the user's gesture to unlock audio.
-    const params=toolAtStart.id==='video-compress'
+    // PDF splitting needs no provider status or API calls.
+    const params=['video-compress','pdf-split'].includes(toolAtStart.id)
       ?readParams():await attachProviderCredentials(readParams());
     const result=await runTool(toolAtStart.id,filesAtStart,params,progressForOperation);
     if(operationId!==activeOperation||currentTool!==toolAtStart||$('#tool-modal').classList.contains('hidden'))return;
