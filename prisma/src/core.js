@@ -13,7 +13,7 @@ import { mountCoreWelcomeGrid } from './core-welcome-grid.js';
 import { isPrismaAuthenticated, openPrismaAuthForGuestLimit } from './prisma-account.js';
 import { GUEST_TASK_LIMIT, readGuestTaskCount, canGuestSubmit, recordGuestTask, isGuestFileTask } from './core-guest-limit.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
-import { resolveIndependentCoreRequest } from './core-independent-intelligence.js';
+import { resolveIndependentCoreRequest, resolveContextualCoreRequest } from './core-independent-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
@@ -1493,7 +1493,7 @@ async function requestPlan(userText){
   // Independent Prisma Core reasoning: verified deterministic answers without
   // external models. Keep it separate from Prisma Mini and generated-file jobs.
   if(!attachments.length){
-    const independent=resolveIndependentCoreRequest(userText);
+    const independent=resolveContextualCoreRequest(userText,messages.slice(-16,-1))||resolveIndependentCoreRequest(userText);
     if(independent){
       addMessage('assistant',independent.text,{engine:'prisma-core-local'});
       status('Resuelto directamente por Prisma Core, sin proveedores externos.','success');
