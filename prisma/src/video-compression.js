@@ -92,6 +92,13 @@ export async function compressVideoNative(file,opts={},cb){
  document.body.appendChild(video);
  let ctx=null,stream=null,recorder=null,frame=0,interval=0,deadline=0;
  try{
+  // The AudioContext should start during the user's click. Waiting for
+  // loadedmetadata before calling resume() can lose iOS user activation.
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx)throw Object.assign(Error('No se puede conservar el audio.'),{name:'NotSupportedError'});
+  ctx=new AudioCtx();
+  const earlyAudioReady=withTimeout(ctx.resume(),8000,'iOS no permitió iniciar el audio para la compresión.');
+  earlyAudioReady.catch(()=>{});
   cb?.(.08,'Leyendo duración y resolución del vídeo…');
   if(video.readyState<1){
    await new Promise((resolve,reject)=>{
@@ -113,16 +120,13 @@ export async function compressVideoNative(file,opts={},cb){
   if(!stream.getVideoTracks().length)throw Error('El navegador no permitió capturar los fotogramas.');
   // Route audio from the uploaded local video through Web Audio. Never
   // silently remove audio in a compression request.
-  const AudioCtx=window.AudioContext||window.webkitAudioContext;
-  if(!AudioCtx)throw Object.assign(Error('No se puede conservar el audio.'),{name:'NotSupportedError'});
-  ctx=new AudioCtx();
   const source=ctx.createMediaElementSource(video);
   const destination=ctx.createMediaStreamDestination();
   source.connect(destination);
   const tracks=destination.stream.getAudioTracks();
   if(!tracks.length)throw Error('No se pudo preparar una pista para conservar el audio.');
   stream.addTrack(tracks[0]);
-  await withTimeout(ctx.resume(),8000,'iOS no permitió iniciar el audio para la compresión.');
+  await earlyAudioReady;
   if(ctx.state!=='running')throw Object.assign(Error('El audio no pudo iniciarse.'),{name:'NotAllowedError'});
   cb?.(.12,'Codificando vídeo localmente; mantén Prisma abierto…');
   recorder=new MediaRecorder(stream,{mimeType:mime,
