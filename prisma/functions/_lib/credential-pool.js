@@ -147,7 +147,12 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     throw error;
   }
 
-  const maxAttempts = Math.min(slots.length, 2, Math.max(1, Number(options.maxAttempts) || 2));
+  // An invalid/unauthorized key is not a quota; when explicitly enabled,
+  // check each configured slot before giving up. Continue to respect 402/429
+  // as provider-wide budget limits, and keep network/5xx retries at two.
+  const sweepAuthSlots = options.sweepAuthSlots === true;
+  const maxAttempts = Math.min(slots.length,
+    sweepAuthSlots ? maxCredentialSlots(provider) : Math.min(2, Math.max(1, Number(options.maxAttempts) || 2)));
   const startIndex = Number.isInteger(options.startIndex)
     ? ((options.startIndex % slots.length) + slots.length) % slots.length
     : Math.floor(Math.random() * slots.length);
@@ -179,6 +184,9 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       }
 
       if (!retryable.has(response.status)) return response;
+      // Do not retry backend outages across six keys; only authentication
+      // errors warrant checking every slot in this optional mode.
+      if (sweepAuthSlots && response.status !== 401 && response.status !== 403 && attempted >= 2) return response;
       await setProviderHold(env, healthKey,
         response.status === 401 || response.status === 403 ? "auth_error" : "provider_error",
         "Esta credencial requiere una pausa temporal; se probará como máximo una clave alternativa.", retryHoldSeconds(response.status, response.headers));
@@ -186,6 +194,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       lastError = error;
       await setProviderHold(env, healthKey, "network_error",
         "La conexión de este espacio de credenciales falló.", 60);
+      if (sweepAuthSlots && attempted >= 2) break;
     }
   }
 
