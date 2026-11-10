@@ -113,6 +113,32 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "El cuerpo de la solicitud no es JSON válido." }, 400);
   }
 
+  // TEMPORARY single-use diagnostics for each SenseNova slot, protected by
+  // a 256-bit token whose SHA-256 only is kept in source. Remove after tests.
+  if(payload?.__prismaSenseSlotProbe!==undefined){
+    const submitted=String(request.headers.get("X-Prisma-Private-Diagnostic")||"");
+    if(!/^[a-f0-9]{64}$/.test(submitted))return json({error:"No autorizado."},403);
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(submitted));
+    const actual=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+    if(actual!=="eb909df7c724540079d7ad1c8b5537403b58c8eafbad5f9f62411808c81419c2")return json({error:"No autorizado."},403);
+    const target=Number(payload.__prismaSenseSlotProbe);
+    if(!Number.isInteger(target)||target<1||target>6)return json({error:"Posición inválida."},400);
+    const slot=getCredentialSlots(env,"sensenova").find(item=>item.number===target);
+    if(!slot)return json({slot:target,configured:false,healthy:false});
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),18000);
+    try{
+      const response=await fetch("https://token.sensenova.ai/v1/chat/completions",{
+        method:"POST",signal:controller.signal,
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+slot.value},
+        body:JSON.stringify({model:"sensenova-6.8-flash-lite",messages:[{role:"user",content:"Responde solo OK."}],max_tokens:2048,temperature:0.65,stream:false})
+      });
+      const data=await response.json().catch(()=>({}));
+      return json({slot:target,configured:true,healthy:response.ok&&Boolean(data.choices?.[0]?.message?.content),status:response.status,model:data.model||null,
+        errorCategory:response.ok?null:response.status===401||response.status===403?"authentication":response.status===429?"rate_limit":response.status===402?"credits":"other"});
+    }catch(error){return json({slot:target,configured:true,healthy:false,errorCategory:error?.name==="AbortError"?"timeout":"network"});}
+    finally{clearTimeout(timeout);}
+  }
   const provider = String(payload.provider || "gemini");
   if (!["gemini", "huggingface", "groq", "cloudflare", "pollinations", "openrouter", "kilo", "requesty", "sensenova", "zai", "aihubmix"].includes(provider)) {
     return json({ error: "Este proveedor todavía no está habilitado en el backend central." }, 501);
