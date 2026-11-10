@@ -92,7 +92,10 @@ function convert(source,target,files,query){
 export function planFileConversion(text,files=[],previousTexts=[]){
  const latest=String(text||''),q=norm(latest),attached=files.length>0;
  const prior=previousTexts.slice(-8).reverse().find(item=>hasConversionIntent(item));
- const followup=attached&&prior&&(/^(?:aqui|ahi|adjunto|ya lo subi|ya lo cargue|este|listo|archivo adjunto|te envio|esta adjunto|aqui esta|aqui tienes|por favor|hazlo|procesa este)/.test(q)||!hasConversionIntent(latest));
+ // A new instruction always wins. An old conversion is continued only when
+ // this turn merely confirms that the requested source file was uploaded.
+ const attachmentOnly=/^(?:aqui|ahi|aqui esta|aqui tienes|aqui esta el archivo|aqui tienes el archivo|aqui esta el pdf|aqui tienes el pdf|adjunto|adjunto el pdf|adjunto el archivo|archivo adjunto|el archivo adjunto|este archivo|este es el archivo|este es el pdf|te envio|te envio el archivo|te envio el pdf|ya lo subi|ya lo cargue|ya lo adjunte|esta adjunto|listo|hazlo|por favor|procesa este archivo|aqui esta el documento)[.!?\s]*$/;
+ const followup=attached&&prior&&attachmentOnly.test(q);
  const joined=followup?prior+'\n'+latest:latest;
  const isIntent=hasConversionIntent(joined)||/^(?:a|en|como)\s+(?:pdf|word|docx|png|jpg|jpeg|webp|csv|json|excel|xlsx|mp3|wav|ogg|txt|html)$/.test(q);
  if(!isIntent)return null;
