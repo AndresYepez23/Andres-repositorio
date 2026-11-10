@@ -112,7 +112,8 @@ assert.match(coreSource,/async function interpretAttachedImageText\(userText\)/,
 assert.match(coreSource,/async function transcribeAttachedImageBatch\(userText\)/,'Batch OCR must process each attached image');
 assert.match(coreSource,/for\(let i=0;i<images\.length;i\+\+\)/,'Every image is processed independently');
 assert.match(coreSource,/Archivos no procesados como imágenes/,'Video must be reported separately, not silently dropped');
-assert.match(coreSource,/attachments=\[\];renderAttachments\(\);\s*const fileInput=\$\('#core-file-input'\)/,'Submitted attachments must be removed from composer after processing');
+assert.match(coreSource,/attachments=\[\];renderAttachments\(\);\s*\$\('#core-attachments'\)\?\.classList\.remove\('hidden'\);\s*const fileInput=\$\('#core-file-input'\)/,'Submitted attachments must be cleared and preview tray restored after processing');
+assert.match(coreSource,/\$\('#core-attachments'\)\?\.classList\.add\('hidden'\)/,'The submitted file tray must disappear as soon as a request is sent');
 
 assert.match(coreSource,/No te limites a transcribir/,'Contextual analysis must not merely echo OCR');
 assert.match(coreSource,/no inventes elementos visuales/,'OCR analysis must not hallucinate unseen visual elements');
