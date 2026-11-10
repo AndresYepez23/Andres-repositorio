@@ -49,14 +49,14 @@ export function videoCompressionSettings({width,height,fileSize,duration,quality
   frameRate:preset.fps,videoBitsPerSecond:videoBitrate,
   audioBitsPerSecond:96000,quality};
 }
-export function chooseNativeRecordingType(recorder=globalThis.MediaRecorder){
+export function chooseNativeRecordingType(recorder=globalThis.MediaRecorder,{preferMp4=true}={}){
  if(!recorder?.isTypeSupported)return null;
- for(const type of [
-  'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
-  'video/mp4',
-  'video/webm;codecs="vp8,opus"',
-  'video/webm'
- ])if(recorder.isTypeSupported(type))return type;
+ const mp4=['video/mp4;codecs="avc1.42E01E,mp4a.40.2"','video/mp4'];
+ const webm=['video/webm;codecs="vp8,opus"','video/webm'];
+ // Chromium may advertise video/mp4 yet actually encode VP9/Opus. Prefer
+ // WebM there; iOS WebKit encodes a more broadly compatible H.264/AAC MP4.
+ for(const type of (preferMp4?[...mp4,...webm]:[...webm,...mp4]))
+  if(recorder.isTypeSupported(type))return type;
  return null;
 }
 export function localizedVideoError(error){
@@ -79,7 +79,10 @@ export async function compressVideoNative(file,opts={},cb){
  if(file.size>100*MB)throw Error('El vídeo supera el límite local de 100 MB.');
  if(typeof document==='undefined'||typeof MediaRecorder==='undefined')
   throw Error('Este navegador no ofrece grabación multimedia local.');
- const mime=chooseNativeRecordingType(MediaRecorder);
+ const userAgent=String(navigator.userAgent||'');
+ const appleWebKit=/AppleWebKit/i.test(userAgent)&&!/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/i.test(userAgent);
+ const iosWebKit=/(iPhone|iPad|iPod)/i.test(userAgent);
+ const mime=chooseNativeRecordingType(MediaRecorder,{preferMp4:appleWebKit||iosWebKit});
  if(!mime)throw Object.assign(Error('Formato de vídeo no compatible.'),{name:'NotSupportedError'});
  if(typeof HTMLCanvasElement==='undefined'||!HTMLCanvasElement.prototype.captureStream)
   throw Object.assign(Error('No existe captura de lienzo.'),{name:'NotSupportedError'});
