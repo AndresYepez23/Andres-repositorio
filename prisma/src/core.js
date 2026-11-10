@@ -11,6 +11,7 @@ import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
+import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
@@ -1429,7 +1430,7 @@ async function requestPlan(userText){
   if(!steps.length){addMessage('assistant',plan.message||'No encontré una herramienta disponible para esa solicitud.');status('No se generó un plan ejecutable.','warning');return;}
   // A single expressly requested generation can run directly; approvals remain
   // for multi-provider pipelines or other external actions.
-  const safeSingleGeneration=steps.length===1&&['ai-assistant','music-lyrics','image-gen','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id);
+  const safeSingleGeneration=steps.length===1&&['ai-assistant','music-lyrics','image-gen','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper','ai-webpage'].includes(steps[0].tool.id);
   const requiresApproval=!safeSingleGeneration&&steps.some(({tool})=>!['local','browser'].includes(tool.mode));
   if(requiresApproval){showPlan(plan,steps);status('Este flujo usa servicios externos. Revisa y autoriza antes de continuar.','warning');setProgress(1,'Esperando tu autorización');}
   else{pendingPlan={plan,steps};$('#core-plan').classList.add('hidden');await executePlan();}
@@ -1479,6 +1480,7 @@ async function executePlan(){
         if(!tool.multiple)inputFiles=[inputFiles[0]];
       }
       const result=await runTool(tool.id,inputFiles,params,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);});
+      validateAgentStepResult(tool.id,result);
       executed.push({name:tool.name,reason,result});setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
       if(result?.text)lastText=String(result.text).slice(0,30000);
       else if(result?.html)lastText=String(result.html).slice(0,30000);
