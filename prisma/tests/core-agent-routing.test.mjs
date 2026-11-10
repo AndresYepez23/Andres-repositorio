@@ -18,6 +18,7 @@ import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHt
 import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
 import { validateAgentStepResult } from '../src/core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions, isCoreFollowUp } from '../src/core-context.js';
+import { resolveIndependentCoreRequest, solveOfflineArithmetic, getOfflineExtractiveSummary, INDEPENDENT_CORE_KNOWLEDGE_COUNT } from '../src/core-independent-intelligence.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage, readInferenceUsage, INFERENCE_USAGE_KEY } from '../src/core-economy.js';
 import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
@@ -350,6 +351,23 @@ const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',im
 assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"/,'SenseNova must enable valid-key auth sweep');
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.ai\/v1\/chat\/completions"/,'SenseNova international keys must use the international API host');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
+
+// Prisma Core independent intelligence must work without AI models or Mini.
+assert.ok(INDEPENDENT_CORE_KNOWLEDGE_COUNT>=40,'Ship at least 40 curated, bounded factual concepts');
+assert.match(solveOfflineArithmetic('15% de 200'),/30/,'Offline percentage');
+assert.match(solveOfflineArithmetic('¿Cuánto es 25 * 4?'),/100/,'Offline multiplication');
+assert.match(solveOfflineArithmetic('10 / 0'),/dividir entre cero/,'Zero division');
+assert.match(resolveIndependentCoreRequest('¿Qué es RLS?').text,/filas/,'Offline technical knowledge');
+assert.match(resolveIndependentCoreRequest('¿Qué significa HTTP 401?').text,/autenticación|autenticacion/,'Offline error guidance');
+assert.equal(resolveIndependentCoreRequest('Explícame el conflicto internacional de hoy'),null,'No fabricated fresh facts');
+assert.equal(solveOfflineArithmetic('cuanto es 2+2 y además compara con el año pasado'),null,'Unsupported compound arithmetic must not silently drop instructions');
+const offlineSummary=getOfflineExtractiveSummary('Resume: La seguridad de las aplicaciones exige permisos adecuados. Los permisos se comprueban del lado del servidor. Las credenciales no deben exponerse en el navegador. Los registros deben revisarse periódicamente.');
+assert.match(offlineSummary,/extractivo local/,'Extractive summary must be clearly labeled');
+assert.equal(getOfflineExtractiveSummary('Resume: hola'),null,'Do not invent a summary of insufficient input');
+const independentCoreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(independentCoreSource,/resolveIndependentCoreRequest\(userText\)/,'Core must use local intelligence');
+assert.match(independentCoreSource,/const localPlan=buildLocalPlan\(userText\)/,'No-provider fallback must use independent local tools rather than browser models');
+assert.doesNotMatch(independentCoreSource,/const nativePlan=await requestNativeBrowserPlan\(userText,attachmentContext\)/,'Prisma Mini must not be part of Core fallback');
 
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
 const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','aihubmix']);
