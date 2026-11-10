@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { reconcileIosPwaViewport } from '../src/pwa-viewport.js';
+import { reconcileIosPwaViewport, recoverIosStandaloneBottomGap } from '../src/pwa-viewport.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
@@ -730,11 +730,44 @@ assert.equal(reconcileIosPwaViewport({
 assert.equal(reconcileIosPwaViewport({innerHeight:0,visualHeight:0}),240);
 assert.match(uiMain,/reconcileIosPwaViewport\(\{/);
 assert.match(uiMain,/getComputedStyle\(dvhProbe\)\.height/,'Measure actual CSS 100dvh');
-assert.match(uiMain,/standalone&&!keyboardOpen\?layoutHeight:visible/,
+assert.match(uiMain,/standalone&&!keyboardOpen\?layoutHeight(?:\+recovery)?:visible/,
  'Keyboard must keep a separate viewport height');
 assert.doesNotMatch(uiMain,/\bMath\.max\([^\n]*screen\.height/,
  'Never expand the PWA to physical screen.height and cover the home indicator');
 assert.match(stylesSource,/PWA screen reconciliation:/);
 assert.match(stylesSource,/height:var\(--prisma-core-viewport,100dvh\)/);
+
+
+// Regression based on iPhone screenshot (1179x2556 @3x = 393x852 CSS px):
+// the chat/composer ended around 793px, leaving ~59px to screen bottom.
+// The home indicator claims ~34px; 6px must remain above it.
+const iphoneGap={
+ isIOS:true,standalone:true,keyboardOpen:false,
+ screenWidth:393,screenHeight:852,viewportWidth:393,
+ layoutHeight:793,safeInsetBottom:34,visualScale:1
+};
+assert.equal(recoverIosStandaloneBottomGap(iphoneGap),19,
+ 'Must extend the ROOT chat 19 CSS pixels, unlike ineffective padding-only fixes');
+assert.equal(793+recoverIosStandaloneBottomGap(iphoneGap),812);
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,safeInsetBottom:0}),19,
+ 'Tall iPhone with an under-reported CSS env inset must still reserve 34px');
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,layoutHeight:810}),0,
+ 'Already correctly sized viewport must not be expanded again');
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,layoutHeight:778}),30,
+ 'Recovery is capped at 30px even when the unused area is larger');
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,layoutHeight:710}),0,
+ 'Reject unsafe discrepancies larger than the known phone safe-area geometry');
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,keyboardOpen:true}),0);
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,standalone:false}),0);
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,isIOS:false}),0);
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,visualScale:1.3}),0);
+assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,viewportWidth:380}),0);
+assert.equal(recoverIosStandaloneBottomGap({
+ ...iphoneGap,screenWidth:375,screenHeight:667,viewportWidth:375,safeInsetBottom:0,
+ layoutHeight:625
+}),0,'Older phones with no home indicator must not be shifted into system UI');
+assert.match(uiMain,/recoverIosStandaloneBottomGap\(\{/);
+assert.match(uiMain,/layoutHeight\+recovery/,'Recovery applies to chat root height, not input padding');
+assert.match(uiMain,/getComputedStyle\(safeAreaProbe\)\.paddingBottom/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
