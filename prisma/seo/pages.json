@@ -199,7 +199,8 @@
           "¿Puedo elegir solo algunas páginas?",
           "Sí, puedes indicar rangos de páginas antes de convertir."
         ]
-      ]
+      ],
+      "format": "jpeg"
     },
     {
       "slug": "extraer-texto-pdf",
@@ -399,7 +400,8 @@
           "¿La conversión cambia las dimensiones?",
           "El objetivo de la operación es convertir el formato, no redimensionar la imagen."
         ]
-      ]
+      ],
+      "format": "image/jpeg"
     },
     {
       "slug": "quitar-fondo-imagen",
@@ -1002,6 +1004,2622 @@
           "Sí. Descarga un archivo .srt que puedes importar en CapCut y otros editores compatibles."
         ]
       ]
+    },
+    {
+      "slug": "inspeccionar-campos-pdf",
+      "tool": "pdf-form-fields",
+      "title": "Inspeccionar campos de un formulario PDF online",
+      "h1": "Inspeccionar campos de un formulario PDF",
+      "description": "Antes de automatizar un formulario, identifica los nombres internos de sus campos y distingue casillas, textos y otros controles AcroForm.",
+      "intro": "Antes de automatizar un formulario, identifica los nombres internos de sus campos y distingue casillas, textos y otros controles AcroForm.",
+      "details": "Carga el PDF y ejecuta la inspección; consulta el listado de nombres y tipos junto al número de campos. Solo se muestran nombres y tipos, nunca las respuestas introducidas. Un escaneo no contiene campos interactivos por el hecho de mostrar casillas.",
+      "steps": [
+        "Abre inspeccionar campos de un formulario pdf en Prisma Space.",
+        "Carga el PDF y ejecuta la inspección; consulta el listado de nombres y tipos junto al número de campos.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Solo se muestran nombres y tipos, nunca las respuestas introducidas. Un escaneo no contiene campos interactivos por el hecho de mostrar casillas.",
+      "faqs": [
+        [
+          "¿Puedo leer las respuestas del formulario?",
+          "No. Esta inspección evita extraer los valores de los campos y sirve para conocer su estructura."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Solo se muestran nombres y tipos, nunca las respuestas introducidas. Un escaneo no contiene campos interactivos por el hecho de mostrar casillas."
+        ]
+      ],
+      "keyword": "inspeccionar campos pdf"
+    },
+    {
+      "slug": "aplanar-formulario-pdf",
+      "tool": "pdf-form-flatten",
+      "title": "Aplanar un formulario PDF online",
+      "h1": "Aplanar un formulario PDF",
+      "description": "Fija el aspecto de un formulario completado para compartir una copia cuyos campos ya no se puedan rellenar como controles interactivos.",
+      "intro": "Fija el aspecto de un formulario completado para compartir una copia cuyos campos ya no se puedan rellenar como controles interactivos.",
+      "details": "Selecciona el PDF con campos AcroForm, ejecuta el aplanado y descarga la copia con el formulario fijo. Conserva el original editable. Aplanar campos no cifra el archivo ni impide que un editor de PDF modifique su contenido.",
+      "steps": [
+        "Abre aplanar un formulario pdf en Prisma Space.",
+        "Selecciona el PDF con campos AcroForm, ejecuta el aplanado y descarga la copia con el formulario fijo.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Conserva el original editable. Aplanar campos no cifra el archivo ni impide que un editor de PDF modifique su contenido.",
+      "faqs": [
+        [
+          "¿Aplanar equivale a proteger con contraseña?",
+          "No. Convierte los campos en contenido visual; no añade cifrado ni restricciones de acceso."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Conserva el original editable. Aplanar campos no cifra el archivo ni impide que un editor de PDF modifique su contenido."
+        ]
+      ],
+      "keyword": "aplanar formulario pdf"
+    },
+    {
+      "slug": "insertar-paginas-blanco-pdf",
+      "tool": "pdf-add-blank",
+      "title": "Insertar páginas en blanco en PDF online",
+      "h1": "Insertar páginas en blanco en PDF",
+      "description": "Añade espacio para anotaciones al comienzo o al final de unos apuntes sin reconstruir el documento.",
+      "intro": "Añade espacio para anotaciones al comienzo o al final de unos apuntes sin reconstruir el documento.",
+      "details": "Carga el PDF, indica entre 1 y 10 páginas y elige Al principio o Al final antes de descargar. Las páginas añadidas toman las dimensiones de la primera página. No se insertan en posiciones intermedias.",
+      "steps": [
+        "Abre insertar páginas en blanco en pdf en Prisma Space.",
+        "Carga el PDF, indica entre 1 y 10 páginas y elige Al principio o Al final antes de descargar.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Las páginas añadidas toman las dimensiones de la primera página. No se insertan en posiciones intermedias.",
+      "faqs": [
+        [
+          "¿Puedo insertar una página en mitad del PDF?",
+          "Esta herramienta solo añade páginas al principio o al final."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Las páginas añadidas toman las dimensiones de la primera página. No se insertan en posiciones intermedias."
+        ]
+      ],
+      "keyword": "insertar paginas blanco pdf"
+    },
+    {
+      "slug": "word-a-html",
+      "tool": "docx-html",
+      "title": "Convertir Word a HTML online",
+      "h1": "Convertir Word a HTML",
+      "description": "Recupera el contenido de un documento DOCX en HTML para preparar una publicación o continuar editando su estructura en un editor web.",
+      "intro": "Recupera el contenido de un documento DOCX en HTML para preparar una publicación o continuar editando su estructura en un editor web.",
+      "details": "Selecciona un archivo DOCX, ejecuta la conversión y descarga el HTML generado. Mammoth prioriza la estructura del contenido sobre la fidelidad visual. Revisa tablas, imágenes y estilos antes de publicar.",
+      "steps": [
+        "Abre convertir word a html en Prisma Space.",
+        "Selecciona un archivo DOCX, ejecuta la conversión y descarga el HTML generado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Mammoth prioriza la estructura del contenido sobre la fidelidad visual. Revisa tablas, imágenes y estilos antes de publicar.",
+      "faqs": [
+        [
+          "¿Acepta documentos DOC antiguos?",
+          "La entrada disponible es DOCX; convierte primero los archivos DOC con su editor original."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Mammoth prioriza la estructura del contenido sobre la fidelidad visual. Revisa tablas, imágenes y estilos antes de publicar."
+        ]
+      ],
+      "keyword": "word a html"
+    },
+    {
+      "slug": "codificar-decodificar-base64",
+      "tool": "base64",
+      "title": "Codificar y decodificar Base64 online",
+      "h1": "Codificar y decodificar Base64",
+      "description": "Transforma texto Unicode a Base64 o recupera una cadena codificada para depurar intercambios de texto entre aplicaciones.",
+      "intro": "Transforma texto Unicode a Base64 o recupera una cadena codificada para depurar intercambios de texto entre aplicaciones.",
+      "details": "Pega el contenido y selecciona Codificar a Base64 o Decodificar Base64; ejecuta y copia el resultado. Base64 es una representación reversible, no cifrado. Esta utilidad trabaja con texto y no convierte archivos binarios.",
+      "steps": [
+        "Abre codificar y decodificar base64 en Prisma Space.",
+        "Pega el contenido y selecciona Codificar a Base64 o Decodificar Base64; ejecuta y copia el resultado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Base64 es una representación reversible, no cifrado. Esta utilidad trabaja con texto y no convierte archivos binarios.",
+      "faqs": [
+        [
+          "¿Conserva tildes y caracteres especiales?",
+          "Sí, la conversión de texto utiliza codificación compatible con Unicode."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Base64 es una representación reversible, no cifrado. Esta utilidad trabaja con texto y no convierte archivos binarios."
+        ]
+      ],
+      "keyword": "codificar decodificar base64"
+    },
+    {
+      "slug": "conversor-monedas",
+      "tool": "currency",
+      "title": "Conversor de monedas de referencia online",
+      "h1": "Conversor de monedas de referencia",
+      "description": "Estima el equivalente de una cantidad en otra moneda antes de comparar importes expresados en divisas distintas.",
+      "intro": "Estima el equivalente de una cantidad en otra moneda antes de comparar importes expresados en divisas distintas.",
+      "details": "Escribe la cantidad, elige las monedas de origen y destino y consulta la tasa disponible. Las tasas son de referencia, dependen del servicio externo y no incluyen comisiones bancarias. Algunas monedas pueden no estar disponibles en la fuente.",
+      "steps": [
+        "Abre conversor de monedas de referencia en Prisma Space.",
+        "Escribe la cantidad, elige las monedas de origen y destino y consulta la tasa disponible.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Las tasas son de referencia, dependen del servicio externo y no incluyen comisiones bancarias. Algunas monedas pueden no estar disponibles en la fuente.",
+      "faqs": [
+        [
+          "¿Es el valor que cobrará mi banco?",
+          "No. El banco puede aplicar otra tasa, comisiones y una fecha de liquidación diferente."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Las tasas son de referencia, dependen del servicio externo y no incluyen comisiones bancarias. Algunas monedas pueden no estar disponibles en la fuente."
+        ]
+      ],
+      "keyword": "conversor monedas"
+    },
+    {
+      "slug": "conversor-unidades",
+      "tool": "units",
+      "title": "Conversor de unidades de medida online",
+      "h1": "Conversor de unidades de medida",
+      "description": "Resuelve cambios de longitud, masa, área, volumen, velocidad, datos digitales y temperatura desde un único formulario.",
+      "intro": "Resuelve cambios de longitud, masa, área, volumen, velocidad, datos digitales y temperatura desde un único formulario.",
+      "details": "Selecciona la magnitud, introduce el valor y elige las unidades de origen y destino; ejecuta el cálculo. Las unidades digitales usan múltiplos decimales de 1000. Galón y taza corresponden a las medidas estadounidenses implementadas.",
+      "steps": [
+        "Abre conversor de unidades de medida en Prisma Space.",
+        "Selecciona la magnitud, introduce el valor y elige las unidades de origen y destino; ejecuta el cálculo.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Las unidades digitales usan múltiplos decimales de 1000. Galón y taza corresponden a las medidas estadounidenses implementadas.",
+      "faqs": [
+        [
+          "¿Convierte Celsius, Fahrenheit y Kelvin?",
+          "Sí. Selecciona Temperatura y escoge las dos escalas en sus desplegables."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Las unidades digitales usan múltiplos decimales de 1000. Galón y taza corresponden a las medidas estadounidenses implementadas."
+        ]
+      ],
+      "keyword": "conversor unidades"
+    },
+    {
+      "slug": "convertir-timestamp-unix",
+      "tool": "timestamp",
+      "title": "Convertir timestamp Unix a fecha online",
+      "h1": "Convertir timestamp Unix a fecha",
+      "description": "Interpreta fechas de registros técnicos o convierte una fecha ISO a segundos y milisegundos Unix para integraciones.",
+      "intro": "Interpreta fechas de registros técnicos o convierte una fecha ISO a segundos y milisegundos Unix para integraciones.",
+      "details": "Elige Unix a fecha o Fecha a Unix, pega el valor y ejecuta la conversión. El modo Unix distingue segundos y milisegundos por magnitud. Prefiere fechas ISO con zona explícita para evitar ambigüedad.",
+      "steps": [
+        "Abre convertir timestamp unix a fecha en Prisma Space.",
+        "Elige Unix a fecha o Fecha a Unix, pega el valor y ejecuta la conversión.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El modo Unix distingue segundos y milisegundos por magnitud. Prefiere fechas ISO con zona explícita para evitar ambigüedad.",
+      "faqs": [
+        [
+          "¿El resultado incluye una fecha ISO?",
+          "En el modo Unix a fecha se muestra la fecha legible y su representación ISO."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El modo Unix distingue segundos y milisegundos por magnitud. Prefiere fechas ISO con zona explícita para evitar ambigüedad."
+        ]
+      ],
+      "keyword": "convertir timestamp unix"
+    },
+    {
+      "slug": "codificar-decodificar-url",
+      "tool": "url-code",
+      "title": "Codificar y decodificar componentes URL online",
+      "h1": "Codificar y decodificar componentes URL",
+      "description": "Prepara valores que contienen espacios, tildes o símbolos para incluirlos como componentes de una URL.",
+      "intro": "Prepara valores que contienen espacios, tildes o símbolos para incluirlos como componentes de una URL.",
+      "details": "Pega el valor, selecciona Codificar o Decodificar y copia el resultado. La codificación utiliza encodeURIComponent: también codifica separadores como dos puntos y barras. No la apliques a una URL completa si deseas mantener su estructura.",
+      "steps": [
+        "Abre codificar y decodificar componentes url en Prisma Space.",
+        "Pega el valor, selecciona Codificar o Decodificar y copia el resultado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La codificación utiliza encodeURIComponent: también codifica separadores como dos puntos y barras. No la apliques a una URL completa si deseas mantener su estructura.",
+      "faqs": [
+        [
+          "¿Por qué aparecen secuencias con porcentaje?",
+          "Representan caracteres codificados; por ejemplo, un espacio se convierte en %20."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La codificación utiliza encodeURIComponent: también codifica separadores como dos puntos y barras. No la apliques a una URL completa si deseas mantener su estructura."
+        ]
+      ],
+      "keyword": "codificar decodificar url"
+    },
+    {
+      "slug": "quitar-tildes-texto",
+      "tool": "text-remove-accents",
+      "title": "Quitar tildes y diacríticos de un texto online",
+      "h1": "Quitar tildes y diacríticos de un texto",
+      "description": "Normaliza etiquetas o listas para sistemas que necesitan caracteres sin marcas diacríticas.",
+      "intro": "Normaliza etiquetas o listas para sistemas que necesitan caracteres sin marcas diacríticas.",
+      "details": "Pega el texto, ejecuta la normalización y revisa la copia sin tildes. También cambia ñ a n. No corrige ortografía ni traduce el texto; conserva una copia de los nombres originales.",
+      "steps": [
+        "Abre quitar tildes y diacríticos de un texto en Prisma Space.",
+        "Pega el texto, ejecuta la normalización y revisa la copia sin tildes.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "También cambia ñ a n. No corrige ortografía ni traduce el texto; conserva una copia de los nombres originales.",
+      "faqs": [
+        [
+          "¿Se conserva la ñ?",
+          "No. La eliminación de marcas diacríticas transforma ñ en n, por lo que conviene revisar nombres propios."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "También cambia ñ a n. No corrige ortografía ni traduce el texto; conserva una copia de los nombres originales."
+        ]
+      ],
+      "keyword": "quitar tildes texto"
+    },
+    {
+      "slug": "invertir-texto",
+      "tool": "text-reverse",
+      "title": "Invertir texto o el orden de sus líneas online",
+      "h1": "Invertir texto o el orden de sus líneas",
+      "description": "Invierte una cadena para un efecto tipográfico o cambia el orden de una lista sin reescribirla elemento por elemento.",
+      "intro": "Invierte una cadena para un efecto tipográfico o cambia el orden de una lista sin reescribirla elemento por elemento.",
+      "details": "Pega el texto y elige Caracteres u Orden de líneas antes de ejecutar. El modo de líneas conserva el contenido de cada línea. El modo de caracteres invierte la secuencia, no crea letras reflejadas gráficamente.",
+      "steps": [
+        "Abre invertir texto o el orden de sus líneas en Prisma Space.",
+        "Pega el texto y elige Caracteres u Orden de líneas antes de ejecutar.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El modo de líneas conserva el contenido de cada línea. El modo de caracteres invierte la secuencia, no crea letras reflejadas gráficamente.",
+      "faqs": [
+        [
+          "¿Puedo invertir una lista sin invertir sus palabras?",
+          "Sí. Selecciona Orden de líneas."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El modo de líneas conserva el contenido de cada línea. El modo de caracteres invierte la secuencia, no crea letras reflejadas gráficamente."
+        ]
+      ],
+      "keyword": "invertir texto"
+    },
+    {
+      "slug": "extraer-correos-texto",
+      "tool": "text-extract-emails",
+      "title": "Extraer correos electrónicos de un texto online",
+      "h1": "Extraer correos electrónicos de un texto",
+      "description": "Separa direcciones de correo presentes en un documento para revisar una lista de contactos con autorización.",
+      "intro": "Separa direcciones de correo presentes en un documento para revisar una lista de contactos con autorización.",
+      "details": "Pega el texto de origen, ejecuta la extracción y copia las direcciones detectadas. Se eliminan duplicados y se normaliza a minúsculas. Reconocer la forma de una dirección no verifica que exista ni que acepte mensajes.",
+      "steps": [
+        "Abre extraer correos electrónicos de un texto en Prisma Space.",
+        "Pega el texto de origen, ejecuta la extracción y copia las direcciones detectadas.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se eliminan duplicados y se normaliza a minúsculas. Reconocer la forma de una dirección no verifica que exista ni que acepte mensajes.",
+      "faqs": [
+        [
+          "¿Comprueba si los correos funcionan?",
+          "No. Solo detecta cadenas con formato de correo dentro del texto proporcionado."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se eliminan duplicados y se normaliza a minúsculas. Reconocer la forma de una dirección no verifica que exista ni que acepte mensajes."
+        ]
+      ],
+      "keyword": "extraer correos texto"
+    },
+    {
+      "slug": "extraer-enlaces-texto",
+      "tool": "text-extract-urls",
+      "title": "Extraer enlaces de un texto online",
+      "h1": "Extraer enlaces de un texto",
+      "description": "Recupera referencias web de notas o documentos para inspeccionar sus destinos en una lista separada.",
+      "intro": "Recupera referencias web de notas o documentos para inspeccionar sus destinos en una lista separada.",
+      "details": "Pega el documento, ejecuta la extracción y revisa los enlaces únicos obtenidos. Detecta enlaces HTTP, HTTPS y cadenas que comienzan por www. No consulta los destinos ni comprueba su disponibilidad.",
+      "steps": [
+        "Abre extraer enlaces de un texto en Prisma Space.",
+        "Pega el documento, ejecuta la extracción y revisa los enlaces únicos obtenidos.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Detecta enlaces HTTP, HTTPS y cadenas que comienzan por www. No consulta los destinos ni comprueba su disponibilidad.",
+      "faqs": [
+        [
+          "¿Detecta enlaces rotos?",
+          "No. La extracción es local y no abre las direcciones encontradas."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Detecta enlaces HTTP, HTTPS y cadenas que comienzan por www. No consulta los destinos ni comprueba su disponibilidad."
+        ]
+      ],
+      "keyword": "extraer enlaces texto"
+    },
+    {
+      "slug": "minificar-json",
+      "tool": "json-minify",
+      "title": "Minificar JSON online",
+      "h1": "Minificar JSON",
+      "description": "Reduce espacios de presentación en una estructura JSON antes de guardarla o enviarla a una API.",
+      "intro": "Reduce espacios de presentación en una estructura JSON antes de guardarla o enviarla a una API.",
+      "details": "Pega JSON válido, ejecuta la minificación y copia la representación compacta. Primero se analiza con JSON.parse. Comentarios, comas finales y otros formatos como JSON5 no son válidos; los números grandes pueden perder precisión en JavaScript.",
+      "steps": [
+        "Abre minificar json en Prisma Space.",
+        "Pega JSON válido, ejecuta la minificación y copia la representación compacta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Primero se analiza con JSON.parse. Comentarios, comas finales y otros formatos como JSON5 no son válidos; los números grandes pueden perder precisión en JavaScript.",
+      "faqs": [
+        [
+          "¿Es lo mismo que comprimir con gzip?",
+          "No. Minificar quita espacios de formato; gzip es una compresión distinta del archivo o de la respuesta HTTP."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Primero se analiza con JSON.parse. Comentarios, comas finales y otros formatos como JSON5 no son válidos; los números grandes pueden perder precisión en JavaScript."
+        ]
+      ],
+      "keyword": "minificar json"
+    },
+    {
+      "slug": "html-a-texto",
+      "tool": "html-to-text",
+      "title": "Convertir HTML a texto online",
+      "h1": "Convertir HTML a texto",
+      "description": "Recupera el contenido textual de un fragmento HTML para reutilizarlo en notas o revisar su redacción sin etiquetas.",
+      "intro": "Recupera el contenido textual de un fragmento HTML para reutilizarlo en notas o revisar su redacción sin etiquetas.",
+      "details": "Pega el HTML, ejecuta la extracción y copia el texto resultante. Se excluyen scripts, estilos, plantillas y noscript. No interpreta el diseño visual ni sustituye un navegador completo.",
+      "steps": [
+        "Abre convertir html a texto en Prisma Space.",
+        "Pega el HTML, ejecuta la extracción y copia el texto resultante.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se excluyen scripts, estilos, plantillas y noscript. No interpreta el diseño visual ni sustituye un navegador completo.",
+      "faqs": [
+        [
+          "¿Se ejecuta el JavaScript del HTML?",
+          "No. El fragmento se analiza como documento inerte y los scripts se retiran del texto extraído."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se excluyen scripts, estilos, plantillas y noscript. No interpreta el diseño visual ni sustituye un navegador completo."
+        ]
+      ],
+      "keyword": "html a texto"
+    },
+    {
+      "slug": "eliminar-lineas-vacias",
+      "tool": "text-remove-empty-lines",
+      "title": "Eliminar líneas vacías de un texto online",
+      "h1": "Eliminar líneas vacías de un texto",
+      "description": "Compacta listas que contienen separaciones vacías al copiar información de documentos o formularios.",
+      "intro": "Compacta listas que contienen separaciones vacías al copiar información de documentos o formularios.",
+      "details": "Pega las líneas, ejecuta la limpieza y copia el texto con contenido. Se eliminan también las líneas formadas únicamente por espacios; las líneas con texto mantienen su orden.",
+      "steps": [
+        "Abre eliminar líneas vacías de un texto en Prisma Space.",
+        "Pega las líneas, ejecuta la limpieza y copia el texto con contenido.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se eliminan también las líneas formadas únicamente por espacios; las líneas con texto mantienen su orden.",
+      "faqs": [
+        [
+          "¿Elimina líneas repetidas?",
+          "No. Para eso utiliza Eliminar líneas duplicadas; esta operación solo retira líneas vacías."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se eliminan también las líneas formadas únicamente por espacios; las líneas con texto mantienen su orden."
+        ]
+      ],
+      "keyword": "eliminar lineas vacias"
+    },
+    {
+      "slug": "anadir-prefijo-sufijo-lineas",
+      "tool": "text-prefix-lines",
+      "title": "Añadir prefijo y sufijo a cada línea online",
+      "h1": "Añadir prefijo y sufijo a cada línea",
+      "description": "Prepara listas con una etiqueta inicial o un cierre común sin editar cada elemento por separado.",
+      "intro": "Prepara listas con una etiqueta inicial o un cierre común sin editar cada elemento por separado.",
+      "details": "Pega la lista, escribe Prefijo y Sufijo según necesites y ejecuta la transformación. El texto añadido es literal y se aplica a todas las líneas, incluidas las vacías. No genera numeración incremental.",
+      "steps": [
+        "Abre añadir prefijo y sufijo a cada línea en Prisma Space.",
+        "Pega la lista, escribe Prefijo y Sufijo según necesites y ejecuta la transformación.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El texto añadido es literal y se aplica a todas las líneas, incluidas las vacías. No genera numeración incremental.",
+      "faqs": [
+        [
+          "¿Puedo añadir solo un prefijo?",
+          "Sí. Deja vacío el campo Sufijo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El texto añadido es literal y se aplica a todas las líneas, incluidas las vacías. No genera numeración incremental."
+        ]
+      ],
+      "keyword": "anadir prefijo sufijo lineas"
+    },
+    {
+      "slug": "buscar-reemplazar-texto",
+      "tool": "text-replace",
+      "title": "Buscar y reemplazar texto online online",
+      "h1": "Buscar y reemplazar texto online",
+      "description": "Corrige un término repetido o sustituye una etiqueta en un bloque de texto con control de coincidencias.",
+      "intro": "Corrige un término repetido o sustituye una etiqueta en un bloque de texto con control de coincidencias.",
+      "details": "Pega el texto, completa Buscar y Reemplazar por y ajusta las casillas de mayúsculas y todas las coincidencias. La búsqueda es literal, no una expresión regular. Revisa el resultado cuando el término también aparezca dentro de otras palabras.",
+      "steps": [
+        "Abre buscar y reemplazar texto online en Prisma Space.",
+        "Pega el texto, completa Buscar y Reemplazar por y ajusta las casillas de mayúsculas y todas las coincidencias.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La búsqueda es literal, no una expresión regular. Revisa el resultado cuando el término también aparezca dentro de otras palabras.",
+      "faqs": [
+        [
+          "¿Puedo reemplazar solo la primera coincidencia?",
+          "Sí. Desmarca Reemplazar todas las coincidencias antes de ejecutar."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La búsqueda es literal, no una expresión regular. Revisa el resultado cuando el término también aparezca dentro de otras palabras."
+        ]
+      ],
+      "keyword": "buscar reemplazar texto"
+    },
+    {
+      "slug": "extraer-hashtags",
+      "tool": "text-extract-hashtags",
+      "title": "Extraer hashtags de un texto online",
+      "h1": "Extraer hashtags de un texto",
+      "description": "Reúne las etiquetas de una publicación para revisar cuáles se están utilizando y eliminar repeticiones en la lista resultante.",
+      "intro": "Reúne las etiquetas de una publicación para revisar cuáles se están utilizando y eliminar repeticiones en la lista resultante.",
+      "details": "Pega las publicaciones, ejecuta la extracción y copia los hashtags únicos. Admite letras con tildes, números y guiones bajos. No mide popularidad, alcance ni volumen de búsqueda.",
+      "steps": [
+        "Abre extraer hashtags de un texto en Prisma Space.",
+        "Pega las publicaciones, ejecuta la extracción y copia los hashtags únicos.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Admite letras con tildes, números y guiones bajos. No mide popularidad, alcance ni volumen de búsqueda.",
+      "faqs": [
+        [
+          "¿Distingue hashtags con diferentes mayúsculas?",
+          "Las repeticiones se comparan sin distinguir mayúsculas, conservando la primera forma encontrada."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Admite letras con tildes, números y guiones bajos. No mide popularidad, alcance ni volumen de búsqueda."
+        ]
+      ],
+      "keyword": "extraer hashtags"
+    },
+    {
+      "slug": "extraer-telefonos-texto",
+      "tool": "text-extract-phones",
+      "title": "Extraer posibles teléfonos de un texto online",
+      "h1": "Extraer posibles teléfonos de un texto",
+      "description": "Identifica cadenas que podrían ser números telefónicos para facilitar la revisión manual de datos de contacto.",
+      "intro": "Identifica cadenas que podrían ser números telefónicos para facilitar la revisión manual de datos de contacto.",
+      "details": "Pega el texto, ejecuta la detección y contrasta cada resultado con su contexto. Detecta candidatos de 7 a 15 dígitos. Puede confundir otros identificadores y no valida planes de numeración de cada país.",
+      "steps": [
+        "Abre extraer posibles teléfonos de un texto en Prisma Space.",
+        "Pega el texto, ejecuta la detección y contrasta cada resultado con su contexto.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Detecta candidatos de 7 a 15 dígitos. Puede confundir otros identificadores y no valida planes de numeración de cada país.",
+      "faqs": [
+        [
+          "¿Añade el indicativo internacional?",
+          "No. Extrae lo que aparece en el texto; debes comprobar o completar el indicativo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Detecta candidatos de 7 a 15 dígitos. Puede confundir otros identificadores y no valida planes de numeración de cada país."
+        ]
+      ],
+      "keyword": "extraer telefonos texto"
+    },
+    {
+      "slug": "aplanar-json",
+      "tool": "json-flatten",
+      "title": "Aplanar JSON en rutas y valores online",
+      "h1": "Aplanar JSON en rutas y valores",
+      "description": "Inspecciona objetos anidados como una lista legible de rutas para localizar propiedades sin recorrer manualmente todo el documento.",
+      "intro": "Inspecciona objetos anidados como una lista legible de rutas para localizar propiedades sin recorrer manualmente todo el documento.",
+      "details": "Pega JSON válido, ejecuta el aplanado y revisa rutas como usuario.nombre o items[0]. La salida es texto de rutas y valores, no un nuevo objeto JSON reversible. Las claves que ya contienen puntos pueden resultar ambiguas.",
+      "steps": [
+        "Abre aplanar json en rutas y valores en Prisma Space.",
+        "Pega JSON válido, ejecuta el aplanado y revisa rutas como usuario.nombre o items[0].",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La salida es texto de rutas y valores, no un nuevo objeto JSON reversible. Las claves que ya contienen puntos pueden resultar ambiguas.",
+      "faqs": [
+        [
+          "¿Cómo representa las listas?",
+          "Añade el índice entre corchetes a la ruta de cada elemento."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La salida es texto de rutas y valores, no un nuevo objeto JSON reversible. Las claves que ya contienen puntos pueden resultar ambiguas."
+        ]
+      ],
+      "keyword": "aplanar json"
+    },
+    {
+      "slug": "convertir-mayusculas-minusculas",
+      "tool": "text-case",
+      "title": "Convertir mayúsculas y minúsculas online",
+      "h1": "Convertir mayúsculas y minúsculas",
+      "description": "Uniforma la capitalización de textos copiados de fuentes distintas antes de preparar un documento.",
+      "intro": "Uniforma la capitalización de textos copiados de fuentes distintas antes de preparar un documento.",
+      "details": "Pega el texto y selecciona mayúsculas, minúsculas, tipo título o tipo oración. La transformación no reconoce siglas ni nombres propios. Revisa especialmente los modos título y oración antes de publicar.",
+      "steps": [
+        "Abre convertir mayúsculas y minúsculas en Prisma Space.",
+        "Pega el texto y selecciona mayúsculas, minúsculas, tipo título o tipo oración.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La transformación no reconoce siglas ni nombres propios. Revisa especialmente los modos título y oración antes de publicar.",
+      "faqs": [
+        [
+          "¿Corrige la gramática?",
+          "No. Solo modifica la capitalización del texto."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La transformación no reconoce siglas ni nombres propios. Revisa especialmente los modos título y oración antes de publicar."
+        ]
+      ],
+      "keyword": "convertir mayusculas minusculas"
+    },
+    {
+      "slug": "markdown-a-html",
+      "tool": "markdown",
+      "title": "Convertir Markdown básico a código HTML",
+      "h1": "Convertir Markdown básico a HTML",
+      "description": "Transforma encabezados, negritas y cursivas de Markdown en código HTML básico. Consulta el marcado generado directamente en el navegador.",
+      "intro": "Prepara el marcado HTML de una nota sencilla escrita con encabezados y énfasis Markdown. La herramienta muestra el código resultante para que lo revises y lo reutilices en un editor.",
+      "details": "Pega Markdown con encabezados, negritas o cursivas y ejecuta la conversión. El resultado se muestra como código, no como una página renderizada. El conversor es básico y no promete soporte completo para tablas, listas ni bloques de código.",
+      "steps": [
+        "Abre la herramienta y pega una nota con Markdown básico.",
+        "Ejecuta la conversión y revisa las etiquetas HTML mostradas en el resultado.",
+        "Selecciona el código que quieras reutilizar y compruébalo en tu editor antes de publicarlo."
+      ],
+      "tip": "No es un sanitizador de HTML. Trabaja con contenido de confianza y revisa cualquier código antes de insertarlo en una página.",
+      "faqs": [
+        [
+          "¿Muestra una vista visual de la página?",
+          "No. La interfaz actual presenta el código HTML generado dentro de un bloque de texto."
+        ],
+        [
+          "¿Admite todo Markdown de GitHub?",
+          "No. Convierte encabezados y énfasis básicos, sin garantizar listas, tablas o bloques de código."
+        ]
+      ],
+      "keyword": "markdown a html"
+    },
+    {
+      "slug": "generador-paletas-colores",
+      "tool": "color-palette",
+      "title": "Generador de paletas de colores online",
+      "h1": "Generador de paletas de colores",
+      "description": "Obtén cinco colores HSL como punto de partida para explorar una identidad visual o un fondo.",
+      "intro": "Obtén cinco colores HSL como punto de partida para explorar una identidad visual o un fondo.",
+      "details": "Abre la herramienta, genera una paleta y copia los valores HSL que te interesen. Las combinaciones son aleatorias. El formulario actual no permite fijar un color base ni elegir una armonía, y no garantiza contraste accesible.",
+      "steps": [
+        "Abre generador de paletas de colores en Prisma Space.",
+        "Abre la herramienta, genera una paleta y copia los valores HSL que te interesen.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Las combinaciones son aleatorias. El formulario actual no permite fijar un color base ni elegir una armonía, y no garantiza contraste accesible.",
+      "faqs": [
+        [
+          "¿Los colores están en formato HEX?",
+          "La herramienta entrega valores HSL que puedes utilizar directamente en CSS."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Las combinaciones son aleatorias. El formulario actual no permite fijar un color base ni elegir una armonía, y no garantiza contraste accesible."
+        ]
+      ],
+      "keyword": "generador paletas colores"
+    },
+    {
+      "slug": "generador-imagenes-ia",
+      "tool": "image-gen",
+      "title": "Generar imágenes con inteligencia artificial online",
+      "h1": "Generar imágenes con inteligencia artificial",
+      "description": "Convierte una descripción de sujeto, ambiente e iluminación en una imagen para explorar conceptos visuales.",
+      "intro": "Convierte una descripción de sujeto, ambiente e iluminación en una imagen para explorar conceptos visuales.",
+      "details": "Describe la composición, elige estilo y proporción y genera la imagen con el motor disponible. La generación depende de cuotas, disponibilidad y conexiones. Una cuenta personal de un proveedor puede requerir saldo; no se promete uso ilimitado ni reproducción exacta.",
+      "steps": [
+        "Abre generar imágenes con inteligencia artificial en Prisma Space.",
+        "Describe la composición, elige estilo y proporción y genera la imagen con el motor disponible.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La generación depende de cuotas, disponibilidad y conexiones. Una cuenta personal de un proveedor puede requerir saldo; no se promete uso ilimitado ni reproducción exacta.",
+      "faqs": [
+        [
+          "¿Puedo elegir formato vertical u horizontal?",
+          "Sí. El formulario ofrece cuadrado, horizontal, vertical y panorámico."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La generación depende de cuotas, disponibilidad y conexiones. Una cuenta personal de un proveedor puede requerir saldo; no se promete uso ilimitado ni reproducción exacta."
+        ]
+      ],
+      "keyword": "generador imagenes ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "reconocer-objetos-imagen",
+      "tool": "image-identify-local",
+      "title": "Reconocer objetos en una imagen online",
+      "h1": "Reconocer objetos en una imagen",
+      "description": "Obtén categorías visuales aproximadas para explorar qué reconoce un clasificador en una fotografía.",
+      "intro": "Obtén categorías visuales aproximadas para explorar qué reconoce un clasificador en una fotografía.",
+      "details": "Selecciona una imagen, espera la descarga inicial del modelo y consulta las cinco predicciones. El modelo se ejecuta en el dispositivo y entrega etiquetas en inglés. Sus porcentajes no son garantía de acierto ni sirven para identificar personas.",
+      "steps": [
+        "Abre reconocer objetos en una imagen en Prisma Space.",
+        "Selecciona una imagen, espera la descarga inicial del modelo y consulta las cinco predicciones.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El modelo se ejecuta en el dispositivo y entrega etiquetas en inglés. Sus porcentajes no son garantía de acierto ni sirven para identificar personas.",
+      "faqs": [
+        [
+          "¿Necesita una API personal?",
+          "No. Descarga el modelo al navegador; necesita conexión para obtenerlo y memoria suficiente para ejecutarlo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El modelo se ejecuta en el dispositivo y entrega etiquetas en inglés. Sus porcentajes no son garantía de acierto ni sirven para identificar personas."
+        ]
+      ],
+      "keyword": "reconocer objetos imagen"
+    },
+    {
+      "slug": "extraer-paleta-imagen",
+      "tool": "image-palette",
+      "title": "Extraer la paleta de colores de una imagen online",
+      "h1": "Extraer la paleta de colores de una imagen",
+      "description": "Obtén hasta seis colores dominantes para tomar referencias de una fotografía o ilustración.",
+      "intro": "Obtén hasta seis colores dominantes para tomar referencias de una fotografía o ilustración.",
+      "details": "Carga la imagen, ejecuta el análisis y copia los colores HEX del resultado. Los colores se estiman a partir de una versión reducida y cuantizada. No es un cuentagotas para seleccionar un píxel exacto.",
+      "steps": [
+        "Abre extraer la paleta de colores de una imagen en Prisma Space.",
+        "Carga la imagen, ejecuta el análisis y copia los colores HEX del resultado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los colores se estiman a partir de una versión reducida y cuantizada. No es un cuentagotas para seleccionar un píxel exacto.",
+      "faqs": [
+        [
+          "¿Detecta todos los colores de la fotografía?",
+          "No. Muestra una selección aproximada de los más frecuentes."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los colores se estiman a partir de una versión reducida y cuantizada. No es un cuentagotas para seleccionar un píxel exacto."
+        ]
+      ],
+      "keyword": "extraer paleta imagen"
+    },
+    {
+      "slug": "voltear-imagen",
+      "tool": "image-flip",
+      "title": "Voltear una imagen horizontal o verticalmente online",
+      "h1": "Voltear una imagen horizontal o verticalmente",
+      "description": "Crea un efecto espejo o invierte una fotografía de arriba abajo conservando sus dimensiones.",
+      "intro": "Crea un efecto espejo o invierte una fotografía de arriba abajo conservando sus dimensiones.",
+      "details": "Selecciona la imagen, elige dirección horizontal o vertical y descarga el PNG. La operación cambia también la orientación del texto visible. Voltear no equivale a girar 90 grados.",
+      "steps": [
+        "Abre voltear una imagen horizontal o verticalmente en Prisma Space.",
+        "Selecciona la imagen, elige dirección horizontal o vertical y descarga el PNG.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La operación cambia también la orientación del texto visible. Voltear no equivale a girar 90 grados.",
+      "faqs": [
+        [
+          "¿En qué formato se descarga?",
+          "El resultado se exporta como PNG."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La operación cambia también la orientación del texto visible. Voltear no equivale a girar 90 grados."
+        ]
+      ],
+      "keyword": "voltear imagen"
+    },
+    {
+      "slug": "generador-iconos-web",
+      "tool": "image-favicon",
+      "title": "Generar iconos PNG para web y PWA online",
+      "h1": "Generar iconos PNG para web y PWA",
+      "description": "Prepara un paquete de tamaños de icono para integrarlos después en la cabecera y el manifiesto de un sitio.",
+      "intro": "Prepara un paquete de tamaños de icono para integrarlos después en la cabecera y el manifiesto de un sitio.",
+      "details": "Selecciona una imagen preferiblemente cuadrada, ejecuta y descarga el ZIP de iconos. Incluye PNG de 16, 32, 48, 180, 192 y 512 píxeles. La imagen se adapta a cuadrados; no crea ICO ni instala los iconos en tu web.",
+      "steps": [
+        "Abre generar iconos png para web y pwa en Prisma Space.",
+        "Selecciona una imagen preferiblemente cuadrada, ejecuta y descarga el ZIP de iconos.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Incluye PNG de 16, 32, 48, 180, 192 y 512 píxeles. La imagen se adapta a cuadrados; no crea ICO ni instala los iconos en tu web.",
+      "faqs": [
+        [
+          "¿Genera un archivo favicon.ico?",
+          "No. El paquete contiene archivos PNG utilizables como iconos web."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Incluye PNG de 16, 32, 48, 180, 192 y 512 píxeles. La imagen se adapta a cuadrados; no crea ICO ni instala los iconos en tu web."
+        ]
+      ],
+      "keyword": "generador iconos web"
+    },
+    {
+      "slug": "recortar-audio",
+      "tool": "audio-trim",
+      "title": "Recortar audio y descargar WAV online",
+      "h1": "Recortar audio y descargar WAV",
+      "description": "Extrae un fragmento corto de una grabación para revisar una frase o preparar una muestra.",
+      "intro": "Extrae un fragmento corto de una grabación para revisar una frase o preparar una muestra.",
+      "details": "Carga el audio, introduce inicio y duración en segundos y descarga el fragmento WAV. El formulario limita actualmente la duración a 12 segundos. El motor multimedia se descarga la primera vez y requiere memoria en el navegador.",
+      "steps": [
+        "Abre recortar audio y descargar wav en Prisma Space.",
+        "Carga el audio, introduce inicio y duración en segundos y descarga el fragmento WAV.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El formulario limita actualmente la duración a 12 segundos. El motor multimedia se descarga la primera vez y requiere memoria en el navegador.",
+      "faqs": [
+        [
+          "¿Mantiene el formato MP3 del original?",
+          "No. El recorte se entrega como WAV."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El formulario limita actualmente la duración a 12 segundos. El motor multimedia se descarga la primera vez y requiere memoria en el navegador."
+        ]
+      ],
+      "keyword": "recortar audio"
+    },
+    {
+      "slug": "convertir-documentos-texto",
+      "tool": "text-file-convert",
+      "title": "Convertir TXT, Markdown y HTML a PDF o Word online",
+      "h1": "Convertir TXT, Markdown y HTML a PDF o Word",
+      "description": "Transforma archivos de texto en documentos descargables para compartir apuntes sencillos o continuar editándolos.",
+      "intro": "Transforma archivos de texto en documentos descargables para compartir apuntes sencillos o continuar editándolos.",
+      "details": "Carga TXT, Markdown, HTML o DOCX y selecciona manualmente PDF, Word, TXT o HTML como destino. La salida conserva texto con diseño básico. Markdown se trata como texto literal; el PDF puede sustituir caracteres fuera de su juego admitido por signos de interrogación.",
+      "steps": [
+        "Abre convertir txt, markdown y html a pdf o word en Prisma Space.",
+        "Carga TXT, Markdown, HTML o DOCX y selecciona manualmente PDF, Word, TXT o HTML como destino.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La salida conserva texto con diseño básico. Markdown se trata como texto literal; el PDF puede sustituir caracteres fuera de su juego admitido por signos de interrogación.",
+      "faqs": [
+        [
+          "¿Respeta imágenes, tablas y estilos originales?",
+          "No. Es una conversión centrada en el texto, no en reproducir la maquetación."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La salida conserva texto con diseño básico. Markdown se trata como texto literal; el PDF puede sustituir caracteres fuera de su juego admitido por signos de interrogación."
+        ]
+      ],
+      "keyword": "convertir documentos texto"
+    },
+    {
+      "slug": "convertir-archivos-csv-excel-json",
+      "tool": "table-file-convert",
+      "title": "Convertir archivos CSV, Excel y JSON online",
+      "h1": "Convertir archivos CSV, Excel y JSON",
+      "description": "Cambia el formato de datos tabulares para importar información en una hoja de cálculo o una aplicación.",
+      "intro": "Cambia el formato de datos tabulares para importar información en una hoja de cálculo o una aplicación.",
+      "details": "Carga CSV, JSON, XLS o XLSX, selecciona manualmente el destino y descarga el archivo. La primera fila de CSV se usa como encabezado. Para Excel se conserva la primera hoja, salvo la opción de todas las hojas destinada a JSON; no conserva estilos ni fórmulas como un libro original.",
+      "steps": [
+        "Abre convertir archivos csv, excel y json en Prisma Space.",
+        "Carga CSV, JSON, XLS o XLSX, selecciona manualmente el destino y descarga el archivo.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La primera fila de CSV se usa como encabezado. Para Excel se conserva la primera hoja, salvo la opción de todas las hojas destinada a JSON; no conserva estilos ni fórmulas como un libro original.",
+      "faqs": [
+        [
+          "¿Convierte un archivo XLS a XLSX?",
+          "El motor rechaza Excel a Excel por ser el mismo tipo de origen; los destinos para Excel son CSV o JSON."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La primera fila de CSV se usa como encabezado. Para Excel se conserva la primera hoja, salvo la opción de todas las hojas destinada a JSON; no conserva estilos ni fórmulas como un libro original."
+        ]
+      ],
+      "keyword": "convertir archivos csv excel json"
+    },
+    {
+      "slug": "auditar-archivo-csv",
+      "tool": "csv-profile-local",
+      "title": "Auditar columnas y duplicados de un CSV online",
+      "h1": "Auditar columnas y duplicados de un CSV",
+      "description": "Revisa la calidad de una tabla antes de importarla, identificando vacíos, filas repetidas y tipos probables.",
+      "intro": "Revisa la calidad de una tabla antes de importarla, identificando vacíos, filas repetidas y tipos probables.",
+      "details": "Carga el CSV, escoge el separador o la detección automática y consulta el informe. El informe describe el archivo; no elimina duplicados ni corrige celdas automáticamente. Los tipos son inferidos y pueden necesitar revisión.",
+      "steps": [
+        "Abre auditar columnas y duplicados de un csv en Prisma Space.",
+        "Carga el CSV, escoge el separador o la detección automática y consulta el informe.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El informe describe el archivo; no elimina duplicados ni corrige celdas automáticamente. Los tipos son inferidos y pueden necesitar revisión.",
+      "faqs": [
+        [
+          "¿Modifica el CSV original?",
+          "No. Analiza el contenido y devuelve un informe."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El informe describe el archivo; no elimina duplicados ni corrige celdas automáticamente. Los tipos son inferidos y pueden necesitar revisión."
+        ]
+      ],
+      "keyword": "auditar archivo csv"
+    },
+    {
+      "slug": "validar-json-schema",
+      "tool": "json-schema-validate",
+      "title": "Validar JSON con JSON Schema online",
+      "h1": "Validar JSON con JSON Schema",
+      "description": "Comprueba si los datos respetan campos obligatorios y tipos esperados antes de integrarlos en una aplicación.",
+      "intro": "Comprueba si los datos respetan campos obligatorios y tipos esperados antes de integrarlos en una aplicación.",
+      "details": "Pega los datos y el esquema JSON, ejecuta la validación y revisa los errores señalados. El esquema también debe ser válido. La comprobación es local con AJV y no certifica reglas de negocio que no hayas expresado.",
+      "steps": [
+        "Abre validar json con json schema en Prisma Space.",
+        "Pega los datos y el esquema JSON, ejecuta la validación y revisa los errores señalados.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El esquema también debe ser válido. La comprobación es local con AJV y no certifica reglas de negocio que no hayas expresado.",
+      "faqs": [
+        [
+          "¿Detecta campos obligatorios ausentes?",
+          "Sí, cuando los declaras en la propiedad required del esquema."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El esquema también debe ser válido. La comprobación es local con AJV y no certifica reglas de negocio que no hayas expresado."
+        ]
+      ],
+      "keyword": "validar json schema"
+    },
+    {
+      "slug": "csv-a-json",
+      "tool": "csv-json",
+      "title": "Convertir CSV a JSON online",
+      "h1": "Convertir CSV a JSON",
+      "description": "Transforma una tabla pegada en una lista de objetos con los encabezados como claves.",
+      "intro": "Transforma una tabla pegada en una lista de objetos con los encabezados como claves.",
+      "details": "Pega CSV con encabezados y al menos una fila, elige coma o punto y coma y ejecuta. Los valores se conservan como texto. Usa encabezados únicos para evitar que columnas con el mismo nombre se sobrescriban.",
+      "steps": [
+        "Abre convertir csv a json en Prisma Space.",
+        "Pega CSV con encabezados y al menos una fila, elige coma o punto y coma y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los valores se conservan como texto. Usa encabezados únicos para evitar que columnas con el mismo nombre se sobrescriban.",
+      "faqs": [
+        [
+          "¿Convierte automáticamente números y fechas?",
+          "No. El resultado conserva los valores como cadenas para no adivinar su tipo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los valores se conservan como texto. Usa encabezados únicos para evitar que columnas con el mismo nombre se sobrescriban."
+        ]
+      ],
+      "keyword": "csv a json"
+    },
+    {
+      "slug": "json-a-csv",
+      "tool": "json-csv",
+      "title": "Convertir JSON a CSV online",
+      "h1": "Convertir JSON a CSV",
+      "description": "Prepara una lista de objetos para abrirla en una hoja de cálculo o importarla en un sistema tabular.",
+      "intro": "Prepara una lista de objetos para abrirla en una hoja de cálculo o importarla en un sistema tabular.",
+      "details": "Pega una lista JSON de objetos, ejecuta la conversión y copia la tabla CSV. Las columnas reúnen las claves presentes. Los objetos anidados se serializan dentro de la celda y no se convierten en columnas separadas.",
+      "steps": [
+        "Abre convertir json a csv en Prisma Space.",
+        "Pega una lista JSON de objetos, ejecuta la conversión y copia la tabla CSV.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Las columnas reúnen las claves presentes. Los objetos anidados se serializan dentro de la celda y no se convierten en columnas separadas.",
+      "faqs": [
+        [
+          "¿Qué ocurre con una propiedad ausente?",
+          "Su celda queda vacía en la fila correspondiente."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Las columnas reúnen las claves presentes. Los objetos anidados se serializan dentro de la celda y no se convierten en columnas separadas."
+        ]
+      ],
+      "keyword": "json a csv"
+    },
+    {
+      "slug": "generador-slugs",
+      "tool": "slug",
+      "title": "Generador de slugs para URL online",
+      "h1": "Generador de slugs para URL",
+      "description": "Transforma un título en una ruta sencilla con minúsculas y guiones para usarla al crear una página.",
+      "intro": "Transforma un título en una ruta sencilla con minúsculas y guiones para usarla al crear una página.",
+      "details": "Escribe el título, ejecuta y copia el slug sin espacios ni tildes. No comprueba si la ruta ya existe en tu sitio ni garantiza posicionamiento. Usa títulos descriptivos y evita cambiar URLs publicadas sin redirecciones.",
+      "steps": [
+        "Abre generador de slugs para url en Prisma Space.",
+        "Escribe el título, ejecuta y copia el slug sin espacios ni tildes.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "No comprueba si la ruta ya existe en tu sitio ni garantiza posicionamiento. Usa títulos descriptivos y evita cambiar URLs publicadas sin redirecciones.",
+      "faqs": [
+        [
+          "¿Genera la URL completa?",
+          "No. Entrega solo el fragmento que puedes añadir al dominio."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "No comprueba si la ruta ya existe en tu sitio ni garantiza posicionamiento. Usa títulos descriptivos y evita cambiar URLs publicadas sin redirecciones."
+        ]
+      ],
+      "keyword": "generador slugs"
+    },
+    {
+      "slug": "eliminar-lineas-duplicadas",
+      "tool": "dedupe-lines",
+      "title": "Eliminar líneas duplicadas online",
+      "h1": "Eliminar líneas duplicadas",
+      "description": "Depura listas pegadas conservando la primera aparición de cada línea.",
+      "intro": "Depura listas pegadas conservando la primera aparición de cada línea.",
+      "details": "Pega la lista, decide si distinguir mayúsculas y ejecuta la eliminación de duplicados. La comparación se realiza por línea completa y no normaliza espacios. Ana y Ana con un espacio final pueden seguir siendo diferentes.",
+      "steps": [
+        "Abre eliminar líneas duplicadas en Prisma Space.",
+        "Pega la lista, decide si distinguir mayúsculas y ejecuta la eliminación de duplicados.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La comparación se realiza por línea completa y no normaliza espacios. Ana y Ana con un espacio final pueden seguir siendo diferentes.",
+      "faqs": [
+        [
+          "¿Mantiene el orden original?",
+          "Sí. Conserva la primera aparición y su posición relativa."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La comparación se realiza por línea completa y no normaliza espacios. Ana y Ana con un espacio final pueden seguir siendo diferentes."
+        ]
+      ],
+      "keyword": "eliminar lineas duplicadas"
+    },
+    {
+      "slug": "limpiar-espacios-texto",
+      "tool": "clean-text",
+      "title": "Limpiar espacios y saltos de línea online",
+      "h1": "Limpiar espacios y saltos de línea",
+      "description": "Normaliza textos que acumulan espacios sobrantes al copiarlos desde documentos o formularios.",
+      "intro": "Normaliza textos que acumulan espacios sobrantes al copiarlos desde documentos o formularios.",
+      "details": "Pega el contenido, ejecuta la limpieza y copia el texto normalizado. Se recortan espacios al inicio y final de líneas y se reducen saltos excesivos. No lo uses si la sangría tiene significado, como en código Python.",
+      "steps": [
+        "Abre limpiar espacios y saltos de línea en Prisma Space.",
+        "Pega el contenido, ejecuta la limpieza y copia el texto normalizado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se recortan espacios al inicio y final de líneas y se reducen saltos excesivos. No lo uses si la sangría tiene significado, como en código Python.",
+      "faqs": [
+        [
+          "¿Corrige palabras mal escritas?",
+          "No. Ajusta espacios y saltos de línea, sin corrección ortográfica."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se recortan espacios al inicio y final de líneas y se reducen saltos excesivos. No lo uses si la sangría tiene significado, como en código Python."
+        ]
+      ],
+      "keyword": "limpiar espacios texto"
+    },
+    {
+      "slug": "codificar-entidades-html",
+      "tool": "html-entities",
+      "title": "Codificar y decodificar entidades HTML online",
+      "h1": "Codificar y decodificar entidades HTML",
+      "description": "Representa caracteres reservados como texto para preparar ejemplos de marcado o recuperar entidades codificadas.",
+      "intro": "Representa caracteres reservados como texto para preparar ejemplos de marcado o recuperar entidades codificadas.",
+      "details": "Pega el fragmento y selecciona Codificar o Decodificar antes de ejecutar. Escapar caracteres no sustituye una política completa de saneamiento de HTML ni protege todos los contextos de JavaScript o CSS.",
+      "steps": [
+        "Abre codificar y decodificar entidades html en Prisma Space.",
+        "Pega el fragmento y selecciona Codificar o Decodificar antes de ejecutar.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Escapar caracteres no sustituye una política completa de saneamiento de HTML ni protege todos los contextos de JavaScript o CSS.",
+      "faqs": [
+        [
+          "¿Qué ocurre con el símbolo menor que?",
+          "Al codificar se representa como &lt; para mostrarlo como texto en HTML."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Escapar caracteres no sustituye una política completa de saneamiento de HTML ni protege todos los contextos de JavaScript o CSS."
+        ]
+      ],
+      "keyword": "codificar entidades html"
+    },
+    {
+      "slug": "generador-uuid",
+      "tool": "uuid",
+      "title": "Generador de UUID v4 online",
+      "h1": "Generador de UUID v4",
+      "description": "Crea identificadores para registros de prueba, recursos o integraciones sin inventarlos manualmente.",
+      "intro": "Crea identificadores para registros de prueba, recursos o integraciones sin inventarlos manualmente.",
+      "details": "Indica entre 1 y 50 identificadores, ejecuta y copia la lista de UUID v4. Se utiliza Web Crypto en el navegador. La probabilidad de colisión es muy baja, pero no consulta bases de datos para garantizar unicidad global.",
+      "steps": [
+        "Abre generador de uuid v4 en Prisma Space.",
+        "Indica entre 1 y 50 identificadores, ejecuta y copia la lista de UUID v4.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se utiliza Web Crypto en el navegador. La probabilidad de colisión es muy baja, pero no consulta bases de datos para garantizar unicidad global.",
+      "faqs": [
+        [
+          "¿Genera UUID de otras versiones?",
+          "No. Esta herramienta genera UUID v4."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se utiliza Web Crypto en el navegador. La probabilidad de colisión es muy baja, pero no consulta bases de datos para garantizar unicidad global."
+        ]
+      ],
+      "keyword": "generador uuid"
+    },
+    {
+      "slug": "generador-lorem-ipsum",
+      "tool": "lorem",
+      "title": "Generador de Lorem Ipsum online",
+      "h1": "Generador de Lorem Ipsum",
+      "description": "Rellena una maqueta con texto de prueba para evaluar jerarquía y espacio antes de tener la redacción final.",
+      "intro": "Rellena una maqueta con texto de prueba para evaluar jerarquía y espacio antes de tener la redacción final.",
+      "details": "Elige entre 10 y 1500 palabras y hasta 12 párrafos; genera y copia el texto. El vocabulario se repite para alcanzar la longitud. Es contenido de relleno y conviene sustituirlo antes de publicar.",
+      "steps": [
+        "Abre generador de lorem ipsum en Prisma Space.",
+        "Elige entre 10 y 1500 palabras y hasta 12 párrafos; genera y copia el texto.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El vocabulario se repite para alcanzar la longitud. Es contenido de relleno y conviene sustituirlo antes de publicar.",
+      "faqs": [
+        [
+          "¿Es un texto original para mi sitio?",
+          "No. Es texto de prueba pensado para diseño y maquetación."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El vocabulario se repite para alcanzar la longitud. Es contenido de relleno y conviene sustituirlo antes de publicar."
+        ]
+      ],
+      "keyword": "generador lorem ipsum"
+    },
+    {
+      "slug": "generador-numeros-aleatorios",
+      "tool": "random",
+      "title": "Generador de números aleatorios online",
+      "h1": "Generador de números aleatorios",
+      "description": "Obtén enteros dentro de un rango para ejemplos, ejercicios o datos de prueba.",
+      "intro": "Obtén enteros dentro de un rango para ejemplos, ejercicios o datos de prueba.",
+      "details": "Indica mínimo, máximo y cantidad de resultados entre 1 y 100; ejecuta. Los límites son inclusivos y los números pueden repetirse. La implementación no está certificada para sorteos regulados.",
+      "steps": [
+        "Abre generador de números aleatorios en Prisma Space.",
+        "Indica mínimo, máximo y cantidad de resultados entre 1 y 100; ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los límites son inclusivos y los números pueden repetirse. La implementación no está certificada para sorteos regulados.",
+      "faqs": [
+        [
+          "¿Puedo pedir números sin repetición?",
+          "El formulario actual no ofrece esa modalidad; revisa los duplicados si tu uso exige unicidad."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los límites son inclusivos y los números pueden repetirse. La implementación no está certificada para sorteos regulados."
+        ]
+      ],
+      "keyword": "generador numeros aleatorios"
+    },
+    {
+      "slug": "calculadora-expresiones",
+      "tool": "calculator",
+      "title": "Calculadora de expresiones matemáticas online",
+      "h1": "Calculadora de expresiones matemáticas",
+      "description": "Resuelve operaciones con paréntesis y potencias para comprobar cálculos cotidianos.",
+      "intro": "Resuelve operaciones con paréntesis y potencias para comprobar cálculos cotidianos.",
+      "details": "Escribe una expresión con números y operadores, como (125 * 1.19) + 5000, y ejecuta. Admite +, -, *, /, %, ^ y paréntesis. No interpreta funciones trigonométricas ni ecuaciones con incógnitas.",
+      "steps": [
+        "Abre calculadora de expresiones matemáticas en Prisma Space.",
+        "Escribe una expresión con números y operadores, como (125 * 1.19) + 5000, y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Admite +, -, *, /, %, ^ y paréntesis. No interpreta funciones trigonométricas ni ecuaciones con incógnitas.",
+      "faqs": [
+        [
+          "¿Qué significa el símbolo % aquí?",
+          "Calcula el resto de una división; para porcentajes utiliza la calculadora específica."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Admite +, -, *, /, %, ^ y paréntesis. No interpreta funciones trigonométricas ni ecuaciones con incógnitas."
+        ]
+      ],
+      "keyword": "calculadora expresiones"
+    },
+    {
+      "slug": "calculadora-porcentajes",
+      "tool": "percentage",
+      "title": "Calculadora de porcentajes y variación online",
+      "h1": "Calculadora de porcentajes y variación",
+      "description": "Calcula una parte porcentual de un importe o compara cuánto ha cambiado un valor respecto al inicial.",
+      "intro": "Calcula una parte porcentual de un importe o compara cuánto ha cambiado un valor respecto al inicial.",
+      "details": "Selecciona porcentaje de una cantidad o variación, completa los dos valores y ejecuta. La variación usa el valor inicial como referencia y no admite que sea cero. No añade impuestos ni descuentos automáticamente.",
+      "steps": [
+        "Abre calculadora de porcentajes y variación en Prisma Space.",
+        "Selecciona porcentaje de una cantidad o variación, completa los dos valores y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La variación usa el valor inicial como referencia y no admite que sea cero. No añade impuestos ni descuentos automáticamente.",
+      "faqs": [
+        [
+          "¿Cómo calculo una subida de 100 a 120?",
+          "Elige Variación, introduce 100 como inicial y 120 como final: el resultado es 20 %."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La variación usa el valor inicial como referencia y no admite que sea cero. No añade impuestos ni descuentos automáticamente."
+        ]
+      ],
+      "keyword": "calculadora porcentajes"
+    },
+    {
+      "slug": "dias-entre-fechas",
+      "tool": "date-diff",
+      "title": "Calcular días entre dos fechas online",
+      "h1": "Calcular días entre dos fechas",
+      "description": "Mide la separación de dos fechas de calendario para planificar períodos o comparar eventos.",
+      "intro": "Mide la separación de dos fechas de calendario para planificar períodos o comparar eventos.",
+      "details": "Elige fecha inicial y final y ejecuta el cálculo. Devuelve la distancia absoluta en días y aclara el orden. No descuenta festivos ni fines de semana y no cuenta ambos extremos como días completos.",
+      "steps": [
+        "Abre calcular días entre dos fechas en Prisma Space.",
+        "Elige fecha inicial y final y ejecuta el cálculo.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Devuelve la distancia absoluta en días y aclara el orden. No descuenta festivos ni fines de semana y no cuenta ambos extremos como días completos.",
+      "faqs": [
+        [
+          "¿Calcula días hábiles?",
+          "No. Cuenta días naturales entre las fechas."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Devuelve la distancia absoluta en días y aclara el orden. No descuenta festivos ni fines de semana y no cuenta ambos extremos como días completos."
+        ]
+      ],
+      "keyword": "dias entre fechas"
+    },
+    {
+      "slug": "conversor-zonas-horarias",
+      "tool": "timezone",
+      "title": "Convertir una hora a otra zona horaria online",
+      "h1": "Convertir una hora a otra zona horaria",
+      "description": "Consulta cómo se representa una fecha y hora local en una de las ciudades disponibles.",
+      "intro": "Consulta cómo se representa una fecha y hora local en una de las ciudades disponibles.",
+      "details": "Introduce la fecha y hora según la zona de tu dispositivo, selecciona la ciudad de destino y ejecuta. La entrada se interpreta en la zona local del navegador. El selector corresponde al destino; no hay un selector independiente de zona de origen.",
+      "steps": [
+        "Abre convertir una hora a otra zona horaria en Prisma Space.",
+        "Introduce la fecha y hora según la zona de tu dispositivo, selecciona la ciudad de destino y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La entrada se interpreta en la zona local del navegador. El selector corresponde al destino; no hay un selector independiente de zona de origen.",
+      "faqs": [
+        [
+          "¿Tiene en cuenta cambios estacionales?",
+          "Utiliza las reglas de zona horaria disponibles en el navegador para la fecha indicada."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La entrada se interpreta en la zona local del navegador. El selector corresponde al destino; no hay un selector independiente de zona de origen."
+        ]
+      ],
+      "keyword": "conversor zonas horarias"
+    },
+    {
+      "slug": "comprobar-contraste-colores",
+      "tool": "contrast",
+      "title": "Comprobar contraste de colores WCAG online",
+      "h1": "Comprobar contraste de colores WCAG",
+      "description": "Evalúa si dos colores de texto y fondo alcanzan los umbrales de contraste para texto normal.",
+      "intro": "Evalúa si dos colores de texto y fondo alcanzan los umbrales de contraste para texto normal.",
+      "details": "Introduce ambos colores HEX de tres o seis dígitos, ejecuta y consulta la relación y los resultados AA y AAA. Esta prueba mide un par de colores planos. No audita una página completa, fondos con imágenes ni todos los criterios de accesibilidad.",
+      "steps": [
+        "Abre comprobar contraste de colores wcag en Prisma Space.",
+        "Introduce ambos colores HEX de tres o seis dígitos, ejecuta y consulta la relación y los resultados AA y AAA.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Esta prueba mide un par de colores planos. No audita una página completa, fondos con imágenes ni todos los criterios de accesibilidad.",
+      "faqs": [
+        [
+          "¿Qué significa una relación 21:1?",
+          "Es el contraste máximo entre negro y blanco en este cálculo de luminancia relativa."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Esta prueba mide un par de colores planos. No audita una página completa, fondos con imágenes ni todos los criterios de accesibilidad."
+        ]
+      ],
+      "keyword": "comprobar contraste colores"
+    },
+    {
+      "slug": "ordenar-lista-alfabeticamente",
+      "tool": "text-sort",
+      "title": "Ordenar una lista alfabéticamente online",
+      "h1": "Ordenar una lista alfabéticamente",
+      "description": "Organiza nombres o etiquetas pegados en líneas separadas usando comparación en español.",
+      "intro": "Organiza nombres o etiquetas pegados en líneas separadas usando comparación en español.",
+      "details": "Pega una entrada por línea, ajusta sensibilidad a mayúsculas y ejecuta. El orden también considera números, por lo que elemento 2 puede ir antes de elemento 10. No elimina duplicados.",
+      "steps": [
+        "Abre ordenar una lista alfabéticamente en Prisma Space.",
+        "Pega una entrada por línea, ajusta sensibilidad a mayúsculas y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El orden también considera números, por lo que elemento 2 puede ir antes de elemento 10. No elimina duplicados.",
+      "faqs": [
+        [
+          "¿Puedo ordenar varias columnas como en Excel?",
+          "No. Cada línea se trata como una entrada completa."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El orden también considera números, por lo que elemento 2 puede ir antes de elemento 10. No elimina duplicados."
+        ]
+      ],
+      "keyword": "ordenar lista alfabeticamente"
+    },
+    {
+      "slug": "frecuencia-palabras-texto",
+      "tool": "word-frequency",
+      "title": "Analizar la frecuencia de palabras online",
+      "h1": "Analizar la frecuencia de palabras",
+      "description": "Identifica términos repetidos para revisar vocabulario o explorar la composición de un texto.",
+      "intro": "Identifica términos repetidos para revisar vocabulario o explorar la composición de un texto.",
+      "details": "Pega el contenido, ejecuta el análisis y revisa hasta 30 términos ordenados por frecuencia. Se normalizan mayúsculas, pero no se agrupan sinónimos ni variantes como singular y plural. Las palabras funcionales también se cuentan.",
+      "steps": [
+        "Abre analizar la frecuencia de palabras en Prisma Space.",
+        "Pega el contenido, ejecuta el análisis y revisa hasta 30 términos ordenados por frecuencia.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se normalizan mayúsculas, pero no se agrupan sinónimos ni variantes como singular y plural. Las palabras funcionales también se cuentan.",
+      "faqs": [
+        [
+          "¿Es un análisis de densidad SEO profesional?",
+          "Es un conteo local de términos, sin datos de posicionamiento ni recomendaciones de densidad."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se normalizan mayúsculas, pero no se agrupan sinónimos ni variantes como singular y plural. Las palabras funcionales también se cuentan."
+        ]
+      ],
+      "keyword": "frecuencia palabras texto"
+    },
+    {
+      "slug": "leer-codigo-qr-imagen",
+      "tool": "qr-scan",
+      "title": "Leer un código QR desde una imagen online",
+      "h1": "Leer un código QR desde una imagen",
+      "description": "Recupera el texto o enlace contenido en un QR guardado como fotografía o captura.",
+      "intro": "Recupera el texto o enlace contenido en un QR guardado como fotografía o captura.",
+      "details": "Selecciona una imagen con el QR completo, ejecuta y revisa el contenido detectado. El código debe estar legible y tener margen suficiente. Leerlo no verifica que su enlace sea seguro.",
+      "steps": [
+        "Abre leer un código qr desde una imagen en Prisma Space.",
+        "Selecciona una imagen con el QR completo, ejecuta y revisa el contenido detectado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El código debe estar legible y tener margen suficiente. Leerlo no verifica que su enlace sea seguro.",
+      "faqs": [
+        [
+          "¿Abre automáticamente el enlace?",
+          "La herramienta devuelve el contenido para que puedas revisarlo antes de utilizarlo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El código debe estar legible y tener margen suficiente. Leerlo no verifica que su enlace sea seguro."
+        ]
+      ],
+      "keyword": "leer codigo qr imagen"
+    },
+    {
+      "slug": "generador-codigos-barras",
+      "tool": "barcode",
+      "title": "Generador de códigos de barras online",
+      "h1": "Generador de códigos de barras",
+      "description": "Crea una representación PNG de un identificador para pruebas de etiquetas y flujos internos.",
+      "intro": "Crea una representación PNG de un identificador para pruebas de etiquetas y flujos internos.",
+      "details": "Introduce el contenido, elige Code 128, EAN-13 o Code 39 y descarga el código generado. Cada formato restringe los caracteres admitidos. Generar un EAN visual no asigna un identificador comercial oficial ni registra un producto.",
+      "steps": [
+        "Abre generador de códigos de barras en Prisma Space.",
+        "Introduce el contenido, elige Code 128, EAN-13 o Code 39 y descarga el código generado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Cada formato restringe los caracteres admitidos. Generar un EAN visual no asigna un identificador comercial oficial ni registra un producto.",
+      "faqs": [
+        [
+          "¿Cuántos dígitos necesita EAN-13?",
+          "Introduce 12 o 13 dígitos y comprueba que el contenido pase la validación del formato."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Cada formato restringe los caracteres admitidos. Generar un EAN visual no asigna un identificador comercial oficial ni registra un producto."
+        ]
+      ],
+      "keyword": "generador codigos barras"
+    },
+    {
+      "slug": "imagen-blanco-negro",
+      "tool": "image-grayscale",
+      "title": "Convertir una imagen a blanco y negro online",
+      "h1": "Convertir una imagen a blanco y negro",
+      "description": "Crea una versión en escala de grises para comparar tonos o preparar un recurso visual sin color.",
+      "intro": "Crea una versión en escala de grises para comparar tonos o preparar un recurso visual sin color.",
+      "details": "Carga la fotografía, ejecuta el filtro y descarga el PNG. Se convierte toda la imagen a escala de grises. No aplica color selectivo ni produce una imagen binaria de solo dos tonos.",
+      "steps": [
+        "Abre convertir una imagen a blanco y negro en Prisma Space.",
+        "Carga la fotografía, ejecuta el filtro y descarga el PNG.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se convierte toda la imagen a escala de grises. No aplica color selectivo ni produce una imagen binaria de solo dos tonos.",
+      "faqs": [
+        [
+          "¿Modifica mi archivo original?",
+          "No. Entrega una copia PNG procesada."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se convierte toda la imagen a escala de grises. No aplica color selectivo ni produce una imagen binaria de solo dos tonos."
+        ]
+      ],
+      "keyword": "imagen blanco negro"
+    },
+    {
+      "slug": "desenfocar-imagen",
+      "tool": "image-blur",
+      "title": "Desenfocar una imagen online",
+      "h1": "Desenfocar una imagen",
+      "description": "Suaviza una fotografía completa para preparar fondos y efectos visuales.",
+      "intro": "Suaviza una fotografía completa para preparar fondos y efectos visuales.",
+      "details": "Carga la imagen, ajusta la intensidad entre 1 y 30 píxeles y descarga el resultado. Se aplica desenfoque global y puede añadirse margen alrededor. No selecciona rostros ni regiones y no garantiza ocultar datos sensibles.",
+      "steps": [
+        "Abre desenfocar una imagen en Prisma Space.",
+        "Carga la imagen, ajusta la intensidad entre 1 y 30 píxeles y descarga el resultado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se aplica desenfoque global y puede añadirse margen alrededor. No selecciona rostros ni regiones y no garantiza ocultar datos sensibles.",
+      "faqs": [
+        [
+          "¿Puedo desenfocar solo una cara?",
+          "No. La operación disponible afecta a toda la imagen."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se aplica desenfoque global y puede añadirse margen alrededor. No selecciona rostros ni regiones y no garantiza ocultar datos sensibles."
+        ]
+      ],
+      "keyword": "desenfocar imagen"
+    },
+    {
+      "slug": "ajustar-brillo-contraste",
+      "tool": "image-adjust",
+      "title": "Ajustar brillo y contraste de una imagen online",
+      "h1": "Ajustar brillo y contraste de una imagen",
+      "description": "Aclara una foto oscura o modifica su contraste para preparar una versión visualmente más equilibrada.",
+      "intro": "Aclara una foto oscura o modifica su contraste para preparar una versión visualmente más equilibrada.",
+      "details": "Carga la imagen, ajusta brillo y contraste entre 10 y 200 % y descarga la copia PNG. Son ajustes globales; no recuperan detalle perdido por sobreexposición ni sustituyen edición por zonas.",
+      "steps": [
+        "Abre ajustar brillo y contraste de una imagen en Prisma Space.",
+        "Carga la imagen, ajusta brillo y contraste entre 10 y 200 % y descarga la copia PNG.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Son ajustes globales; no recuperan detalle perdido por sobreexposición ni sustituyen edición por zonas.",
+      "faqs": [
+        [
+          "¿Qué representa el valor 100 %?",
+          "Es el nivel neutro del ajuste correspondiente."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Son ajustes globales; no recuperan detalle perdido por sobreexposición ni sustituyen edición por zonas."
+        ]
+      ],
+      "keyword": "ajustar brillo contraste"
+    },
+    {
+      "slug": "redondear-esquinas-imagen",
+      "tool": "image-rounded",
+      "title": "Redondear las esquinas de una imagen online",
+      "h1": "Redondear las esquinas de una imagen",
+      "description": "Prepara un recurso con esquinas transparentes para tarjetas, perfiles o composiciones.",
+      "intro": "Prepara un recurso con esquinas transparentes para tarjetas, perfiles o composiciones.",
+      "details": "Selecciona la imagen, define radio y tamaño máximo y descarga el PNG. La transparencia requiere conservar un formato compatible como PNG. Si luego conviertes a JPG perderás las esquinas transparentes.",
+      "steps": [
+        "Abre redondear las esquinas de una imagen en Prisma Space.",
+        "Selecciona la imagen, define radio y tamaño máximo y descarga el PNG.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La transparencia requiere conservar un formato compatible como PNG. Si luego conviertes a JPG perderás las esquinas transparentes.",
+      "faqs": [
+        [
+          "¿Recorta la imagen en un círculo?",
+          "La herramienta redondea las esquinas; no ofrece un recorte circular dedicado."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La transparencia requiere conservar un formato compatible como PNG. Si luego conviertes a JPG perderás las esquinas transparentes."
+        ]
+      ],
+      "keyword": "redondear esquinas imagen"
+    },
+    {
+      "slug": "ver-metadatos-exif",
+      "tool": "image-metadata",
+      "title": "Ver metadatos EXIF de una imagen online",
+      "h1": "Ver metadatos EXIF de una imagen",
+      "description": "Revisa dimensiones y datos de captura antes de compartir una fotografía.",
+      "intro": "Revisa dimensiones y datos de captura antes de compartir una fotografía.",
+      "details": "Carga la imagen, ejecuta la lectura y consulta los campos disponibles. Los metadatos dependen del archivo; redes sociales y editores pueden haberlos eliminado. La ausencia de GPS no demuestra que nunca se almacenó ubicación.",
+      "steps": [
+        "Abre ver metadatos exif de una imagen en Prisma Space.",
+        "Carga la imagen, ejecuta la lectura y consulta los campos disponibles.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los metadatos dependen del archivo; redes sociales y editores pueden haberlos eliminado. La ausencia de GPS no demuestra que nunca se almacenó ubicación.",
+      "faqs": [
+        [
+          "¿Muestra dónde se tomó una foto?",
+          "Puede mostrar datos GPS si existen en los metadatos; no deduce una ubicación a partir de la escena."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los metadatos dependen del archivo; redes sociales y editores pueden haberlos eliminado. La ausencia de GPS no demuestra que nunca se almacenó ubicación."
+        ]
+      ],
+      "keyword": "ver metadatos exif"
+    },
+    {
+      "slug": "audio-a-imagen-onda",
+      "tool": "audio-waveform",
+      "title": "Crear una imagen de la forma de onda de audio online",
+      "h1": "Crear una imagen de la forma de onda de audio",
+      "description": "Obtén una representación visual estática para ilustrar una grabación o comparar su distribución de amplitud.",
+      "intro": "Obtén una representación visual estática para ilustrar una grabación o comparar su distribución de amplitud.",
+      "details": "Carga el audio, elige el color de la onda y descarga el PNG generado. La imagen tiene 1800 por 460 píxeles y representa el primer canal. La compatibilidad de audio depende del decodificador del navegador.",
+      "steps": [
+        "Abre crear una imagen de la forma de onda de audio en Prisma Space.",
+        "Carga el audio, elige el color de la onda y descarga el PNG generado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La imagen tiene 1800 por 460 píxeles y representa el primer canal. La compatibilidad de audio depende del decodificador del navegador.",
+      "faqs": [
+        [
+          "¿Genera un vídeo animado con la onda?",
+          "No. La salida es una imagen PNG estática."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La imagen tiene 1800 por 460 píxeles y representa el primer canal. La compatibilidad de audio depende del decodificador del navegador."
+        ]
+      ],
+      "keyword": "audio a imagen onda"
+    },
+    {
+      "slug": "generar-hash-sha256",
+      "tool": "hash-file",
+      "title": "Calcular el hash SHA-256 de un archivo online",
+      "h1": "Calcular el hash SHA-256 de un archivo",
+      "description": "Obtén una huella digital para comparar copias de un archivo o contrastarla con un hash publicado por una fuente fiable.",
+      "intro": "Obtén una huella digital para comparar copias de un archivo o contrastarla con un hash publicado por una fuente fiable.",
+      "details": "Selecciona el archivo, ejecuta el cálculo y copia la cadena SHA-256. El archivo se lee en memoria local. Un hash coincidente indica igualdad de contenido, pero no certifica que el archivo sea seguro.",
+      "steps": [
+        "Abre calcular el hash sha-256 de un archivo en Prisma Space.",
+        "Selecciona el archivo, ejecuta el cálculo y copia la cadena SHA-256.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El archivo se lee en memoria local. Un hash coincidente indica igualdad de contenido, pero no certifica que el archivo sea seguro.",
+      "faqs": [
+        [
+          "¿Sirve para detectar virus?",
+          "No. Calcula una huella; no analiza malware."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El archivo se lee en memoria local. Un hash coincidente indica igualdad de contenido, pero no certifica que el archivo sea seguro."
+        ]
+      ],
+      "keyword": "generar hash sha256"
+    },
+    {
+      "slug": "buscar-proyectos-open-source",
+      "tool": "github-discover",
+      "title": "Buscar proyectos open source en GitHub online",
+      "h1": "Buscar proyectos open source en GitHub",
+      "description": "Encuentra repositorios públicos relacionados con una tecnología para estudiar alternativas y ejemplos.",
+      "intro": "Encuentra repositorios públicos relacionados con una tecnología para estudiar alternativas y ejemplos.",
+      "details": "Describe el tema, selecciona lenguaje, orden y número de resultados y ejecuta la búsqueda. GitHub aplica límites a consultas públicas. Las estrellas no garantizan calidad, mantenimiento ni permisos de uso; revisa la licencia de cada repositorio.",
+      "steps": [
+        "Abre buscar proyectos open source en github en Prisma Space.",
+        "Describe el tema, selecciona lenguaje, orden y número de resultados y ejecuta la búsqueda.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "GitHub aplica límites a consultas públicas. Las estrellas no garantizan calidad, mantenimiento ni permisos de uso; revisa la licencia de cada repositorio.",
+      "faqs": [
+        [
+          "¿Necesito un token para buscar?",
+          "La consulta pública disponible no requiere token, pero está sujeta a límites por conexión."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "GitHub aplica límites a consultas públicas. Las estrellas no garantizan calidad, mantenimiento ni permisos de uso; revisa la licencia de cada repositorio."
+        ]
+      ],
+      "keyword": "buscar proyectos open source"
+    },
+    {
+      "slug": "probar-api-publica",
+      "tool": "api-explorer",
+      "title": "Probar una API pública desde el navegador online",
+      "h1": "Probar una API pública desde el navegador",
+      "description": "Inspecciona una respuesta GET pública para conocer su estructura antes de preparar una integración.",
+      "intro": "Inspecciona una respuesta GET pública para conocer su estructura antes de preparar una integración.",
+      "details": "Introduce una URL HTTPS pública o elige un ejemplo; selecciona cómo mostrarla y ejecuta. No admite credenciales ni métodos de escritura. Si CORS bloquea la lectura directa puede utilizar un proxy externo para consultar la URL pública.",
+      "steps": [
+        "Abre probar una api pública desde el navegador en Prisma Space.",
+        "Introduce una URL HTTPS pública o elige un ejemplo; selecciona cómo mostrarla y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "No admite credenciales ni métodos de escritura. Si CORS bloquea la lectura directa puede utilizar un proxy externo para consultar la URL pública.",
+      "faqs": [
+        [
+          "¿Permite hacer solicitudes POST?",
+          "No. El explorador actual solo hace consultas GET sin credenciales."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "No admite credenciales ni métodos de escritura. Si CORS bloquea la lectura directa puede utilizar un proxy externo para consultar la URL pública."
+        ]
+      ],
+      "keyword": "probar api publica"
+    },
+    {
+      "slug": "decodificar-jwt",
+      "tool": "jwt-decode",
+      "title": "Decodificar un token JWT online",
+      "h1": "Decodificar un token JWT",
+      "description": "Inspecciona encabezado y payload para entender la estructura de un token durante desarrollo.",
+      "intro": "Inspecciona encabezado y payload para entender la estructura de un token durante desarrollo.",
+      "details": "Pega un JWT de tres segmentos, ejecuta y consulta sus dos objetos JSON. La firma no se verifica. No uses el resultado para decidir si el token es auténtico, está vigente o autoriza una operación.",
+      "steps": [
+        "Abre decodificar un token jwt en Prisma Space.",
+        "Pega un JWT de tres segmentos, ejecuta y consulta sus dos objetos JSON.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La firma no se verifica. No uses el resultado para decidir si el token es auténtico, está vigente o autoriza una operación.",
+      "faqs": [
+        [
+          "¿Comprueba la firma criptográfica?",
+          "No. Solo decodifica el contenido legible del token."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La firma no se verifica. No uses el resultado para decidir si el token es auténtico, está vigente o autoriza una operación."
+        ]
+      ],
+      "keyword": "decodificar jwt"
+    },
+    {
+      "slug": "probador-expresiones-regulares",
+      "tool": "regex-test",
+      "title": "Probar expresiones regulares online",
+      "h1": "Probar expresiones regulares",
+      "description": "Comprueba qué fragmentos coincide un patrón JavaScript antes de incorporarlo a un proceso de texto.",
+      "intro": "Comprueba qué fragmentos coincide un patrón JavaScript antes de incorporarlo a un proceso de texto.",
+      "details": "Escribe el patrón sin barras delimitadoras, los flags y el texto; ejecuta y revisa posiciones. Admite flags g, i, m, s y u, patrones de hasta 200 caracteres y texto de hasta 5000. Usa patrones sencillos para evitar búsquedas costosas.",
+      "steps": [
+        "Abre probar expresiones regulares en Prisma Space.",
+        "Escribe el patrón sin barras delimitadoras, los flags y el texto; ejecuta y revisa posiciones.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Admite flags g, i, m, s y u, patrones de hasta 200 caracteres y texto de hasta 5000. Usa patrones sencillos para evitar búsquedas costosas.",
+      "faqs": [
+        [
+          "¿Es compatible con cualquier motor regex?",
+          "No. Utiliza la implementación de expresiones regulares de JavaScript del navegador."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Admite flags g, i, m, s y u, patrones de hasta 200 caracteres y texto de hasta 5000. Usa patrones sencillos para evitar búsquedas costosas."
+        ]
+      ],
+      "keyword": "probador expresiones regulares"
+    },
+    {
+      "slug": "convertir-json-yaml",
+      "tool": "json-yaml",
+      "title": "Convertir JSON a YAML y YAML a JSON online",
+      "h1": "Convertir JSON a YAML y YAML a JSON",
+      "description": "Traslada estructuras de configuración entre dos formatos de datos para trabajar con herramientas distintas.",
+      "intro": "Traslada estructuras de configuración entre dos formatos de datos para trabajar con herramientas distintas.",
+      "details": "Pega contenido válido, selecciona la dirección de conversión y ejecuta. La conversión conserva datos interpretados, no comentarios ni estilo original. Revisa tipos de valores y evita números que excedan la precisión de JavaScript.",
+      "steps": [
+        "Abre convertir json a yaml y yaml a json en Prisma Space.",
+        "Pega contenido válido, selecciona la dirección de conversión y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La conversión conserva datos interpretados, no comentarios ni estilo original. Revisa tipos de valores y evita números que excedan la precisión de JavaScript.",
+      "faqs": [
+        [
+          "¿Conserva los comentarios de YAML?",
+          "No. Los comentarios no forman parte de los datos que se exportan a JSON."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La conversión conserva datos interpretados, no comentarios ni estilo original. Revisa tipos de valores y evita números que excedan la precisión de JavaScript."
+        ]
+      ],
+      "keyword": "convertir json yaml"
+    },
+    {
+      "slug": "excel-a-json",
+      "tool": "excel-json",
+      "title": "Convertir Excel a JSON online",
+      "h1": "Convertir Excel a JSON",
+      "description": "Exporta datos de un libro XLSX o XLS como objetos JSON para reutilizarlos en una aplicación.",
+      "intro": "Exporta datos de un libro XLSX o XLS como objetos JSON para reutilizarlos en una aplicación.",
+      "details": "Carga el libro, selecciona primera hoja o todas las hojas, conserva JSON como salida y descarga. Los encabezados definen claves. No conserva formato visual ni macros; al elegir todas las hojas, el JSON agrupa los datos por nombre de hoja.",
+      "steps": [
+        "Abre convertir excel a json en Prisma Space.",
+        "Carga el libro, selecciona primera hoja o todas las hojas, conserva JSON como salida y descarga.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los encabezados definen claves. No conserva formato visual ni macros; al elegir todas las hojas, el JSON agrupa los datos por nombre de hoja.",
+      "faqs": [
+        [
+          "¿Puedo exportar todas las hojas juntas?",
+          "Sí. Elige Todas las hojas y formato JSON."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los encabezados definen claves. No conserva formato visual ni macros; al elegir todas las hojas, el JSON agrupa los datos por nombre de hoja."
+        ]
+      ],
+      "keyword": "excel a json"
+    },
+    {
+      "slug": "generador-degradados-css",
+      "tool": "css-gradient",
+      "title": "Generador de degradados CSS online",
+      "h1": "Generador de degradados CSS",
+      "description": "Prepara una declaración CSS de fondo a partir de dos colores para integrarla en tu diseño.",
+      "intro": "Prepara una declaración CSS de fondo a partir de dos colores para integrarla en tu diseño.",
+      "details": "Selecciona colores, tipo lineal o radial y ángulo; genera y copia la declaración. El ángulo se utiliza en degradados lineales. La herramienta no aplica el fondo automáticamente a tu sitio.",
+      "steps": [
+        "Abre generador de degradados css en Prisma Space.",
+        "Selecciona colores, tipo lineal o radial y ángulo; genera y copia la declaración.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El ángulo se utiliza en degradados lineales. La herramienta no aplica el fondo automáticamente a tu sitio.",
+      "faqs": [
+        [
+          "¿Dónde pego el resultado?",
+          "Dentro de una regla CSS del elemento cuyo fondo quieras cambiar."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El ángulo se utiliza en degradados lineales. La herramienta no aplica el fondo automáticamente a tu sitio."
+        ]
+      ],
+      "keyword": "generador degradados css"
+    },
+    {
+      "slug": "redactar-textos-ia",
+      "tool": "ai-assistant",
+      "title": "Redactar textos con inteligencia artificial online",
+      "h1": "Redactar textos con inteligencia artificial",
+      "description": "Prepara borradores ajustando propósito, tono y extensión en lugar de empezar desde una página vacía.",
+      "intro": "Prepara borradores ajustando propósito, tono y extensión en lugar de empezar desde una página vacía.",
+      "details": "Describe el texto que necesitas, añade contexto, selecciona tono y extensión y solicita el borrador. Los resultados dependen del motor y sus cuotas. Revisa hechos, nombres y afirmaciones antes de utilizar el texto; no se garantiza originalidad absoluta.",
+      "steps": [
+        "Abre redactar textos con inteligencia artificial en Prisma Space.",
+        "Describe el texto que necesitas, añade contexto, selecciona tono y extensión y solicita el borrador.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los resultados dependen del motor y sus cuotas. Revisa hechos, nombres y afirmaciones antes de utilizar el texto; no se garantiza originalidad absoluta.",
+      "faqs": [
+        [
+          "¿Puedo pedir un resumen o una explicación?",
+          "Sí. Indica la tarea y proporciona el texto o contexto necesarios en el formulario."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los resultados dependen del motor y sus cuotas. Revisa hechos, nombres y afirmaciones antes de utilizar el texto; no se garantiza originalidad absoluta."
+        ]
+      ],
+      "keyword": "redactar textos ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "generador-contenido-youtube",
+      "tool": "ai-youtube-kit",
+      "title": "Generar títulos, guion y descripción para YouTube online",
+      "h1": "Generar títulos, guion y descripción para YouTube",
+      "description": "Organiza una idea de vídeo en un paquete editorial con títulos, descripción, hashtags y propuestas de miniatura.",
+      "intro": "Organiza una idea de vídeo en un paquete editorial con títulos, descripción, hashtags y propuestas de miniatura.",
+      "details": "Describe tema, público y plataforma; genera el kit y adapta las propuestas a tu contenido real. Entrega texto e ideas visuales, no una miniatura renderizada ni un vídeo. Los títulos no garantizan vistas o CTR.",
+      "steps": [
+        "Abre generar títulos, guion y descripción para youtube en Prisma Space.",
+        "Describe tema, público y plataforma; genera el kit y adapta las propuestas a tu contenido real.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Entrega texto e ideas visuales, no una miniatura renderizada ni un vídeo. Los títulos no garantizan vistas o CTR.",
+      "faqs": [
+        [
+          "¿Publica el contenido en mi canal?",
+          "No. Prepara material para que lo revises y lo publiques por tu cuenta."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Entrega texto e ideas visuales, no una miniatura renderizada ni un vídeo. Los títulos no garantizan vistas o CTR."
+        ]
+      ],
+      "keyword": "generador contenido youtube",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "mejorar-prompts-ia",
+      "tool": "ai-prompt-lab",
+      "title": "Mejorar prompts para inteligencia artificial online",
+      "h1": "Mejorar prompts para inteligencia artificial",
+      "description": "Convierte una idea poco concreta en instrucciones reutilizables para texto, imagen, audio, vídeo o código.",
+      "intro": "Convierte una idea poco concreta en instrucciones reutilizables para texto, imagen, audio, vídeo o código.",
+      "details": "Describe el resultado deseado y el medio de destino, genera y copia la versión detallada o breve. Mejora instrucciones en texto; no ejecuta el prompt ni crea los archivos que este describe. La respuesta depende de cuotas del proveedor.",
+      "steps": [
+        "Abre mejorar prompts para inteligencia artificial en Prisma Space.",
+        "Describe el resultado deseado y el medio de destino, genera y copia la versión detallada o breve.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Mejora instrucciones en texto; no ejecuta el prompt ni crea los archivos que este describe. La respuesta depende de cuotas del proveedor.",
+      "faqs": [
+        [
+          "¿Genera el vídeo si pido un prompt de vídeo?",
+          "No. Entrega un prompt para utilizarlo después en una herramienta compatible."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Mejora instrucciones en texto; no ejecuta el prompt ni crea los archivos que este describe. La respuesta depende de cuotas del proveedor."
+        ]
+      ],
+      "keyword": "mejorar prompts ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "generador-guia-estudio-ia",
+      "tool": "ai-study-notes",
+      "title": "Crear una guía de estudio con IA online",
+      "h1": "Crear una guía de estudio con IA",
+      "description": "Transforma un tema o apuntes en explicación, esquema, preguntas de autoevaluación y tarjetas de repaso.",
+      "intro": "Transforma un tema o apuntes en explicación, esquema, preguntas de autoevaluación y tarjetas de repaso.",
+      "details": "Pega apuntes o especifica el tema y nivel, genera la guía y contrasta las respuestas con el material docente. La IA puede cometer errores. No consulta automáticamente bibliografía verificada ni sustituye la revisión de las fuentes originales.",
+      "steps": [
+        "Abre crear una guía de estudio con ia en Prisma Space.",
+        "Pega apuntes o especifica el tema y nivel, genera la guía y contrasta las respuestas con el material docente.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La IA puede cometer errores. No consulta automáticamente bibliografía verificada ni sustituye la revisión de las fuentes originales.",
+      "faqs": [
+        [
+          "¿Crea preguntas con respuestas?",
+          "Sí. El tutor está preparado para proponer preguntas y separar sus respuestas."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La IA puede cometer errores. No consulta automáticamente bibliografía verificada ni sustituye la revisión de las fuentes originales."
+        ]
+      ],
+      "keyword": "generador guia estudio ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "asistente-programacion-ia",
+      "tool": "ai-code-helper",
+      "title": "Analizar y explicar código con IA online",
+      "h1": "Analizar y explicar código con IA",
+      "description": "Obtén una explicación de un fragmento, posibles correcciones y casos de prueba para investigar un problema de programación.",
+      "intro": "Obtén una explicación de un fragmento, posibles correcciones y casos de prueba para investigar un problema de programación.",
+      "details": "Pega el código y describe error, lenguaje y comportamiento esperado; genera la propuesta y compruébala en tu entorno. La herramienta no ejecuta pruebas ni accede a tu repositorio. Evita pegar secretos y revisa dependencias antes de usar el código.",
+      "steps": [
+        "Abre analizar y explicar código con ia en Prisma Space.",
+        "Pega el código y describe error, lenguaje y comportamiento esperado; genera la propuesta y compruébala en tu entorno.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La herramienta no ejecuta pruebas ni accede a tu repositorio. Evita pegar secretos y revisa dependencias antes de usar el código.",
+      "faqs": [
+        [
+          "¿Garantiza que el código funcione?",
+          "No. Las propuestas deben probarse en el proyecto donde se usarán."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La herramienta no ejecuta pruebas ni accede a tu repositorio. Evita pegar secretos y revisa dependencias antes de usar el código."
+        ]
+      ],
+      "keyword": "asistente programacion ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "generador-letras-canciones",
+      "tool": "music-lyrics",
+      "title": "Crear letras de canciones originales con IA online",
+      "h1": "Crear letras de canciones originales con IA",
+      "description": "Desarrolla una idea musical en letra, estructura y dirección de producción para continuar una composición.",
+      "intro": "Desarrolla una idea musical en letra, estructura y dirección de producción para continuar una composición.",
+      "details": "Describe tema, género, emoción e idioma; genera la letra y solicita los ajustes que necesites. La función compone texto y orientación musical. No genera una grabación, una voz cantada ni un archivo MP3.",
+      "steps": [
+        "Abre crear letras de canciones originales con ia en Prisma Space.",
+        "Describe tema, género, emoción e idioma; genera la letra y solicita los ajustes que necesites.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La función compone texto y orientación musical. No genera una grabación, una voz cantada ni un archivo MP3.",
+      "faqs": [
+        [
+          "¿Puedo descargar la canción en audio?",
+          "Esta herramienta no renderiza audio musical; trabaja con la letra y su estructura."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La función compone texto y orientación musical. No genera una grabación, una voz cantada ni un archivo MP3."
+        ]
+      ],
+      "keyword": "generador letras canciones",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "formatear-html",
+      "tool": "html-format",
+      "title": "Formatear código HTML online",
+      "h1": "Formatear código HTML",
+      "description": "Organiza la presentación de un documento HTML para revisar su estructura con mayor claridad.",
+      "intro": "Organiza la presentación de un documento HTML para revisar su estructura con mayor claridad.",
+      "details": "Pega el código fuente, selecciona indentación y ejecuta el formateado. Utiliza Prettier en el navegador y admite hasta 250000 caracteres. Formatear no verifica accesibilidad ni comportamiento del sitio.",
+      "steps": [
+        "Abre formatear código html en Prisma Space.",
+        "Pega el código fuente, selecciona indentación y ejecuta el formateado.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Utiliza Prettier en el navegador y admite hasta 250000 caracteres. Formatear no verifica accesibilidad ni comportamiento del sitio.",
+      "faqs": [
+        [
+          "¿Cambia el diseño de mi página?",
+          "Su objetivo es ordenar el código, no rediseñarlo; revisa cualquier cambio antes de incorporarlo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Utiliza Prettier en el navegador y admite hasta 250000 caracteres. Formatear no verifica accesibilidad ni comportamiento del sitio."
+        ]
+      ],
+      "keyword": "formatear html"
+    },
+    {
+      "slug": "formatear-css",
+      "tool": "css-format",
+      "title": "Formatear código CSS online",
+      "h1": "Formatear código CSS",
+      "description": "Ordena espacios e indentación de hojas de estilo para facilitar la revisión de reglas y selectores.",
+      "intro": "Ordena espacios e indentación de hojas de estilo para facilitar la revisión de reglas y selectores.",
+      "details": "Pega CSS, selecciona indentación y ejecuta; copia el resultado a tu editor. No elimina reglas sin uso ni comprueba conflictos de cascada. El límite de entrada es de 250000 caracteres.",
+      "steps": [
+        "Abre formatear código css en Prisma Space.",
+        "Pega CSS, selecciona indentación y ejecuta; copia el resultado a tu editor.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "No elimina reglas sin uso ni comprueba conflictos de cascada. El límite de entrada es de 250000 caracteres.",
+      "faqs": [
+        [
+          "¿Minifica la hoja de estilos?",
+          "No. Esta herramienta prioriza legibilidad; no genera una versión comprimida para producción."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "No elimina reglas sin uso ni comprueba conflictos de cascada. El límite de entrada es de 250000 caracteres."
+        ]
+      ],
+      "keyword": "formatear css"
+    },
+    {
+      "slug": "formatear-javascript",
+      "tool": "js-format",
+      "title": "Formatear JavaScript online",
+      "h1": "Formatear JavaScript",
+      "description": "Haz legible un fragmento de JavaScript reorganizando su formato antes de revisarlo.",
+      "intro": "Haz legible un fragmento de JavaScript reorganizando su formato antes de revisarlo.",
+      "details": "Pega el código, escoge indentación y ejecuta el formateado local. El código debe poder analizarse con el parser disponible. No se ejecuta y no se corrigen errores lógicos; el límite es de 250000 caracteres.",
+      "steps": [
+        "Abre formatear javascript en Prisma Space.",
+        "Pega el código, escoge indentación y ejecuta el formateado local.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El código debe poder analizarse con el parser disponible. No se ejecuta y no se corrigen errores lógicos; el límite es de 250000 caracteres.",
+      "faqs": [
+        [
+          "¿También sirve para TypeScript?",
+          "El parser configurado es Babel para JavaScript; no se promete compatibilidad con sintaxis TypeScript."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El código debe poder analizarse con el parser disponible. No se ejecuta y no se corrigen errores lógicos; el límite es de 250000 caracteres."
+        ]
+      ],
+      "keyword": "formatear javascript"
+    },
+    {
+      "slug": "formatear-sql",
+      "tool": "sql-format",
+      "title": "Formatear consultas SQL online",
+      "h1": "Formatear consultas SQL",
+      "description": "Organiza consultas con sangría y palabras clave legibles para revisar filtros, uniones y agrupaciones.",
+      "intro": "Organiza consultas con sangría y palabras clave legibles para revisar filtros, uniones y agrupaciones.",
+      "details": "Pega SQL, elige dialecto e indentación y ejecuta. Incluye SQL estándar, PostgreSQL, MySQL, SQLite y BigQuery. No conecta con bases de datos, ejecuta consultas ni mide su rendimiento.",
+      "steps": [
+        "Abre formatear consultas sql en Prisma Space.",
+        "Pega SQL, elige dialecto e indentación y ejecuta.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Incluye SQL estándar, PostgreSQL, MySQL, SQLite y BigQuery. No conecta con bases de datos, ejecuta consultas ni mide su rendimiento.",
+      "faqs": [
+        [
+          "¿Optimiza una consulta lenta?",
+          "No. Cambia la presentación, no el plan de ejecución."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Incluye SQL estándar, PostgreSQL, MySQL, SQLite y BigQuery. No conecta con bases de datos, ejecuta consultas ni mide su rendimiento."
+        ]
+      ],
+      "keyword": "formatear sql"
+    },
+    {
+      "slug": "formatear-xml",
+      "tool": "xml-format",
+      "title": "Validar y formatear XML online",
+      "h1": "Validar y formatear XML",
+      "description": "Detecta errores de estructura y presenta XML con una indentación sencilla para inspeccionarlo.",
+      "intro": "Detecta errores de estructura y presenta XML con una indentación sencilla para inspeccionarlo.",
+      "details": "Pega el documento XML, ejecuta y corrige los errores si el analizador los indica. Valida sintaxis XML, no un esquema XSD. El formato puede cambiar espacios del contenido mixto; conserva una copia del original.",
+      "steps": [
+        "Abre validar y formatear xml en Prisma Space.",
+        "Pega el documento XML, ejecuta y corrige los errores si el analizador los indica.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Valida sintaxis XML, no un esquema XSD. El formato puede cambiar espacios del contenido mixto; conserva una copia del original.",
+      "faqs": [
+        [
+          "¿Comprueba las reglas de un XSD?",
+          "No. La comprobación disponible es sintáctica."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Valida sintaxis XML, no un esquema XSD. El formato puede cambiar espacios del contenido mixto; conserva una copia del original."
+        ]
+      ],
+      "keyword": "formatear xml"
+    },
+    {
+      "slug": "estadisticas-csv",
+      "tool": "csv-stats",
+      "title": "Calcular estadísticas de un CSV online",
+      "h1": "Calcular estadísticas de un CSV",
+      "description": "Explora valores vacíos y columnas numéricas de una tabla pequeña sin crear fórmulas en una hoja de cálculo.",
+      "intro": "Explora valores vacíos y columnas numéricas de una tabla pequeña sin crear fórmulas en una hoja de cálculo.",
+      "details": "Pega CSV con encabezados, selecciona coma o punto y coma y ejecuta el análisis. Muestra conteos y estadísticas de los valores interpretables como números. Usa punto decimal y revisa formatos regionales antes de interpretar medias.",
+      "steps": [
+        "Abre calcular estadísticas de un csv en Prisma Space.",
+        "Pega CSV con encabezados, selecciona coma o punto y coma y ejecuta el análisis.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Muestra conteos y estadísticas de los valores interpretables como números. Usa punto decimal y revisa formatos regionales antes de interpretar medias.",
+      "faqs": [
+        [
+          "¿Incluye promedio y mediana?",
+          "Sí, junto con mínimo y máximo cuando una columna contiene valores numéricos."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Muestra conteos y estadísticas de los valores interpretables como números. Usa punto decimal y revisa formatos regionales antes de interpretar medias."
+        ]
+      ],
+      "keyword": "estadisticas csv"
+    },
+    {
+      "slug": "json-a-excel",
+      "tool": "json-xlsx",
+      "title": "Convertir JSON a Excel XLSX online",
+      "h1": "Convertir JSON a Excel XLSX",
+      "description": "Prepara una hoja de cálculo descargable a partir de una lista JSON de registros.",
+      "intro": "Prepara una hoja de cálculo descargable a partir de una lista JSON de registros.",
+      "details": "Pega una lista no vacía de objetos, ejecuta y descarga el archivo XLSX. Cada objeto representa una fila. El límite es de 50000 registros y las estructuras complejas pueden requerir aplanado previo.",
+      "steps": [
+        "Abre convertir json a excel xlsx en Prisma Space.",
+        "Pega una lista no vacía de objetos, ejecuta y descarga el archivo XLSX.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Cada objeto representa una fila. El límite es de 50000 registros y las estructuras complejas pueden requerir aplanado previo.",
+      "faqs": [
+        [
+          "¿Produce un archivo XLSX real?",
+          "Sí. Genera un libro con una hoja llamada Datos."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Cada objeto representa una fila. El límite es de 50000 registros y las estructuras complejas pueden requerir aplanado previo."
+        ]
+      ],
+      "keyword": "json a excel"
+    },
+    {
+      "slug": "inspeccionar-tipo-archivo",
+      "tool": "file-inspector",
+      "title": "Inspeccionar el tipo y firma de un archivo online",
+      "h1": "Inspeccionar el tipo y firma de un archivo",
+      "description": "Compara extensión, MIME declarado y primeros bytes para entender qué clase de archivo recibiste.",
+      "intro": "Compara extensión, MIME declarado y primeros bytes para entender qué clase de archivo recibiste.",
+      "details": "Selecciona el archivo, ejecuta la inspección y revisa firma, tamaño y datos básicos. Reconoce un conjunto limitado de firmas. DOCX, XLSX y PPTX comparten estructura ZIP, por lo que la firma por sí sola no los distingue.",
+      "steps": [
+        "Abre inspeccionar el tipo y firma de un archivo en Prisma Space.",
+        "Selecciona el archivo, ejecuta la inspección y revisa firma, tamaño y datos básicos.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Reconoce un conjunto limitado de firmas. DOCX, XLSX y PPTX comparten estructura ZIP, por lo que la firma por sí sola no los distingue.",
+      "faqs": [
+        [
+          "¿Detecta si un archivo es malicioso?",
+          "No. Muestra información básica, sin análisis antivirus."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Reconoce un conjunto limitado de firmas. DOCX, XLSX y PPTX comparten estructura ZIP, por lo que la firma por sí sola no los distingue."
+        ]
+      ],
+      "keyword": "inspeccionar tipo archivo"
+    },
+    {
+      "slug": "eliminar-metadatos-imagen",
+      "tool": "image-strip-metadata",
+      "title": "Eliminar metadatos EXIF de una imagen online",
+      "h1": "Eliminar metadatos EXIF de una imagen",
+      "description": "Prepara una copia de una fotografía que descarte metadatos habituales antes de compartirla.",
+      "intro": "Prepara una copia de una fotografía que descarte metadatos habituales antes de compartirla.",
+      "details": "Carga JPEG, PNG o WebP, ejecuta la reexportación y descarga la copia. El procedimiento vuelve a codificar la imagen y puede cambiar tamaño o calidad. No oculta datos visibles dentro de la fotografía.",
+      "steps": [
+        "Abre eliminar metadatos exif de una imagen en Prisma Space.",
+        "Carga JPEG, PNG o WebP, ejecuta la reexportación y descarga la copia.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El procedimiento vuelve a codificar la imagen y puede cambiar tamaño o calidad. No oculta datos visibles dentro de la fotografía.",
+      "faqs": [
+        [
+          "¿Retira ubicación GPS incrustada?",
+          "La reexportación descarta los metadatos EXIF habituales, incluidos GPS cuando están presentes; revisa la copia antes de compartirla."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El procedimiento vuelve a codificar la imagen y puede cambiar tamaño o calidad. No oculta datos visibles dentro de la fotografía."
+        ]
+      ],
+      "keyword": "eliminar metadatos imagen"
+    },
+    {
+      "slug": "ver-metadatos-pdf",
+      "tool": "pdf-metadata",
+      "title": "Consultar metadatos de un PDF online",
+      "h1": "Consultar metadatos de un PDF",
+      "description": "Comprueba autoría declarada, título y fechas internas de un documento sin modificarlo.",
+      "intro": "Comprueba autoría declarada, título y fechas internas de un documento sin modificarlo.",
+      "details": "Selecciona el PDF, ejecuta la lectura y revisa los campos disponibles. Son datos declarados que pueden estar vacíos o ser modificables. No prueban quién redactó el documento ni su autenticidad.",
+      "steps": [
+        "Abre consultar metadatos de un pdf en Prisma Space.",
+        "Selecciona el PDF, ejecuta la lectura y revisa los campos disponibles.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Son datos declarados que pueden estar vacíos o ser modificables. No prueban quién redactó el documento ni su autenticidad.",
+      "faqs": [
+        [
+          "¿Muestra cuántas páginas tiene?",
+          "Sí. El informe incluye el número de páginas junto a los metadatos."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Son datos declarados que pueden estar vacíos o ser modificables. No prueban quién redactó el documento ni su autenticidad."
+        ]
+      ],
+      "keyword": "ver metadatos pdf"
+    },
+    {
+      "slug": "eliminar-metadatos-pdf",
+      "tool": "pdf-metadata-clean",
+      "title": "Limpiar metadatos de un PDF online",
+      "h1": "Limpiar metadatos de un PDF",
+      "description": "Genera una copia que elimina campos habituales de autoría y el bloque de metadatos del catálogo.",
+      "intro": "Genera una copia que elimina campos habituales de autoría y el bloque de metadatos del catálogo.",
+      "details": "Carga el PDF, ejecuta la limpieza y descarga la copia para revisarla. No anonimiza el texto visible, adjuntos, anotaciones ni todos los objetos posibles del PDF. Revisa el contenido antes de compartirlo.",
+      "steps": [
+        "Abre limpiar metadatos de un pdf en Prisma Space.",
+        "Carga el PDF, ejecuta la limpieza y descarga la copia para revisarla.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "No anonimiza el texto visible, adjuntos, anotaciones ni todos los objetos posibles del PDF. Revisa el contenido antes de compartirlo.",
+      "faqs": [
+        [
+          "¿Borra el nombre del autor escrito en una página?",
+          "No. Actúa sobre metadatos, no sobre texto visible."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "No anonimiza el texto visible, adjuntos, anotaciones ni todos los objetos posibles del PDF. Revisa el contenido antes de compartirlo."
+        ]
+      ],
+      "keyword": "eliminar metadatos pdf"
+    },
+    {
+      "slug": "pixelar-imagen",
+      "tool": "image-pixelate",
+      "title": "Pixelar una imagen completa online",
+      "h1": "Pixelar una imagen completa",
+      "description": "Crea una estética de mosaico para avatares o fondos mediante bloques ajustables.",
+      "intro": "Crea una estética de mosaico para avatares o fondos mediante bloques ajustables.",
+      "details": "Carga la imagen, elige un tamaño de bloque entre 4 y 80 y descarga el PNG. La operación afecta a la imagen completa. No permite seleccionar zonas ni garantiza anonimización de rostros o datos.",
+      "steps": [
+        "Abre pixelar una imagen completa en Prisma Space.",
+        "Carga la imagen, elige un tamaño de bloque entre 4 y 80 y descarga el PNG.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La operación afecta a la imagen completa. No permite seleccionar zonas ni garantiza anonimización de rostros o datos.",
+      "faqs": [
+        [
+          "¿Puedo pixelar solo una matrícula?",
+          "No. El efecto disponible se aplica globalmente."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La operación afecta a la imagen completa. No permite seleccionar zonas ni garantiza anonimización de rostros o datos."
+        ]
+      ],
+      "keyword": "pixelar imagen"
+    },
+    {
+      "slug": "efecto-sepia-imagen",
+      "tool": "image-sepia",
+      "title": "Aplicar efecto sepia a una imagen online",
+      "h1": "Aplicar efecto sepia a una imagen",
+      "description": "Prepara una versión de tono cálido para explorar un estilo fotográfico clásico.",
+      "intro": "Prepara una versión de tono cálido para explorar un estilo fotográfico clásico.",
+      "details": "Carga la fotografía, ejecuta el filtro y descarga la copia PNG. Se aplica sepia a toda la imagen con una intensidad fija. No restaura fotografías ni elimina defectos del original.",
+      "steps": [
+        "Abre aplicar efecto sepia a una imagen en Prisma Space.",
+        "Carga la fotografía, ejecuta el filtro y descarga la copia PNG.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Se aplica sepia a toda la imagen con una intensidad fija. No restaura fotografías ni elimina defectos del original.",
+      "faqs": [
+        [
+          "¿Puedo ajustar la intensidad?",
+          "El filtro actual no expone un control de intensidad."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Se aplica sepia a toda la imagen con una intensidad fija. No restaura fotografías ni elimina defectos del original."
+        ]
+      ],
+      "keyword": "efecto sepia imagen"
+    },
+    {
+      "slug": "generador-qr-contacto",
+      "tool": "qr-vcard",
+      "title": "Crear un código QR de contacto vCard online",
+      "h1": "Crear un código QR de contacto vCard",
+      "description": "Comparte nombre, teléfono, correo y organización en un QR que un lector compatible pueda interpretar como contacto.",
+      "intro": "Comparte nombre, teléfono, correo y organización en un QR que un lector compatible pueda interpretar como contacto.",
+      "details": "Completa los datos, genera el PNG y pruébalo con la cámara antes de imprimir. Los datos están dentro del QR y son legibles para quien lo escanee. El guardado en la agenda depende del lector del teléfono.",
+      "steps": [
+        "Abre crear un código qr de contacto vcard en Prisma Space.",
+        "Completa los datos, genera el PNG y pruébalo con la cámara antes de imprimir.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Los datos están dentro del QR y son legibles para quien lo escanee. El guardado en la agenda depende del lector del teléfono.",
+      "faqs": [
+        [
+          "¿El QR se actualiza si cambio de teléfono?",
+          "No. Contiene los datos usados al generarlo; crea otro QR cuando cambien."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Los datos están dentro del QR y son legibles para quien lo escanee. El guardado en la agenda depende del lector del teléfono."
+        ]
+      ],
+      "keyword": "generador qr contacto"
+    },
+    {
+      "slug": "ocultar-datos-sensibles-texto",
+      "tool": "text-redact-sensitive",
+      "title": "Ocultar datos sensibles de un texto online",
+      "h1": "Ocultar datos sensibles de un texto",
+      "description": "Prepara una copia de registros o notas ocultando coincidencias comunes de claves, correos y teléfonos antes de compartirla.",
+      "intro": "Prepara una copia de registros o notas ocultando coincidencias comunes de claves, correos y teléfonos antes de compartirla.",
+      "details": "Pega el texto, ejecuta el detector y revisa manualmente la copia resultante. La detección usa patrones y tiene un límite de 150000 caracteres. Puede omitir datos o marcar falsos positivos; no garantiza anonimización completa.",
+      "steps": [
+        "Abre ocultar datos sensibles de un texto en Prisma Space.",
+        "Pega el texto, ejecuta el detector y revisa manualmente la copia resultante.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La detección usa patrones y tiene un límite de 150000 caracteres. Puede omitir datos o marcar falsos positivos; no garantiza anonimización completa.",
+      "faqs": [
+        [
+          "¿Oculta también nombres y direcciones postales?",
+          "No de forma general. Debes revisar esos datos manualmente."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La detección usa patrones y tiene un límite de 150000 caracteres. Puede omitir datos o marcar falsos positivos; no garantiza anonimización completa."
+        ]
+      ],
+      "keyword": "ocultar datos sensibles texto"
+    },
+    {
+      "slug": "generador-enlaces-utm",
+      "tool": "utm-builder",
+      "title": "Generador de enlaces UTM online",
+      "h1": "Generador de enlaces UTM",
+      "description": "Etiqueta URLs de campañas para distinguir origen, medio y campaña en una analítica compatible.",
+      "intro": "Etiqueta URLs de campañas para distinguir origen, medio y campaña en una analítica compatible.",
+      "details": "Introduce URL completa, origen, medio y campaña; añade contenido o término si lo necesitas y genera. Conserva otros parámetros de la URL. No instala analítica, acorta enlaces ni garantiza que la plataforma de destino registre la visita.",
+      "steps": [
+        "Abre generador de enlaces utm en Prisma Space.",
+        "Introduce URL completa, origen, medio y campaña; añade contenido o término si lo necesitas y genera.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Conserva otros parámetros de la URL. No instala analítica, acorta enlaces ni garantiza que la plataforma de destino registre la visita.",
+      "faqs": [
+        [
+          "¿Cambia el contenido de la página de destino?",
+          "No. Añade parámetros a su dirección para que una herramienta de analítica pueda interpretarlos."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Conserva otros parámetros de la URL. No instala analítica, acorta enlaces ni garantiza que la plataforma de destino registre la visita."
+        ]
+      ],
+      "keyword": "generador enlaces utm"
+    },
+    {
+      "slug": "comparar-json",
+      "tool": "json-compare-local",
+      "title": "Comparar dos documentos JSON online",
+      "h1": "Comparar dos documentos JSON",
+      "description": "Identifica campos añadidos, eliminados o modificados entre dos versiones sin confundir cambios de formato con cambios de datos.",
+      "intro": "Identifica campos añadidos, eliminados o modificados entre dos versiones sin confundir cambios de formato con cambios de datos.",
+      "details": "Pega los dos JSON válidos, ejecuta la comparación y revisa las rutas marcadas. La comparación estructural tiene límites de tamaño y puede truncar el informe. Las listas se comparan por índice y los números usan precisión JavaScript.",
+      "steps": [
+        "Abre comparar dos documentos json en Prisma Space.",
+        "Pega los dos JSON válidos, ejecuta la comparación y revisa las rutas marcadas.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La comparación estructural tiene límites de tamaño y puede truncar el informe. Las listas se comparan por índice y los números usan precisión JavaScript.",
+      "faqs": [
+        [
+          "¿Importa el orden de las claves de un objeto?",
+          "No. Se comparan claves y valores, no su orden de escritura."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La comparación estructural tiene límites de tamaño y puede truncar el informe. Las listas se comparan por índice y los números usan precisión JavaScript."
+        ]
+      ],
+      "keyword": "comparar json"
+    },
+    {
+      "slug": "extraer-doi-pmid-arxiv",
+      "tool": "citation-ids-local",
+      "title": "Extraer DOI, PMID y arXiv de un texto online",
+      "h1": "Extraer DOI, PMID y arXiv de un texto",
+      "description": "Recupera identificadores de una bibliografía para continuar la consulta de sus fuentes.",
+      "intro": "Recupera identificadores de una bibliografía para continuar la consulta de sus fuentes.",
+      "details": "Pega el texto científico, ejecuta y copia los enlaces generados para cada identificador. Detecta patrones y crea enlaces, pero no verifica que el identificador exista ni recupera automáticamente los metadatos del artículo.",
+      "steps": [
+        "Abre extraer doi, pmid y arxiv de un texto en Prisma Space.",
+        "Pega el texto científico, ejecuta y copia los enlaces generados para cada identificador.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "Detecta patrones y crea enlaces, pero no verifica que el identificador exista ni recupera automáticamente los metadatos del artículo.",
+      "faqs": [
+        [
+          "¿Genera referencias APA completas?",
+          "No. Extrae identificadores; utiliza el generador de referencias para preparar citas con datos verificados."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "Detecta patrones y crea enlaces, pero no verifica que el identificador exista ni recupera automáticamente los metadatos del artículo."
+        ]
+      ],
+      "keyword": "extraer doi pmid arxiv"
+    },
+    {
+      "slug": "comparar-opciones-ia",
+      "tool": "ai-compare-options",
+      "title": "Comparar opciones con inteligencia artificial online",
+      "h1": "Comparar opciones con inteligencia artificial",
+      "description": "Organiza alternativas y criterios para preparar una decisión con ventajas, riesgos y puntos pendientes de comprobar.",
+      "intro": "Organiza alternativas y criterios para preparar una decisión con ventajas, riesgos y puntos pendientes de comprobar.",
+      "details": "Describe las opciones y aporta criterios y datos conocidos; genera la comparación y revisa sus supuestos. La IA no verifica precios ni disponibilidad actuales por sí sola. Aporta fuentes y confirma la información relevante antes de decidir.",
+      "steps": [
+        "Abre comparar opciones con inteligencia artificial en Prisma Space.",
+        "Describe las opciones y aporta criterios y datos conocidos; genera la comparación y revisa sus supuestos.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "La IA no verifica precios ni disponibilidad actuales por sí sola. Aporta fuentes y confirma la información relevante antes de decidir.",
+      "faqs": [
+        [
+          "¿Busca automáticamente precios actuales?",
+          "No. Trabaja con las opciones y el contexto que proporciones."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "La IA no verifica precios ni disponibilidad actuales por sí sola. Aporta fuentes y confirma la información relevante antes de decidir."
+        ]
+      ],
+      "keyword": "comparar opciones ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "crear-plan-accion-ia",
+      "tool": "ai-action-plan",
+      "title": "Crear un plan de acción con IA online",
+      "h1": "Crear un plan de acción con IA",
+      "description": "Convierte un objetivo amplio en pasos, entregables y dependencias que puedas revisar antes de comenzar.",
+      "intro": "Convierte un objetivo amplio en pasos, entregables y dependencias que puedas revisar antes de comenzar.",
+      "details": "Describe objetivo, recursos y restricciones; genera el plan y ajusta las estimaciones a tu situación. El resultado es una propuesta escrita. No ejecuta acciones, crea recordatorios ni confirma plazos o costos externos.",
+      "steps": [
+        "Abre crear un plan de acción con ia en Prisma Space.",
+        "Describe objetivo, recursos y restricciones; genera el plan y ajusta las estimaciones a tu situación.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "El resultado es una propuesta escrita. No ejecuta acciones, crea recordatorios ni confirma plazos o costos externos.",
+      "faqs": [
+        [
+          "¿Realiza las tareas del plan?",
+          "No. Esta herramienta propone y organiza pasos para que los lleves a cabo."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "El resultado es una propuesta escrita. No ejecuta acciones, crea recordatorios ni confirma plazos o costos externos."
+        ]
+      ],
+      "keyword": "crear plan accion ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "revisar-textos-ia",
+      "tool": "ai-text-review",
+      "title": "Revisar estructura y coherencia de textos con IA online",
+      "h1": "Revisar estructura y coherencia de textos con IA",
+      "description": "Obtén una revisión crítica de contradicciones, ambigüedades y afirmaciones sin respaldo en un borrador.",
+      "intro": "Obtén una revisión crítica de contradicciones, ambigüedades y afirmaciones sin respaldo en un borrador.",
+      "details": "Pega el texto e indica si necesitas diagnóstico o reescritura; genera la revisión y evalúa las sugerencias. No verifica hechos con fuentes externas ni sustituye una revisión especializada. La respuesta depende del motor y sus cuotas.",
+      "steps": [
+        "Abre revisar estructura y coherencia de textos con ia en Prisma Space.",
+        "Pega el texto e indica si necesitas diagnóstico o reescritura; genera la revisión y evalúa las sugerencias.",
+        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+      ],
+      "tip": "No verifica hechos con fuentes externas ni sustituye una revisión especializada. La respuesta depende del motor y sus cuotas.",
+      "faqs": [
+        [
+          "¿Reescribe siempre todo el documento?",
+          "No. Puedes pedir solo observaciones y solicitar una reescritura cuando te convenga."
+        ],
+        [
+          "¿Qué debo revisar antes de usar el resultado?",
+          "No verifica hechos con fuentes externas ni sustituye una revisión especializada. La respuesta depende del motor y sus cuotas."
+        ]
+      ],
+      "keyword": "revisar textos ia",
+      "privacyNote": "Procesamiento mediante servicios de IA · Sujeto a cuotas, disponibilidad y condiciones del proveedor"
+    },
+    {
+      "slug": "jpg-a-png",
+      "tool": "image-convert",
+      "format": "image/png",
+      "title": "Convertir JPG a PNG online",
+      "h1": "Convertir JPG a PNG",
+      "description": "Convierte una imagen JPG en un archivo PNG desde el navegador. Abre el conversor con el formato de salida seleccionado y descarga la copia.",
+      "intro": "Si tienes una imagen JPG y la aplicación donde quieres utilizarla necesita PNG, puedes volver a exportarla sin instalar un editor. Prisma procesa una imagen estática en tu dispositivo y genera un archivo con el formato de destino.",
+      "details": "PNG permite seguir editando sin añadir otra compresión con pérdida. No recupera detalle perdido por el JPG ni elimina su fondo.",
+      "steps": [
+        "Abre el conversor y selecciona una imagen JPG que pueda leer tu navegador.",
+        "Comprueba que el formato de salida sea PNG; el enlace de esta página lo preselecciona.",
+        "Ejecuta, descarga el PNG y revisa dimensiones, tamaño y apariencia."
+      ],
+      "tip": "La exportación con Canvas no conserva animación ni metadatos originales. No se promete compatibilidad con todos los perfiles de imagen.",
+      "faqs": [
+        [
+          "¿Cambiar la extensión basta para pasar de JPG a PNG?",
+          "No. Hace falta decodificar y exportar la imagen; renombrar el archivo no cambia su contenido."
+        ],
+        [
+          "¿Qué cambia al usar PNG?",
+          "PNG permite seguir editando sin añadir otra compresión con pérdida. No recupera detalle perdido por el JPG ni elimina su fondo."
+        ]
+      ],
+      "keyword": "jpg a png"
+    },
+    {
+      "slug": "jpg-a-webp",
+      "tool": "image-convert",
+      "format": "image/webp",
+      "title": "Convertir JPG a WebP online",
+      "h1": "Convertir JPG a WebP",
+      "description": "Convierte una imagen JPG en un archivo WebP desde el navegador. Abre el conversor con el formato de salida seleccionado y descarga la copia.",
+      "intro": "Si tienes una imagen JPG y la aplicación donde quieres utilizarla necesita WebP, puedes volver a exportarla sin instalar un editor. Prisma procesa una imagen estática en tu dispositivo y genera un archivo con el formato de destino.",
+      "details": "WebP permite preparar imágenes compatibles con navegadores modernos. La reducción de peso depende del original; comprueba el resultado en el destino.",
+      "steps": [
+        "Abre el conversor y selecciona una imagen JPG que pueda leer tu navegador.",
+        "Comprueba que el formato de salida sea WebP; el enlace de esta página lo preselecciona.",
+        "Ejecuta, descarga el WebP y revisa dimensiones, tamaño y apariencia."
+      ],
+      "tip": "La exportación con Canvas no conserva animación ni metadatos originales. No se promete compatibilidad con todos los perfiles de imagen.",
+      "faqs": [
+        [
+          "¿Cambiar la extensión basta para pasar de JPG a WebP?",
+          "No. Hace falta decodificar y exportar la imagen; renombrar el archivo no cambia su contenido."
+        ],
+        [
+          "¿Qué cambia al usar WebP?",
+          "WebP permite preparar imágenes compatibles con navegadores modernos. La reducción de peso depende del original; comprueba el resultado en el destino."
+        ]
+      ],
+      "keyword": "jpg a webp"
+    },
+    {
+      "slug": "png-a-webp",
+      "tool": "image-convert",
+      "format": "image/webp",
+      "title": "Convertir PNG a WebP online",
+      "h1": "Convertir PNG a WebP",
+      "description": "Convierte una imagen PNG en un archivo WebP desde el navegador. Abre el conversor con el formato de salida seleccionado y descarga la copia.",
+      "intro": "Si tienes una imagen PNG y la aplicación donde quieres utilizarla necesita WebP, puedes volver a exportarla sin instalar un editor. Prisma procesa una imagen estática en tu dispositivo y genera un archivo con el formato de destino.",
+      "details": "WebP puede conservar transparencia con un tamaño diferente al PNG. Esta exportación usa compresión con pérdida; revisa bordes y detalles pequeños.",
+      "steps": [
+        "Abre el conversor y selecciona una imagen PNG que pueda leer tu navegador.",
+        "Comprueba que el formato de salida sea WebP; el enlace de esta página lo preselecciona.",
+        "Ejecuta, descarga el WebP y revisa dimensiones, tamaño y apariencia."
+      ],
+      "tip": "La exportación con Canvas no conserva animación ni metadatos originales. No se promete compatibilidad con todos los perfiles de imagen.",
+      "faqs": [
+        [
+          "¿Cambiar la extensión basta para pasar de PNG a WebP?",
+          "No. Hace falta decodificar y exportar la imagen; renombrar el archivo no cambia su contenido."
+        ],
+        [
+          "¿Qué cambia al usar WebP?",
+          "WebP puede conservar transparencia con un tamaño diferente al PNG. Esta exportación usa compresión con pérdida; revisa bordes y detalles pequeños."
+        ]
+      ],
+      "keyword": "png a webp"
+    },
+    {
+      "slug": "webp-a-jpg",
+      "tool": "image-convert",
+      "format": "image/jpeg",
+      "title": "Convertir WebP a JPG online",
+      "h1": "Convertir WebP a JPG",
+      "description": "Convierte una imagen WebP en un archivo JPG desde el navegador. Abre el conversor con el formato de salida seleccionado y descarga la copia.",
+      "intro": "Si tienes una imagen WebP y la aplicación donde quieres utilizarla necesita JPG, puedes volver a exportarla sin instalar un editor. Prisma procesa una imagen estática en tu dispositivo y genera un archivo con el formato de destino.",
+      "details": "JPG resulta práctico para aplicaciones que no aceptan WebP. No conserva transparencia; el formulario no permite elegir un color de fondo.",
+      "steps": [
+        "Abre el conversor y selecciona una imagen WebP que pueda leer tu navegador.",
+        "Comprueba que el formato de salida sea JPG; el enlace de esta página lo preselecciona.",
+        "Ejecuta, descarga el JPG y revisa dimensiones, tamaño y apariencia."
+      ],
+      "tip": "La exportación con Canvas no conserva animación ni metadatos originales. No se promete compatibilidad con todos los perfiles de imagen.",
+      "faqs": [
+        [
+          "¿Cambiar la extensión basta para pasar de WebP a JPG?",
+          "No. Hace falta decodificar y exportar la imagen; renombrar el archivo no cambia su contenido."
+        ],
+        [
+          "¿Qué cambia al usar JPG?",
+          "JPG resulta práctico para aplicaciones que no aceptan WebP. No conserva transparencia; el formulario no permite elegir un color de fondo."
+        ]
+      ],
+      "keyword": "webp a jpg"
+    },
+    {
+      "slug": "webp-a-png",
+      "tool": "image-convert",
+      "format": "image/png",
+      "title": "Convertir WebP a PNG online",
+      "h1": "Convertir WebP a PNG",
+      "description": "Convierte una imagen WebP en un archivo PNG desde el navegador. Abre el conversor con el formato de salida seleccionado y descarga la copia.",
+      "intro": "Si tienes una imagen WebP y la aplicación donde quieres utilizarla necesita PNG, puedes volver a exportarla sin instalar un editor. Prisma procesa una imagen estática en tu dispositivo y genera un archivo con el formato de destino.",
+      "details": "PNG es útil para continuar editando una imagen y conservar su transparencia. El archivo puede pesar más y no recuperará calidad perdida en el origen.",
+      "steps": [
+        "Abre el conversor y selecciona una imagen WebP que pueda leer tu navegador.",
+        "Comprueba que el formato de salida sea PNG; el enlace de esta página lo preselecciona.",
+        "Ejecuta, descarga el PNG y revisa dimensiones, tamaño y apariencia."
+      ],
+      "tip": "La exportación con Canvas no conserva animación ni metadatos originales. No se promete compatibilidad con todos los perfiles de imagen.",
+      "faqs": [
+        [
+          "¿Cambiar la extensión basta para pasar de WebP a PNG?",
+          "No. Hace falta decodificar y exportar la imagen; renombrar el archivo no cambia su contenido."
+        ],
+        [
+          "¿Qué cambia al usar PNG?",
+          "PNG es útil para continuar editando una imagen y conservar su transparencia. El archivo puede pesar más y no recuperará calidad perdida en el origen."
+        ]
+      ],
+      "keyword": "webp a png"
+    },
+    {
+      "slug": "pdf-a-png",
+      "tool": "pdf-to-image",
+      "format": "png",
+      "title": "PDF a PNG: exportar páginas como imágenes",
+      "h1": "Convertir PDF a PNG",
+      "description": "Exporta páginas de un PDF a imágenes PNG dentro de un ZIP. Elige páginas y resolución; procesa el documento en tu navegador.",
+      "intro": "Cuando necesitas insertar una página de un PDF en una presentación o ilustrar un documento, una imagen PNG conserva su aspecto renderizado. Cada página se convierte en una imagen independiente, reunida en un ZIP descargable.",
+      "details": "PNG evita la compresión con pérdida de JPG, aunque puede generar archivos mayores. La salida ya no contiene texto editable y la resolución seleccionada influye en el tamaño y la memoria necesarios.",
+      "steps": [
+        "Carga el PDF; el enlace abre el formato PNG seleccionado.",
+        "Indica páginas como 1-3, 5 o deja el campo vacío para todas y elige resolución.",
+        "Ejecuta la exportación, descarga el ZIP y extrae las imágenes PNG."
+      ],
+      "tip": "Prueba primero unas pocas páginas si el documento es largo. La resolución más alta exige más memoria, especialmente en móviles.",
+      "faqs": [
+        [
+          "¿Sirve con páginas escaneadas?",
+          "Sí. Renderiza la apariencia de las páginas, incluido su contenido escaneado; no hace reconocimiento de texto."
+        ],
+        [
+          "¿Descarga un único PNG con todo el documento?",
+          "No. Entrega una imagen por página dentro de un ZIP."
+        ]
+      ],
+      "keyword": "pdf a png"
+    },
+    {
+      "slug": "webp-a-pdf",
+      "tool": "image-pdf",
+      "title": "WebP a PDF: convertir imágenes en un documento",
+      "h1": "Convertir WebP a PDF",
+      "description": "Convierte una o varias imágenes WebP en páginas de un PDF A4 o Carta. Genera el documento localmente desde el navegador.",
+      "intro": "Si descargaste imágenes WebP y necesitas entregarlas como documento, puedes reunirlas en un PDF para compartirlas o imprimirlas. La herramienta coloca cada imagen en su propia página respetando su proporción.",
+      "details": "Selecciona tamaño A4 o Carta. Las imágenes se rasterizan y se incorporan como JPEG; por eso la transparencia y los metadatos originales no se conservan. No añade una capa de texto OCR.",
+      "steps": [
+        "Carga una o varias imágenes WebP legibles por tu navegador.",
+        "Selecciona A4 o Carta y comprueba el orden de los archivos.",
+        "Ejecuta y descarga el PDF; revisa márgenes y nitidez antes de imprimir."
+      ],
+      "tip": "Trabaja con imágenes estáticas. La opción Ajustar a la imagen del formulario no cambia el tamaño de página en el motor actual: utiliza A4 o Carta.",
+      "faqs": [
+        [
+          "¿Cada imagen ocupa una página?",
+          "Sí. Se añade una página por imagen y se escala el contenido para encajarlo con márgenes."
+        ],
+        [
+          "¿El texto de la imagen se vuelve seleccionable?",
+          "No. Se conserva como imagen; para reconocer texto utiliza OCR por separado."
+        ]
+      ],
+      "keyword": "webp a pdf"
     }
   ]
 }

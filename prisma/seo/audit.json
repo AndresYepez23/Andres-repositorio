@@ -1,0 +1,2530 @@
+{
+  "date": "2026-11-10",
+  "baselinePages": 40,
+  "pages": 140,
+  "tools": 150,
+  "inventory": [
+    {
+      "tool": "pdf-merge",
+      "name": "Unir PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "unir-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-compress",
+      "name": "Optimizar PDF",
+      "status": "beta",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "comprimir-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-split",
+      "name": "Dividir PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "dividir-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-to-word",
+      "name": "PDF a Word",
+      "status": "beta",
+      "mode": "browser",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "pdf-a-word"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-form-fields",
+      "name": "Inspeccionar campos de PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "inspeccionar-campos-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-form-flatten",
+      "name": "Aplanar formulario PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "aplanar-formulario-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-add-blank",
+      "name": "Insertar páginas en blanco",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "insertar-paginas-blanco-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-extract",
+      "name": "Extraer páginas",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "extraer-paginas-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-rotate",
+      "name": "Rotar PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "rotar-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-watermark",
+      "name": "Marca de agua",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "marca-de-agua-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-pdf",
+      "name": "Imágenes a PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "jpg-a-pdf",
+        "png-a-pdf",
+        "webp-a-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "docx-html",
+      "name": "Word a HTML",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "word-a-html"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-compress",
+      "name": "Comprimir imagen",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "comprimir-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-resize",
+      "name": "Redimensionar",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "redimensionar-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-convert",
+      "name": "Convertir formato",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "png-a-jpg",
+        "jpg-a-png",
+        "jpg-a-webp",
+        "png-a-webp",
+        "webp-a-jpg",
+        "webp-a-png"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-crop",
+      "name": "Recorte inteligente",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "recortar-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-bg",
+      "name": "Eliminar fondo",
+      "status": "beta",
+      "mode": "browser",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "quitar-fondo-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-ocr",
+      "name": "Extraer texto (OCR)",
+      "status": "beta",
+      "mode": "browser",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "imagen-a-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-to-image",
+      "name": "PDF a imágenes",
+      "status": "beta",
+      "mode": "browser",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "pdf-a-jpg",
+        "pdf-a-png"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-protect",
+      "name": "Proteger PDF",
+      "status": "soon",
+      "mode": "planned",
+      "category": "pdf",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "En preparación: no se ofrece cifrado PDF implementado.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-audio",
+      "name": "Extraer audio",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "extraer-audio-de-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-trim",
+      "name": "Recortar video",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "recortar-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-transcribe",
+      "name": "Transcribir audio",
+      "status": "soon",
+      "mode": "planned",
+      "category": "media",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "En preparación; la intención de transcripción ya está cubierta por ai-transcribe.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-format",
+      "name": "Formatear JSON",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "El motor pasa la indentación como segundo argumento de JSON.stringify en lugar del tercero. Valida, pero no realiza el formateado anunciado; no se cambia el motor en esta misión.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "base64",
+      "name": "Codificar Base64",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "codificar-decodificar-base64"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "word-count",
+      "name": "Contador de palabras",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "contador-de-palabras"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "password",
+      "name": "Generador de contraseñas",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "generador-de-contrasenas"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "qr",
+      "name": "Generador QR",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "generador-de-codigos-qr"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "currency",
+      "name": "Conversor de monedas",
+      "status": "ready",
+      "mode": "online",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "conversor-monedas"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "units",
+      "name": "Conversor de unidades",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "conversor-unidades"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "timestamp",
+      "name": "Conversor de fechas",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "convertir-timestamp-unix"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "url-code",
+      "name": "Codificar URL",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "codificar-decodificar-url"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-remove-accents",
+      "name": "Quitar tildes y diacríticos",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "quitar-tildes-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-reverse",
+      "name": "Invertir texto",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "invertir-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-extract-emails",
+      "name": "Extraer correos",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "extraer-correos-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-extract-urls",
+      "name": "Extraer enlaces",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "extraer-enlaces-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-minify",
+      "name": "Minificar JSON",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "minificar-json"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "html-to-text",
+      "name": "HTML a texto",
+      "status": "ready",
+      "mode": "local",
+      "category": "web",
+      "decision": "covered",
+      "pages": [
+        "html-a-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-remove-empty-lines",
+      "name": "Eliminar líneas vacías",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "eliminar-lineas-vacias"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-prefix-lines",
+      "name": "Añadir prefijo y sufijo",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "anadir-prefijo-sufijo-lineas"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-replace",
+      "name": "Buscar y reemplazar texto",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "buscar-reemplazar-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-extract-hashtags",
+      "name": "Extraer hashtags",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "extraer-hashtags"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-extract-phones",
+      "name": "Extraer teléfonos",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "extraer-telefonos-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-flatten",
+      "name": "Aplanar JSON",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "aplanar-json"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-case",
+      "name": "Cambiar mayúsculas",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "convertir-mayusculas-minusculas"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "markdown",
+      "name": "Vista Markdown",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "markdown-a-html"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "color-palette",
+      "name": "Paleta de colores",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "generador-paletas-colores"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-remove-pages",
+      "name": "Eliminar páginas",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "eliminar-paginas-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-page-numbers",
+      "name": "Numerar páginas",
+      "status": "ready",
+      "mode": "local",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "numerar-paginas-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-text",
+      "name": "PDF a texto",
+      "status": "beta",
+      "mode": "browser",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "extraer-texto-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-gen",
+      "name": "Generar imagen con IA",
+      "status": "beta",
+      "mode": "byok",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "generador-imagenes-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-watermark",
+      "name": "Marca de agua en imagen",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "marca-de-agua-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-identify-local",
+      "name": "Reconocer objetos en fotos",
+      "status": "beta",
+      "mode": "browser",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "reconocer-objetos-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-palette",
+      "name": "Extraer paleta",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "extraer-paleta-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-flip",
+      "name": "Voltear imagen",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "voltear-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-favicon",
+      "name": "Crear iconos web",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "generador-iconos-web"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-collage",
+      "name": "Crear mosaico",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "collage-de-fotos"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-thumbnail",
+      "name": "Capturar miniatura",
+      "status": "ready",
+      "mode": "local",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "extraer-miniatura-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-gif",
+      "name": "Video a GIF",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "video-a-gif"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-mute",
+      "name": "Quitar audio del video",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "quitar-audio-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "audio-trim",
+      "name": "Recortar audio",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "recortar-audio"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-file-convert",
+      "name": "Convertir TXT, Markdown y Word",
+      "status": "beta",
+      "mode": "browser",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "convertir-documentos-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "table-file-convert",
+      "name": "Convertir CSV, JSON y Excel",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "covered",
+      "pages": [
+        "convertir-archivos-csv-excel-json"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "csv-profile-local",
+      "name": "Auditoría de CSV",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "covered",
+      "pages": [
+        "auditar-archivo-csv"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-schema-validate",
+      "name": "Comprobar JSON Schema",
+      "status": "beta",
+      "mode": "browser",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "validar-json-schema"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "csv-json",
+      "name": "CSV a JSON",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "csv-a-json"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-csv",
+      "name": "JSON a CSV",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "json-a-csv"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "slug",
+      "name": "Generador de URL amigable",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "generador-slugs"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "dedupe-lines",
+      "name": "Eliminar líneas duplicadas",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "eliminar-lineas-duplicadas"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "clean-text",
+      "name": "Limpiar texto",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "limpiar-espacios-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "html-entities",
+      "name": "Codificar HTML",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "codificar-entidades-html"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "uuid",
+      "name": "Generador UUID",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "generador-uuid"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "lorem",
+      "name": "Texto Lorem Ipsum",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "generador-lorem-ipsum"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "random",
+      "name": "Números aleatorios",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "generador-numeros-aleatorios"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "calculator",
+      "name": "Calculadora avanzada",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "calculadora-expresiones"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "percentage",
+      "name": "Calculadora de porcentajes",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "calculadora-porcentajes"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "date-diff",
+      "name": "Días entre fechas",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "dias-entre-fechas"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "timezone",
+      "name": "Conversor de zonas horarias",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "conversor-zonas-horarias"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "contrast",
+      "name": "Comprobador de contraste",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "comprobar-contraste-colores"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-sort",
+      "name": "Ordenar líneas",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "ordenar-lista-alfabeticamente"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "word-frequency",
+      "name": "Frecuencia de palabras",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "covered",
+      "pages": [
+        "frecuencia-palabras-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "qr-scan",
+      "name": "Leer código QR",
+      "status": "beta",
+      "mode": "browser",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "leer-codigo-qr-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "barcode",
+      "name": "Generar código de barras",
+      "status": "ready",
+      "mode": "local",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "generador-codigos-barras"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "docx-pdf",
+      "name": "Word a PDF",
+      "status": "beta",
+      "mode": "browser",
+      "category": "pdf",
+      "decision": "covered",
+      "pages": [
+        "word-a-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-grayscale",
+      "name": "Blanco y negro",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "imagen-blanco-negro"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-blur",
+      "name": "Desenfocar imagen",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "desenfocar-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-adjust",
+      "name": "Ajustar luz y contraste",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "ajustar-brillo-contraste"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-rounded",
+      "name": "Esquinas redondeadas",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "redondear-esquinas-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-metadata",
+      "name": "Ver metadatos de imagen",
+      "status": "beta",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "ver-metadatos-exif"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "audio-waveform",
+      "name": "Visualizar forma de onda",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "audio-a-imagen-onda"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "hash-file",
+      "name": "Generar hash SHA-256",
+      "status": "ready",
+      "mode": "local",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "generar-hash-sha256"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "github-discover",
+      "name": "Descubrir proyectos open source",
+      "status": "ready",
+      "mode": "online",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "buscar-proyectos-open-source"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "api-explorer",
+      "name": "Explorar una API pública",
+      "status": "beta",
+      "mode": "online",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "probar-api-publica"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "jwt-decode",
+      "name": "Decodificar JWT",
+      "status": "ready",
+      "mode": "local",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "decodificar-jwt"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "regex-test",
+      "name": "Probador de expresiones regulares",
+      "status": "ready",
+      "mode": "local",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "probador-expresiones-regulares"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-yaml",
+      "name": "JSON ↔ YAML",
+      "status": "beta",
+      "mode": "local",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "convertir-json-yaml"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "excel-json",
+      "name": "Excel a JSON",
+      "status": "beta",
+      "mode": "local",
+      "category": "office",
+      "decision": "covered",
+      "pages": [
+        "excel-a-json"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "css-gradient",
+      "name": "Generador de degradados CSS",
+      "status": "ready",
+      "mode": "local",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "generador-degradados-css"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-diff",
+      "name": "Comparar textos",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "La expresión de separación de líneas está sobreescapada: una entrada multilínea normal se trata como un bloque. No se promociona comparación por líneas hasta corregirla.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-assistant",
+      "name": "Asistente de texto IA",
+      "status": "beta",
+      "mode": "byok",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "redactar-textos-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-youtube-kit",
+      "name": "Kit para YouTube y redes",
+      "status": "beta",
+      "mode": "online",
+      "category": "creator",
+      "decision": "covered",
+      "pages": [
+        "generador-contenido-youtube"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-prompt-lab",
+      "name": "Mejorador de prompts IA",
+      "status": "beta",
+      "mode": "online",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "mejorar-prompts-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-study-notes",
+      "name": "Tutor de estudio IA",
+      "status": "beta",
+      "mode": "online",
+      "category": "study",
+      "decision": "covered",
+      "pages": [
+        "generador-guia-estudio-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-webpage",
+      "name": "Crear página web HTML descargable",
+      "status": "beta",
+      "mode": "online",
+      "category": "web",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Existe el generador HTML, pero buildFields no ofrece el campo prompt para su apertura directa. No se modifica la interfaz para habilitarlo.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-code-helper",
+      "name": "Ayudante de programación IA",
+      "status": "beta",
+      "mode": "online",
+      "category": "dev",
+      "decision": "covered",
+      "pages": [
+        "asistente-programacion-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "music-lyrics",
+      "name": "Componer letra de canción original",
+      "status": "beta",
+      "mode": "online",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "generador-letras-canciones"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-voice",
+      "name": "Texto a voz IA",
+      "status": "beta",
+      "mode": "online",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "texto-a-voz-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "html-format",
+      "name": "Formatear HTML",
+      "status": "beta",
+      "mode": "browser",
+      "category": "web",
+      "decision": "covered",
+      "pages": [
+        "formatear-html"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "css-format",
+      "name": "Formatear CSS",
+      "status": "beta",
+      "mode": "browser",
+      "category": "web",
+      "decision": "covered",
+      "pages": [
+        "formatear-css"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "js-format",
+      "name": "Formatear JavaScript",
+      "status": "beta",
+      "mode": "browser",
+      "category": "web",
+      "decision": "covered",
+      "pages": [
+        "formatear-javascript"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "sql-format",
+      "name": "Formatear SQL",
+      "status": "beta",
+      "mode": "browser",
+      "category": "web",
+      "decision": "covered",
+      "pages": [
+        "formatear-sql"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "xml-format",
+      "name": "Formatear XML",
+      "status": "ready",
+      "mode": "local",
+      "category": "web",
+      "decision": "covered",
+      "pages": [
+        "formatear-xml"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-schema",
+      "name": "Validar JSON con esquema",
+      "status": "beta",
+      "mode": "browser",
+      "category": "data",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Intención duplicada de json-schema-validate; se utiliza esa ruta con campos y ejemplos válidos.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "csv-stats",
+      "name": "Estadísticas de CSV",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "covered",
+      "pages": [
+        "estadisticas-csv"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-xlsx",
+      "name": "JSON a Excel",
+      "status": "beta",
+      "mode": "browser",
+      "category": "data",
+      "decision": "covered",
+      "pages": [
+        "json-a-excel"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "file-inspector",
+      "name": "Inspeccionar archivo",
+      "status": "ready",
+      "mode": "local",
+      "category": "privacy",
+      "decision": "covered",
+      "pages": [
+        "inspeccionar-tipo-archivo"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-strip-metadata",
+      "name": "Eliminar metadatos de imagen",
+      "status": "ready",
+      "mode": "local",
+      "category": "privacy",
+      "decision": "covered",
+      "pages": [
+        "eliminar-metadatos-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-metadata",
+      "name": "Consultar metadatos PDF",
+      "status": "ready",
+      "mode": "local",
+      "category": "privacy",
+      "decision": "covered",
+      "pages": [
+        "ver-metadatos-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "pdf-metadata-clean",
+      "name": "Limpiar metadatos PDF",
+      "status": "beta",
+      "mode": "local",
+      "category": "privacy",
+      "decision": "covered",
+      "pages": [
+        "eliminar-metadatos-pdf"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-pixelate",
+      "name": "Pixelar imagen",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "pixelar-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-sepia",
+      "name": "Efecto sepia",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "covered",
+      "pages": [
+        "efecto-sepia-imagen"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "image-social-kit",
+      "name": "Kit de tamaños para redes",
+      "status": "beta",
+      "mode": "browser",
+      "category": "creator",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "runTool despacha image-* a imageTool antes de llegar a socialImageKit. La apertura directa no ejecuta el ZIP de cuatro formatos anunciado.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "citation-generator",
+      "name": "Generador de referencias",
+      "status": "ready",
+      "mode": "local",
+      "category": "study",
+      "decision": "covered",
+      "pages": [
+        "generador-citas-apa-vancouver"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "flashcards-export",
+      "name": "Crear tarjetas de estudio",
+      "status": "ready",
+      "mode": "local",
+      "category": "study",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Separación de líneas sobreescapada en el motor: varias tarjetas pegadas pueden convertirse en una sola. Se difiere la landing hasta reparar el flujo.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "qr-vcard",
+      "name": "QR de contacto",
+      "status": "beta",
+      "mode": "browser",
+      "category": "utility",
+      "decision": "covered",
+      "pages": [
+        "generador-qr-contacto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-compress",
+      "name": "Comprimir vídeo",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "comprimir-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-speed",
+      "name": "Cambiar velocidad de video",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "cambiar-velocidad-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-resize",
+      "name": "Cambiar resolución de video",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "cambiar-resolucion-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "video-rotate",
+      "name": "Girar video",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "girar-video"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "audio-convert",
+      "name": "Convertir formato de audio",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "convertir-audio-mp3-wav-ogg"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "audio-normalize",
+      "name": "Normalizar volumen de audio",
+      "status": "beta",
+      "mode": "browser",
+      "category": "media",
+      "decision": "covered",
+      "pages": [
+        "normalizar-volumen-audio"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-transcribe",
+      "name": "Transcribir audio con IA",
+      "status": "beta",
+      "mode": "byok",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "transcribir-audio-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-summary-local",
+      "name": "Resumen extractivo local",
+      "status": "beta",
+      "mode": "local",
+      "category": "text",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "reading-time-local",
+      "name": "Tiempo de lectura",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-analyzer-local",
+      "name": "Analizador de texto",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "csv-to-tsv-local",
+      "name": "CSV a TSV",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "tsv-to-csv-local",
+      "name": "TSV a CSV",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-to-xml-local",
+      "name": "JSON a XML",
+      "status": "beta",
+      "mode": "local",
+      "category": "dev",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "xml-to-json-local",
+      "name": "XML a JSON",
+      "status": "beta",
+      "mode": "local",
+      "category": "dev",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "html-to-markdown-local",
+      "name": "HTML a Markdown",
+      "status": "beta",
+      "mode": "local",
+      "category": "dev",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "contrast-check-local",
+      "name": "Comprobador de contraste WCAG",
+      "status": "ready",
+      "mode": "local",
+      "category": "image",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Duplicado de contraste; además no tiene campos en buildFields. Se cubre con contrast.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-dedupe-words-local",
+      "name": "Eliminar palabras repetidas",
+      "status": "ready",
+      "mode": "local",
+      "category": "text",
+      "decision": "deferred",
+      "pages": [],
+      "reason": "Motor presente, pero apertura directa sin campos en buildFields para introducir el texto requerido. No se anuncia una operación que el CTA no permite completar.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "text-redact-sensitive",
+      "name": "Ocultar datos sensibles",
+      "status": "ready",
+      "mode": "local",
+      "category": "privacy",
+      "decision": "covered",
+      "pages": [
+        "ocultar-datos-sensibles-texto"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "utm-builder",
+      "name": "Crear enlaces UTM",
+      "status": "ready",
+      "mode": "local",
+      "category": "creator",
+      "decision": "covered",
+      "pages": [
+        "generador-enlaces-utm"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "subtitle-srt-local",
+      "name": "Crear subtítulos SRT",
+      "status": "ready",
+      "mode": "local",
+      "category": "creator",
+      "decision": "covered",
+      "pages": [
+        "crear-subtitulos-srt"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "json-compare-local",
+      "name": "Comparar dos JSON",
+      "status": "ready",
+      "mode": "local",
+      "category": "data",
+      "decision": "covered",
+      "pages": [
+        "comparar-json"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "citation-ids-local",
+      "name": "Extraer DOI, PMID y arXiv",
+      "status": "ready",
+      "mode": "local",
+      "category": "study",
+      "decision": "covered",
+      "pages": [
+        "extraer-doi-pmid-arxiv"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-compare-options",
+      "name": "Comparador inteligente de opciones",
+      "status": "beta",
+      "mode": "byok",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "comparar-opciones-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-action-plan",
+      "name": "Planificador inteligente",
+      "status": "beta",
+      "mode": "byok",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "crear-plan-accion-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    },
+    {
+      "tool": "ai-text-review",
+      "name": "Revisor crítico de textos",
+      "status": "beta",
+      "mode": "byok",
+      "category": "ai",
+      "decision": "covered",
+      "pages": [
+        "revisar-textos-ia"
+      ],
+      "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
+      "evidence": [
+        "src/registry.js",
+        "src/main.js#buildFields",
+        "src/engines.js#runTool"
+      ]
+    }
+  ]
+}

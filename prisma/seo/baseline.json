@@ -1,0 +1,1004 @@
+[
+  {
+    "slug": "pdf-a-word",
+    "tool": "pdf-to-word",
+    "title": "PDF a Word gratis: convierte documentos a DOCX editable",
+    "h1": "Convertir PDF a Word gratis",
+    "description": "Transforma el texto de un PDF digital en un archivo Word DOCX editable desde el navegador. Gratis, sin registro y con límites claros.",
+    "intro": "Si recibiste un contrato, un informe o unos apuntes en PDF y necesitas cambiar su redacción, el primer paso es comprobar que puedes seleccionar el texto. Prisma Space extrae ese contenido y prepara un DOCX para seguir editándolo en Word u otro procesador compatible.",
+    "details": "El documento convertido prioriza el texto editable. Los diseños de columnas, tablas complejas, tipografías especiales o elementos posicionados pueden necesitar ajustes después de la conversión.",
+    "steps": [
+      "Abre PDF a Word en Prisma Space y elige tu PDF digital.",
+      "Ejecuta la conversión para extraer el texto de sus páginas.",
+      "Descarga el DOCX y revisa el formato antes de utilizarlo."
+    ],
+    "tip": "Los PDF escaneados o hechos de fotografías necesitan reconocimiento OCR antes de esta conversión.",
+    "faqs": [
+      [
+        "¿Puedo convertir un PDF escaneado?",
+        "Esta función trabaja con PDF que tienen texto seleccionable; para páginas escaneadas primero necesitas OCR."
+      ],
+      [
+        "¿Quedará exactamente igual que el PDF?",
+        "El objetivo es recuperar contenido editable. La composición visual puede variar y requerir revisión."
+      ]
+    ]
+  },
+  {
+    "slug": "word-a-pdf",
+    "tool": "docx-pdf",
+    "title": "Word a PDF gratis: guarda un DOCX como PDF",
+    "h1": "Pasar Word a PDF desde el navegador",
+    "description": "Prepara tu archivo DOCX para guardarlo como PDF con la opción de impresión del navegador. Gratis y sin registro.",
+    "intro": "Cuando necesitas entregar un documento que otras personas puedan abrir sin editarlo fácilmente, el formato PDF suele ser práctico. Prisma Space extrae el contenido del DOCX y abre una vista de impresión desde la que puedes elegir Guardar como PDF.",
+    "details": "Este flujo no convierte directamente un DOCX complejo conservando todo su diseño original. Tablas, saltos y fuentes pueden verse distintos; comprueba la vista previa antes de guardar.",
+    "steps": [
+      "Selecciona tu archivo Word DOCX en la herramienta.",
+      "Abre la vista de impresión preparada por Prisma Space.",
+      "Elige Guardar como PDF en el diálogo del navegador y verifica el resultado."
+    ],
+    "tip": "Para diseños con fidelidad exacta, compara el resultado con la exportación PDF del editor original.",
+    "faqs": [
+      [
+        "¿Se descarga automáticamente un PDF?",
+        "No. Prisma prepara una vista de impresión y tú eliges Guardar como PDF en el navegador."
+      ],
+      [
+        "¿Se respetan todas las tipografías?",
+        "No necesariamente. El contenido se adapta a una vista HTML imprimible y la maquetación puede cambiar."
+      ]
+    ]
+  },
+  {
+    "slug": "unir-pdf",
+    "tool": "pdf-merge",
+    "title": "Unir PDF gratis online: combina varios archivos",
+    "h1": "Unir archivos PDF en uno solo",
+    "description": "Combina varios PDF en un documento descargable desde tu navegador, sin registro y sin enviar los archivos a Prisma Space.",
+    "intro": "Reunir documentos sueltos es útil cuando debes presentar una solicitud, enviar un dossier o agrupar apuntes. En Prisma Space puedes seleccionar varios PDF y producir un único archivo en el orden en que los añadas.",
+    "details": "La unión conserva las páginas de origen como parte del documento final; no fusiona párrafos ni modifica su texto. Antes de descargar, comprueba el orden de los archivos seleccionados.",
+    "steps": [
+      "Abre Unir PDF y añade dos o más documentos.",
+      "Revisa la lista de archivos antes de ejecutar la unión.",
+      "Descarga el PDF combinado y confirma que las páginas están en orden."
+    ],
+    "tip": "Si alguno de los archivos está protegido o dañado, puede que necesites obtener una copia válida.",
+    "faqs": [
+      [
+        "¿Se envían mis PDF a un servidor?",
+        "Esta operación está diseñada para procesar los archivos localmente en el navegador."
+      ],
+      [
+        "¿Puedo combinar archivos con tamaños de página distintos?",
+        "Sí, cada página conserva sus dimensiones originales dentro del PDF resultante."
+      ]
+    ]
+  },
+  {
+    "slug": "dividir-pdf",
+    "tool": "pdf-split",
+    "title": "Dividir PDF gratis por páginas y descargar ZIP",
+    "h1": "Dividir PDF en archivos separados",
+    "description": "Separa un PDF en un documento por página y descarga todos los archivos en un ZIP. Gratis, sin cuenta y con procesamiento local.",
+    "intro": "Si tienes un PDF de muchas páginas y necesitas compartir cada hoja por separado, dividirlo manualmente puede llevar tiempo. Esta herramienta genera archivos PDF individuales y los empaqueta juntos para facilitar la descarga.",
+    "details": "El resultado es un archivo ZIP con un PDF por cada página del original. Si solo necesitas conservar algunas páginas concretas, la herramienta Extraer páginas PDF será más adecuada.",
+    "steps": [
+      "Selecciona el PDF que deseas dividir.",
+      "Ejecuta la separación automática por página.",
+      "Descarga el ZIP y extrae los PDF individuales."
+    ],
+    "tip": "Para obtener un único PDF con determinadas páginas, usa la herramienta de extracción en lugar de dividir todo.",
+    "faqs": [
+      [
+        "¿Obtendré un ZIP o varios archivos sueltos?",
+        "Se entrega un archivo ZIP que contiene los PDF individuales."
+      ],
+      [
+        "¿Puedo dividir un PDF de varias páginas?",
+        "Sí, siempre que el navegador disponga de recursos para procesar el tamaño del documento."
+      ]
+    ]
+  },
+  {
+    "slug": "comprimir-pdf",
+    "tool": "pdf-compress",
+    "title": "Comprimir PDF gratis: optimizar tamaño sin perder texto",
+    "h1": "Optimizar el tamaño de un PDF",
+    "description": "Reduce el peso estructural de algunos documentos PDF sin convertir sus páginas en imágenes. El ahorro depende del archivo.",
+    "intro": "Los PDF pueden contener estructuras duplicadas u objetos internos que admiten reorganización. Prisma Space intenta optimizar esa estructura manteniendo el contenido seleccionable del documento.",
+    "details": "Esta opción no recomprime fotografías ni promete una reducción grande en todos los casos. Un PDF compuesto principalmente por imágenes puede quedar prácticamente igual de pesado.",
+    "steps": [
+      "Selecciona el documento PDF que quieres optimizar.",
+      "Ejecuta la optimización de su estructura interna.",
+      "Compara el tamaño del archivo descargado con el original."
+    ],
+    "tip": "No elimines el original hasta comprobar que el resultado conserva todo lo que necesitas.",
+    "faqs": [
+      [
+        "¿Se reduce siempre el tamaño?",
+        "No. La reducción depende de cómo esté construido el PDF y puede ser mínima."
+      ],
+      [
+        "¿Se baja la resolución de las imágenes?",
+        "Esta versión no aplica compresión avanzada a las fotografías del documento."
+      ]
+    ]
+  },
+  {
+    "slug": "jpg-a-pdf",
+    "tool": "image-pdf",
+    "title": "JPG a PDF gratis: convierte fotos en documentos",
+    "h1": "Convertir JPG a PDF",
+    "description": "Convierte una o varias fotografías JPG en un documento PDF descargable. También admite otras imágenes compatibles.",
+    "intro": "Las fotografías de documentos, recibos y formularios suelen llegar como archivos JPG. Pasarlas a PDF permite reunirlas en un formato sencillo de enviar o archivar. Prisma Space prepara el documento usando las imágenes que elijas.",
+    "details": "Puedes incorporar varias fotografías en una sola operación y elegir el tamaño de página disponible. Revisa que las imágenes tengan la orientación y legibilidad adecuadas antes de convertirlas.",
+    "steps": [
+      "Abre Imágenes a PDF y selecciona tus fotografías JPG.",
+      "Elige el tamaño de página y confirma las imágenes elegidas.",
+      "Ejecuta y descarga el documento PDF resultante."
+    ],
+    "tip": "Si el JPG está borroso, convertirlo a PDF no recuperará texto ni detalles perdidos.",
+    "faqs": [
+      [
+        "¿Se pueden unir varias fotos JPG?",
+        "Sí, la herramienta admite varias imágenes y genera un PDF con ellas."
+      ],
+      [
+        "¿La fotografía se vuelve texto editable?",
+        "No. Se incorpora como imagen dentro del documento PDF."
+      ]
+    ]
+  },
+  {
+    "slug": "png-a-pdf",
+    "tool": "image-pdf",
+    "title": "PNG a PDF gratis: convierte imágenes en documentos",
+    "h1": "Pasar PNG a PDF",
+    "description": "Convierte archivos PNG en PDF desde el navegador. Puedes reunir varias imágenes y descargar un solo documento.",
+    "intro": "Un gráfico, una captura de pantalla o un diseño exportado como PNG puede necesitarse en formato PDF para enviarlo o imprimirlo. Esta herramienta crea un documento a partir de las imágenes seleccionadas.",
+    "details": "El PNG se incrusta visualmente en una página PDF. No transforma las letras de la imagen en texto editable, y los elementos transparentes pueden mostrarse sobre fondo de página.",
+    "steps": [
+      "Selecciona uno o varios archivos PNG en Imágenes a PDF.",
+      "Elige el tamaño de hoja adecuado para imprimir o compartir.",
+      "Descarga el PDF y verifica cómo se ve cada imagen."
+    ],
+    "tip": "Para capturas muy alargadas, utiliza la opción de ajustar la página a la imagen y revisa su lectura.",
+    "faqs": [
+      [
+        "¿Puedo pasar varias imágenes PNG a un PDF?",
+        "Sí, puedes añadir varias imágenes en una misma conversión."
+      ],
+      [
+        "¿Se conserva la transparencia?",
+        "El PDF resultante muestra la imagen sobre la página; verifica cómo se representa el fondo transparente."
+      ]
+    ]
+  },
+  {
+    "slug": "pdf-a-jpg",
+    "tool": "pdf-to-image",
+    "title": "PDF a JPG gratis: convierte páginas en imágenes",
+    "h1": "Convertir PDF a JPG",
+    "description": "Exporta las páginas de un PDF a fotografías JPG dentro de un ZIP. Elige formato JPG al abrir la herramienta.",
+    "intro": "Algunas plataformas solo aceptan imágenes, aunque tengas el documento en PDF. Prisma Space puede renderizar las páginas como JPG y agrupar los resultados en un archivo ZIP.",
+    "details": "Puedes seleccionar páginas concretas y ajustar la resolución. A diferencia de extraer las imágenes incrustadas, esta operación convierte visualmente cada página completa en una imagen.",
+    "steps": [
+      "Abre PDF a imágenes: la opción JPG aparecerá seleccionada.",
+      "Carga el PDF y define las páginas o la resolución si lo deseas.",
+      "Ejecuta la exportación y descarga el ZIP con las imágenes JPG."
+    ],
+    "tip": "Si necesitas mantener trazos y texto con máxima nitidez, PNG puede ser una mejor opción que JPG.",
+    "faqs": [
+      [
+        "¿Genera una imagen por página?",
+        "Sí, las páginas seleccionadas se exportan por separado dentro de un ZIP."
+      ],
+      [
+        "¿Puedo elegir solo algunas páginas?",
+        "Sí, puedes indicar rangos de páginas antes de convertir."
+      ]
+    ]
+  },
+  {
+    "slug": "extraer-texto-pdf",
+    "tool": "pdf-text",
+    "title": "Extraer texto de PDF gratis: copia el contenido",
+    "h1": "Extraer texto de un PDF",
+    "description": "Recupera texto seleccionable de un documento PDF digital para copiarlo o reutilizarlo. Gratis y desde el navegador.",
+    "intro": "Cuando necesitas citar un párrafo, tomar notas o reutilizar datos de un PDF, copiar página por página puede ser incómodo. Prisma Space puede leer las capas de texto de un documento digital y devolverte su contenido.",
+    "details": "La extracción conserva palabras, pero no necesariamente la misma organización visual del documento. Columnas, tablas y caracteres especiales pueden necesitar limpieza posterior.",
+    "steps": [
+      "Selecciona un PDF con texto seleccionable.",
+      "Ejecuta la extracción del contenido textual.",
+      "Copia o descarga el resultado y verifica los saltos de línea."
+    ],
+    "tip": "Para imágenes escaneadas no basta con extraer texto: necesitas un proceso OCR.",
+    "faqs": [
+      [
+        "¿Funciona con una foto guardada como PDF?",
+        "No de manera fiable. Las páginas que solo contienen imágenes necesitan OCR."
+      ],
+      [
+        "¿Mantiene las tablas originales?",
+        "La salida prioriza el contenido en texto, no una réplica exacta de tablas o columnas."
+      ]
+    ]
+  },
+  {
+    "slug": "extraer-paginas-pdf",
+    "tool": "pdf-extract",
+    "title": "Extraer páginas PDF gratis: guarda solo las que necesitas",
+    "h1": "Extraer páginas de un PDF",
+    "description": "Selecciona páginas concretas de un PDF y crea otro documento con ellas sin alterar el archivo original.",
+    "intro": "Es habitual recibir un documento largo cuando solo necesitas presentar dos o tres páginas. Con la herramienta de extracción puedes escribir una selección como 1, 3, 5-8 y crear un PDF reducido que incluya esas hojas.",
+    "details": "A diferencia de dividir un PDF completo, aquí produces un solo documento con las páginas que has elegido. El resto de páginas no aparecerá en la copia descargada.",
+    "steps": [
+      "Sube el PDF a Extraer páginas.",
+      "Indica las páginas que quieres conservar, por ejemplo 1, 3, 5-8.",
+      "Ejecuta la operación y descarga el nuevo PDF."
+    ],
+    "tip": "La numeración comienza en la página 1 del archivo, no en los números impresos dentro del documento.",
+    "faqs": [
+      [
+        "¿Puedo elegir páginas no consecutivas?",
+        "Sí, admite páginas individuales y rangos, como 2, 4-6."
+      ],
+      [
+        "¿Se modifica el documento original?",
+        "No. Obtienes una copia PDF independiente con las páginas elegidas."
+      ]
+    ]
+  },
+  {
+    "slug": "eliminar-paginas-pdf",
+    "tool": "pdf-remove-pages",
+    "title": "Eliminar páginas de PDF gratis y conservar el resto",
+    "h1": "Quitar páginas de un PDF",
+    "description": "Borra páginas específicas de una copia de tu PDF, manteniendo el resto de páginas en un nuevo documento.",
+    "intro": "Un PDF puede incluir portadas sobrantes, hojas en blanco o páginas que no necesitas compartir. Prisma Space permite indicar los números de esas páginas y crear una versión que conserve todas las demás.",
+    "details": "Esta operación no edita el archivo original en tu dispositivo. La copia descargada contendrá las páginas restantes en el orden de origen.",
+    "steps": [
+      "Abre Eliminar páginas y selecciona el PDF.",
+      "Escribe los números o rangos de páginas que quieres quitar.",
+      "Ejecuta la operación y revisa la copia antes de compartirla."
+    ],
+    "tip": "Comprueba el número de página real del archivo: puede no coincidir con la numeración impresa.",
+    "faqs": [
+      [
+        "¿Puedo eliminar páginas intermedias?",
+        "Sí, la selección acepta páginas individuales y rangos."
+      ],
+      [
+        "¿Puedo recuperar páginas eliminadas?",
+        "El PDF original no cambia, por lo que puedes repetir el proceso con otra selección."
+      ]
+    ]
+  },
+  {
+    "slug": "rotar-pdf",
+    "tool": "pdf-rotate",
+    "title": "Rotar PDF gratis: gira páginas mal orientadas",
+    "h1": "Rotar páginas de PDF",
+    "description": "Corrige la orientación de páginas PDF con giros de 90, 180 o 270 grados y descarga una copia.",
+    "intro": "Si un archivo digitalizado aparece horizontal, invertido o de lado, no necesitas volver a escanearlo para cambiar la orientación. Prisma Space permite girar las páginas del PDF y generar otra versión.",
+    "details": "La herramienta ofrece ángulos predeterminados. Comprueba el resultado después de descargarlo, especialmente si el documento mezcla hojas verticales y horizontales.",
+    "steps": [
+      "Selecciona el archivo PDF que aparece girado.",
+      "Escoge 90, 180 o 270 grados según la corrección que necesites.",
+      "Aplica el giro y descarga el archivo corregido."
+    ],
+    "tip": "Para documentos con distintas orientaciones, revisa todas las páginas tras el cambio.",
+    "faqs": [
+      [
+        "¿Se pierde el texto del documento?",
+        "El giro cambia la orientación de las páginas del PDF; no es una conversión del texto en imagen."
+      ],
+      [
+        "¿Puedo girar hacia la izquierda?",
+        "Sí, el giro de 270 grados equivale a 90 grados hacia la izquierda."
+      ]
+    ]
+  },
+  {
+    "slug": "numerar-paginas-pdf",
+    "tool": "pdf-page-numbers",
+    "title": "Numerar páginas de PDF gratis: añade números",
+    "h1": "Añadir números de página a un PDF",
+    "description": "Coloca numeración consecutiva en la parte superior o inferior de un PDF desde tu navegador.",
+    "intro": "Los informes, trabajos académicos y expedientes son más fáciles de consultar cuando sus hojas están numeradas. Prisma Space añade números a las páginas del documento y genera una copia descargable.",
+    "details": "Puedes elegir entre una ubicación superior o inferior. La numeración es consecutiva según el orden real de páginas del archivo, independientemente de los números que ya estén impresos.",
+    "steps": [
+      "Sube tu documento a Numerar páginas PDF.",
+      "Elige dónde quieres colocar la numeración.",
+      "Ejecuta y comprueba la posición de los números en el PDF final."
+    ],
+    "tip": "Si tu archivo ya tiene números en el mismo lugar, pueden superponerse; revisa el resultado.",
+    "faqs": [
+      [
+        "¿Se numera desde la primera hoja?",
+        "La herramienta aplica numeración consecutiva sobre las páginas del documento."
+      ],
+      [
+        "¿Puedo elegir entre arriba y abajo?",
+        "Sí, permite numeración superior o inferior."
+      ]
+    ]
+  },
+  {
+    "slug": "comprimir-imagen",
+    "tool": "image-compress",
+    "title": "Comprimir imágenes gratis: reducir peso JPG, PNG y WebP",
+    "h1": "Comprimir una imagen sin instalar programas",
+    "description": "Ajusta la calidad de una imagen y exporta una versión más ligera en JPG o WebP desde el navegador.",
+    "intro": "Las fotografías de alta resolución pueden pesar demasiado para enviarlas por correo o subirlas a un formulario. Reducir su calidad de exportación puede ahorrar espacio manteniendo una apariencia adecuada para pantalla.",
+    "details": "Esta herramienta trabaja sobre una imagen y permite elegir un nivel de calidad. El tamaño final depende de la fotografía de origen, sus dimensiones y el formato elegido.",
+    "steps": [
+      "Selecciona la imagen que quieres optimizar.",
+      "Ajusta la calidad y elige JPG o WebP como formato de salida.",
+      "Descarga el archivo y compara peso y nitidez con el original."
+    ],
+    "tip": "Si necesitas conservar transparencias, revisa el formato de salida antes de comprimir.",
+    "faqs": [
+      [
+        "¿Comprimir una imagen siempre reduce su tamaño?",
+        "No siempre. Depende del formato, de las características de la imagen y de la configuración elegida."
+      ],
+      [
+        "¿Puedo ajustar la calidad?",
+        "Sí, la herramienta permite elegir un nivel de calidad antes de generar el archivo."
+      ]
+    ]
+  },
+  {
+    "slug": "redimensionar-imagen",
+    "tool": "image-resize",
+    "title": "Redimensionar imagen gratis: cambiar ancho y alto",
+    "h1": "Cambiar el tamaño de una imagen",
+    "description": "Modifica las dimensiones en píxeles de una imagen y conserva opcionalmente su proporción original.",
+    "intro": "A menudo una página, un formulario o una red social pide imágenes con un ancho y alto concretos. Redimensionar permite adaptar los píxeles del archivo sin tener que usar un editor de diseño completo.",
+    "details": "Prisma Space ofrece campos de ancho y alto y una casilla para mantener la proporción. Aumentar mucho una imagen pequeña no inventará detalles que no existían en el original.",
+    "steps": [
+      "Selecciona tu imagen y consulta sus dimensiones actuales.",
+      "Indica el ancho o alto deseado y decide si mantienes la proporción.",
+      "Ejecuta y descarga la imagen con su nuevo tamaño."
+    ],
+    "tip": "Para no deformar personas ni objetos, mantén activada la proporción salvo que necesites estirar la imagen.",
+    "faqs": [
+      [
+        "¿Puedo conservar la proporción de la foto?",
+        "Sí, existe una opción para conservar la relación entre ancho y alto."
+      ],
+      [
+        "¿Redimensionar mejora una imagen borrosa?",
+        "No. Cambiar sus píxeles no recupera automáticamente el detalle perdido."
+      ]
+    ]
+  },
+  {
+    "slug": "png-a-jpg",
+    "tool": "image-convert",
+    "title": "PNG a JPG gratis: convierte imágenes en JPEG",
+    "h1": "Convertir PNG a JPG",
+    "description": "Cambia una imagen PNG a formato JPG desde el navegador. La herramienta seleccionará JPG como destino.",
+    "intro": "El formato JPG es útil para fotografías y para plataformas que no admiten archivos PNG. Prisma Space convierte la imagen a un archivo JPEG descargable mediante procesamiento en el navegador.",
+    "details": "JPG no admite transparencia y utiliza compresión con pérdida. Las zonas transparentes y los bordes finos pueden verse distintos; revisa el resultado antes de borrar el PNG original.",
+    "steps": [
+      "Abre el conversor de imagen con JPG seleccionado.",
+      "Carga tu archivo PNG y confirma el formato de salida.",
+      "Ejecuta la conversión y descarga la imagen JPG."
+    ],
+    "tip": "Si tu PNG contiene un logotipo con fondo transparente, quizá sea mejor conservarlo en PNG o usar WebP.",
+    "faqs": [
+      [
+        "¿Qué pasa con el fondo transparente del PNG?",
+        "JPG no admite transparencia; el resultado se representa con un fondo sin canal alfa."
+      ],
+      [
+        "¿La conversión cambia las dimensiones?",
+        "El objetivo de la operación es convertir el formato, no redimensionar la imagen."
+      ]
+    ]
+  },
+  {
+    "slug": "quitar-fondo-imagen",
+    "tool": "image-bg",
+    "title": "Quitar fondo de imagen gratis con IA local",
+    "h1": "Eliminar el fondo de una imagen",
+    "description": "Prueba la eliminación de fondo para obtener una imagen PNG transparente con un modelo que se ejecuta en tu navegador.",
+    "intro": "Separar una persona u objeto de su fondo puede ayudarte a crear una miniatura, una ficha de producto o una composición para redes. Prisma Space ofrece un motor de segmentación local que intenta conservar el sujeto y quitar el entorno.",
+    "details": "La calidad depende de los bordes, el contraste, la iluminación y la complejidad del fondo. La primera ejecución puede descargar los archivos necesarios del modelo al dispositivo.",
+    "steps": [
+      "Abre Eliminar fondo y selecciona una imagen compatible.",
+      "Ejecuta el procesamiento con el modelo local.",
+      "Revisa los bordes y descarga el PNG transparente si el resultado te sirve."
+    ],
+    "tip": "Esta función está en beta. Cabello fino, objetos translúcidos y fondos similares al sujeto pueden producir imperfecciones.",
+    "faqs": [
+      [
+        "¿Necesito registrarme para quitar el fondo?",
+        "La herramienta se puede probar sin crear una cuenta; la descarga del modelo requiere conexión inicialmente."
+      ],
+      [
+        "¿El resultado siempre queda perfecto?",
+        "No. El recorte es automático y puede cometer errores en bordes y detalles finos."
+      ]
+    ]
+  },
+  {
+    "slug": "contador-de-palabras",
+    "tool": "word-count",
+    "title": "Contador de palabras y caracteres gratis online",
+    "h1": "Contar palabras, caracteres y líneas",
+    "description": "Pega un texto y calcula palabras, caracteres, líneas y tiempo aproximado de lectura sin registrarte.",
+    "intro": "El número de palabras importa en ensayos, publicaciones, tareas académicas y descripciones con límites de extensión. Prisma Space analiza el texto introducido y muestra métricas que te ayudan a ajustarlo.",
+    "details": "El conteo de palabras y caracteres es una medida mecánica; no evalúa la calidad o la originalidad del texto. Puedes corregirlo y volver a contar cuantas veces lo necesites.",
+    "steps": [
+      "Abre Contador de palabras y pega el texto.",
+      "Ejecuta el análisis para ver sus métricas.",
+      "Edita tu escrito y repite el conteo según el límite que necesites."
+    ],
+    "tip": "Algunas plataformas cuentan emojis, guiones o símbolos de forma diferente; verifica los límites exactos del destino.",
+    "faqs": [
+      [
+        "¿También cuenta caracteres?",
+        "Sí, la herramienta muestra estadísticas de palabras, caracteres y líneas."
+      ],
+      [
+        "¿Debo subir un documento?",
+        "No. Puedes pegar directamente el texto que quieres analizar."
+      ]
+    ]
+  },
+  {
+    "slug": "generador-de-contrasenas",
+    "tool": "password",
+    "title": "Generador de contraseñas seguras gratis",
+    "h1": "Crear una contraseña aleatoria",
+    "description": "Genera contraseñas aleatorias con opciones de seguridad desde tu propio navegador.",
+    "intro": "Reutilizar contraseñas entre servicios expone varias cuentas si una de ellas sufre una filtración. Para registrar una nueva cuenta conviene usar una clave diferente, difícil de adivinar y guardarla en un gestor de contraseñas.",
+    "details": "Prisma Space incorpora un generador local con opciones de composición. Evita enviar o publicar la contraseña generada; considera activar verificación en dos pasos cuando esté disponible.",
+    "steps": [
+      "Abre el generador y revisa las opciones de seguridad.",
+      "Genera una contraseña aleatoria adecuada para el servicio.",
+      "Guárdala en un gestor de contraseñas y úsala solo para esa cuenta."
+    ],
+    "tip": "Una contraseña fuerte no sustituye la autenticación multifactor ni las buenas prácticas contra el phishing.",
+    "faqs": [
+      [
+        "¿Dónde debo guardar mis contraseñas?",
+        "Lo recomendable es un gestor de contraseñas seguro, no una nota pública o un chat."
+      ],
+      [
+        "¿Puedo usar la misma clave en varios sitios?",
+        "No es recomendable. Genera una contraseña distinta para cada cuenta importante."
+      ]
+    ]
+  },
+  {
+    "slug": "generador-de-codigos-qr",
+    "tool": "qr",
+    "title": "Generador de códigos QR gratis en PNG",
+    "h1": "Crear códigos QR a partir de enlaces o texto",
+    "description": "Genera un código QR descargable en PNG para compartir una dirección web o un texto.",
+    "intro": "Los códigos QR son prácticos para carteles, menús, invitaciones o tarjetas informativas. Puedes convertir un enlace en una imagen escaneable que otras personas abran desde la cámara de su teléfono.",
+    "details": "Antes de imprimir un código QR, comprueba que el contenido sea definitivo y que pueda leerse con varios dispositivos. Un QR estático contiene los datos introducidos, no un enlace editable por Prisma.",
+    "steps": [
+      "Abre Generador QR y escribe la URL o el texto que quieras compartir.",
+      "Genera el código QR y descarga su imagen PNG.",
+      "Escanéalo con otro teléfono para verificar que funciona antes de difundirlo."
+    ],
+    "tip": "No incluyas secretos o información privada en un código QR destinado a espacios públicos.",
+    "faqs": [
+      [
+        "¿El QR deja de funcionar si cierro Prisma?",
+        "Un QR estático almacena el contenido codificado en la imagen y no depende de mantener abierta la página."
+      ],
+      [
+        "¿Puedo poner un enlace de una página web?",
+        "Sí, puedes introducir una URL y generar un código QR para compartirla."
+      ]
+    ]
+  },
+  {
+    "slug": "imagen-a-texto",
+    "tool": "image-ocr",
+    "title": "Imagen a texto gratis con OCR en español | Prisma Space",
+    "h1": "Convertir imagen a texto con OCR",
+    "description": "Extrae texto de fotografías y documentos escaneados con OCR. Elige español, inglés o ambos idiomas y revisa el resultado antes de copiarlo.",
+    "intro": "Si tienes una foto de apuntes, un recibo o una hoja impresa, volver a escribir cada línea lleva tiempo. El OCR de Prisma Space analiza la imagen y reconoce sus caracteres para recuperar el contenido en texto que puedas copiar y reutilizar.",
+    "details": "Puedes seleccionar español, inglés o una combinación de ambos idiomas. En la primera ejecución se descargan los datos de idioma necesarios en el navegador. La precisión depende de la nitidez, la iluminación, el contraste y la orientación del documento.",
+    "steps": [
+      "Selecciona una fotografía o imagen que contenga texto impreso.",
+      "Elige español, inglés o ambos idiomas en el selector de OCR.",
+      "Ejecuta el reconocimiento, revisa las palabras detectadas y copia el texto."
+    ],
+    "tip": "El OCR puede confundir letras, números, tildes y columnas. Comprueba nombres, fechas y cifras contra la imagen original.",
+    "faqs": [
+      [
+        "¿Puedo convertir un PDF escaneado directamente?",
+        "Esta herramienta recibe imágenes. Si tienes un PDF, convierte primero sus páginas a imágenes y después ejecuta el OCR."
+      ],
+      [
+        "¿Reconoce escritura a mano?",
+        "Está orientado principalmente a texto impreso. El reconocimiento de manuscritos puede ser impreciso y requiere revisión."
+      ]
+    ]
+  },
+  {
+    "slug": "marca-de-agua-pdf",
+    "tool": "pdf-watermark",
+    "title": "Marca de agua en PDF gratis | Prisma Space",
+    "h1": "Añadir una marca de agua a un PDF",
+    "description": "Inserta un texto diagonal y semitransparente en las páginas de un PDF desde tu navegador, sin reemplazar el documento original.",
+    "intro": "Cuando compartes un borrador, una muestra o un documento de trabajo, una marca de agua ayuda a identificar visualmente su estado o procedencia. Prisma Space permite escribir un texto y aplicarlo sobre las páginas de una copia del PDF.",
+    "details": "La marca se representa en diagonal y con transparencia para que el contenido del documento siga siendo legible. Puedes usar un nombre, una indicación como BORRADOR o una referencia de tu organización. El resultado es un nuevo PDF descargable.",
+    "steps": [
+      "Selecciona el archivo PDF al que quieres añadir la marca.",
+      "Escribe el texto que aparecerá como marca de agua.",
+      "Ejecuta el proceso y revisa el PDF resultante antes de compartirlo."
+    ],
+    "tip": "Una marca de agua visual no cifra el documento ni impide que alguien copie su contenido. Para información confidencial, utiliza controles de acceso adecuados.",
+    "faqs": [
+      [
+        "¿La marca aparece en todas las páginas?",
+        "La herramienta aplica el texto sobre las páginas del documento procesado."
+      ],
+      [
+        "¿La marca de agua protege el PDF con contraseña?",
+        "No. Añade una identificación visual, pero no sustituye el cifrado ni la protección mediante contraseña."
+      ]
+    ]
+  },
+  {
+    "slug": "generador-citas-apa-vancouver",
+    "tool": "citation-generator",
+    "title": "Generador de citas APA 7, Vancouver y MLA | Prisma Space",
+    "h1": "Generar referencias bibliográficas en APA 7, Vancouver y MLA",
+    "description": "Da formato a referencias con autor, año, título, revista o editorial y DOI. Elige APA 7, Vancouver o MLA 9 y revisa los datos de la fuente.",
+    "intro": "Preparar la bibliografía de un trabajo académico exige mantener un formato coherente. Este generador organiza los datos que introduces y crea versiones de la referencia en tres estilos habituales: APA 7, Vancouver y MLA 9.",
+    "details": "Añade autor, año y título, e incorpora la revista, editorial, DOI o URL cuando corresponda. Prisma Space no busca automáticamente los metadatos de una publicación ni verifica que sean correctos: el resultado depende de la información que escribas.",
+    "steps": [
+      "Introduce los autores, el año y el título de la publicación.",
+      "Añade la revista, editorial, DOI o URL si tienes esos datos.",
+      "Selecciona APA 7, Vancouver o MLA 9 y comprueba la referencia generada."
+    ],
+    "tip": "Consulta siempre la guía oficial del estilo exigido por tu universidad. Revisa el orden de autores, mayúsculas, volumen, número, páginas y DOI.",
+    "faqs": [
+      [
+        "¿El generador busca un artículo usando su DOI?",
+        "No. Puedes escribir el DOI o su URL como dato de la referencia, pero la herramienta no consulta automáticamente una base bibliográfica."
+      ],
+      [
+        "¿Puedo generar referencias Vancouver y APA 7?",
+        "Sí. La herramienta muestra versiones APA 7, Vancouver y MLA 9 a partir de los datos que proporcionas."
+      ]
+    ]
+  },
+  {
+    "slug": "recortar-imagen",
+    "tool": "image-crop",
+    "title": "Recortar imagen online gratis | Prisma Space",
+    "h1": "Recortar una imagen online",
+    "description": "Recorta fotografías e imágenes ajustando el ancho y el alto del recorte en porcentaje. Descarga una copia sin instalar un editor.",
+    "intro": "Una fotografía puede necesitar un encuadre más compacto para una publicación, una ficha o una presentación. Esta herramienta recorta la imagen desde el centro y permite definir cuánto de su ancho y alto conservar.",
+    "details": "Puedes indicar porcentajes independientes para el ancho y el alto del recorte. El resultado se genera en el navegador y se descarga como un archivo nuevo. Esta versión aplica un recorte centrado; todavía no ofrece selección libre arrastrando un marco con el ratón.",
+    "steps": [
+      "Selecciona la fotografía que quieres recortar.",
+      "Indica el porcentaje de ancho y alto que deseas conservar.",
+      "Genera y descarga la imagen recortada; comprueba que el encuadre sea adecuado."
+    ],
+    "tip": "Como el recorte se centra automáticamente, coloca el sujeto cerca del centro antes de usar esta versión. Conserva el original por si necesitas otro encuadre.",
+    "faqs": [
+      [
+        "¿Puedo mover el marco de recorte con el ratón?",
+        "Esta versión realiza un recorte centrado mediante porcentajes. No incluye todavía un marco de selección libre."
+      ],
+      [
+        "¿Se modifica la imagen original?",
+        "No. Prisma genera una copia recortada para descargar; tu archivo de origen permanece intacto."
+      ]
+    ]
+  },
+  {
+    "slug": "marca-de-agua-imagen",
+    "tool": "image-watermark",
+    "title": "Poner marca de agua a una imagen online | Prisma Space",
+    "h1": "Añadir una marca de agua a una imagen",
+    "description": "Firma fotografías con texto personalizable: elige posición, tamaño, color y opacidad y descarga la imagen resultante.",
+    "intro": "Si publicas fotografías, diseños o imágenes de trabajo, puedes añadir una firma visual para indicar su autoría o procedencia. Prisma Space incorpora un texto sobre la imagen y te permite ajustar cómo se presenta.",
+    "details": "Configura el contenido de la marca, su ubicación, el tamaño en píxeles, el color y la opacidad. Puedes colocarla en las esquinas o en el centro. La herramienta exporta una nueva imagen sin alterar el archivo original.",
+    "steps": [
+      "Carga la fotografía o imagen que quieres identificar.",
+      "Escribe la marca y ajusta posición, tamaño, color y opacidad.",
+      "Aplica el texto y descarga la imagen con la marca incorporada."
+    ],
+    "tip": "Una marca discreta puede ser más legible y menos invasiva. Revisa el resultado en el tamaño real en que publicarás la fotografía.",
+    "faqs": [
+      [
+        "¿Puedo poner mi nombre o el logo de mi marca?",
+        "Esta herramienta añade una marca de agua de texto. Puedes escribir un nombre, una web o el nombre de tu marca; no inserta un logotipo como archivo independiente."
+      ],
+      [
+        "¿Puedo cambiar la transparencia?",
+        "Sí. Puedes ajustar la opacidad y elegir la ubicación, el tamaño y el color del texto."
+      ]
+    ]
+  },
+  {
+    "slug": "collage-de-fotos",
+    "tool": "image-collage",
+    "title": "Crear collage de fotos online gratis | Prisma Space",
+    "h1": "Crear un collage de fotos online",
+    "description": "Combina de 2 a 12 fotografías en un mosaico cuadrado. Elige un fondo y descarga la composición en JPG.",
+    "intro": "Un collage permite reunir varias fotografías en una sola imagen para compartir recuerdos, comparar resultados o preparar una publicación. Prisma Space organiza las fotos seleccionadas en una cuadrícula automática.",
+    "details": "Puedes combinar entre dos y doce imágenes. El sistema calcula filas y columnas según la cantidad de archivos, adapta cada fotografía a una celda cuadrada y permite escoger un fondo blanco, oscuro o turquesa claro. No es un editor de composición libre.",
+    "steps": [
+      "Selecciona al menos dos fotografías y hasta doce archivos compatibles.",
+      "Elige el color de fondo del mosaico.",
+      "Genera el collage y descarga la composición en formato JPG."
+    ],
+    "tip": "Las fotografías se ajustan a celdas cuadradas y pueden perder parte de sus bordes. Utiliza imágenes con el sujeto centrado para obtener un resultado más uniforme.",
+    "faqs": [
+      [
+        "¿Cuántas fotos puedo juntar?",
+        "Puedes seleccionar de dos a doce imágenes en una misma composición."
+      ],
+      [
+        "¿Puedo mover cada foto o cambiar su tamaño por separado?",
+        "La cuadrícula se genera automáticamente. Esta versión no permite arrastrar y organizar cada foto de forma manual."
+      ]
+    ]
+  },
+  {
+    "slug": "comprimir-video",
+    "tool": "video-compress",
+    "title": "Comprimir vídeo online gratis sin subirlo | Prisma Space",
+    "h1": "Comprimir un vídeo online",
+    "description": "Reduce el tamaño de vídeos MP4, MOV, M4V, WebM o MKV con procesamiento local. Descarga el resultado solo si realmente pesa menos.",
+    "intro": "Los vídeos grabados con teléfonos y cámaras pueden ocupar demasiado espacio para enviarlos o guardarlos. Prisma Space permite volver a codificar un vídeo con un nivel de compresión elegido desde el navegador.",
+    "details": "Puedes priorizar un archivo más pequeño, un equilibrio o una calidad superior. La herramienta conserva el audio y compara el tamaño final con el original: si el resultado no pesa menos, no ofrece una copia que empeore el archivo sin ahorrar espacio.",
+    "steps": [
+      "Selecciona el vídeo que quieres comprimir.",
+      "Elige entre archivo pequeño, equilibrado o mayor calidad.",
+      "Espera a que termine la codificación y descarga el resultado si se ha reducido su tamaño."
+    ],
+    "tip": "La compresión puede tardar aproximadamente lo mismo que la duración del vídeo, especialmente en teléfonos. Mantén la pestaña abierta y evita cerrar el navegador durante el proceso.",
+    "faqs": [
+      [
+        "¿Se sube mi vídeo a un servidor?",
+        "La compresión está diseñada para ejecutarse localmente en el navegador o mediante codificación nativa del dispositivo cuando está disponible."
+      ],
+      [
+        "¿Siempre se reduce el peso del vídeo?",
+        "No. Si la nueva codificación no consigue un archivo más pequeño, la herramienta informa del resultado y conserva el original."
+      ]
+    ]
+  },
+  {
+    "slug": "video-a-gif",
+    "tool": "video-gif",
+    "title": "Convertir vídeo a GIF online gratis | Prisma Space",
+    "h1": "Convertir un vídeo a GIF animado",
+    "description": "Transforma un fragmento corto de vídeo en un GIF en bucle. Selecciona el segundo de inicio y crea una animación descargable.",
+    "intro": "Un GIF animado sirve para mostrar una reacción, un gesto o una demostración breve sin compartir un vídeo completo. Prisma Space permite seleccionar un fragmento de un archivo de vídeo y convertirlo en una animación.",
+    "details": "La herramienta genera GIF de hasta doce segundos, con una salida optimizada de aproximadamente 640 píxeles de ancho y doce fotogramas por segundo. El motor multimedia se descarga al primer uso y procesa el archivo en el navegador.",
+    "steps": [
+      "Carga un vídeo compatible desde tu dispositivo.",
+      "Indica el segundo de inicio y la duración del fragmento, hasta doce segundos.",
+      "Genera el GIF en bucle y descarga el archivo resultante."
+    ],
+    "tip": "Los GIF pueden pesar más que un vídeo corto. Utiliza fragmentos breves y evita escenas con mucho movimiento si buscas un archivo ligero.",
+    "faqs": [
+      [
+        "¿Puedo convertir un vídeo completo a GIF?",
+        "La herramienta está pensada para fragmentos de hasta doce segundos, no para convertir vídeos largos completos."
+      ],
+      [
+        "¿El GIF tiene sonido?",
+        "No. El formato GIF contiene animación visual, no una pista de audio."
+      ]
+    ]
+  },
+  {
+    "slug": "extraer-audio-de-video",
+    "tool": "video-audio",
+    "title": "Extraer audio de un vídeo online gratis | Prisma Space",
+    "h1": "Extraer el audio de un vídeo",
+    "description": "Separa la pista de sonido de un archivo de vídeo y guárdala como WAV desde el navegador, sin cargar el vídeo a Prisma.",
+    "intro": "Quizá grabaste una entrevista, una clase o una presentación y necesitas escuchar únicamente su contenido sonoro. Extraer el audio permite guardar la pista por separado para reproducirla o editarla.",
+    "details": "Prisma Space utiliza un motor multimedia en el navegador para separar la pista de audio del vídeo y exportarla como WAV. El primer uso puede requerir descargar los componentes de procesamiento; la duración y el tamaño del archivo influyen en el tiempo de espera.",
+    "steps": [
+      "Selecciona el vídeo que contiene el audio que necesitas.",
+      "Ejecuta la extracción de la pista sonora.",
+      "Descarga el archivo WAV y reprodúcelo para verificar que el sonido está completo."
+    ],
+    "tip": "El resultado es WAV, no MP3. Si necesitas otro formato, puedes abrir después el conversor de audio de Prisma Space.",
+    "faqs": [
+      [
+        "¿Puedo extraer audio de MP4?",
+        "Sí, la herramienta admite archivos de vídeo compatibles, incluidos MP4 y otros formatos habituales."
+      ],
+      [
+        "¿En qué formato se descarga el audio?",
+        "La extracción genera un archivo WAV de audio."
+      ]
+    ]
+  },
+  {
+    "slug": "recortar-video",
+    "tool": "video-trim",
+    "title": "Recortar vídeo online gratis por segundos | Prisma Space",
+    "h1": "Recortar un vídeo por tiempo",
+    "description": "Extrae un fragmento de un vídeo indicando el segundo de inicio y la duración. Descarga el clip resultante en MP4.",
+    "intro": "Para compartir una escena concreta no siempre necesitas enviar la grabación completa. Esta herramienta permite indicar en qué momento comienza el fragmento y cuánto debe durar.",
+    "details": "El recorte se define mediante segundos de inicio y duración, en lugar de una línea de tiempo visual. El motor multimedia se ejecuta en el navegador y prepara un archivo MP4 que puedes revisar antes de compartir.",
+    "steps": [
+      "Selecciona el vídeo que deseas recortar.",
+      "Escribe el segundo de inicio y la duración del clip.",
+      "Ejecuta el recorte y descarga el MP4 resultante."
+    ],
+    "tip": "Reproduce el resultado antes de publicarlo. Según los puntos de codificación del vídeo original, el corte puede no coincidir con un fotograma exacto.",
+    "faqs": [
+      [
+        "¿Puedo elegir el inicio y el final del clip?",
+        "Sí. Indicas el tiempo de inicio y la duración deseada en segundos."
+      ],
+      [
+        "¿Se necesita instalar un editor?",
+        "No. El procesamiento se realiza en el navegador; la primera ejecución puede descargar el motor multimedia."
+      ]
+    ]
+  },
+  {
+    "slug": "quitar-audio-video",
+    "tool": "video-mute",
+    "title": "Quitar audio de un vídeo online gratis | Prisma Space",
+    "h1": "Quitar el sonido de un vídeo",
+    "description": "Crea una copia MP4 de un vídeo sin su pista de audio. Conserva el flujo de imagen y descarga el archivo silencioso.",
+    "intro": "Cuando una grabación contiene conversaciones de fondo, ruido o música que no quieres compartir, puedes crear una versión sin sonido. Prisma Space elimina la pista de audio y conserva el vídeo.",
+    "details": "La operación copia el flujo de vídeo y omite la pista sonora, sin necesidad de volver a codificar la imagen. El resultado es una copia MP4 silenciosa; el archivo original no se modifica.",
+    "steps": [
+      "Selecciona el vídeo al que quieres quitarle el sonido.",
+      "Ejecuta la eliminación de la pista de audio.",
+      "Descarga el MP4 sin sonido y comprueba que la imagen se conserva."
+    ],
+    "tip": "Esta operación elimina la pista de audio completa. Si solo quieres bajar el volumen o conservar una parte del sonido, necesitas un editor de audio o vídeo más avanzado.",
+    "faqs": [
+      [
+        "¿Se pierde calidad de imagen?",
+        "La herramienta copia el flujo de vídeo sin volver a codificarlo, por lo que no aplica una nueva compresión de imagen."
+      ],
+      [
+        "¿Puedo recuperar el audio después?",
+        "El archivo original permanece intacto. La copia descargada no contiene la pista de audio."
+      ]
+    ]
+  },
+  {
+    "slug": "cambiar-velocidad-video",
+    "tool": "video-speed",
+    "title": "Cambiar velocidad de vídeo online | Prisma Space",
+    "h1": "Acelerar o ralentizar un vídeo",
+    "description": "Cambia la velocidad de reproducción a cámara lenta o rápida, desde 0,5× hasta 2×, y descarga una nueva versión.",
+    "intro": "A veces necesitas ralentizar una demostración para observar sus pasos o acelerar una grabación para resumir una actividad. Prisma Space permite ajustar la velocidad de un vídeo mediante valores predefinidos.",
+    "details": "Puedes elegir 0,5×, 0,75×, 1,25×, 1,5× o 2×. El vídeo se vuelve a codificar para ajustar imagen y audio, por lo que la duración final cambia y el tiempo de procesamiento depende del archivo.",
+    "steps": [
+      "Carga el vídeo que quieres acelerar o ralentizar.",
+      "Selecciona la velocidad de reproducción deseada.",
+      "Procesa el archivo y descarga el vídeo con la nueva velocidad."
+    ],
+    "tip": "La cámara lenta no crea detalles que no estaban grabados. En vídeos con pocos fotogramas por segundo, los movimientos pueden verse menos fluidos.",
+    "faqs": [
+      [
+        "¿Puedo crear cámara lenta?",
+        "Sí. Selecciona 0,5× o 0,75× para reducir la velocidad."
+      ],
+      [
+        "¿Qué opciones de velocidad hay?",
+        "La herramienta ofrece 0,5×, 0,75×, 1,25×, 1,5× y 2×."
+      ]
+    ]
+  },
+  {
+    "slug": "cambiar-resolucion-video",
+    "tool": "video-resize",
+    "title": "Cambiar resolución de vídeo online | Prisma Space",
+    "h1": "Cambiar el tamaño y formato de un vídeo",
+    "description": "Adapta un vídeo a formatos vertical, retrato, cuadrado, horizontal o HD para distintos usos y plataformas.",
+    "intro": "Un mismo vídeo puede necesitar formatos diferentes para una historia vertical, una publicación cuadrada o una pantalla horizontal. Prisma Space adapta las dimensiones del archivo mediante formatos predefinidos.",
+    "details": "Puedes elegir 1080 × 1920 vertical, 1080 × 1350 retrato, 1080 × 1080 cuadrado, 1920 × 1080 horizontal o 1280 × 720 HD. La herramienta mantiene la proporción original y completa el espacio restante con bandas, en lugar de estirar la imagen.",
+    "steps": [
+      "Selecciona el vídeo que quieres adaptar.",
+      "Elige el formato vertical, retrato, cuadrado, horizontal o HD.",
+      "Procesa el archivo y revisa las dimensiones y el encuadre del resultado."
+    ],
+    "tip": "El formato vertical no garantiza que el sujeto quede centrado. Revisa las bandas y el encuadre antes de subir el vídeo a una red social.",
+    "faqs": [
+      [
+        "¿Puedo crear un vídeo vertical para historias?",
+        "Sí. El formato vertical disponible es 1080 × 1920 píxeles."
+      ],
+      [
+        "¿La herramienta estira la imagen para llenar el formato?",
+        "No. Mantiene la proporción del vídeo y completa el espacio sobrante con bandas."
+      ]
+    ]
+  },
+  {
+    "slug": "girar-video",
+    "tool": "video-rotate",
+    "title": "Girar vídeo online 90 o 180 grados | Prisma Space",
+    "h1": "Girar un vídeo online",
+    "description": "Corrige la orientación de un vídeo girándolo 90 grados a la derecha, 90 a la izquierda o 180 grados.",
+    "intro": "Una grabación puede aparecer de lado o invertida por la orientación del teléfono o la cámara. Girar el vídeo permite corregir cómo se muestra sin tener que grabarlo de nuevo.",
+    "details": "Prisma Space ofrece tres opciones: giro de 90 grados a la derecha, 90 grados a la izquierda o 180 grados. El archivo se vuelve a codificar en el navegador, por lo que el procesamiento puede tardar según su tamaño y duración.",
+    "steps": [
+      "Selecciona el vídeo que aparece con la orientación incorrecta.",
+      "Elige 90° a la derecha, 90° a la izquierda o 180°.",
+      "Ejecuta el giro y reproduce el archivo descargado para verificar la orientación."
+    ],
+    "tip": "La recodificación puede modificar el tamaño y la calidad final. Conserva el vídeo original hasta revisar el resultado.",
+    "faqs": [
+      [
+        "¿Puedo girar un vídeo 90 grados?",
+        "Sí. Puedes girarlo 90 grados a la derecha o a la izquierda."
+      ],
+      [
+        "¿También permite ponerlo boca abajo?",
+        "Sí. Selecciona el giro de 180 grados."
+      ]
+    ]
+  },
+  {
+    "slug": "extraer-miniatura-video",
+    "tool": "video-thumbnail",
+    "title": "Extraer fotograma y miniatura de un vídeo | Prisma Space",
+    "h1": "Extraer una imagen de un vídeo",
+    "description": "Captura un fotograma en el segundo que elijas y guárdalo como imagen para usarlo como referencia o miniatura.",
+    "intro": "Si necesitas una imagen fija de una grabación, puedes capturar un instante concreto en lugar de hacer una captura de pantalla mientras el vídeo se reproduce. Prisma Space extrae el fotograma indicado.",
+    "details": "La herramienta solicita el segundo del vídeo que quieres capturar y procesa el archivo localmente. El resultado es una imagen independiente que puedes revisar, guardar o utilizar como base para una miniatura diseñada en otro editor.",
+    "steps": [
+      "Carga el vídeo del que quieres obtener una imagen.",
+      "Indica el segundo exacto o aproximado que quieres capturar.",
+      "Genera el fotograma y descarga la imagen resultante."
+    ],
+    "tip": "Elige un instante con buena iluminación y movimiento reducido. Esta herramienta captura un fotograma, pero no añade títulos, textos ni diseños de miniatura.",
+    "faqs": [
+      [
+        "¿Puedo elegir el momento de la captura?",
+        "Sí. Introduce el segundo del vídeo que quieres convertir en imagen."
+      ],
+      [
+        "¿La herramienta diseña una miniatura de YouTube?",
+        "No. Extrae un fotograma; puedes usarlo después como base para diseñar una miniatura."
+      ]
+    ]
+  },
+  {
+    "slug": "convertir-audio-mp3-wav-ogg",
+    "tool": "audio-convert",
+    "title": "Convertir audio a MP3, WAV u OGG | Prisma Space",
+    "h1": "Convertir archivos de audio a MP3, WAV u OGG",
+    "description": "Cambia el formato de una grabación de audio y descarga una copia en MP3, WAV u OGG desde el navegador.",
+    "intro": "Un reproductor, editor o plataforma puede pedir un formato de audio distinto al que tienes. Este conversor permite seleccionar una grabación y exportarla en uno de los formatos habituales.",
+    "details": "Puedes elegir MP3, WAV u OGG como formato de salida. El procesamiento se realiza en el navegador mediante un motor multimedia que puede descargarse la primera vez. La conversión no mejora una grabación que ya tenga ruido o baja calidad.",
+    "steps": [
+      "Selecciona el archivo de audio que quieres convertir.",
+      "Elige MP3, WAV u OGG como formato de salida.",
+      "Ejecuta la conversión y descarga el nuevo archivo de audio."
+    ],
+    "tip": "MP3 suele ser práctico para compartir, mientras que WAV puede ocupar más espacio. Comprueba qué formato admite el programa o dispositivo de destino.",
+    "faqs": [
+      [
+        "¿Puedo convertir WAV a MP3?",
+        "Sí. Selecciona el archivo de origen y elige MP3 como formato de salida."
+      ],
+      [
+        "¿Qué formatos de salida ofrece?",
+        "Puedes exportar a MP3, WAV u OGG."
+      ]
+    ]
+  },
+  {
+    "slug": "normalizar-volumen-audio",
+    "tool": "audio-normalize",
+    "title": "Normalizar volumen de audio online | Prisma Space",
+    "h1": "Normalizar el volumen de un audio",
+    "description": "Equilibra la sonoridad de una grabación para conseguir un nivel de escucha más uniforme y exporta el resultado en M4A.",
+    "intro": "Una grabación puede escucharse demasiado baja o presentar diferencias de volumen entre sus partes. La normalización de sonoridad ajusta el nivel general para que la reproducción resulte más uniforme.",
+    "details": "Prisma Space aplica un objetivo aproximado de -16 LUFS, habitual para voz y contenido digital, y genera un archivo M4A. El procesamiento se ejecuta en el navegador mediante el motor multimedia; el resultado debe escucharse antes de publicarlo.",
+    "steps": [
+      "Selecciona el archivo de audio que quieres normalizar.",
+      "Ejecuta el ajuste automático de sonoridad.",
+      "Descarga el archivo M4A y escucha el resultado con auriculares o altavoces."
+    ],
+    "tip": "La normalización no elimina automáticamente ruido de fondo, eco ni distorsión. Si la grabación está saturada, el resultado seguirá necesitando edición.",
+    "faqs": [
+      [
+        "¿Qué significa normalizar a -16 LUFS?",
+        "Es un objetivo aproximado de sonoridad integrado usado como referencia para voz y contenido digital."
+      ],
+      [
+        "¿En qué formato se descarga?",
+        "La herramienta exporta el audio normalizado en formato M4A."
+      ]
+    ]
+  },
+  {
+    "slug": "texto-a-voz-ia",
+    "tool": "ai-voice",
+    "title": "Texto a voz con IA: convierte texto en audio | Prisma Space",
+    "h1": "Convertir texto a voz con inteligencia artificial",
+    "description": "Genera una narración a partir de texto con distintas voces y modelos de IA. Escucha y descarga el audio en MP3, WAV u Opus.",
+    "intro": "Una narración puede servir para escuchar un texto, preparar una voz en off o crear una pieza de contenido. Prisma Space transforma un texto breve en un archivo de audio generado por inteligencia artificial.",
+    "details": "Puedes elegir entre varias voces, seleccionar el modelo de voz y exportar MP3, WAV u Opus. Cada operación admite hasta 1.500 caracteres. La generación utiliza proveedores de voz externos y está sujeta a su disponibilidad, cuotas y presupuesto configurado.",
+    "steps": [
+      "Escribe o pega un texto de hasta 1.500 caracteres.",
+      "Selecciona el motor, el modelo, la voz y el formato de audio.",
+      "Genera la narración, escúchala y descarga el archivo si el resultado te convence."
+    ],
+    "tip": "No introduzcas contraseñas, datos personales sensibles ni información confidencial. La voz generada puede requerir revisión de pronunciación y pausas.",
+    "faqs": [
+      [
+        "¿Puedo elegir una voz masculina o femenina?",
+        "Sí. Hay distintas voces disponibles, con opciones femeninas, masculinas y neutras."
+      ],
+      [
+        "¿Puedo convertir un libro o texto muy largo de una sola vez?",
+        "Cada operación admite hasta 1.500 caracteres. Divide el contenido en fragmentos y revisa la continuidad entre audios."
+      ]
+    ],
+    "privacyNote": "La generación utiliza un proveedor externo de voz IA. No introduzcas información confidencial; el servicio depende de las cuotas y disponibilidad del motor."
+  },
+  {
+    "slug": "transcribir-audio-ia",
+    "tool": "ai-transcribe",
+    "title": "Transcribir audio a texto con IA | Prisma Space",
+    "h1": "Transcribir audio a texto con inteligencia artificial",
+    "description": "Convierte grabaciones compatibles en texto con reconocimiento automático de voz. Selecciona español, inglés o detección automática.",
+    "intro": "Una entrevista, una clase o una nota de voz puede contener información que necesitas consultar por escrito. La transcripción automática convierte el habla de una grabación compatible en texto que puedes revisar y reutilizar.",
+    "details": "Prisma Space puede utilizar motores de transcripción disponibles en su configuración, como Groq Whisper, Cloudflare Whisper o proveedores alternativos autorizados. La disponibilidad depende de las conexiones, las cuotas y los límites de cada servicio; los resultados automáticos pueden contener errores.",
+    "steps": [
+      "Selecciona una grabación de audio compatible desde tu dispositivo.",
+      "Indica español, inglés o detección automática y elige el motor disponible.",
+      "Inicia la transcripción, revisa el texto y corrige nombres, cifras y términos técnicos."
+    ],
+    "tip": "La transcripción no sustituye la revisión humana. Comprueba especialmente nombres propios, conversaciones con ruido, acentos y vocabulario especializado.",
+    "faqs": [
+      [
+        "¿Puede transcribir una grabación en español?",
+        "Sí. Puedes seleccionar español como idioma o utilizar la detección automática cuando esté disponible."
+      ],
+      [
+        "¿La transcripción es ilimitada?",
+        "No. Depende de los motores habilitados, sus cuotas, créditos y límites temporales."
+      ]
+    ],
+    "privacyNote": "El audio se envía al motor de transcripción seleccionado mediante los servicios habilitados. Evita subir grabaciones confidenciales o de terceros sin autorización."
+  },
+  {
+    "slug": "crear-subtitulos-srt",
+    "tool": "subtitle-srt-local",
+    "title": "Crear subtítulos SRT online desde un texto | Prisma Space",
+    "h1": "Crear un archivo de subtítulos SRT desde texto",
+    "description": "Convierte un guion en un archivo .srt con tiempos aproximados y duración configurable para editarlo en CapCut u otros programas.",
+    "intro": "Si ya tienes el guion de un vídeo, puedes transformarlo en un archivo de subtítulos que luego se importa en un editor. Prisma Space separa el texto en fragmentos y crea una estructura SRT descargable.",
+    "details": "Puedes introducir una frase por línea o pegar un texto completo, definir los segundos aproximados por subtítulo y ajustar el máximo de caracteres. Los tiempos se calculan de forma estimada: la herramienta no escucha el audio ni sincroniza automáticamente las frases con la voz.",
+    "steps": [
+      "Pega el guion o escribe una frase por línea.",
+      "Ajusta la duración aproximada y los caracteres máximos de cada subtítulo.",
+      "Genera y descarga el archivo SRT; impórtalo en CapCut u otro editor y sincroniza los tiempos."
+    ],
+    "tip": "Revisa cada entrada SRT junto al vídeo. Para transcribir automáticamente una grabación, utiliza una herramienta de transcripción y después ajusta los subtítulos.",
+    "faqs": [
+      [
+        "¿La herramienta transcribe el audio del vídeo?",
+        "No. Crea subtítulos a partir del texto que proporcionas y asigna tiempos aproximados."
+      ],
+      [
+        "¿El archivo sirve para CapCut?",
+        "Sí. Descarga un archivo .srt que puedes importar en CapCut y otros editores compatibles."
+      ]
+    ]
+  }
+]

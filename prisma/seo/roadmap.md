@@ -78,3 +78,31 @@ Dominio canónico: https://prismaspace.pages.dev/
 ## Nota de precisión
 
 La primera tanda contiene dos páginas (JPG a PDF y PNG a PDF) que usan el mismo motor `image-pdf`, pero responden a búsquedas distintas. La segunda tanda no repite ningún ID de herramienta de la primera. Los contenidos indican expresamente los límites de las funciones beta, de OCR, de subtítulos estimados y de los servicios de IA sujetos a cuotas.
+
+## Expansión por capacidades — 10 de noviembre de 2026
+
+Este apartado sustituye la antigua restricción de comparar IDs como si cada herramienta solo pudiera tener una página. Se comparan intenciones, slugs, títulos, H1 y descripciones; se permiten varias operaciones de un motor cuando el enlace admite su formato y la intención es distinta.
+
+- [x] Auditoría de las 150 entradas: `audit.json` contiene cada decisión, incluso las exclusiones.
+- [x] Conservar las 40 páginas anteriores: snapshot inmutable en `baseline.json`.
+- [x] Crear 100 páginas justificadas: 140 páginas individuales, 132 herramientas cubiertas.
+- [x] Eliminar límites rígidos; pruebas de catálogos de 1, 50, 70, 100 y 200 páginas.
+- [x] Directorio y categorías derivados del catálogo publicado.
+- [x] Canónicas, sitemap y robots derivados de `SEO_BASE` en `config.mjs`, todavía pages.dev.
+- [x] Enlaces relacionados circulares por familia; todas las landings reciben enlaces contextuales.
+- [x] Admitir únicamente presets `format` ya soportados por main.js; no modificar la aplicación.
+- [x] Verificar estructura HTML con analizador HTML5 y sitemap con analizador XML.
+- [x] Validar campos de apertura para todas las nuevas herramientas, y 29 operaciones locales mediante su ejecutor real.
+- [x] Ejecutar pruebas existentes de Core, Whisper y diseño junto a las nuevas de SEO.
+- [x] Revisión visual local y 564 comprobaciones adaptables sin desbordamientos.
+- [ ] Confirmar preview Cloudflare antes de fusionar.
+- [ ] Confirmar despliegue de producción del commit fusionado.
+
+El [informe completo](expansion-report.md) incluye las 100 nuevas URLs, operaciones múltiples, 18 entradas descartadas/consolidadas y checklist del dominio definitivo. No se promocionan como nuevas páginas los fallos detectados; su reparación queda fuera de esta misión SEO.
+
+### Validación y mantenimiento
+
+Desde la raíz: `node prisma/build.mjs` y `node --test prisma/tests/*.test.mjs`.
+El build de Pages ejecuta las validaciones SEO y de capacidades, además de las comprobaciones existentes. La comparación de formatos de URL detecta si cambia la lista admitida por main.js. `baseline.json` no se amplía al añadir páginas: protege las 40 originales, no impone el tamaño futuro del catálogo.
+
+Las comprobaciones no consumen cuotas de IA ni certifican disponibilidad permanente de proveedores externos. Las funciones conectadas se publican con sus condiciones y límites; no se promete funcionamiento ilimitado ni garantía de indexación.
