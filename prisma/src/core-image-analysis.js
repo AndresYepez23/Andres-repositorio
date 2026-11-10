@@ -10,7 +10,7 @@ export function imageAnalysisIntent(text,files=[]){
  if(/\b(?:extrae|extraer|transcribe|transcribir|copia|copiar|pasame|pasar|saca|sacar|reconoce|reconocer|ocr)\b.{0,55}\b(?:texto|literal|palabras|escrito)\b/.test(q)||
     /\b(?:texto|contenido)\b.{0,55}\b(?:literal|exacto|tal cual|sin cambiar|sin interpretar)\b/.test(q)||
     /\b(?:solo|unicamente)\s+(?:el\s+)?(?:texto|ocr)\b/.test(q))return 'transcribe';
- if(/\b(?:analiz(?:a|ame|ala|alo|ar|arla|arlo|ando|is)|interpret(?:a|ame|ala|alo|ar|acion)|explic(?:a|ame|ala|alo|ar|acion)|describ(?:e|eme|ela|elo|ir)|comprend(?:e|er)|resumen|resume|contextualiz(?:a|ar|acion)|evalu(?:a|ar|acion)|opina|significado|de que trata|que quiere decir|que significa|conclusiones|ideas principales|que dice|que (?:hay|ves|aparece) en (?:esta|esa|la) (?:foto|imagen))\b/.test(q)||
+ if(/\b(?:analiz(?:a|ame|ala|alo|ar|arla|arlo|ando)|analisis|interpret(?:a|ame|ala|alo|ar|acion)|explic(?:a|ame|ala|alo|ar|acion)|describ(?:e|eme|ela|elo|ir)|comprend(?:e|er)|resumen|resume|contextualiz(?:a|ar|acion)|evalu(?:a|ar|acion)|opina|significado|de que trata|que quiere decir|que significa|conclusiones|ideas principales|que dice|que (?:hay|ves|aparece) en (?:esta|esa|la) (?:foto|imagen))\b/.test(q)||
     !q||/\b(?:lee|leer|revisa|revisar|entiende|entender)\b/.test(q))return 'interpret';
  return '';
 }
