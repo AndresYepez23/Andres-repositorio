@@ -6,6 +6,8 @@ import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
+import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHtml, WEBSITE_FOLLOWUP } from '../src/core-intent.js';
+import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHtml } from '../src/core-intent.js';
 import { validateAgentStepResult } from '../src/core-agent-guard.js';
 import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
@@ -615,5 +617,54 @@ assert.throws(()=>validateAgentStepResult('ai-webpage',{}),/archivo esperado/);
 assert.throws(()=>validateAgentStepResult('image-gen',{text:'I created a photo'}),/archivo esperado/);
 assert.equal(validateAgentStepResult('ai-webpage',{blob:new Blob([webHTML],{type:'text/html'})}).blob.size>0,true);
 assert.equal(validateAgentStepResult('ai-assistant',{text:'Respuesta real'}).text,'Respuesta real');
+
+
+// Core 5 regression: the actual user prompt must be answered as a capability
+// question, not with unsolicited HTML boilerplate or a billed model call.
+assert.deepEqual(routeWebsiteRequest('¿Puedes hacer una página web?'),{
+ type:'ask',message:WEBSITE_FOLLOWUP
+});
+assert.equal(routeWebsiteRequest('¿Puedes hacer una página web para un restaurante?')?.type,'build');
+assert.equal(routeWebsiteRequest('Crea una web para un gimnasio')?.type,'build');
+assert.equal(routeWebsiteRequest('Quiero una página web')?.type,'ask');
+assert.equal(routeWebsiteRequest('¿Cuánto cuesta una página web?'),null);
+assert.equal(routeWebsiteRequest('¿Qué es una página web?'),null);
+assert.equal(routeWebsiteRequest('Quítale los metadatos a la foto para mi web'),null);
+assert.equal(routeWebsiteRequest('Crea una imagen para mi web'),null);
+assert.equal(routeWebsiteRequest('Hazme una canción sobre mi web'),null);
+assert.equal(routeWebsiteRequest('Quiero una web de mi negocio')?.type,'ask');
+const pendingWebsite={started:Date.now()};
+assert.equal(routeWebsiteRequest('Para una clínica dental',pendingWebsite)?.type,'build','The second user turn supplies the missing website subject');
+assert.equal(routeWebsiteRequest('Una tienda de ropa',pendingWebsite)?.type,'build');
+assert.equal(routeWebsiteRequest('Cancelar',pendingWebsite)?.type,'cancel');
+assert.equal(routeWebsiteRequest('Ahora haz una miniatura',pendingWebsite)?.type,'abandon');
+assert.equal(routeWebsiteRequest('Hola',pendingWebsite)?.type,'abandon');
+assert.equal(routeWebsiteRequest('Para una floristería',{started:Date.now()-48*3600000}),null,'Expired brief must not be resumed');
+assert.match(resolveGeneralCapabilityQuestion('¿Puedes hacer una canción?')||'',/tema quieres/);
+assert.match(resolveGeneralCapabilityQuestion('¿Puedes crear una imagen?')||'',/imagen/);
+assert.equal(resolveGeneralCapabilityQuestion('Crea una imagen de un paisaje'),null);
+const memoryReply=resolvePrismaProductQuestion('¿Tienes memoria?',[],{});
+assert.match(memoryReply,/navegador/);
+assert.match(memoryReply,/50 conversaciones/);
+assert.match(memoryReply,/60 mensajes/);
+assert.doesNotMatch(memoryReply,/no guardo información una vez que la sesión termina/i);
+assert.match(resolvePrismaProductQuestion('¿Qué recuerdas de mí?',[],{}),/conversación activa/);
+const sampleWeb='<!doctype html><html lang="es"><head><title>Mi web</title></head><body><main>Hola</main></body></html>';
+assert.equal(extractWebsiteHtml(sampleWeb),sampleWeb);
+assert.equal(extractWebsiteHtml(String.fromCharCode(96).repeat(3)+'html\n'+sampleWeb+'\n'+String.fromCharCode(96).repeat(3)),sampleWeb);
+assert.throws(()=>extractWebsiteHtml('<div>Solo una sección</div>'),/documento HTML completo/);
+assert.throws(()=>extractWebsiteHtml('<html><head></head><body>Sin cierre'),/incompleto/);
+assert.throws(()=>extractWebsiteHtml('<html><head></head><body><iframe src="https://bad.com"></iframe></body></html>'),/código externo/);
+assert.throws(()=>extractWebsiteHtml('<html><head></head><body><script src="https://bad.com/a.js"></script></body></html>'),/código externo/);
+assert.ok(registered.some(item=>item.id==='ai-webpage'&&item.status==='beta'),'Website tool must be registered');
+assert.match(coreSource,/routeWebsiteRequest\(text,chat\.websiteBrief,false\)/);
+assert.match(coreSource,/if\(await handleWebsiteConversation\(userText\)\)return/);
+assert.match(coreSource,/resolveGeneralCapabilityQuestion\(userText\)/);
+assert.match(coreSource,/frame\.setAttribute\('sandbox','allow-scripts'\)/);
+assert.match(coreSource,/websiteBrief:chat.websiteBrief/,'Website brief must survive a browser reload');
+const engineSource5=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(engineSource5,/if\(id==='ai-webpage'\)return generateWebsite\(p,cb\)/);
+assert.match(engineSource5,/extractWebsiteHtml\(response.text\)/,'HTML must be validated before delivering the file');
+assert.match(engineSource5,/filename:'prisma-sitio-web.html'/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
