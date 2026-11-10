@@ -1568,6 +1568,26 @@ function createExecutionResults(executed,partial){
       }else if(String(result.blob.type||'').startsWith('video/')){
         const player=document.createElement('video');player.className='core-result-player';player.controls=true;player.preload='metadata';player.src=url;card.append(player);
       }
+      if(String(result.blob.type||'').startsWith('text/html')&&result.previewHtml){
+        const previewButton=document.createElement('button');previewButton.type='button';
+        previewButton.className='mini-button';previewButton.textContent='Vista previa de la web';
+        previewButton.setAttribute('aria-expanded','false');
+        const panel=document.createElement('div');panel.className='core-website-preview hidden';
+        const frame=document.createElement('iframe');frame.className='core-website-frame';
+        frame.title='Vista previa aislada del prototipo web';frame.loading='lazy';
+        frame.setAttribute('sandbox','allow-scripts');
+        // Preview only: block network requests and remote resources. The user's
+        // download is the original self-contained HTML.
+        const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; base-uri \'none\'; form-action \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; font-src data:; connect-src \'none\'">';
+        frame.srcdoc=String(result.previewHtml).replace(/<head\\b[^>]*>/i,head=>head+csp);
+        panel.append(frame);
+        previewButton.addEventListener('click',()=>{
+          const visible=panel.classList.toggle('hidden')===false;
+          previewButton.setAttribute('aria-expanded',String(visible));
+          previewButton.textContent=visible?'Cerrar vista previa':'Vista previa de la web';
+        });
+        card.append(previewButton,panel);
+      }
       const row=document.createElement('div');row.className='core-result-download';
       const label=document.createElement('span');label.textContent=result.filename||'Archivo generado';
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
