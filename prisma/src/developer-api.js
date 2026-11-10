@@ -7,6 +7,7 @@ import {
   coreCapabilityContext
 } from "./core-tool-intelligence.js";
 import { buildSmartLocalFlow } from "./smart-flows.js";
+import { workflowCatalog } from "./workflow-catalog.js";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -80,6 +81,20 @@ export function getPrismaDeveloperCatalog({ query = "", category = "", status = 
     limit: safeLimit,
     tools: filtered.slice(safeOffset, safeOffset + safeLimit)
   };
+}
+
+export function getPrismaDeveloperWorkflows() {
+  return workflowCatalog.map((workflow) => ({
+    id: workflow.id,
+    name: workflow.name,
+    description: workflow.description,
+    icon: workflow.icon,
+    tag: workflow.tag,
+    file: Boolean(workflow.file),
+    multiple: Boolean(workflow.multiple),
+    maxFiles: workflow.maxFiles || null,
+    accept: workflow.accept || null
+  }));
 }
 
 export function planWithPrismaCore({ text = "", files = [], history = [] } = {}) {
