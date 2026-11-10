@@ -201,7 +201,7 @@ assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===
 assert.match(welcomeGridSource,/container\.append\(layer\)/,'The ambient canvas must be attached to the full chat viewport container');
 assert.match(welcomeGridSource,/dotsDesktop=15,dotsTablet=17,dotsMobile=18/,'Dot density must be increased consistently across desktop, tablet and mobile');
 assert.match(welcomeGridSource,/width<=580\?dotsMobile:width<=900\?dotsTablet:dotsDesktop/,'Dot spacing must adapt to viewport width');
-assert.match(coreSource,/if\(!disposeWelcomeGrid\)\{[\s\S]*?disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\)/,'The animated background must be mounted once and persist across chat updates');
+assert.match(coreSource,/if\(!messages\.length\)\{\s*if\(!disposeWelcomeGrid\)\{[\s\S]*?disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\);\s*\}\s*\}else if\(disposeWelcomeGrid\)\{\s*disposeWelcomeGrid\(\);\s*disposeWelcomeGrid=null;\s*\}/,'The full-width matrix must be mounted only on empty chats and disposed after the first message');
 assert.match(coreSource,/if\(!messages\.length\)/,'The welcome content must remain restricted to the empty chat state');
 assert.match(welcomeGridSource,/pointermove/,'Desktop cursor must illuminate nearby dots');
 assert.match(welcomeGridSource,/pointerleave/,'Cursor reaction must fade on exit');
@@ -210,6 +210,8 @@ assert.match(welcomeGridSource,/prefers-reduced-motion: reduce/,'Respect reduced
 assert.match(welcomeGridSource,/IntersectionObserver/,'Pause the matrix when offscreen');
 assert.match(welcomeGridSource,/visibilitychange/,'Pause when the page is hidden');
 assert.match(welcomeGridSource,/cancelAnimationFrame/,'Release animation resources on unmount');
+assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===0\)/,'Empty state marker must be synchronized on every chat switch');
+
 assert.doesNotMatch(welcomeGridSource,/\bfetch\s*\(|XMLHttpRequest|\bgetContext\(['"]webgl|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
 assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty/,'Empty Core state must receive dedicated layout styles');assert.match(stylesSource,/overflow-y:auto!important;\s*scrollbar-width:none!important/,'Empty welcome must not show a limiting scrollbar but remain scrollable if needed');
 assert.match(stylesSource,/core-messages\.is-empty::\-webkit-scrollbar/,'Empty welcome must hide WebKit scrollbars');

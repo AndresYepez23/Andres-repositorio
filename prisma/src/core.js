@@ -451,11 +451,17 @@ function renderMessages({forceBottom=false}={}){
   list.classList.toggle('is-empty',messages.length===0);
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
-  // Anchor the animated field to the full main area so it reaches both screen
-  // edges beside the sidebar, independent of page-content's content width.
-  if(!disposeWelcomeGrid){
-    const chatSurface=document.querySelector('.main-area')||document.getElementById('page-content')||list;
-    disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
+  // The full-width animated matrix belongs to the empty welcome screen only.
+  // Remove its canvas and event listeners as soon as a conversation has messages,
+  // and recreate it when opening a fresh empty chat.
+  if(!messages.length){
+    if(!disposeWelcomeGrid){
+      const chatSurface=document.querySelector('.main-area')||document.getElementById('page-content')||list;
+      disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
+    }
+  }else if(disposeWelcomeGrid){
+    disposeWelcomeGrid();
+    disposeWelcomeGrid=null;
   }
   if(answerRevealFrame){cancelAnimationFrame(answerRevealFrame);answerRevealFrame=0;}
   list.replaceChildren();
