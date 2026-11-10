@@ -81,6 +81,12 @@ function setProviderAvailability(){
  }
  const email=$('#auth-email-choice');
  if(email)email.disabled=!config.enabled;
+ // The HTML defaults to disabled to prevent submitting before the SDK loads.
+ // Reactivate real email/signup controls only after Supabase is configured.
+ for(const selector of ['#auth-submit','#auth-reset-submit','#auth-recovery-submit']){
+  const button=$(selector);
+  if(button)button.disabled=!config.enabled;
+ }
  const availability=$('#auth-availability');
  if(availability)availability.textContent=config.enabled
   ?'Correo y contraseña disponibles. Otros métodos se habilitarán cuando estén configurados.'
