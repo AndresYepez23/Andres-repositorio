@@ -68,7 +68,7 @@ export function mergeConversations(localInput, remoteInput) {
   for (const message of remote.messages) messageMap.set(message.id, message);
   for (const message of local.messages) {
     const existing = messageMap.get(message.id);
-    if (!existing || Number(message.time) > Number(existing.time)) messageMap.set(message.id, message);
+    if (!existing || Number(message.time) > Number(existing.time) || (localIsNewer && Number(message.time) === Number(existing.time))) messageMap.set(message.id, message);
   }
   const messages = [...messageMap.values()].sort((a, b) =>
     (Number(a.time) - Number(b.time)) || String(a.id).localeCompare(String(b.id))
