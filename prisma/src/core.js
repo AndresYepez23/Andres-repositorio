@@ -983,7 +983,7 @@ function directCoreTask(text){
  if(/\b(codigo|programacion|javascript|typescript|python|sql|script|debug|desarrolla una funcion|corrige esta funcion)\b/.test(q))return 'coding';
  if(/\b(youtube|miniatura|instagram|tiktok|publicacion|marketing|anuncio|titulo|descripcion del video)\b/.test(q))return 'creative';
  if(/\b(resume|resumen|resumir|sintetiza|ideas principales|puntos clave)\b/.test(q))return 'summary';
- if(/\b(compara|comparacion|comparativa|versus|pros y contras|que conviene|cual conviene|mejor opcion|ventajas y desventajas|analiza|investiga|explica|razona|solucion|estrategia|plan de|evalua|planifica|organiza|prioriza|revisa|revisar|corrige el texto|contradicciones|coherencia)\b/.test(q))return 'reasoning';
+ if(/\b(compara|comparacion|comparativa|versus|pros y contras|que conviene|cual conviene|mejor opcion|ventajas y desventajas|analiza|investiga|razona|solucion|estrategia|plan de|evalua|planifica|organiza|prioriza|revisa|revisar|corrige el texto|contradicciones|coherencia)\b/.test(q))return 'reasoning';
  return 'conversation';
 }
 async function answerConversation(text,creds,task='conversation'){
