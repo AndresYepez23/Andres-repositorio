@@ -1,6 +1,7 @@
 import { cp, copyFile, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 // Abort publication if Core can no longer discover or safely chain its tools.
 import "./tests/core-agent-routing.test.mjs";
+import "./tests/cloudflare-whisper.test.mjs";
 
 const output = new URL("./dist/", import.meta.url);
 await rm(output, { recursive: true, force: true });
