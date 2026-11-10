@@ -18,7 +18,7 @@ export const categories = [
 export const tools = [
   { id:'pdf-merge', name:'Unir PDF', description:'Combina varios documentos en un solo archivo.', category:'pdf', icon:'files', status:'ready', mode:'local', file:true, multiple:true, accept:'.pdf,application/pdf', tag:'Sin subir archivos' },
   { id:'pdf-compress', name:'Optimizar PDF', description:'Reduce el peso estructural del PDF sin rasterizar sus páginas ni necesitar una API.', category:'pdf', icon:'file-archive', status:'beta', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Gratis · Local · Sin API' },
-  { id:'pdf-split', name:'Dividir PDF', description:'Separa cada página en un PDF independiente y descarga todos los archivos en un ZIP.', category:'pdf', icon:'files', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Gratis · Sin API · ZIP' },
+  { id:'pdf-split', name:'Dividir PDF', description:'Separa todas las páginas o elige páginas, rangos y bloques para dividir un PDF.', category:'pdf', icon:'files', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'Gratis · Sin API · ZIP' },
   { id:'pdf-to-word', name:'PDF a Word', description:'Convierte el texto de un PDF digital en un documento DOCX editable.', category:'pdf', icon:'file-text', status:'beta', mode:'browser', file:true, accept:'.pdf,application/pdf', tag:'Gratis · Sin API · DOCX' },
 
   { id:'pdf-form-fields', name:'Inspeccionar campos de PDF', description:'Lista los campos interactivos y su tipo sin leer ni mostrar respuestas privadas.', category:'pdf', icon:'file-text', status:'ready', mode:'local', file:true, accept:'.pdf,application/pdf', tag:'pdf-lib · Gratis y local' },
