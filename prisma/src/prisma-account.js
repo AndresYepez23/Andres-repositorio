@@ -196,11 +196,27 @@ function openAccount(){
   refreshIdentity();
  }else{
   showScreen('intro');
+  const title=$('#auth-title');
+  if(title)title.textContent='Bienvenido a Prisma';
+  $('#auth-guest')?.classList.remove('hidden');
  }
  info('');
  showAuth(true,{focus:true});
 }
 export function openPrismaAuth(){openAccount();}
+export function isPrismaAuthenticated(){return Boolean(user?.id);}
+export function openPrismaAuthForGuestLimit(){
+ if(user?.id)return false;
+ showScreen('intro');
+ const title=$('#auth-title');
+ if(title)title.textContent='Continúa creando con Prisma';
+ // A dismissed dialog may be revisited. The send button stays gated until
+ // a real account session exists; browsing and downloads remain accessible.
+ $('#auth-guest')?.classList.add('hidden');
+ info('Completaste tus 4 tareas de prueba. Crea una cuenta gratis o inicia sesión para seguir usando Prisma Core.','info');
+ showAuth(true,{focus:false});
+ return true;
+}
 function selectedSync(){
  return !!user&&profile?.sync_enabled===true;
 }
