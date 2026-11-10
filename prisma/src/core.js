@@ -286,6 +286,36 @@ async function persistGeneratedResults(results){
  }
  return allSaved;
 }
+let answerRevealFrame=0;
+function revealNewAssistantAnswer(message){
+ // The complete response is already saved. Only its first on-screen render
+ // is progressively revealed; chat history and exports remain untouched.
+ if(message.role!=='assistant'||message.results?.length||message.content.length<25||message.content.length>9000)return;
+ if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;
+ const list=$('#core-messages');
+ const body=list?.lastElementChild?.querySelector('.core-message-body');
+ if(!body)return;
+ const full=String(message.content);
+ const duration=Math.min(1550,Math.max(480,full.length*1.15));
+ let began=0,lastPaint=0;
+ body.classList.add('is-revealing');
+ body.textContent='';
+ const paint=now=>{
+  if(!body.isConnected||!list.isConnected){answerRevealFrame=0;return;}
+  if(!began)began=now;
+  const progress=Math.min(1,(now-began)/duration);
+  if(now-lastPaint>33||progress===1){
+   lastPaint=now;
+   // Use the same sanitizing Markdown renderer as completed messages.
+   const length=progress===1?full.length:Math.min(full.length,Math.ceil(full.length*progress));
+   body.innerHTML=renderMarkdownSafe(full.slice(0,length));
+   if(userPinnedToBottom)list.scrollTop=list.scrollHeight;
+  }
+  if(progress<1)answerRevealFrame=requestAnimationFrame(paint);
+  else{body.classList.remove('is-revealing');answerRevealFrame=0;}
+ };
+ answerRevealFrame=requestAnimationFrame(paint);
+}
 function addMessage(role,content,extra={}){
   // Other tool routes also generate images, audio and PDFs. Retain their
   // downloads even when the conversation is reloaded or synced.
@@ -303,8 +333,10 @@ function addMessage(role,content,extra={}){
        });
     }
   }
-  messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
+  const message={id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra};
+  messages.push(message);
   save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
+  if(role==='assistant')revealNewAssistantAnswer(message);
   document.dispatchEvent(new CustomEvent('prisma:core-message',{detail:{role,content:String(content||'')}}));
 }
 function speechSynthesisStop(){
@@ -419,6 +451,7 @@ function renderMessages({forceBottom=false}={}){
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
   // Re-rendering the chat must remove canvas listeners and its animation loop.
+  if(answerRevealFrame){cancelAnimationFrame(answerRevealFrame);answerRevealFrame=0;}
   disposeWelcomeGrid?.();
   disposeWelcomeGrid=null;
   list.replaceChildren();
