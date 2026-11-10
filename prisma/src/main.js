@@ -1476,7 +1476,11 @@ function setupPrismaCoreViewport(){
       document.body.classList.toggle('is-keyboard-open',keyboardOpen);
       if(keyboardOpen&&focused){
         const list=document.querySelector('#core-messages');
-        if(list?.scrollHeight>list?.clientHeight)list.scrollTop=list.scrollHeight;
+        // The welcome is a decorative empty state, not a chat transcript.
+        // Scrolling it to the bottom pushes the dot matrix and heading out
+        // of view when iOS resizes the visual viewport for the keyboard.
+        if(list?.classList.contains('is-empty'))list.scrollTop=0;
+        else if(list?.scrollHeight>list?.clientHeight)list.scrollTop=list.scrollHeight;
       }
     });
   };
