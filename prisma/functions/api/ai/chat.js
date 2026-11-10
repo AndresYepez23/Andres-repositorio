@@ -385,7 +385,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const compatibleProviders={
-    sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
+    sensenova:{url:"https://token.sensenova.ai/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
     zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
