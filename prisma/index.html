@@ -424,9 +424,10 @@
     </div>
     <div id="auth-confirm-screen" class="auth-screen hidden">
       <span class="auth-state-icon" aria-hidden="true">✉</span>
-      <h2>Revisa tu correo</h2>
-      <p class="auth-description">Te enviamos las instrucciones de confirmación. Abre el enlace desde este dispositivo para terminar de activar tu cuenta.</p>
+      <h2 id="auth-confirm-title">Revisa tu correo</h2>
+      <p class="auth-description" id="auth-confirm-description">Te enviamos un enlace para continuar.</p>
       <p class="auth-confirm-email" id="auth-confirm-email"></p>
+      <button type="button" class="auth-resend" id="auth-resend-signup">Reenviar confirmación</button>
       <button type="button" class="auth-submit" id="auth-confirm-done">Entendido</button>
     </div>
     <div id="auth-welcome-screen" class="auth-screen hidden">
