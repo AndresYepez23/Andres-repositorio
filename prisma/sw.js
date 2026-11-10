@@ -1,5 +1,5 @@
 const VERSION="__BUILD_VERSION__";const CACHE="prisma-shell-"+VERSION;
-const SHELL=["/","/index.html","/styles.css","/assets/prisma-mark.svg","/assets/prisma-app-icon.svg","/assets/prisma-192.png","/assets/prisma-512.png","/manifest.webmanifest"];
+const SHELL=["/","/index.html","/styles.css","/aurora-system.css","/assets/prisma-mark.svg","/assets/prisma-app-icon.svg","/assets/prisma-192.png","/assets/prisma-512.png","/manifest.webmanifest"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting()));});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("prisma-shell-")&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
 self.addEventListener("fetch",event=>{
