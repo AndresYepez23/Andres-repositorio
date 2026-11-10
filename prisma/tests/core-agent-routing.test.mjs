@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { planFileConversion } from '../src/file-conversions.js';
+import { planPdfSplit } from '../src/pdf-split-options.js';
 import { reconcileIosPwaViewport } from '../src/pwa-viewport.js';
 import { isVideoCompressionIntent, isVideoFile, preferNativeVideoCompression, videoCompressionSettings, chooseNativeRecordingType, localizedVideoError, compressVideoNative } from '../src/video-compression.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
@@ -1233,3 +1235,40 @@ assert.match(accountStyles,/#auth-modal \.auth-password-wrap/);
 assert.match(accountStyles,/#auth-modal \.auth-screen\.hidden/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
+
+
+// New PDF requests must override the prior turn even when a different PDF is
+// uploaded; only a bare file-acknowledgement may continue the old conversion.
+const priorPdfConversion=['Convertir el PDF a Word'];
+const freshPdf=[{name:'Informe_Detallado.pdf',type:'application/pdf'}];
+assert.equal(planFileConversion('Extraer la página 2 del PDF adjunto',freshPdf,priorPdfConversion),null);
+assert.equal(planFileConversion('Divide este PDF en páginas independientes',freshPdf,priorPdfConversion),null);
+assert.equal(planFileConversion('Resume el contenido del documento',freshPdf,priorPdfConversion),null);
+assert.equal(planFileConversion('Aquí está el archivo',freshPdf,priorPdfConversion)?.steps?.[0]?.tool_id,'pdf-to-word');
+assert.equal(planFileConversion('Convertir este PDF a Word',freshPdf,[])?.steps?.[0]?.tool_id,'pdf-to-word');
+
+const pdfSplitAll=planPdfSplit({},6);
+assert.equal(pdfSplitAll.groups.length,6);
+assert.equal(pdfSplitAll.groups[1].filename,'pagina-002.pdf');
+const pdfSplitPicked=planPdfSplit({mode:'selected',pages:'2, 4-6'},7);
+assert.deepEqual(pdfSplitPicked.groups.map(group=>group.indices[0]),[1,3,4,5]);
+assert.equal(pdfSplitPicked.groups[0].filename,'pagina-002.pdf');
+assert.equal(pdfSplitPicked.selectedCount,4);
+assert.equal(planPdfSplit({mode:'selected',pages:'2'},6).groups.length,1);
+const pdfSplitRanges=planPdfSplit({mode:'ranges',ranges:'1-3; 5; 7-8'},9);
+assert.deepEqual(pdfSplitRanges.groups.map(group=>group.indices),[[0,1,2],[4],[6,7]]);
+assert.deepEqual(planPdfSplit({mode:'parts',parts:3},8).groups.map(group=>group.indices.length),[2,3,3]);
+assert.deepEqual(planPdfSplit({mode:'chunk',chunkSize:3},8).groups.map(group=>group.indices.length),[3,3,2]);
+assert.deepEqual(planPdfSplit({parts:2},8).groups.map(group=>group.indices.length),[4,4]);
+assert.throws(()=>planPdfSplit({mode:'selected',pages:'3-8'},5),/fuera/i);
+assert.throws(()=>planPdfSplit({mode:'ranges',ranges:'1-3; 3-4'},8),/repetidas/i);
+assert.throws(()=>planPdfSplit({mode:'parts',parts:10},4),/superar/i);
+assert.throws(()=>planPdfSplit({mode:'chunk',chunkSize:0},9),/bloque/i);
+assert.throws(()=>planPdfSplit({mode:'selected',pages:''},9),/indica/i);
+
+const splitUiSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+assert.match(splitUiSource,/setupPdfSplitOptions\(\)/);
+assert.match(splitUiSource,/planPdfSplit\(readParams\(\),count\)/);
+assert.match(splitUiSource,/case 'pdf-split':return selectField/);
+assert.match(readFileSync(new URL('../src/engines.js',import.meta.url),'utf8'),/planPdfSplit\(p,total\)/);
+assert.match(readFileSync(new URL('../src/core.js',import.meta.url),'utf8'),/newPdfCommand/);

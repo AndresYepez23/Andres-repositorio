@@ -1,4 +1,5 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
+import { planPdfSplit } from './pdf-split-options.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { extractWebsiteHtml } from './core-intent.js';
 import { compressVideoNative, preferNativeVideoCompression, localizedVideoError } from './video-compression.js';
@@ -76,25 +77,24 @@ async function pdfTool(id,files,p,cb){
  }
  if(id==='pdf-split'){
   const JSZip=(await import(JSZIP_URL)).default,zip=new JSZip();
-  const pages=src.getPageIndices(),requested=Number(p.parts||0),chunkSize=Number(p.chunkSize||0);
-  if(requested&&chunkSize)throw Error('Elige entre dividir por cantidad de partes o por páginas por bloque.');
-  if(requested&&(!Number.isInteger(requested)||requested<2||requested>20||requested>pages.length))
-   throw Error('La cantidad de partes debe estar entre 2 y 20 y no puede superar el número de páginas.');
-  if(chunkSize&&(!Number.isInteger(chunkSize)||chunkSize<1||chunkSize>200))
-   throw Error('El número de páginas por bloque debe estar entre 1 y 200.');
-  const groups=requested
-   ? Array.from({length:requested},(_,i)=>pages.slice(Math.floor(i*pages.length/requested),Math.floor((i+1)*pages.length/requested)))
-   : chunkSize?Array.from({length:Math.ceil(pages.length/chunkSize)},(_,i)=>pages.slice(i*chunkSize,(i+1)*chunkSize))
-   : pages.map(page=>[page]);
-  for(let i=0;i<groups.length;i++){
-   const single=await PDFDocument.create(),copied=await single.copyPages(src,groups[i]);
-   copied.forEach(page=>single.addPage(page));
-   const label=requested||chunkSize?'parte-':'pagina-';
-   zip.file(label+String(i+1).padStart(3,'0')+'.pdf',await single.save());
-   progress(cb,(i+1)/groups.length*.85,'Preparando '+(i+1)+' de '+groups.length+'...');
+  const plan=planPdfSplit(p,total);
+  // Preserve original page numbers in file names, even for selected subsets.
+  if(plan.groups.length===1){
+   const group=plan.groups[0],one=await PDFDocument.create();
+   (await one.copyPages(src,group.indices)).forEach(page=>one.addPage(page));
+   progress(cb,1,'PDF seleccionado listo.');
+   return {...download(makeBlob(await one.save(),'application/pdf'),fileName(files[0])+'-'+group.filename),
+    summary:'Se preparó un PDF con '+plan.selectedCount+' página(s) seleccionada(s).'};
+  }
+  for(let i=0;i<plan.groups.length;i++){
+   const group=plan.groups[i],one=await PDFDocument.create();
+   (await one.copyPages(src,group.indices)).forEach(page=>one.addPage(page));
+   zip.file(group.filename,await one.save());
+   progress(cb,(i+1)/plan.groups.length*.85,'Preparando '+(i+1)+' de '+plan.groups.length+' archivos...');
   }
   const blob=await zip.generateAsync({type:'blob'});
-  return download(blob,fileName(files[0])+(requested||chunkSize?'-partes.zip':'-paginas.zip'));
+  return {...download(blob,fileName(files[0])+'-dividido.zip'),
+   summary:'Se generaron '+plan.groups.length+' PDFs con '+plan.selectedCount+' páginas seleccionadas.'};
  }
 
  if(id==='pdf-extract'){
