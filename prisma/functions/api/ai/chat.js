@@ -82,9 +82,9 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
     const detail=String(data.error?.message||data.error?.code||data.message||"").slice(0,180);
     const message=status===429?provider+" alcanzó su límite temporal. Prisma probará otro motor."
       :status===402?provider+" no tiene crédito gratuito disponible."
-      :status===401||status===403?provider+" rechazó la clave configurada. Revisa su secreto en Cloudflare."
+      :status===401||status===403?provider+" devolvió HTTP "+status+" (autenticación o permisos). Comprueba la clave, su cuenta, el modelo permitido y la región del endpoint."
       :provider+" respondió con un error ("+status+")."+(detail?" "+detail:"");
-    return json({error:message,provider,status,code:status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":"PROVIDER_ERROR"},status===429||status===402?status:status===400?400:502);
+    return json({error:message,provider,status,code:status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":status===401||status===403?"PROVIDER_AUTH":"PROVIDER_ERROR"},[400,401,402,403,429].includes(status)?status:502);
   }
   const content=data.choices?.[0]?.message?.content;
   const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
