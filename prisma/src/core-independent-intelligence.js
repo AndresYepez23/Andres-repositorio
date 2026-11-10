@@ -104,10 +104,9 @@ function knowledgeAnswer(topic, mode='both'){
  return '**'+topic.toUpperCase()+'**: '+item.definition+'\n\n**En la práctica:** '+item.application;
 }
 function knownTopicIn(text){
- const q=fold(text);
- // Longest matching phrase first, ensuring "api key" is not reduced to "api".
- return [...GLOSSARY.keys()].sort((a,b)=>b.length-a.length)
-  .find(key=>new RegExp('(?:^|[^\\p{L}\\p{N}])'+key.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'(?=$|[^\\p{L}\\p{N}])','u').test(q))||'';
+ const q=' '+fold(text).replace(/[^\\p{L}\\p{N}]+/gu,' ').trim()+' ';
+ // Longer glossary terms win (API key before API), with exact word boundaries.
+ return [...GLOSSARY.keys()].sort((a,b)=>b.length-a.length).find(key=>q.includes(' '+key+' '))||'';
 }
 export function resolveContextualCoreRequest(text,history=[]){
  const q=fold(text).replace(/[¿?¡!.,;:]/g,' ').replace(/\s+/g,' ').trim();
