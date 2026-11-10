@@ -288,7 +288,7 @@ body.is-core-view .core-sidebar-conversation.active{
  background:linear-gradient(105deg,#147f83,#3f80ae 50%,#785eaf);
  background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
 }
-:root[data-theme="light"] body.is-core-view #core-messages.is-empty > .core-welcome-ambient{
+:root[data-theme="light"] body.is-core-view #page-content > .core-welcome-ambient{
  background:radial-gradient(ellipse 75% 75% at 50% 45%,rgba(104,183,217,.12),transparent 80%)!important;
 }
 :root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-examples button{
