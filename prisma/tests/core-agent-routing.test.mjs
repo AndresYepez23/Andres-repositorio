@@ -953,7 +953,7 @@ assert.match(uiHtml,/id="conversation-search-layer"/);
 assert.match(uiHtml,/id="conversation-search-results"/);
 assert.match(uiHtml,/id="conversation-search-field-slot"/);
 assert.doesNotMatch(uiHtml,/id="sidebar-search-slot"/,'The search row must not reserve sidebar height');
-assert.match(coreSource,/findConversations\(conversations,q,q\?35:14\)/);
+assert.match(coreSource,/findConversations\(conversations\.filter\(hasConversationMessages\),q,q\?35:14\)/);
 assert.match(coreSource,/searchOverlaySlot\.append\(searchField\)/);
 assert.match(coreSource,/prisma:close-conversation-search/);
 assert.match(uiMain,/function openSidebarSearch\(\)/);

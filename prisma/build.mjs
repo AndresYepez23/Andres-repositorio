@@ -2,6 +2,7 @@ import { cp, copyFile, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { generateSeoPages } from "./seo/generate.mjs";
 // Abort publication if Core can no longer discover or safely chain its tools.
 import "./tests/core-agent-routing.test.mjs";
+import "./tests/conversation-history.test.mjs";
 import "./tests/provider-orchestration.test.mjs";
 import "./tests/developer-api.test.mjs";
 import "./tests/cloudflare-whisper.test.mjs";

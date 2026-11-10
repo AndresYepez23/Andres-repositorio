@@ -192,7 +192,9 @@ body:not(.is-core-view) .metric-note{color:var(--muted)}
 /* 07. Prisma Core: conversation, history, top actions and composer.
    Size, scroll, keyboard and PWA safe-area rules stay untouched. */
 body.is-core-view .core-message.assistant{
- background:var(--aurora-surface);border-color:var(--line-strong);
+ background:transparent;
+ border:0;
+ box-shadow:none;
 }
 body.is-core-view .core-message.user{
  background:color-mix(in srgb,var(--aurora-blue) 10%,var(--panel-2));
