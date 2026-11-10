@@ -53,6 +53,18 @@ export function setPrismaCoreViewActive(active){
   syncWelcomeGrid();
 }
 let attachments = [];
+export function getPrismaCoreAttachments(){return attachments.slice();}
+export async function getPrismaCoreExecutionContext(){
+  try{
+    const status=await getCentralProviderStatus();
+    centralProviders=status.providers||centralProviders;
+    centralFeatures=status.features||centralFeatures;
+    centralModelCatalog=status.modelCatalog||centralModelCatalog;
+  }catch(error){
+    console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);
+  }
+  return credentials();
+}
 let pendingPlan = null;
 let busy = false;
 let executionActive = false;
