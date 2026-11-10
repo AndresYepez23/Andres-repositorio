@@ -957,7 +957,8 @@ async function generateText(p,cb){
    }
    if(stopInferenceFallback(error))
     throw Error('Prisma detuvo los respaldos porque la solicitud es inválida o no está autorizada. '+detail);
-   if(error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT')lastLimitError=error;
+   if(error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT'||
+      error?.code==='PROVIDER_COOLDOWN'&&[402,429].includes(Number(error?.status)))lastLimitError=error;
    if(attempted.length<candidates.length)progress(cb,.22,'No se pudo utilizar '+providerNames[provider]+'. Buscando un motor alternativo…');
   }
  }

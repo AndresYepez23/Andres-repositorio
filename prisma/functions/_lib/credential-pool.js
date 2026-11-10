@@ -199,8 +199,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   const providerHold = await getProviderHold(env, provider);
   if (providerHold) {
     const error = new Error(providerHold.reason || "El proveedor está temporalmente en pausa.");
-    error.code = providerHold.state === "quota_exhausted" || providerHold.state === "rate_limited"
-      ? "PROVIDER_LIMIT" : "PROVIDER_COOLDOWN";
+    error.code = "PROVIDER_COOLDOWN";
     error.status = providerHold.state === "quota_exhausted" ? 402
       : providerHold.state === "rate_limited" ? 429 : 503;
     error.retryAfter = Math.max(1, Number(providerHold.valid_until || 0) - Math.floor(Date.now() / 1000));
