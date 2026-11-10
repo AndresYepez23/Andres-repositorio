@@ -6,6 +6,9 @@ import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
+import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHtml } from '../src/core-intent.js';
+import { validateAgentStepResult } from '../src/core-agent-guard.js';
+import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from '../src/core-context.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage, readInferenceUsage, INFERENCE_USAGE_KEY } from '../src/core-economy.js';
 import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
@@ -563,5 +566,54 @@ assert.match(economyCore,/asksAboutPrisma/,'Provider catalog must not be sent wi
 const economyMain=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 assert.match(economyMain,/readInferenceUsage\(\)/);
 assert.match(economyMain,/tokens reportados/);
+
+
+// Prisma Core 5: distinguish what Core CAN do from an instruction to do it.
+const pendingWeb={started:Date.now()};
+assert.equal(routeWebsiteRequest('¿Puedes hacer una página web?')?.type,'ask');
+assert.equal(routeWebsiteRequest('¿Puedes hacer una web?')?.type,'ask');
+assert.equal(routeWebsiteRequest('Hazme una página web')?.type,'ask');
+assert.equal(routeWebsiteRequest('Necesito una web para mi negocio')?.type,'ask');
+assert.equal(routeWebsiteRequest('¿Puedes hacer una página web para un consultorio odontológico?')?.type,'build');
+assert.equal(routeWebsiteRequest('Quiero una landing para vender zapatos')?.type,'build');
+assert.equal(routeWebsiteRequest('Una tienda de ropa',pendingWeb)?.type,'build');
+assert.equal(routeWebsiteRequest('Cancelar',pendingWeb)?.type,'cancel');
+assert.equal(routeWebsiteRequest('Hola, ¿qué es HTML?',pendingWeb)?.type,'abandon');
+assert.equal(routeWebsiteRequest('Quiero una imagen',pendingWeb)?.type,'abandon');
+assert.equal(routeWebsiteRequest('Quiero una imagen para mi web'),null);
+assert.equal(routeWebsiteRequest('¿Cuánto cuesta una página web?'),null);
+assert.equal(routeWebsiteRequest('¿Cómo hacer una página web?'),null);
+assert.equal(routeWebsiteRequest('Haz una web para un museo',null,true),null,'An attached file is never silently ignored');
+assert.match(resolveGeneralCapabilityQuestion('¿Puedes hacer una canción?'),/tema/);
+assert.match(resolveGeneralCapabilityQuestion('¿Puedes hacer una imagen?'),/Qué quieres/);
+assert.equal(resolveGeneralCapabilityQuestion('Crea una canción sobre esperanza'),null,
+ 'A clear creation request must not be mistaken for a general capability question');
+assert.match(resolvePrismaProductQuestion('¿Tienes memoria?'),/historial reciente en este navegador/);
+assert.match(resolvePrismaProductQuestion('¿Qué recuerdas de mí?'),/esta conversación activa/);
+assert.ok(!resolvePrismaProductQuestion('¿Tienes memoria?').includes('No guardo información una vez que la sesión termina'));
+const webHTML='<!DOCTYPE html><html lang="es"><head><title>Prueba</title></head><body><h1>Hola</h1></body></html>';
+assert.equal(extractWebsiteHtml(webHTML),webHTML);
+const tripleBacktick=String.fromCharCode(96).repeat(3);
+assert.equal(extractWebsiteHtml(tripleBacktick+'html\n'+webHTML+'\n'+tripleBacktick),webHTML);
+assert.throws(()=>extractWebsiteHtml('Aquí tienes: <h1>Hola</h1>'),/HTML completo/);
+assert.throws(()=>extractWebsiteHtml('<html><head></head><body>Sin cierre'),/incompleto/);
+assert.throws(()=>extractWebsiteHtml('<html><head></head><body><iframe src="https://example.com"></iframe></body></html>'),/externo/);
+assert.throws(()=>extractWebsiteHtml('<html><head></head><body><script src="https://example.com/x.js"></script></body></html>'),/externo/);
+assert.equal(registered.filter(tool=>tool.id==='ai-webpage').length,1,'A real website tool must exist in the registry');
+assert.equal(router.coreToolCatalog().find(tool=>tool.id==='ai-webpage')?.status,'beta');
+assert.match(coreSource,/handleWebsiteConversation\(userText\)/,'Capability route missing in Core');
+assert.match(coreSource,/websiteBrief:chat\.websiteBrief/,'Website context must survive page reload in this browser');
+assert.match(coreSource,/routeWebsiteRequest\(/);
+assert.match(coreSource,/validateAgentStepResult\(tool\.id,result\)/,'Agent must validate each tool output');
+assert.match(coreSource,/sandbox.{0,3}allow-scripts/,'HTML preview must be sandboxed');
+assert.doesNotMatch(coreSource,/sandbox.{0,3}allow-same-origin/,'Never grant generated HTML same-origin access');
+const enginesWebsite=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(enginesWebsite,/if\(id==='ai-webpage'\)return generateWebsite\(p,cb\)/);
+assert.match(enginesWebsite,/extractWebsiteHtml\(response\.text\)/);
+assert.throws(()=>validateAgentStepResult('ai-assistant',{}),/no devolvió contenido/);
+assert.throws(()=>validateAgentStepResult('ai-webpage',{}),/archivo esperado/);
+assert.throws(()=>validateAgentStepResult('image-gen',{text:'I created a photo'}),/archivo esperado/);
+assert.equal(validateAgentStepResult('ai-webpage',{blob:new Blob([webHTML],{type:'text/html'})}).blob.size>0,true);
+assert.equal(validateAgentStepResult('ai-assistant',{text:'Respuesta real'}).text,'Respuesta real');
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
