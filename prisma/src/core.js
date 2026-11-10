@@ -13,13 +13,14 @@ import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conv
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
 import { findConversations } from './conversation-search.js';
+import { mergeConversationLists, serializeConversation } from './conversation-sync.js';
+import { readConversationSnapshot, saveConversationSnapshot, clearConversationSnapshot } from './conversation-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
 const CHATS_KEY = 'prisma-core-chats-v2';
-const MAX_CHATS = 50;
 let conversations = [];
 let activeConversationId = '';
 let conversationSearch = '';
@@ -61,8 +62,8 @@ function escapeHtml(value){
 }
 function save(){
   try{
-    const serializable=messages.slice(-60).map(message=>{
-      const item={role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,id:message.id||'',feedback:message.feedback||''};
+    const serializable=messages.map(message=>{
+      const item={role:message.role,content:String(message.content||''),time:message.time,id:message.id||'',feedback:message.feedback||''};
       if(message.engine)item.engine=message.engine;
       if(message.model)item.model=message.model;
       if(message.fallbackFrom)item.fallbackFrom=message.fallbackFrom;
@@ -73,10 +74,10 @@ function save(){
         name:entry.name,
         reason:entry.reason,
         result:{
-          summary:String(entry.result?.summary||'').slice(0,500),
-          text:typeof entry.result?.text==='string'?entry.result.text.slice(0,8000):'',
+          summary:String(entry.result?.summary||''),
+          text:typeof entry.result?.text==='string'?entry.result.text:'',
           filename:String(entry.result?.filename||''),
-          html:typeof entry.result?.html==='string'?entry.result.html.slice(0,8000):'',
+          html:typeof entry.result?.html==='string'?entry.result.html:'',
           hasFile:!!(entry.result?.blob||entry.result?.hasFile)
         }
       }));
@@ -84,7 +85,7 @@ function save(){
     });
     const active=conversations.find(chat=>chat.id===activeConversationId);
     if(active){
-      active.messages=messages.slice(-60);
+      active.messages=messages.slice();
       active.updated=Date.now();
       const first=messages.find(message=>message.role==='user'&&message.content.trim());
       if(first&&(!active.titled||active.title==='Nueva conversación')){
@@ -103,50 +104,54 @@ function newChatRecord(content=[]){
    titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false};
 }
 function persistChatHistory(activeSerialized=null){
- try{
-  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,MAX_CHATS).map(chat=>({
-   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,websiteBrief:chat.websiteBrief||null,pinned:!!chat.pinned,
-   messages:chat.id===activeConversationId&&activeSerialized
-    ?activeSerialized:chat.messages.slice(-60).map(message=>({
-     id:message.id||'',role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,
-     engine:message.engine,model:message.model,fallbackFrom:message.fallbackFrom,
-     feedback:message.feedback||'',files:message.files?.slice(0,8),
-     results:message.results?.map(entry=>({name:entry.name,reason:entry.reason,
-      result:{summary:String(entry.result?.summary||'').slice(0,500),
-       text:String(entry.result?.text||'').slice(0,6000),filename:entry.result?.filename||'',
-       hasFile:!!(entry.result?.blob||entry.result?.hasFile)}}))
-    }))
-  }));
-  localStorage.setItem(CHATS_KEY,JSON.stringify(records));
-  document.dispatchEvent(new Event('prisma:chats-changed'));
- }catch(error){
-  // Browser storage may be full. Retain the active chat and discard oldest
-  // persisted chats before retrying; never silently discard the active thread.
-  try{
-   const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,12).map(chat=>({
-     id:chat.id,title:chat.title,titled:chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,
-     messages:chat.messages.slice(-20).map(m=>({id:m.id,role:m.role,content:String(m.content||'').slice(0,9000),time:m.time,engine:m.engine,model:m.model,feedback:m.feedback}))
-   }));
-   localStorage.setItem(CHATS_KEY,JSON.stringify(records));
-  }catch{}
+ const records=conversations.slice().sort((a,b)=>b.updated-a.updated).map(chat=>serializeConversation({
+  ...chat,
+  messages:chat.id===activeConversationId&&activeSerialized?activeSerialized:chat.messages
+ })).filter(Boolean);
+ try{localStorage.setItem(CHATS_KEY,JSON.stringify(records));}
+ catch(error){
+  console.warn('Prisma: el historial supera la capacidad de localStorage; se conservará en IndexedDB.',error?.message||error);
+  document.dispatchEvent(new Event('prisma:history-storage-warning'));
  }
+ saveConversationSnapshot(records).catch(error=>{
+  console.error('Prisma: no se pudo guardar la copia local completa en IndexedDB.',error?.message||error);
+  document.dispatchEvent(new Event('prisma:history-storage-error'));
+ });
+ document.dispatchEvent(new Event('prisma:chats-changed'));
 }
 function loadChatHistory(){
  let stored=[];
  try{
   const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
-  if(Array.isArray(records))stored=records.filter(chat=>chat&&typeof chat.id==='string'&&Array.isArray(chat.messages))
-    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null,websiteBrief:chat.websiteBrief||null,pinned:!!chat.pinned}));
- }catch{}
+  if(Array.isArray(records))stored=records.map(serializeConversation).filter(Boolean);
+ }catch(error){console.warn('Prisma: no se pudo leer el historial rápido local.',error?.message||error);}
  if(!stored.length){
-  let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old.slice(-60);}catch{}
+  let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old;}catch{}
   stored=[newChatRecord(legacy)];
  }
  conversations=stored;
  conversations.sort((a,b)=>b.updated-a.updated);
- activeConversationId=conversations[0].id;
- messages=conversations[0].messages.slice();
+ activeConversationId=conversations[0]?.id||'';
+ messages=conversations[0]?.messages?.slice()||[];
  renderConversationList();
+}
+async function restoreIndexedHistory(){
+ try{
+  const indexed=await readConversationSnapshot();
+  if(!Array.isArray(indexed)||!indexed.length)return;
+  const merged=mergeConversationLists(conversations,indexed);
+  if(!merged.length)return;
+  conversations=merged;
+  const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
+  activeConversationId=active.id;
+  messages=active.messages.slice();
+  try{localStorage.setItem(CHATS_KEY,JSON.stringify(conversations));}catch{}
+  saveConversationSnapshot(conversations).catch(error=>console.warn('Prisma IndexedDB snapshot:',error?.message||error));
+  renderConversationList();
+  renderMessages({forceBottom:true});
+  updateChatScreen();
+  document.dispatchEvent(new Event('prisma:local-history-restored'));
+ }catch(error){console.warn('Prisma: no se pudo restaurar IndexedDB.',error?.message||error);}
 }
 function renderConversationSearch(){
  const results=$('#conversation-search-results');
@@ -255,7 +260,7 @@ function startNewConversation(){
 function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';}
 function addMessage(role,content,extra={}){
   messages.push({id:'m-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),role,content:String(content||''),time:Date.now(),...extra});
-  messages=messages.slice(-60);save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
+  save();renderMessages({forceBottom:role==='user'});renderConversationList();updateChatScreen();
   document.dispatchEvent(new CustomEvent('prisma:core-message',{detail:{role,content:String(content||'')}}));
 }
 function speechSynthesisStop(){
@@ -1782,11 +1787,20 @@ export function initPrismaCore(){
   initImageEditor();
   initPrismaVoice();
   loadChatHistory();
+  window.__prismaHistoryReady=restoreIndexedHistory();
   renderMessages({forceBottom:true});updateChatScreen();
   document.addEventListener('prisma:core-export-request',exportActiveChat);
   document.addEventListener('prisma:core-rename-request',renameActiveChat);
   document.addEventListener('prisma:core-delete-request',deleteActiveChat);
-  document.addEventListener('prisma:remote-chats-ready',()=>{if(busy||executionActive)return;loadChatHistory();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();});
+  document.addEventListener('prisma:remote-chats-ready',()=>{
+    if(busy||executionActive)return;
+    loadChatHistory();
+    saveConversationSnapshot(conversations).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
+    userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
+  });
+  document.addEventListener('prisma:clear-local-history',()=>{
+    clearConversationSnapshot().catch(error=>console.warn('Prisma: no se pudo limpiar IndexedDB.',error?.message||error));
+  });
   $('#core-history-search')?.addEventListener('input',event=>{
     conversationSearch=String(event.target.value||'').toLocaleLowerCase('es').trim();
     renderConversationList();
