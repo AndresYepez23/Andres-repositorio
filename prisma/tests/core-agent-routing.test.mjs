@@ -6,6 +6,7 @@ import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-rou
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { findConversations } from '../src/conversation-search.js';
+import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX } from '../src/sidebar-gestures.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
@@ -788,5 +789,35 @@ assert.match(videoEngineSource,/preferNativeVideoCompression/);
 assert.match(videoEngineSource,/blob\.size>=files\[0\]\.size/,'Do not report success for larger files');
 const videoMainSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 assert.match(videoMainSource,/case 'video-compress':return selectField/);
+
+
+// The user's iPhone recording: horizontal edge swipes should reveal Prisma's
+// drawer, while vertical swipes INSIDE it remain native inertial scrolling.
+assert.equal(SIDEBAR_EDGE_PX,44);
+assert.equal(classifySidebarSwipe({startX:8,startY:440,x:118,y:452,open:false}),'open');
+assert.equal(classifySidebarSwipe({startX:20,startY:200,x:26,y:315,open:false}),'vertical',
+ 'Vertical scroll from the edge must not open the drawer');
+assert.equal(classifySidebarSwipe({startX:100,startY:400,x:215,y:407,open:false}),'ignore',
+ 'Start outside the edge zone should not steal ordinary gestures');
+assert.equal(classifySidebarSwipe({startX:260,startY:300,x:130,y:309,open:true}),'close');
+assert.equal(classifySidebarSwipe({startX:200,startY:280,x:209,y:392,open:true}),'vertical');
+assert.equal(classifySidebarSwipe({startX:13,startY:100,x:22,y:106,open:false}),'pending');
+assert.equal(shouldCommitSidebarSwipe({distance:90,drawerWidth:320,elapsed:280}),true);
+assert.equal(shouldCommitSidebarSwipe({distance:50,drawerWidth:320,elapsed:70}),true,
+ 'Fast flicks should work without requiring a long drag');
+assert.equal(shouldCommitSidebarSwipe({distance:22,drawerWidth:320,elapsed:200}),false,
+ 'Small touches must not open the menu');
+const sidebarHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(sidebarHtml,/id="sidebar-scroll-region"/);
+assert.match(sidebarHtml,/sidebar-scroll-region[\\s\\S]*?<\\/div>\\s*<div class="sidebar-bottom"/,
+ 'Footer is outside the independently scrollable navigation area');
+assert.match(stylesSource,/\\.sidebar-scroll-region\\s*\\{/);
+assert.match(stylesSource,/-webkit-overflow-scrolling:touch/);
+assert.match(stylesSource,/touch-action:pan-y/);
+assert.match(stylesSource,/sidebar-backdrop\\.sidebar-gesture-preview/);
+assert.match(uiMain,/installMobileSidebarGestures\\(\\{sidebar,backdrop,menu\\}\\)/);
+const sidebarGesturesSource=readFileSync(new URL('../src/sidebar-gestures.js',import.meta.url),'utf8');
+assert.match(sidebarGesturesSource,/touchmove',move,\\{passive:false,capture:true\\}/);
+assert.match(sidebarGesturesSource,/intent==='vertical'/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
