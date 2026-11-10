@@ -2944,3 +2944,77 @@ body.is-core-view #core-messages.is-empty .core-examples button:focus-visible{ou
  body.is-core-view #core-messages.is-empty .core-welcome p{margin-bottom:10px}
 }
 @media(prefers-reduced-motion:reduce){body.is-core-view .core-prism-shape{animation:none}}
+
+/* Prisma Space Aurora: coherent, responsive Explore experience. */
+body:not(.is-core-view) .hero-section{
+ position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,.86fr);
+ align-items:center;gap:clamp(16px,4vw,56px);min-height:410px;
+ padding:clamp(34px,6vw,76px) clamp(18px,4vw,54px) 38px;
+ border:1px solid rgba(145,192,220,.12);border-radius:28px;
+ overflow:hidden;background:radial-gradient(ellipse 55% 75% at 78% 52%,rgba(54,136,183,.17),transparent 85%),
+ radial-gradient(ellipse 60% 80% at 90% 85%,rgba(134,100,200,.12),transparent 80%),
+ linear-gradient(145deg,#0d1523,#102638 53%,#201c36);
+}
+body:not(.is-core-view) .hero-section::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.38;background-image:radial-gradient(circle,rgba(144,207,227,.38) 1px,transparent 1.7px);background-size:24px 24px;mask-image:radial-gradient(ellipse at 76% 48%,#000,transparent 70%)}
+body:not(.is-core-view) .hero-copy{position:relative;z-index:2;min-width:0}
+body:not(.is-core-view) .hero-copy .eyebrow{color:#98ded7;font-size:clamp(9px,1vw,11px);letter-spacing:.15em}
+body:not(.is-core-view) .hero-copy h1{font-size:clamp(35px,4.5vw,65px);line-height:1.12;letter-spacing:-.06em;margin:20px 0 18px;color:#f4f5fa;text-wrap:balance}
+body:not(.is-core-view) .hero-copy h1 em{font-weight:750;background:linear-gradient(100deg,#8ce0d3,#83bce9 52%,#b8a3f0);background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+body:not(.is-core-view) .hero-description{color:#c0cadb;font-size:clamp(12px,1.25vw,15px);line-height:1.7;max-width:480px}
+body:not(.is-core-view) .hero-actions{gap:10px}
+body:not(.is-core-view) .hero-actions .button{border-radius:13px;min-height:45px;padding:10px 17px;font-size:12px}
+body:not(.is-core-view) .hero-actions .button-primary{background:linear-gradient(110deg,#8bd4ce,#a0e3d7);color:#12202c;border-color:transparent}
+body:not(.is-core-view) .hero-art{height:clamp(285px,32vw,400px);min-width:0;overflow:visible}
+body:not(.is-core-view) .hero-prism{width:min(85%,310px);height:auto;max-height:320px;filter:drop-shadow(0 0 32px rgba(108,187,229,.33))}
+body:not(.is-core-view) .prism-glow{width:290px;height:290px;background:radial-gradient(circle,rgba(105,193,222,.26),rgba(124,134,231,.12) 46%,transparent 72%)}
+body:not(.is-core-view) .orbit{border-color:rgba(169,191,232,.21)}
+body:not(.is-core-view) .hero-aurora-particles{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#9edfe7 1.4px,transparent 2px);background-size:23px 23px;opacity:.26;mask-image:radial-gradient(ellipse,#000,transparent 72%)}
+body:not(.is-core-view) .art-tag{border-color:rgba(165,197,225,.24);background:rgba(22,29,46,.82);color:#b6c7d7;border-radius:11px;font-size:9px;padding:9px 11px}
+body:not(.is-core-view) .metric-strip{margin-top:22px;padding:18px 4px 22px;gap:clamp(12px,3vw,30px)}
+body:not(.is-core-view) .metric strong{font-size:clamp(19px,2vw,26px)}
+body:not(.is-core-view) .home-dashboard{padding:36px 0 38px}
+body:not(.is-core-view) .home-dashboard-heading h2{font-size:clamp(22px,2.6vw,32px)}
+body:not(.is-core-view) .workflow-hub{border-radius:20px}
+body:not(.is-core-view) .workflow-card{min-height:76px;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--panel),color-mix(in srgb,var(--accent) 3%,var(--panel)))}
+body:not(.is-core-view) .workflow-card:focus-visible,body:not(.is-core-view) .goal-card:focus-visible,body:not(.is-core-view) .tool-card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+body:not(.is-core-view) .goal-card{border-radius:15px;min-height:118px;transition:transform .2s,border-color .2s}
+body:not(.is-core-view) .goal-card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 42%,var(--line))}
+body:not(.is-core-view) .home-panel{border-radius:18px}
+body:not(.is-core-view) .tools-section{padding-top:40px}
+body:not(.is-core-view) .tools-section .section-heading h2{font-size:clamp(23px,2.7vw,32px)}
+body:not(.is-core-view) .tool-card{border-radius:16px;min-height:170px}
+@media(max-width:850px){
+ body:not(.is-core-view) .hero-section{grid-template-columns:1fr;gap:0;padding:30px 22px 25px;min-height:0;border-radius:23px}
+ body:not(.is-core-view) .hero-copy{text-align:center}
+ body:not(.is-core-view) .hero-copy .eyebrow{justify-content:center}
+ body:not(.is-core-view) .hero-copy h1{font-size:clamp(34px,7vw,52px);margin:18px 0 13px}
+ body:not(.is-core-view) .hero-description{margin:0 auto 19px}
+ body:not(.is-core-view) .hero-actions{justify-content:center}
+ body:not(.is-core-view) .hero-art{height:280px;margin-top:12px}
+ body:not(.is-core-view) .hero-prism{width:245px}
+}
+@media(max-width:620px){
+ body:not(.is-core-view) .hero-section{padding:26px 14px 19px;border-radius:19px}
+ body:not(.is-core-view) .hero-copy h1{font-size:clamp(32px,9vw,43px);line-height:1.13}
+ body:not(.is-core-view) .hero-description{font-size:12px;line-height:1.6;max-width:330px}
+ body:not(.is-core-view) .hero-actions .button{min-height:43px;font-size:11px;flex:1 1 auto}
+ body:not(.is-core-view) .hero-art{height:248px;margin-top:8px}
+ body:not(.is-core-view) .hero-prism{width:230px}
+ body:not(.is-core-view) .art-tag{font-size:7px;padding:7px 8px}
+ body:not(.is-core-view) .metric-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}
+ body:not(.is-core-view) .metric{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+ body:not(.is-core-view) .metric span{font-size:9px;line-height:1.35}
+ body:not(.is-core-view) .metric-divider{display:none}
+ body:not(.is-core-view) .metric-note{grid-column:1/-1;margin:0}
+ body:not(.is-core-view) .home-dashboard{padding:26px 0}
+ body:not(.is-core-view) .workflow-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body:not(.is-core-view) .workflow-card{padding:11px;min-height:80px;align-items:flex-start}
+ body:not(.is-core-view) .workflow-card-copy strong{font-size:10px}
+ body:not(.is-core-view) .workflow-card-copy small{font-size:9px}
+ body:not(.is-core-view) .home-goals{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body:not(.is-core-view) .goal-card{min-height:104px}
+ body:not(.is-core-view) .tool-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body:not(.is-core-view) .tool-card{padding:12px;min-height:152px}
+}
+@media(max-width:370px){body:not(.is-core-view) .workflow-grid,body:not(.is-core-view) .tool-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){body:not(.is-core-view) .hero-art *,body:not(.is-core-view) .goal-card,body:not(.is-core-view) .workflow-card{animation:none!important;transition:none!important}}
