@@ -104,7 +104,7 @@ function knowledgeAnswer(topic, mode='both'){
  return '**'+topic.toUpperCase()+'**: '+item.definition+'\n\n**En la práctica:** '+item.application;
 }
 function knownTopicIn(text){
- const q=' '+fold(text).replace(/[^\\p{L}\\p{N}]+/gu,' ').trim()+' ';
+ const q=' '+fold(text).replace(/[^\p{L}\p{N}]+/gu,' ').trim()+' ';
  // Longer glossary terms win (API key before API), with exact word boundaries.
  return [...GLOSSARY.keys()].sort((a,b)=>b.length-a.length).find(key=>q.includes(' '+key+' '))||'';
 }
