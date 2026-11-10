@@ -1,6 +1,6 @@
-// Prisma Core welcome ambient: a lightweight interactive halftone/dot matrix.
+// Prisma Core ambient: a lightweight interactive halftone/dot matrix.
 // Purely decorative: no external services, WebGL, tracking or layout shifts.
-// Runs only while the empty-chat welcome screen is visible.
+// Mounted once on the complete chat column and kept behind messages and composer.
 const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
 
 export function mountCoreWelcomeGrid(container){
