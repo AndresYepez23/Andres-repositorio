@@ -68,6 +68,16 @@ assert.ok(router.describeCoreTools('herramientas para editar un video', video).i
 
 // Validate typed tool handoffs: never pass a ZIP to PDF/image editing.
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+const generatedFileStorageSource=readFileSync(new URL('../src/core-result-storage.js',import.meta.url),'utf8');
+assert.match(generatedFileStorageSource,/indexedDB\.open\(DB_NAME, 1\)/,'Generated videos must be retained in a dedicated IndexedDB store');
+assert.match(generatedFileStorageSource,/files\.createIndex\('chatId'/,'Results must be associated with their conversation for cleanup');
+assert.match(generatedFileStorageSource,/blob\s*\n\s*\}\)/,'Generated file storage must preserve binary Blob bytes');
+assert.match(coreSource,/fileKey:String\(entry\.result\?\.fileKey\|\|''\)/,'Saved chats must retain a generated file lookup key');
+assert.match(coreSource,/await persistGeneratedResults\(visibleResults\)/,'Generated files must be stored before success is reported');
+assert.match(coreSource,/loadGeneratedFile\(result\.fileKey\)/,'History must restore downloadable binaries after a reload or remote sync');
+assert.match(coreSource,/document\.body\.appendChild\(a\);a\.click\(\);a\.remove\(\)/,'Downloads must use a DOM-connected anchor for mobile browsers');
+assert.match(coreSource,/navigator\.share\(\{files:\[nativeFile\]\}\)/,'Mobile users should have a native save/share fallback');
+assert.match(coreSource,/clearGeneratedFiles\(\)/,'Clearing local history must also clear locally generated files');
 const stylesSource=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
 
 // A short compliment about a previous song is a conversational turn, not a
