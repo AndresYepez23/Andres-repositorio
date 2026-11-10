@@ -1,5 +1,6 @@
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
+import { extractWebsiteHtml } from './core-intent.js';
 import { selectImageCandidates, imageFailureDecision } from './image-routing.js';
 import { runAdvancedTextTool } from './advanced-text-tools.js';
 import { LOCAL_CREATOR_TOOL_IDS, runLocalCreatorTool } from './local-creator-tools.js';
@@ -798,7 +799,9 @@ async function generateText(p,cb){
   while(history.length&&history[0].role!=='user')history.shift();
   const conversationMessages=[{role:'system',content:system},...history,{role:'user',content:user}];
  const lengths={short:500,medium:1600,long:tier==='smart'?3200:2400};
- const outputTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
+ const standardTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
+ // Only deliberate artifact creation may request an expanded bounded budget.
+ const outputTokens=p.outputTokenBudget?Math.max(1000,Math.min(4400,Number(p.outputTokenBudget)||standardTokens)):standardTokens;
  const preferred=p.provider||'auto';
  const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
@@ -1442,6 +1445,30 @@ async function runSpecializedTextTool(id,p,cb){
  return {...result,summary:spec.label+' · '+(result?.provider||'motor de IA')+'.'};
 }
 
+// Generate one actual downloadable artifact, not an unsolicited snippet or a
+// misleading claim of website hosting. HTML is validated before user delivery.
+async function generateWebsite(p,cb){
+ const brief=String(p.prompt||p.text||'').trim();
+ if(brief.length<8)throw Error('Describe el objetivo de la página antes de generarla.');
+ const instruction=[
+  'Eres un desarrollador frontend. Produce exactamente UN documento HTML5 completo, desde <!DOCTYPE html> hasta </html>, sin Markdown, sin texto antes o después.',
+  'Diseña un sitio web profesional, moderno, en español y responsive para móviles, tabletas y PC. Interfaz clara, alto contraste accesible y navegación funcional.',
+  'Incluye CSS y JavaScript dentro del propio HTML; no uses bibliotecas, fonts, imágenes, scripts, iframes o CDNs externos. Puedes usar degradados, SVG inline y placeholders claramente etiquetados.',
+  'Si no proporcionan marca, imágenes, datos de contacto, precios o políticas, usa textos de ejemplo identificables y evita inventar datos reales.',
+  'Implementa únicamente funciones que puedan funcionar en un HTML estático; no simules login real, checkout, envíos, almacenamiento seguro ni base de datos. Marca como demostración cualquier sección que precise backend.',
+  'Crea secciones coherentes con el propósito, menú adaptable, CTA usable, estados visibles si hay botones interactivos. No agregues elementos que no sean pertinentes.',
+  'La web NO se publicará aquí; entrega solo el código fuente independiente.',
+  'SOLICITUD DEL USUARIO:',
+  brief
+ ].join('\n');
+ const response=await generateText({...p,prompt:instruction,context:'',contextMessages:[],
+  task:'coding',reasoning:'smart',length:'long',outputTokenBudget:4200},cb);
+ const html=extractWebsiteHtml(response.text);
+ const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+ return {...response,text:'',blob,filename:'prisma-sitio-web.html',previewHtml:html,
+  summary:'Página web HTML preparada y validada. Descarga el archivo para abrirlo en tu navegador. Todavía no está publicada en Internet.'};
+}
+
 export async function runTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(LOCAL_CREATOR_TOOL_IDS.includes(id))return runLocalCreatorTool(id,p);
@@ -1479,6 +1506,7 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='excel-json')return excelToJson(files[0],p,cb);
  if(id==='audio-waveform')return audioWaveform(files[0],p,cb);
  if(id==='audio-convert'||id==='audio-normalize')return runVideo(id,files,p,cb);
+ if(id==='ai-webpage')return generateWebsite(p,cb);
  if(SPECIALIZED_TEXT_TOOLS[id])return runSpecializedTextTool(id,p,cb);
  if(id==='ai-assistant')return generateText(p,cb);
  if(id==='music-lyrics')return generateText({...p,task:'songwriting',prompt:'Responde a la solicitud musical actual y utiliza el contexto anterior de esta conversación. Si pide crear, compón una canción original completa. Si pide corregir, acortar, ampliar o cambiar una parte, revisa la canción previa sin inventar otra distinta. No copies letras existentes ni imites exactamente a un artista. No afirmes haber generado audio.\n\nSolicitud: '+String(p.prompt||p.text||''),tone:'creative',reasoning:p.reasoning||'smart',length:'long'},cb);

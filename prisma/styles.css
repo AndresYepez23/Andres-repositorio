@@ -1960,3 +1960,9 @@ body.is-core-view #core-thinking {
     width: 100%;
   }
 }
+
+/* Core 5: constrained previews of locally downloaded website artifacts. */
+.core-website-preview{width:100%;margin:10px 0 12px;overflow:hidden;border:1px solid var(--border,rgba(90,103,129,.25));border-radius:14px;background:#fff}
+.core-website-frame{display:block;width:100%;height:min(56vh,520px);min-height:280px;border:0;background:#fff}
+.core-website-preview.hidden{display:none!important}
+@media(max-width:640px){.core-website-frame{height:410px;min-height:320px}.core-website-preview{border-radius:10px}}

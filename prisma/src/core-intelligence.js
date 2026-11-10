@@ -20,6 +20,15 @@ export function resolvePrismaProductQuestion(text,history=[],providers={}){
  const q=fold(text).replace(/[¿?¡!.,;:]/g,' ').replace(/\s+/g,' ').trim();
  const earlier=lastTopic(history);
  if(!q)return null;
+ // Real implementation: Core restores previous chat messages from localStorage,
+ // keeps up to 50 conversations and up to 60 messages each (storage permitting).
+ // It supplies only the active conversation to the model, not every chat.
+ if(/^(?:tienes memoria|tienes buena memoria|tienes memoria de (?:lo que hablamos|nuestras conversaciones|este chat)|guardas (?:lo que hablamos|las conversaciones|mis mensajes)|recuerdas (?:lo que hablamos|lo de ayer|mis conversaciones)|puedes recordar (?:lo que te digo|lo que hablamos)|que (?:memoria|recuerdas) tienes|como funciona tu memoria)$/.test(q)){
+  return 'Sí, tengo **memoria de conversación**: sigo el hilo del chat que tienes abierto, y Prisma guarda el historial reciente en este navegador para que puedas volver a abrirlo incluso después de cerrar la pestaña. Se conservan hasta 50 conversaciones y los últimos 60 mensajes de cada una, sujeto al espacio disponible. **No es una memoria personal ilimitada** ni consulto automáticamente todos tus otros chats; tampoco puedo garantizar sincronización entre dispositivos. Si borras los datos del navegador, puedes perder ese historial.';
+ }
+ if(/^(?:que recuerdas de mi|que sabes de mi|te acuerdas de mi|recuerdas algo sobre mi)$/.test(q)){
+  return 'Puedo usar lo que aparece en esta conversación activa y sus mensajes recientes. El historial de otros chats que ves en Prisma no se incorpora automáticamente a mis respuestas. Si me indicas un dato de este chat, puedo retomarlo contigo; no afirmaré recordar información que no tengo disponible.';
+ }
  // Questions about the identity / models of THIS application are product facts.
  const queryModels=/\b(modelos?|motores?|gemini|groq|openrouter|gpt ?[3456]|chatgpt|openai|claude|llama)\b/.test(q);
  const localIdentity=/^(eres una (?:inteligencia|ia|inteligente)|eres ia|eres un (?:robot|chatbot)|quien eres|que eres|tu quien eres)\??$/.test(q);
