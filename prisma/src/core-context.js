@@ -30,6 +30,10 @@ export function buildConversationContext(history = [], query = '', options = {})
   if (!entries.length) return [];
 
   const recentCount = Math.min(entries.length, 9);
+  // When asked to revise a previous draft, retain the actual previous output
+  // instead of silently truncating the lyrics, code or text to 1,900 chars.
+  const revision=/\b(?:cambia|corrige|reescribe|revisa|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|el anterior|la anterior|esa cancion|ese texto|ese codigo|el coro|la estrofa|la respuesta)\b/.test(fold(query));
+  const previousAssistantIndex=revision?entries.findLastIndex(item=>item.role==='assistant'):-1;
   const recentStart = entries.length - recentCount;
   const selected = new Set(entries.map((_, index) => index).slice(recentStart));
   const words = keywords(query);
@@ -57,7 +61,7 @@ export function buildConversationContext(history = [], query = '', options = {})
   for (const index of chosen) {
     if (result.length >= limit || remaining < 120) break;
     const recent = index >= recentStart;
-    const cap = recent ? 1900 : 1200;
+    const cap = index===previousAssistantIndex ? 6500 : recent ? (entries[index].role==='user' ? 1900 : 1450) : 1200;
     const content = entries[index].content.slice(0, Math.min(cap, remaining));
     if (content) {
       result.push({ index, role: entries[index].role, content });
@@ -66,6 +70,23 @@ export function buildConversationContext(history = [], query = '', options = {})
   }
   return result.sort((a, b) => a.index - b.index)
     .map(({ role, content }) => ({ role, content }));
+}
+
+
+/**
+ * Adapt conversation history to the user's actual task. Short, independent
+ * questions do not need thirteen old messages sent to an external model.
+ * Explicit revisions keep sufficient budget for the previous artifact.
+ */
+export function chooseCoreContextOptions(task='conversation',text=''){
+ const q=fold(text).replace(/^[¿?¡!\\s]+/,'').trim();
+ const revision=/\\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\\b/.test(q);
+ const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\\b/.test(q);
+ if(revision||task==='songwriting'&&/\\b(?:revisa|cambia|edita|corrige|version)\\b/.test(q))
+  return {maxMessages:13,maxChars:14500};
+ if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500};
+ if(['coding','reasoning'].includes(task))return {maxMessages:11,maxChars:11500};
+ return {maxMessages:8,maxChars:7500};
 }
 
 export function chooseCoreReasoning(task = 'conversation', text = '') {
