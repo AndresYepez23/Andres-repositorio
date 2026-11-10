@@ -201,12 +201,14 @@ const welcomeGridSource=readFileSync(new URL('../src/core-welcome-grid.js',impor
 assert.match(coreSource,/Cuéntame qué necesitas o adjunta un archivo\. Prisma organiza el resto\./,'Welcome helper copy must stay concise and explain the assistant flow');
 assert.match(stylesSource,/max-width:680px;\s*margin:0 auto 17px;\s*color:color-mix\(in srgb,var\(--text\) 76%,var\(--accent\) 24%\);\s*font-weight:500;\s*line-height:1\.5/,'Welcome helper copy must be more readable without increasing its footprint');
 assert.match(stylesSource,/body\.is-core-view \.core-welcome p\{\s*margin-bottom:14px;\s*line-height:1\.45;/,'Mobile welcome helper copy must remain compact');
-assert.match(coreSource,/const chatSurface=document\.querySelector\('\.main-area'\)\|\|document\.getElementById\('page-content'\)\|\|list;\s*disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\)/,'The reactive dot matrix must be mounted on the full main area');
+assert.match(coreSource,/const shouldMount=coreViewActive&&messages\.length===0/,'The reactive dot matrix must run only for an empty, active Core view');
+assert.match(coreSource,/export function setPrismaCoreViewActive\(active\)/,'Core must expose its view lifecycle to the app shell');
 assert.match(coreSource,/list\.classList\.toggle\('is-empty',messages\.length===0\)/,'Core must mark its empty state for dedicated scroll behavior');
 assert.match(welcomeGridSource,/container\.append\(layer\)/,'The ambient canvas must be attached to the full chat viewport container');
-assert.match(welcomeGridSource,/dotsDesktop=15,dotsTablet=17,dotsMobile=18/,'Dot density must be increased consistently across desktop, tablet and mobile');
+assert.match(welcomeGridSource,/dotsDesktop=17,dotsTablet=18,dotsMobile=20/,'Dot density must stay within the optimized desktop, tablet and mobile budget');
 assert.match(welcomeGridSource,/width<=580\?dotsMobile:width<=900\?dotsTablet:dotsDesktop/,'Dot spacing must adapt to viewport width');
-assert.match(coreSource,/if\(!messages\.length\)\{\s*if\(!disposeWelcomeGrid\)\{[\s\S]*?disposeWelcomeGrid=mountCoreWelcomeGrid\(chatSurface\);\s*\}\s*\}else if\(disposeWelcomeGrid\)\{\s*disposeWelcomeGrid\(\);\s*disposeWelcomeGrid=null;\s*\}/,'The full-width matrix must be mounted only on empty chats and disposed after the first message');
+assert.match(coreSource,/if\(!shouldMount&&disposeWelcomeGrid\)\{\s*disposeWelcomeGrid\(\);\s*disposeWelcomeGrid=null;\s*\}/,'The full-width matrix must be disposed after the first message or when Core is hidden');
+assert.match(coreSource,/syncWelcomeGrid\(\);/,'Message rendering must synchronize the welcome ambience with chat state');
 assert.match(coreSource,/if\(!messages\.length\)/,'The welcome content must remain restricted to the empty chat state');
 assert.match(welcomeGridSource,/pointermove/,'Desktop cursor must illuminate nearby dots');
 assert.match(welcomeGridSource,/pointerleave/,'Cursor reaction must fade on exit');
