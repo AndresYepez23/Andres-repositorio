@@ -220,6 +220,9 @@ assert.match(stylesSource,/body\.is-core-view \.main-area > \.topbar\{\s*positio
 assert.match(stylesSource,/body\.is-core-view \.main-area > #page-content\{\s*position:relative!important;\s*z-index:1!important;/,'Chat content must remain above the full-width animated background');
 assert.match(stylesSource,/body\.is-core-view #core-section,[\s\S]*?background-color:transparent!important;/,'Core sections must not obscure the full-width background');
 assert.match(auroraSource,/:root\[data-theme="light"\] body\.is-core-view \.main-area > \.core-welcome-ambient/,'Full-width background must also be styled in light mode');
+assert.match(stylesSource,/@media \(min-width:851px\) and \(pointer:fine\)\{\s*body\.is-core-view \.core-prism-scene\{\s*height:clamp\(132px,18vh,154px\);\s*margin:4px auto 24px;\s*display:flex;\s*align-items:flex-start;\s*justify-content:center;\s*flex:0 0 auto;/,'Desktop welcome prism must be compact and separated from the title');
+assert.match(stylesSource,/body\.is-core-view \.core-prism-svg\{\s*display:block;\s*width:min\(100%,232px\);\s*height:100%;\s*flex:0 0 auto;/,'Desktop prism artwork must be smaller without distortion');
+assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty \.core-welcome h2\{\s*margin:0 auto 12px;/,'Desktop welcome heading must begin below the compact prism');
 assert.match(stylesSource,/pointer-events:none/,'Welcome background must not intercept taps');
 
 // A short compliment about a previous song is a conversational turn, not a

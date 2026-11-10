@@ -3069,3 +3069,26 @@ body.is-core-view #core-messages{
 @media(prefers-reduced-motion:reduce){
   body.is-core-view .main-area > .core-welcome-ambient{animation:none!important}
 }
+
+
+/* Prisma Core desktop welcome: keep the prism clear of the headline.
+   Pointer-fine desktop only; tablet, mobile and PWA layouts remain unchanged. */
+@media (min-width:851px) and (pointer:fine){
+ body.is-core-view .core-prism-scene{
+  height:clamp(132px,18vh,154px);
+  margin:4px auto 24px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  flex:0 0 auto;
+ }
+ body.is-core-view .core-prism-svg{
+  display:block;
+  width:min(100%,232px);
+  height:100%;
+  flex:0 0 auto;
+ }
+ body.is-core-view #core-messages.is-empty .core-welcome h2{
+  margin:0 auto 12px;
+ }
+}
