@@ -82,7 +82,7 @@ export async function compressVideoNative(file,opts={},cb){
  // On iOS video decoding can pause when the element is display:none.
  video.style.cssText='position:fixed;left:-2px;top:-2px;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1';
  document.body.appendChild(video);
- let ctx=null,stream=null,recorder=null,frame=0,interval=0;
+ let ctx=null,stream=null,recorder=null,frame=0,interval=0,deadline=0;
  try{
   cb?.(.08,'Leyendo duración y resolución del vídeo…');
   if(video.readyState<1){
@@ -126,14 +126,19 @@ export async function compressVideoNative(file,opts={},cb){
    recorder.onerror=event=>reject(event.error||Error('Error del codificador de vídeo.'));
    recorder.onstop=()=>resolve();
   });
+  // Attach a rejection handler immediately: the recorder may fail before the
+  // video reaches its end and must never create an unhandled rejection.
+  recorded.catch(()=>{});
+  let rejectFrame;
+  const frameFailure=new Promise((_,reject)=>{rejectFrame=reject;});
   function paint(){
    if(video.readyState>=2){
     try{draw.drawImage(video,0,0,canvas.width,canvas.height);}
     catch(error){
      // Some WebKit builds prohibit drawing protected video frames. Preserve
      // the input file and reject rather than record a blank result.
-     if(recorder?.state==='recording')recorder.stop();
-     throw error;
+     rejectFrame(error);
+     return;
     }
    }
    frame=requestAnimationFrame(paint);
@@ -151,9 +156,9 @@ export async function compressVideoNative(file,opts={},cb){
   const finished=new Promise((resolve,reject)=>{
    video.addEventListener('ended',resolve,{once:true});
    video.addEventListener('error',()=>reject(Error('Se interrumpió la reproducción del vídeo.')),{once:true});
-   setTimeout(()=>reject(Error('La codificación excedió el tiempo de seguridad.')),Math.ceil(video.duration*1300)+20000);
+   deadline=setTimeout(()=>reject(Error('La codificación excedió el tiempo de seguridad.')),Math.ceil(video.duration*1300)+20000);
   });
-  await finished;
+  await Promise.race([finished,frameFailure,recorded.then(()=>{throw Error('La grabación se detuvo antes de completar el vídeo.');})]);
   if(recorder.state==='recording')recorder.stop();
   await recorded;
   const container=recorder.mimeType||mime;
@@ -161,6 +166,11 @@ export async function compressVideoNative(file,opts={},cb){
   const type=isMp4?'video/mp4':'video/webm';
   const blob=new Blob(pieces,{type});
   if(blob.size<1024)throw Error('La codificación no produjo un vídeo utilizable.');
+  const header=new Uint8Array(await blob.slice(0,16).arrayBuffer());
+  const mp4Signature=header.length>=8&&String.fromCharCode(...header.slice(4,8))==='ftyp';
+  const webmSignature=header.length>=4&&header[0]===0x1a&&header[1]===0x45&&header[2]===0xdf&&header[3]===0xa3;
+  if(isMp4&&!mp4Signature||!isMp4&&!webmSignature)
+   throw Error('El navegador informó un formato distinto al contenido grabado; se descartó el archivo incompatible.');
   if(blob.size>=file.size)throw Error('La nueva codificación no redujo el tamaño. Se conserva el archivo original sin presentarlo como comprimido.');
   cb?.(1,'Vídeo comprimido y listo para descargar.');
   const percent=Math.round((1-blob.size/file.size)*100);
@@ -170,6 +180,7 @@ export async function compressVideoNative(file,opts={},cb){
  finally{
   if(frame)cancelAnimationFrame(frame);
   if(interval)clearInterval(interval);
+  if(deadline)clearTimeout(deadline);
   if(recorder?.state==='recording'){try{recorder.stop();}catch{}}
   stream?.getTracks().forEach(track=>track.stop());
   video.pause();video.removeAttribute('src');video.load();video.remove();
