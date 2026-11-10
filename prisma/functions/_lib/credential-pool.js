@@ -125,6 +125,16 @@ async function credentialHealthKey(provider, slot) {
   const tag=Array.from(new Uint8Array(digest).slice(0,8),b=>b.toString(16).padStart(2,'0')).join('');
   return "credential-slot:" + provider + ":" + slot.number + ":" + tag;
 }
+export async function getHealthyCredentialCount(env,provider) {
+  const slots=getCredentialSlots(env,provider);
+  if (!env?.PRISMA_RATE_DB?.prepare) return slots.length;
+  const status=await Promise.all(slots.map(async slot=>{
+    const key=await credentialHealthKey(provider,slot);
+    return !(await getProviderHold(env,key));
+  }));
+  return status.filter(Boolean).length;
+}
+
 function retryHoldSeconds(status, headers) {
   if (status === 401 || status === 403) return 3600;
   if (status === 402) return 3600;
