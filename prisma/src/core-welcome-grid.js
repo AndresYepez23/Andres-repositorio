@@ -3,8 +3,8 @@
 // Runs only while the empty-chat welcome screen is visible.
 const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
 
-export function mountCoreWelcomeGrid(welcome){
- if(!welcome||typeof document==='undefined'||typeof window==='undefined')return ()=>{};
+export function mountCoreWelcomeGrid(container){
+ if(!container||typeof document==='undefined'||typeof window==='undefined')return ()=>{};
  const layer=document.createElement('div');
  layer.className='core-welcome-ambient';
  layer.setAttribute('aria-hidden','true');
@@ -12,7 +12,7 @@ export function mountCoreWelcomeGrid(welcome){
  canvas.className='core-welcome-dots';
  canvas.setAttribute('role','presentation');
  layer.append(canvas);
- welcome.prepend(layer);
+ container.append(layer);
  const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true});
  if(!ctx)return ()=>layer.remove();
 
@@ -24,7 +24,7 @@ export function mountCoreWelcomeGrid(welcome){
  let pointerX=-1000,pointerY=-1000,targetX=-1000,targetY=-1000;
  let strength=0,targetStrength=0,touchUntil=0;
  const nominalInterval=precise?1000/27:1000/22;
- const dotsDesktop=20,dotsMobile=23;
+ const dotsDesktop=15,dotsTablet=17,dotsMobile=18;
 
  function currentTheme(){
   return document.documentElement.dataset.theme==='light'?'light':'dark';
@@ -34,7 +34,7 @@ export function mountCoreWelcomeGrid(welcome){
   const bounds=layer.getBoundingClientRect();
   const nextWidth=Math.round(bounds.width),nextHeight=Math.round(bounds.height);
   if(nextWidth<5||nextHeight<5)return;
-  const nextRatio=Math.min(window.devicePixelRatio||1,1.7);
+  const nextRatio=Math.min(window.devicePixelRatio||1,1.5);
   if(width!==nextWidth||height!==nextHeight||ratio!==nextRatio){
    width=nextWidth;height=nextHeight;ratio=nextRatio;
    canvas.width=Math.round(width*ratio);
@@ -51,17 +51,17 @@ export function mountCoreWelcomeGrid(welcome){
   const dark=currentTheme()==='dark';
   theme=dark?'dark':'light';
   const midX=width*.50,midY=height*.49;
-  const glow=ctx.createRadialGradient(midX,midY,12,midX,midY,Math.max(width*.64,height*.96));
-  glow.addColorStop(0,dark?'rgba(68,189,200,.075)':'rgba(71,145,159,.055)');
-  glow.addColorStop(.47,dark?'rgba(46,89,151,.035)':'rgba(80,141,162,.018)');
+  const glow=ctx.createRadialGradient(midX,midY,8,midX,midY,Math.max(width*.76,height*1.08));
+  glow.addColorStop(0,dark?'rgba(68,205,198,.105)':'rgba(55,155,160,.078)');
+  glow.addColorStop(.48,dark?'rgba(54,112,176,.052)':'rgba(80,141,162,.027)');
   glow.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
 
   pointerX+=(targetX-pointerX)*.16;
   pointerY+=(targetY-pointerY)*.16;
   strength+=(targetStrength-strength)*.14;
-  const hoverRadius=precise?160:122;
-  const space=width<=580?dotsMobile:dotsDesktop;
+  const hoverRadius=precise?190:138;
+  const space=width<=580?dotsMobile:width<=900?dotsTablet:dotsDesktop;
   const offsetX=((width%space)/2)+space/2;
   const offsetY=((height%space)/2)+space/2;
   const breathe=reduced?0:Math.sin(now*.00048)*.065;
@@ -69,8 +69,8 @@ export function mountCoreWelcomeGrid(welcome){
 
   if(strength>.012){
    const aura=ctx.createRadialGradient(pointerX,pointerY,1,pointerX,pointerY,hoverRadius*1.58);
-   aura.addColorStop(0,dark?'rgba(111,243,224,.115)':'rgba(27,153,146,.085)');
-   aura.addColorStop(.38,dark?'rgba(94,188,237,.053)':'rgba(72,149,198,.030)');
+   aura.addColorStop(0,dark?'rgba(111,243,224,.17)':'rgba(27,153,146,.12)');
+   aura.addColorStop(.38,dark?'rgba(94,188,237,.075)':'rgba(72,149,198,.046)');
    aura.addColorStop(1,'rgba(0,0,0,0)');
    ctx.fillStyle=aura;
    ctx.globalAlpha=strength;
@@ -85,9 +85,9 @@ export function mountCoreWelcomeGrid(welcome){
     const distance=Math.hypot(x-pointerX,y-pointerY);
     const near=strength*Math.exp(-Math.pow(distance/hoverRadius,2)*1.85);
     const topology=Math.sin(x*.029+y*.021+now*.00034)*.5+.5;
-    const alpha=clamp((dark?.085:.075)+(dark?.205:.16)*falloff+
-      (.075+breathe)*falloff*topology+near*(dark?.62:.45),0,.96);
-    const radius=.66+.42*falloff+near*1.12;
+    const alpha=clamp((dark?.105:.092)+(dark?.235:.19)*falloff+
+      (.085+breathe)*falloff*topology+near*(dark?.72:.53),0,.98);
+    const radius=.76+.48*falloff+near*1.22;
     const tint=(col*7+row*3)%17;
     const rgb=tint<10?(dark?'135,222,218':'45,127,133'):
       tint<15?(dark?'118,167,229':'58,111,172'):
@@ -97,9 +97,9 @@ export function mountCoreWelcomeGrid(welcome){
     ctx.arc(x,y,radius,0,Math.PI*2);
     ctx.fill();
     // A few brighter anchor pixels reinforce the subtle circuit-grid look.
-    if((col+row*5)%23===0&&falloff>.36){
-     ctx.fillStyle=dark?'rgba(167,241,234,.25)':'rgba(47,131,145,.18)';
-     ctx.fillRect(x-.47,y-.47,.94,.94);
+    if((col+row*5)%19===0&&falloff>.30){
+     ctx.fillStyle=dark?'rgba(167,241,234,.34)':'rgba(47,131,145,.25)';
+     ctx.fillRect(x-.55,y-.55,1.1,1.1);
     }
    }
   }
@@ -165,7 +165,7 @@ export function mountCoreWelcomeGrid(welcome){
   resume();
  }
  function visibility(){if(shouldRun())resume();else if(raf){cancelAnimationFrame(raf);raf=0;}}
- const pointerTarget=welcome.closest('.core-messages')||welcome;
+ const pointerTarget=container;
  if(!reduced){
   if(precise){
    pointerTarget.addEventListener('pointermove',move,{passive:true});
@@ -180,7 +180,7 @@ export function mountCoreWelcomeGrid(welcome){
   inView=entries[0]?.isIntersecting!==false;
   visibility();
  },{threshold:.01}):null;
- intersectionObserver?.observe(welcome);
+ intersectionObserver?.observe(container);
  measure();
  if(!reduced&&precise)resume();
 
