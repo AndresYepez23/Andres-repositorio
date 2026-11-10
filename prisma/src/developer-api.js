@@ -114,15 +114,18 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
 
   const ready = (candidate) => candidate && candidate.type === "ready" && Array.isArray(candidate.steps) && candidate.steps.length;
   const needsInput = (candidate) => candidate && candidate.type === "needs-input";
-  const selected = ready(smartFlow)
-    ? { source: "prisma-smart-flows", ...smartFlow }
-    : ready(offlinePlan)
-      ? { source: "prisma-core-offline-intelligence", ...offlinePlan }
-      : needsInput(smartFlow)
-        ? { source: "prisma-smart-flows", ...smartFlow }
-        : needsInput(offlinePlan)
-          ? { source: "prisma-core-offline-intelligence", ...offlinePlan }
-          : null;
+  const readyCandidates = [
+    ready(smartFlow) ? { source: "prisma-smart-flows", ...smartFlow } : null,
+    ready(offlinePlan) ? { source: "prisma-core-offline-intelligence", ...offlinePlan } : null
+  ].filter(Boolean);
+  const selected = readyCandidates.length
+    ? readyCandidates.sort((a, b) => b.steps.length - a.steps.length ||
+      (a.source === "prisma-smart-flows" ? -1 : 1))[0]
+    : needsInput(smartFlow)
+      ? { source: "prisma-smart-flows", ...smartFlow }
+      : needsInput(offlinePlan)
+        ? { source: "prisma-core-offline-intelligence", ...offlinePlan }
+        : null;
 
   const toolIndex = new Map(tools.map((tool) => [tool.id, tool]));
   const steps = (selected?.steps || []).map((step, index) => {
