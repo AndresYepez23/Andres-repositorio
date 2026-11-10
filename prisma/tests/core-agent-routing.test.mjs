@@ -106,6 +106,11 @@ assert.equal(imageAnalysisIntent('Transcribe el texto literalmente',uploadedPhot
 assert.equal(imageAnalysisIntent('Analiza este texto',[]),'','Un chat sin imágenes no debe activar OCR');
 assert.equal(isBatchImageTranscription('Sácame el texto de todas esas imágenes',[{name:'IMG_6717.png',type:'image/png'},{name:'IMG_6715.png',type:'image/png'},{name:'IMG_6716.png',type:'image/png'},{name:'IMG_6713.png',type:'image/png'},{name:'ScreenRecording.mp4',type:'video/mp4'}]),true,'Process every still image in a mixed upload');
 assert.equal(isBatchImageTranscription('Analiza esta foto',[{name:'foto.jpg',type:'image/jpeg'}]),false,'Analysis is not literal OCR');
+assert.equal(imageAnalysisIntent('Analízame esa imagen por favor',picture),'interpret','Colloquial Spanish analysis must not become a metadata lookup');
+assert.equal(imageAnalysisIntent('Interprétame esta fotografía',picture),'interpret');
+assert.equal(imageAnalysisIntent('Explícame la imagen',picture),'interpret');
+assert.equal(imageAnalysisIntent('Describe esta foto',picture),'interpret');
+assert.equal(imageAnalysisIntent('Muéstrame los metadatos EXIF',picture),'','Explicit metadata requests remain local');
 
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 assert.match(coreSource,/const explanation=\/\^/,'Explanatory questions must bypass the tool planner');
