@@ -224,8 +224,9 @@ function renderConversationList(){
    });
    const remove=document.createElement('button');remove.type='button';remove.textContent='Eliminar';remove.className='danger';
    remove.addEventListener('click',()=>{
-    if(!window.confirm('¿Eliminar esta conversación de este dispositivo?'))return;
+    if(!window.confirm('¿Eliminar esta conversación de este dispositivo y sus archivos generados locales?'))return;
     if(busy)return;
+    deleteGeneratedFilesForChat(chat.id).catch(error=>console.warn('Prisma no pudo limpiar los archivos del chat:',error?.message||error));
     conversations=conversations.filter(item=>item.id!==chat.id);
    document.dispatchEvent(new CustomEvent('prisma:chat-deleted',{detail:{id:chat.id}}));
     if(!conversations.length)conversations=[newChatRecord()];
@@ -1548,7 +1549,7 @@ async function executePlan(){
   if(!pendingPlan||executionActive)return;
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
-  const executed=[];let currentFiles=[...attachments],lastText='',successful=false;
+  const executed=[];let currentFiles=[...attachments],lastText='',successful=false,allResultFilesSaved=true;
   try{
     for(let index=0;index<steps.length;index++){
       if(cancelRequested)break;
@@ -1618,11 +1619,14 @@ async function executePlan(){
       }else{
         const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
         const filesSaved=await persistGeneratedResults(visibleResults);
+        allResultFilesSaved=filesSaved;
         const label=plan.conversion?'Conversión preparada. Descarga el archivo resultante o sigue las instrucciones de impresión si aparecen.':plan.combineFinalFiles?'Proceso completado. Aquí tienes el archivo final con las modificaciones solicitadas.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
-        addMessage('assistant',label+(!filesSaved?' Atención: el vídeo está listo para descargar ahora, pero este dispositivo no permitió guardar una copia. Descárgalo antes de salir.':''),{results:visibleResults,partial:!filesSaved});
+        addMessage('assistant',label+(!filesSaved?' Atención: el archivo está listo para descargar ahora, pero este dispositivo no permitió guardar una copia. Descárgalo antes de salir.':''),{results:visibleResults,partial:false});
       }
       successful=true;
-      if(executed.some(entry=>entry?.result?.blob)&&executed.some(entry=>entry.result?.fileKey))
+      if(!allResultFilesSaved)
+        status('Archivo listo para descargar ahora, pero sin respaldo local. Descárgalo antes de cerrar Prisma.','warning');
+      else if(executed.some(entry=>entry?.result?.blob&&entry.result?.fileKey))
         status('Archivo terminado y guardado en este dispositivo. Descárgalo desde el resultado.','success');
       else status('Ejecución completada.','success');
     }
@@ -1846,6 +1850,7 @@ function deleteActiveChat(){
  const chat=conversations.find(x=>x.id===activeConversationId);if(!chat)return;
  if(!window.confirm('¿Eliminar definitivamente esta conversación? Esta acción también la borrará de la nube si activaste la sincronización.'))return;
  const id=chat.id;
+ deleteGeneratedFilesForChat(id).catch(error=>console.warn('Prisma no pudo limpiar los archivos del chat:',error?.message||error));
  conversations=conversations.filter(x=>x.id!==id);
  if(!conversations.length)conversations=[newChatRecord()];
  activeConversationId=conversations[0].id;messages=conversations[0].messages.slice();attachments=[];renderAttachments();
@@ -1896,8 +1901,11 @@ export function initPrismaCore(){
     renderConversationList();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
   });
   document.addEventListener('prisma:clear-local-history',()=>{
-    window.__prismaClearHistoryPromise=clearConversationSnapshot().catch(error=>{
-      console.warn('Prisma: no se pudo limpiar IndexedDB.',error?.message||error);
+    window.__prismaClearHistoryPromise=Promise.all([
+      clearConversationSnapshot(),
+      clearGeneratedFiles()
+    ]).catch(error=>{
+      console.warn('Prisma: no se pudo limpiar por completo el historial y sus archivos locales.',error?.message||error);
     });
   });
   document.addEventListener('prisma:history-storage-warning',()=>{
