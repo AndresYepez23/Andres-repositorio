@@ -2165,3 +2165,14 @@ body.is-core-view #core-thinking {
   padding-bottom:3px!important;
  }
 }
+
+/* Conversation finder on iOS: use the keyboard-visible viewport rather than
+   the hardware screen. Results stay scrollable above the software keyboard. */
+@media(max-width:750px){
+ .conversation-search-layer:not(.hidden){
+  inset:auto 0 auto 0;
+  top:var(--prisma-search-vp-top,0px);
+  height:var(--prisma-search-viewport,100dvh);
+  max-height:var(--prisma-search-viewport,100dvh);
+ }
+}
