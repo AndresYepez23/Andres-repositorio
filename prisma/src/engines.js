@@ -186,7 +186,10 @@ async function runVideo(id,files,p,cb){
   const maxWidth={small:720,balanced:960,quality:1280}[quality];
   const crf={small:'35',balanced:'31',quality:'27'}[quality];
   output='video-comprimido.mp4';
-  args=['-i',input,'-vf',"scale='min(iw,"+maxWidth+")':-2",
+  // Bound the longest side, not just the width: iPhone screen recordings
+  // are portrait and must not keep a 2000px+ height after compression.
+  const scale="scale='trunc(iw*min(1,"+maxWidth+"/max(iw,ih))/2)*2':-2";
+  args=['-i',input,'-vf',scale,
    '-c:v','libx264','-preset','ultrafast','-crf',crf,
    '-c:a','aac','-b:a','96k','-movflags','+faststart',output];
  }else if(id==='video-speed'){
