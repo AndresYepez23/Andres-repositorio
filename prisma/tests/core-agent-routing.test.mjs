@@ -74,6 +74,8 @@ const directTaskEnd=coreSource.indexOf('async function answerConversation',direc
 assert.ok(directTaskStart>=0&&directTaskEnd>directTaskStart,'Core conversation task router not found');
 const directTask=new Function('attachments',coreSource.slice(directTaskStart,directTaskEnd)+';return directCoreTask;')([]);
 assert.equal(directTask('Muy buena canción'),'conversation');
+assert.equal(directTask('Explica qué es la fotosíntesis'),'conversation','Simple explanations should not use expensive reasoning route');
+assert.equal(directTask('Analiza las consecuencias de tres estrategias'),'reasoning');
 assert.equal(directTask('Me encanta la canción'),'conversation');
 assert.equal(directTask('Crea una canción original'),'songwriting');
 assert.equal(directTask('Una canción sobre esperanza'),'songwriting');
