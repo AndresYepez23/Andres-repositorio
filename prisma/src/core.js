@@ -169,7 +169,8 @@ function renderConversationSearch(){
   button.setAttribute('aria-label','Abrir conversación: '+match.title);
   const icon=document.createElement('span');
   icon.className='conversation-search-result-icon';
-  icon.setAttribute('aria-hidden','true');icon.textContent='◯';
+  icon.setAttribute('aria-hidden','true');
+  icon.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8.5 8.5 0 0 1-8.5 8.5 8.8 8.8 0 0 1-4-.95L3 20l.95-5A8.8 8.8 0 0 1 3 11a8.5 8.5 0 1 1 17.5.5Z"/></svg>';
   const copy=document.createElement('span');copy.className='conversation-search-result-copy';
   const title=document.createElement('strong');title.textContent=match.title;
   const snippet=document.createElement('small');
