@@ -1,5 +1,5 @@
 import { initPrismaCore } from './core.js';
-import { reconcileIosPwaViewport, recoverIosStandaloneBottomGap } from './pwa-viewport.js';
+import { reconcileIosPwaViewport } from './pwa-viewport.js';
 import { readInferenceUsage } from './core-economy.js';
 import { initPrismaExperience } from './prisma-experience.js';
 import { initPrismMotion } from './prism-motion.js';
@@ -1405,11 +1405,6 @@ function setupPrismaCoreViewport(){
   dvhProbe.setAttribute('aria-hidden','true');
   dvhProbe.style.cssText='position:fixed;left:-9999px;top:0;width:0;height:100dvh;visibility:hidden;pointer-events:none';
   document.body.append(dvhProbe);
-  // Read the CSS safe area instead of blindly stretching to screen.height.
-  const safeAreaProbe=document.createElement('div');
-  safeAreaProbe.setAttribute('aria-hidden','true');
-  safeAreaProbe.style.cssText='position:fixed;left:-9999px;top:0;width:0;height:0;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
-  document.body.append(safeAreaProbe);
   let raf=0,lastUnfocusedHeight=0;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
@@ -1445,18 +1440,9 @@ function setupPrismaCoreViewport(){
       // Only reclaim browser-confirmed space; physical screen.height includes
       // the protected system home indicator and must NOT drive the chat height.
       const searchFocused=document.activeElement===document.querySelector('#core-history-search');
-      const searchKeyboardOpen=searchFocused&&lastUnfocusedHeight-visible>110;
-      const recovery=recoverIosStandaloneBottomGap({
-        isIOS:isIOS(),standalone,keyboardOpen:keyboardOpen||searchKeyboardOpen,
-        screenWidth:window.screen?.width,screenHeight:window.screen?.height,
-        viewportWidth:window.innerWidth,layoutHeight,
-        safeInsetBottom:parseFloat(getComputedStyle(safeAreaProbe).paddingBottom)||0,
-        visualScale:vv?.scale??1
-      });
-      // The recovered pixels extend the ROOT chat layout, not just its input
-      // padding. Example: a 393x852 iPhone with a 793px app and 34px safe
-      // bottom can safely extend the chat 19px without covering the indicator.
-      const height=standalone&&!keyboardOpen?layoutHeight+recovery:visible;
+      const height=standalone&&!keyboardOpen?layoutHeight:visible;
+      const recovery=standalone&&isIOS()&&!keyboardOpen
+        ?Math.max(0,layoutHeight-primaryHeight):0;
       // pageTop is measured in document coordinates. Unlike offsetTop alone
       // it also follows Safari's implicit focus scrolling on WebKit.
       const pageTop=Number.isFinite(vv?.pageTop)?vv.pageTop:
