@@ -21,7 +21,7 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 - `src/workflows.js`: orquestación de cuatro flujos de varios pasos (imágenes, PDF, creación con IA y tareas de texto).
 - `src/core.js`: agente conversacional en el navegador, catálogo dinámico de herramientas disponibles, planificación JSON, aprobación explícita, ejecución secuencial, validación de archivos y conservación de resultados parciales.
 - Prisma Core ya dispone de una primera capa de agente en cliente: un modelo conectado planifica operaciones a partir del catálogo disponible y el ejecutor invoca las herramientas locales o los proveedores personales después de la aprobación del usuario.
-- La siguiente etapa pendiente es trasladar capacidades seleccionadas a un backend Cloudflare Worker protegido, con cuotas, autenticación, observabilidad y límites por usuario. La memoria actual es local al navegador; no hay sincronización entre dispositivos.
+- La siguiente etapa pendiente es trasladar capacidades seleccionadas a un backend Cloudflare Worker protegido, con cuotas, autenticación, observabilidad y límites por usuario. La memoria de conversaciones se conserva localmente con respaldo IndexedDB y puede sincronizarse entre dispositivos mediante Supabase Auth y la tabla protegida `prisma_conversations`. La sincronización es una preferencia global de la cuenta y requiere consentimiento explícito.
 - `build.mjs`: prepara el directorio de publicación `dist/`.
 - `_headers`: cabeceras HTTP de seguridad para Cloudflare Pages.
 - `worker.js`: prototipo independiente para futuras rutas dinámicas; no forma parte del sitio estático publicado.
@@ -45,7 +45,7 @@ Cada actualización integrada en `main` se puede desplegar en Cloudflare Pages. 
 - Los planes externos advierten que los datos pueden salir del navegador y que pueden existir costes del proveedor.
 - El enrutador incorpora metadatos por modalidad sobre motor, privacidad, coste orientativo y estrategia de respaldo. Cuando no se ha verificado una tarifa o licencia específica, no la presenta como garantizada.
 - Las operaciones se ejecutan secuencialmente; los archivos resultantes pueden alimentar el siguiente paso. El usuario puede detener la secuencia al terminar la operación activa y conservar los resultados parciales.
-- La conversación se guarda en el almacenamiento local del navegador. Los archivos adjuntos no se guardan en el historial.
+- La conversación se guarda localmente (IndexedDB con caché en localStorage) y, si el usuario autoriza la sincronización, en su cuenta Prisma para continuar en otros dispositivos. Los archivos adjuntos binarios no se sincronizan; se conserva el texto y los metadatos disponibles.
 - Las credenciales personales se leen desde la sesión del navegador y no se incorporan al historial.
 - El agente no puede publicar, enviar, comprar ni borrar recursos externos.
 
