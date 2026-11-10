@@ -123,7 +123,7 @@ async function credentialHealthKey(provider, slot) {
   const bytes=new TextEncoder().encode(slot.value);
   const digest=await crypto.subtle.digest('SHA-256',bytes);
   const tag=Array.from(new Uint8Array(digest).slice(0,8),b=>b.toString(16).padStart(2,'0')).join('');
-  return "credential-slot:" + provider + ":" + slot.number + ":" + tag;
+  return "credential-slot:v2:" + provider + ":" + slot.number + ":" + tag;
 }
 export async function getHealthyCredentialCount(env,provider) {
   const slots=getCredentialSlots(env,provider);
@@ -136,7 +136,7 @@ export async function getHealthyCredentialCount(env,provider) {
 }
 
 function retryHoldSeconds(status, headers) {
-  if (status === 401 || status === 403) return 3600;
+  if (status === 401) return 120;
   if (status === 402) return 3600;
   if (status === 429) {
     const seconds = Number(headers?.get?.("retry-after"));
@@ -174,7 +174,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   const startIndex = Number.isInteger(options.startIndex)
     ? ((options.startIndex % slots.length) + slots.length) % slots.length
     : Math.floor(Math.random() * slots.length);
-  const retryable = new Set(options.retryStatuses || [401, 403, 500, 502, 503, 504]);
+  const retryable = new Set(options.retryStatuses || [401, 500, 502, 503, 504]);
   let lastResponse, lastError, attempted = 0;
 
   for (let offset = 0; offset < slots.length && attempted < maxAttempts; offset++) {
@@ -204,14 +204,16 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       if (!retryable.has(response.status)) return response;
       // Do not retry backend outages across six keys; only authentication
       // errors warrant checking every slot in this optional mode.
-      if (sweepAuthSlots && response.status !== 401 && response.status !== 403 && attempted >= 2) return response;
-      await setProviderHold(env, healthKey,
-        response.status === 401 || response.status === 403 ? "auth_error" : "provider_error",
-        "La credencial recibió HTTP " + response.status + "; esta clave permanecerá temporalmente en pausa.", retryHoldSeconds(response.status, response.headers));
+      if (sweepAuthSlots && response.status !== 401 && attempted >= 2) return response;
+      // A 403 may mean model permissions or regional policy; a 5xx is upstream.
+      // Neither proves that this individual API key is invalid.
+      if (response.status === 401) {
+        await setProviderHold(env, healthKey, "auth_error",
+          "El proveedor devolvió HTTP 401; reintentaremos esta clave en dos minutos.", retryHoldSeconds(401, response.headers));
+      }
     } catch (error) {
       lastError = error;
-      await setProviderHold(env, healthKey, "network_error",
-        "La conexión de este espacio de credenciales falló.", 60);
+      // Network failures do not prove a key is invalid; bound retries only.
       if (sweepAuthSlots && attempted >= 2) break;
     }
   }
