@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { installMobileSidebarGestures } from './sidebar-gestures.js';
 import { localizedVideoError } from './video-compression.js';
 import { reconcileIosPwaViewport } from './pwa-viewport.js';
 import { readInferenceUsage } from './core-economy.js';
@@ -1324,6 +1325,10 @@ function setupSidebarControls(){
       menu.setAttribute('aria-label','Ocultar barra lateral');
     }
   });
+
+  // Horizontal edge swipes follow the finger. Vertical movement remains
+  // native momentum scrolling inside #sidebar-scroll-region.
+  installMobileSidebarGestures({sidebar,backdrop,menu});
 
   document.addEventListener('click',event=>{
     if(!event.target.closest?.('#core-history-new'))return;
