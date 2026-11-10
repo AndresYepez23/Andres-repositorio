@@ -533,6 +533,11 @@ async function onSignedIn(newUser,{fromInteraction=false}={}){
  }else if(screen==='account')refreshIdentity();
 }
 function bindForms(){
+ renderAvatarChoices('auth-signup-avatar-choices','prisma-signup-avatar',signupAvatarChoice,id=>{
+  signupAvatarChoice=id;updateSignupPreview();
+ });
+ $('#auth-display-name')?.addEventListener('input',updateSignupPreview);
+ updateSignupPreview();
  $('#auth-close')?.addEventListener('click',()=>showAuth(false));
  $('#auth-guest')?.addEventListener('click',()=>showAuth(false));
  $('#auth-modal')?.addEventListener('click',event=>{
@@ -573,12 +578,17 @@ function bindForms(){
     ?validateAccountPassword(password,$('#auth-password-confirm')?.value||'')
     :password?'':'Introduce tu contraseña.';
    if(error){info(error,'error');return;}
-   info(authMode==='signup'?'Creando tu cuenta…':'Comprobando tus credenciales…');
    const signup=authMode==='signup';
+   const chosenName=fullName($('#auth-display-name')?.value);
+   if(signup&&chosenName.length<2){
+    info('Indica tu nombre o apodo (al menos 2 caracteres) para personalizar tu espacio.','error');
+    return;
+   }
+   info(signup?'Creando tu espacio personalizado…':'Comprobando tus credenciales…');
    const {data,error:authError}=signup
     ?await api.auth.signUp({
       email,password,options:{
-       data:{full_name:fullName($('#auth-display-name')?.value)},
+       data:{full_name:chosenName,prisma_avatar:prismaAvatar(signupAvatarChoice).id},
        emailRedirectTo:location.origin+location.pathname
       }
      })
@@ -676,13 +686,25 @@ function bindForms(){
   event.preventDefault();
   withBusy($('#auth-profile-save'),async()=>{
    if(!api||!user)return;
-   const value=fullName($('#auth-profile-name')?.value);
-   const {data,error}=await api.from('prisma_profiles')
-    .upsert({user_id:user.id,display_name:value||null,updated_at:new Date().toISOString()},{onConflict:'user_id'})
-    .select('user_id,display_name,theme').single();
-   if(error)throw error;
-   profile=data;refreshIdentity();
-   info('Perfil actualizado.','success');
+   const id=user.id;
+   const name=fullName($('#auth-profile-name')?.value);
+   const avatar=prismaAvatar(profileAvatarChoice).id;
+   // A safe visual preference in editable auth metadata, never for RLS roles.
+   const {data:updatedAuth,error:avatarError}=await api.auth.updateUser({data:{prisma_avatar:avatar}});
+   if(avatarError)throw avatarError;
+   if(user?.id!==id)return;
+   if(updatedAuth?.user)user=updatedAuth.user;
+   const fields={display_name:name||null,updated_at:new Date().toISOString()};
+   // Keep sync_enabled and theme untouched when editing the visible profile.
+   const query=profile
+    ?api.from('prisma_profiles').update(fields).eq('user_id',id)
+    :api.from('prisma_profiles').insert({...fields,user_id:id});
+   const {data,error}=await query.select('user_id,display_name,theme,sync_enabled').single();
+   if(error){refreshIdentity();throw error;}
+   if(user?.id!==id)return;
+   profile=data;
+   refreshIdentity();
+   info('Tu nombre y tu avatar se guardaron correctamente.','success');
   });
  });
  $('#auth-account-sync')?.addEventListener('click',performSync);
