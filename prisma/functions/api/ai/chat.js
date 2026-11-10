@@ -70,8 +70,10 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
     response = await requestWithCredentialPool(env, provider, credential => fetch(endpoint, {
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential,...extraHeaders},
-      body:JSON.stringify({model,messages,temperature:0.65,max_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false}),
-    }));
+      body:JSON.stringify({model,messages,temperature:0.65,
+        max_tokens:clamp(payload.maxOutputTokens,provider==="sensenova"?2048:128,4096,provider==="sensenova"?2400:1200),
+        stream:false}),
+    }),{sweepAuthSlots:provider==="sensenova"});
   } catch (error) {
     const status=Number(error?.status)||502;
     return json({error:error?.message||"No fue posible conectar con "+provider+".",provider,status,retryAfter:error?.retryAfter||null},status===429?429:status===402?402:502);
