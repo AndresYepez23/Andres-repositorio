@@ -9,8 +9,8 @@
     "standalone",
     "minimal-ui"
   ],
-  "background_color": "#101218",
-  "theme_color": "#101218",
+  "background_color": "#0e121d",
+  "theme_color": "#0e121d",
   "lang": "es",
   "categories": [
     "productivity",
