@@ -322,6 +322,11 @@ const networkSense=await requestWithCredentialPool(senseKeys,'sensenova',async()
 },{startIndex:0,sweepAuthSlots:true});
 assert.equal(networkSense.status,502);
 assert.equal(networkAttempts,2,'Network outages should not exhaust all six slots');
+const credentialPoolSource=readFileSync(new URL('../functions/_lib/credential-pool.js',import.meta.url),'utf8');
+assert.match(credentialPoolSource,/crypto\.subtle\.digest\('SHA-256',bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
+assert.match(credentialPoolSource,/await credentialHealthKey\(provider, slot\)/,'A replaced secret must not inherit its prior slot cooldown');
+assert.match(credentialPoolSource,/La credencial recibió HTTP/,'Provider health should retain the actual upstream status');
+
 const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"/,'SenseNova must enable valid-key auth sweep');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
