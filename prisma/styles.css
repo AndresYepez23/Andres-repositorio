@@ -3190,3 +3190,22 @@ body.is-core-view #core-messages{
 @media(prefers-reduced-motion:reduce){
  #auth-modal .auth-avatar-choice{transition:none}
 }
+
+
+/* Native radio controls keep keyboard navigation while the styled choices
+   remain compact in the signup form (which otherwise sizes inputs to 43px). */
+#auth-modal .auth-avatar-choice{position:relative}
+#auth-modal .auth-avatar-choice input[type="radio"]{
+ position:absolute;width:1px;height:1px;min-width:1px;min-height:1px;
+ opacity:0;overflow:hidden;clip-path:inset(50%);
+ padding:0;margin:0;border:0;
+}
+#auth-modal .auth-avatar-choice:has(input[type="radio"]:checked){
+ background:color-mix(in srgb,var(--accent) 11%,var(--panel-2));
+ border-color:color-mix(in srgb,var(--accent) 66%,var(--line));
+ box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 12%,transparent);
+ color:var(--text);
+}
+#auth-modal .auth-avatar-choice:has(input[type="radio"]:focus-visible){
+ outline:2px solid var(--accent);outline-offset:3px;
+}
