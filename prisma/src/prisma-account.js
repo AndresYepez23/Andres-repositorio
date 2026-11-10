@@ -343,6 +343,7 @@ async function signOut(){
  if(synced){
   localStorage.removeItem(STORAGE);localStorage.removeItem(SYNC_KEY);
   document.dispatchEvent(new Event('prisma:clear-local-history'));
+  await (window.__prismaClearHistoryPromise||Promise.resolve());
  }
  user=null;profile=null;
  document.dispatchEvent(new Event('prisma:close-profile'));
