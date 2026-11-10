@@ -1797,10 +1797,10 @@ export function initPrismaCore(){
     if(busy||executionActive)return;
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
     if(remote){
-      const current=conversations.filter(chat=>chat.messages?.length||chat.titled||chat.pinned);
-      conversations=mergeConversationLists(current,remote);
+      conversations=mergeConversationLists(remote);
+      if(!conversations.length)conversations=[newChatRecord()];
       const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
-      if(active){activeConversationId=active.id;messages=active.messages.slice();}
+      activeConversationId=active.id;messages=active.messages.slice();
       try{localStorage.setItem(CHATS_KEY,JSON.stringify(conversations));}catch{}
     }else loadChatHistory();
     saveConversationSnapshot(conversations).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
