@@ -17,7 +17,7 @@ import { imageAnalysisIntent, isBatchImageTranscription } from '../src/core-imag
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion, extractWebsiteHtml, WEBSITE_FOLLOWUP } from '../src/core-intent.js';
 import { resolvePrismaProductQuestion } from '../src/core-intelligence.js';
 import { validateAgentStepResult } from '../src/core-agent-guard.js';
-import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from '../src/core-context.js';
+import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions, isCoreFollowUp } from '../src/core-context.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage, readInferenceUsage, INFERENCE_USAGE_KEY } from '../src/core-economy.js';
 import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
@@ -107,6 +107,13 @@ assert.equal(isBatchImageTranscription('Sácame el texto de todas esas imágenes
 assert.equal(isBatchImageTranscription('Analiza esta foto',[{name:'foto.jpg',type:'image/jpeg'}]),false,'Analysis is not literal OCR');
 
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(coreSource,/const explanation=\/\^/,'Explanatory questions must bypass the tool planner');
+assert.match(coreSource,/if\(explanation&&!explicitExecution\)/,'Questions mentioning file formats should remain in ordinary chat');
+const engineQualitySource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(engineQualitySource,/Comprensión profunda:/,'All providers should receive improved contextual reasoning instructions');
+assert.match(engineQualitySource,/No te limites a repetir, parafrasear o enumerar datos/,'Core must contextualize instead of restating raw input');
+assert.match(engineQualitySource,/slice\(0,5500\)/,'Previous drafts need enough context for faithful revisions');
+
 assert.match(coreSource,/imageAnalysisIntent\(userText,attachments\)==='interpret'/,'Contextual image reading is routed before generic tool planning');
 assert.match(coreSource,/async function interpretAttachedImageText\(userText\)/,'OCR is interpreted using a dedicated model reasoning path');
 assert.match(coreSource,/async function transcribeAttachedImageBatch\(userText\)/,'Batch OCR must process each attached image');
@@ -629,6 +636,14 @@ assert.ok(recalled.at(-1).content.includes('otra tarea'),'Recent context must be
 assert.ok(recalled.length<=12);
 assert.equal(chooseCoreReasoning('coding','Depura este código'),'smart');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast');
+assert.equal(isCoreFollowUp('¿Y las demás?'),true,'Short follow-up must reference the conversation');
+assert.equal(isCoreFollowUp('¿Qué es un PDF?'),false,'Independent factual question must not be forced to use a previous artifact');
+assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:13,maxChars:14500},'Short follow-ups need ample relevant context');
+assert.equal(chooseCoreReasoning('conversation','Analiza por qué falla esta autenticación y evalúa las causas'),'smart','Complex requests deserve deeper model routing');
+assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast','Quick greetings remain efficient');
+assert.equal(chooseCoreResponseLength('conversation','Explica cómo funciona y cuándo conviene usar un sistema de registro de pacientes'),'long','Meaningful explanations must not be artificially short');
+assert.equal(chooseCoreResponseLength('conversation','¿Qué es un archivo PDF?'),'medium','Ordinary factual answers should not be one-line by default');
+
 assert.ok(runLocalCreatorTool('text-redact-sensitive',{text:'Correo: test@example.com y clave: rqsty-sk-Abc123Abc123Abc123'}).text.includes('[CLAVE OCULTA]'));
 assert.doesNotMatch(runLocalCreatorTool('text-redact-sensitive',{text:'test@example.com'}).text,/test@example.com/);
 const utm=runLocalCreatorTool('utm-builder',{url:'https://example.com/?a=1',source:'instagram',medium:'social',campaign:'prisma'});
