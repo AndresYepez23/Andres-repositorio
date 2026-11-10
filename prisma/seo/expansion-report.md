@@ -72,7 +72,7 @@ Referencias metodológicas consultadas: [contenido útil](https://developers.goo
 | [Extraer posibles teléfonos de un texto](https://prismaspace.pages.dev/herramientas/extraer-telefonos-texto/) | text-extract-phones |
 | [Aplanar JSON en rutas y valores](https://prismaspace.pages.dev/herramientas/aplanar-json/) | json-flatten |
 | [Convertir mayúsculas y minúsculas](https://prismaspace.pages.dev/herramientas/convertir-mayusculas-minusculas/) | text-case |
-| [Previsualizar Markdown básico](https://prismaspace.pages.dev/herramientas/editor-markdown/) | markdown |
+| [Convertir Markdown básico a HTML](https://prismaspace.pages.dev/herramientas/markdown-a-html/) | markdown |
 | [Generador de paletas de colores](https://prismaspace.pages.dev/herramientas/generador-paletas-colores/) | color-palette |
 | [Generar imágenes con inteligencia artificial](https://prismaspace.pages.dev/herramientas/generador-imagenes-ia/) | image-gen |
 | [Reconocer objetos en una imagen](https://prismaspace.pages.dev/herramientas/reconocer-objetos-imagen/) | image-identify-local |
@@ -163,10 +163,12 @@ Referencias metodológicas consultadas: [contenido útil](https://developers.goo
 ## Evidencia de validación previa a publicación
 
 - `node prisma/build.mjs`: correcto, incluidas comprobaciones de Core y Whisper ya existentes.
-- `node --test prisma/tests/*.test.mjs`: 15 pruebas, 15 aprobadas, cero fallos (incluye dos suites con aserciones existentes a nivel de módulo).
+- `node --test prisma/tests/*.test.mjs`: 23 pruebas, 23 aprobadas, cero fallos (incluye dos suites con aserciones existentes a nivel de módulo).
 - 29 casos locales ejecutados por `runTool`, con valores de salida esperados; no se consumieron cuotas de IA.
 - 141 documentos (140 landings + directorio) analizados con html5lib: cero errores después de escapar correctamente los parámetros de la URL de fuentes.
 - Sitemap analizado como XML; 143 URLs únicas (portada, directorio, 140 landings y privacidad).
 - 564 comprobaciones de layout: 141 páginas × 320, 390, 768 y 1440 px. Cero desbordamientos tras retirar el ancho mínimo fijo de 320 px del body SEO, que no tenía en cuenta el espacio ocupado por la barra de desplazamiento.
 - Inspección visual de la plantilla Aurora en escritorio, móvil y tablet; enlaces WebP → PNG y PDF → PNG abiertos en el navegador con formato PNG preseleccionado.
 - La revisión completa combina análisis de código, formularios y pruebas locales. No supone haber ejecutado cada conversión de archivos ni cada proveedor remoto en todos los navegadores o dispositivos físicos.
+
+Se incorporó main `3192732` antes de publicar, preservando Prisma Developer y su suite. La diferencia frente a main se limita a SEO, su build y pruebas.

@@ -1578,30 +1578,30 @@
       "keyword": "convertir mayusculas minusculas"
     },
     {
-      "slug": "editor-markdown",
+      "slug": "markdown-a-html",
       "tool": "markdown",
-      "title": "Previsualizar Markdown básico online",
-      "h1": "Previsualizar Markdown básico",
-      "description": "Comprueba encabezados, negritas y cursivas de una nota con una vista HTML sencilla.",
-      "intro": "Comprueba encabezados, negritas y cursivas de una nota con una vista HTML sencilla.",
-      "details": "Pega Markdown con encabezados y énfasis, ejecuta la herramienta y consulta su vista previa. El conversor es básico: no promete compatibilidad completa con tablas, listas, bloques de código ni extensiones de GitHub.",
+      "title": "Convertir Markdown básico a código HTML",
+      "h1": "Convertir Markdown básico a HTML",
+      "description": "Transforma encabezados, negritas y cursivas de Markdown en código HTML básico. Consulta el marcado generado directamente en el navegador.",
+      "intro": "Prepara el marcado HTML de una nota sencilla escrita con encabezados y énfasis Markdown. La herramienta muestra el código resultante para que lo revises y lo reutilices en un editor.",
+      "details": "Pega Markdown con encabezados, negritas o cursivas y ejecuta la conversión. El resultado se muestra como código, no como una página renderizada. El conversor es básico y no promete soporte completo para tablas, listas ni bloques de código.",
       "steps": [
-        "Abre previsualizar markdown básico en Prisma Space.",
-        "Pega Markdown con encabezados y énfasis, ejecuta la herramienta y consulta su vista previa.",
-        "Revisa el resultado antes de copiarlo, descargarlo o utilizarlo."
+        "Abre la herramienta y pega una nota con Markdown básico.",
+        "Ejecuta la conversión y revisa las etiquetas HTML mostradas en el resultado.",
+        "Selecciona el código que quieras reutilizar y compruébalo en tu editor antes de publicarlo."
       ],
-      "tip": "El conversor es básico: no promete compatibilidad completa con tablas, listas, bloques de código ni extensiones de GitHub.",
+      "tip": "No es un sanitizador de HTML. Trabaja con contenido de confianza y revisa cualquier código antes de insertarlo en una página.",
       "faqs": [
         [
-          "¿Admite todas las funciones de Markdown?",
-          "No. La implementación disponible interpreta encabezados y énfasis básicos."
+          "¿Muestra una vista visual de la página?",
+          "No. La interfaz actual presenta el código HTML generado dentro de un bloque de texto."
         ],
         [
-          "¿Qué debo revisar antes de usar el resultado?",
-          "El conversor es básico: no promete compatibilidad completa con tablas, listas, bloques de código ni extensiones de GitHub."
+          "¿Admite todo Markdown de GitHub?",
+          "No. Convierte encabezados y énfasis básicos, sin garantizar listas, tablas o bloques de código."
         ]
       ],
-      "keyword": "editor markdown"
+      "keyword": "markdown a html"
     },
     {
       "slug": "generador-paletas-colores",

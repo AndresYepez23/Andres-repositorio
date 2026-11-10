@@ -1,4 +1,5 @@
 import { initPrismaAccount, openPrismaAuth } from './prisma-account.js';
+import { initPrismaDeveloperBridge } from './developer-bridge.js';
 const $=s=>document.querySelector(s);
 const HIDE_UNTIL='prisma-pwa-banner-hide-until';
 let installPrompt=null;
@@ -90,6 +91,7 @@ export function initPrismaExperience(){
  const profile=$('#profile-menu');if(profile&&profile.parentElement!==document.body)document.body.append(profile);
  initPwa();
  initCoreMenu();
+ initPrismaDeveloperBridge();
  initPrismaAccount().catch(error=>console.warn('Cuenta Prisma no conectada:',error?.message||error));
  $('#open-account-auth')?.addEventListener('click',()=>{document.dispatchEvent(new Event('prisma:close-profile'));openPrismaAuth();});
  document.addEventListener('prisma:close-profile',()=>{

@@ -779,7 +779,7 @@
       "category": "text",
       "decision": "covered",
       "pages": [
-        "editor-markdown"
+        "markdown-a-html"
       ],
       "reason": "Intención diferenciada con motor y formulario accesibles; ver límites e instrucciones de la landing.",
       "evidence": [
