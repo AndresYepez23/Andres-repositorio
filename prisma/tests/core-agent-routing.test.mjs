@@ -335,7 +335,7 @@ const rejectedSenseKeys={
 };
 assert.equal(await getHealthyCredentialCount(rejectedSenseKeys,'sensenova'),0,'Rejected SenseNova keys must not remain advertised as available');
 const providerStatusSource=readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
-assert.match(providerStatusSource,/senseNovaHealthySlots>0/,'Prisma must not route to SenseNova when all six keys are on auth cooldown');
+assert.match(providerStatusSource,/senseNovaHealthySlots\s*>\s*0/,'Prisma must not route to SenseNova when all six keys are on auth cooldown');
 assert.match(providerStatusSource,/HTTP 401\/403/,'Provider panel must explain authentication rejection clearly');
 
 
