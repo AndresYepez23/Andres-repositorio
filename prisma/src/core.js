@@ -412,6 +412,7 @@ function isNearBottom(list,threshold=120){
 }
 function renderMessages({forceBottom=false}={}){
   const list=$('#core-messages');if(!list)return;
+  list.classList.toggle('is-empty',messages.length===0);
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
   // Re-rendering the chat must remove canvas listeners and its animation loop.
@@ -424,7 +425,7 @@ function renderMessages({forceBottom=false}={}){
     const examples=document.createElement('div');examples.className='core-examples';
     examples.innerHTML=['Divide este PDF y guarda cada página por separado','Convierte este PDF en un Word editable','Analiza este documento y resume lo importante','Prepara esta imagen para Instagram','Crea una página web para mi negocio'].map((x,i)=>'<button type="button" data-example="'+i+'">'+escapeHtml(x)+'</button>').join('');
     welcome.append(examples);list.append(welcome);
-    disposeWelcomeGrid=mountCoreWelcomeGrid(welcome);
+    disposeWelcomeGrid=mountCoreWelcomeGrid(list);
     examples.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{const input=$('#core-input');input.value=button.textContent;input.focus();}));
   }
   for(const message of messages){
