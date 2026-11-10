@@ -1344,10 +1344,14 @@ function setupSidebarControls(){
 function scrollToCurrentView(){
   // Prisma Core is a viewport-sized chat. Never scroll its outer page.
   if(activeView==='core'){window.scrollTo(0,0);return;}
-  const target=activeView==='ai'?$('#ai-section'):
-    activeView==='explore'&&activeCategory==='all'&&!searchTerm?$('#home-dashboard'):$('#tools-section');
-  if(!target)return;
   const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Opening Explore should reveal its Aurora hero instead of skipping straight to flows.
+  if(activeView==='explore'&&activeCategory==='all'&&!searchTerm){
+    window.scrollTo({top:0,behavior:reduceMotion?'instant':'smooth'});
+    return;
+  }
+  const target=activeView==='ai'?$('#ai-section'):$('#tools-section');
+  if(!target)return;
   target.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
 }
 function showView(view){
