@@ -19,6 +19,10 @@ function jsonSafe(value, key = '') {
   return value;
 }
 
+export function hasConversationMessages(conversation) {
+  return Array.isArray(conversation?.messages) && conversation.messages.length > 0;
+}
+
 function stableLegacyMessageId(chatId, message, index) {
   const source = [chatId, index, message?.role || '', message?.time || '', message?.content || ''].join('|');
   let hash = 2166136261;
