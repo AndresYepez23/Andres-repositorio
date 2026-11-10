@@ -76,11 +76,16 @@ function setProviderAvailability(){
  for(const provider of ['google','apple','phone']){
   const btn=$('#auth-'+provider);
   if(!btn)continue;
-  const ready=config.enabled&&isAccountProviderAvailable(config.features,provider);
+  // Apple is intentionally unavailable until its OAuth integration is prepared.
+  const ready=provider!=='apple'&&config.enabled&&isAccountProviderAvailable(config.features,provider);
   btn.disabled=!ready;
   btn.setAttribute('aria-disabled',String(!ready));
+  if(provider==='apple'){
+   btn.title='Próximamente';
+   btn.setAttribute('aria-label','Continuar con Apple. Próximamente');
+  }
   const label=btn.querySelector('small');
-  if(label)label.textContent=ready?'Disponible':provider==='phone'?'Requiere configurar SMS':'Por configurar';
+  if(label)label.textContent=ready?'Disponible':provider==='apple'?'Próximamente':provider==='phone'?'Requiere configurar SMS':'Por configurar';
  }
  const email=$('#auth-email-choice');
  if(email)email.disabled=!config.enabled;
