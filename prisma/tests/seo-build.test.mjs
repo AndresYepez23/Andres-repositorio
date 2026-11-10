@@ -6,8 +6,8 @@ const root=new URL('../',import.meta.url);
 const dist=new URL('../dist/',import.meta.url);
 const {pages}=JSON.parse(await readFile(new URL('seo/pages.json',root),'utf8'));
 
-test('20 pages configured with unique slugs and real tool IDs',async()=>{
-  assert.equal(pages.length,20);
+test('40 pages configured with unique slugs and real tool IDs',async()=>{
+  assert.equal(pages.length,40);
   assert.equal(new Set(pages.map(page=>page.slug)).size,20);
   const registry=await import('../src/registry.js');
   for(const page of pages){
@@ -17,7 +17,7 @@ test('20 pages configured with unique slugs and real tool IDs',async()=>{
   }
 });
 
-test('20 pre-rendered pages have unique titles, canonical, guidance, CTA and FAQ',async()=>{
+test('40 pre-rendered pages have unique titles, canonical, guidance, CTA and FAQ',async()=>{
   const titles=new Set();
   for(const page of pages){
     const path=new URL('herramientas/'+page.slug+'/index.html',dist);
@@ -39,7 +39,7 @@ test('20 pre-rendered pages have unique titles, canonical, guidance, CTA and FAQ
   }
 });
 
-test('directory and sitemap expose all 20 URLs and robots advertises sitemap',async()=>{
+test('directory and sitemap expose all 40 URLs and robots advertises sitemap',async()=>{
   const listing=await readFile(new URL('herramientas/index.html',dist),'utf8');
   const sitemap=await readFile(new URL('sitemap.xml',dist),'utf8');
   const robots=await readFile(new URL('robots.txt',dist),'utf8');
