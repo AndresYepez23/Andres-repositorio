@@ -215,10 +215,22 @@ function queueDeletedId(id){
  try{localStorage.setItem(DELETED_KEY,JSON.stringify([...ids]));}
  catch(error){console.error('Prisma: no se pudo guardar la marca local de eliminación.',error?.message||error);}
 }
+async function refreshSyncState(){
+ if(!api||!user)return;
+ const activeUserId=user.id;
+ const {data,error}=await api.from('prisma_profiles')
+  .select('user_id,display_name,theme,sync_enabled').eq('user_id',activeUserId).maybeSingle();
+ if(error||!data||user?.id!==activeUserId)return;
+ profile=data;
+ if(profile.sync_enabled===true)localStorage.setItem(SYNC_KEY,activeUserId);
+ else localStorage.removeItem(SYNC_KEY);
+ refreshIdentity();
+ if(selectedSync())await doSync();
+}
 function startSyncWatchers(){
- if(syncInterval||!selectedSync())return;
+ if(syncInterval)return;
  const refresh=()=>{
-  if(document.visibilityState==='visible'&&selectedSync())doSync().catch(error=>console.warn('Prisma sync:',error?.message||error));
+  if(document.visibilityState==='visible')refreshSyncState().catch(error=>console.warn('Prisma sync:',error?.message||error));
  };
  syncInterval=window.setInterval(refresh,30000);
  window.addEventListener('focus',refresh);
@@ -380,8 +392,8 @@ async function onSignedIn(newUser,{fromInteraction=false}={}){
  if(changed)profile=null;
  refreshIdentity();
  await ensureProfile();
+ startSyncWatchers();
  if(selectedSync()){
-  startSyncWatchers();
   await (window.__prismaHistoryReady||Promise.resolve());
   try{await doSync();}catch(error){console.warn('Prisma: no se pudo completar la sincronización inicial.',error?.message||error);}
  }
