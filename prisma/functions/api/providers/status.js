@@ -1,6 +1,6 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
-import { getCredentialSlots, getCredentialStatus, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
+import { getCredentialSlots, getCredentialStatus, getHealthyCredentialCount, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from "../../_lib/limits.js";
@@ -51,8 +51,12 @@ export async function onRequestGet({ env }) {
   const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
   const kiloModels = await getKiloFreeModels(env);
   const aihubmixModels = configured.aihubmix > 0 ? await getAihubmixFreeModels(env) : [];
+  // SenseNova's six variables can all exist even when every credential
+  // receives HTTP 401/403. Do not advertise it as healthy in that case.
+  const senseNovaHealthySlots=await getHealthyCredentialCount(env,"sensenova");
   const available = Object.fromEntries(poolProviders.map(provider =>
     [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
+      (provider !== "sensenova" || senseNovaHealthySlots > 0) &&
       dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
       !(provider === "kilo" && kiloModels.length === 0) &&
       !(provider === "aihubmix" && aihubmixModels.length === 0)]
@@ -73,6 +77,7 @@ export async function onRequestGet({ env }) {
     const info = getCredentialStatus(env, provider);
     return [provider, {
       ...info,
+      ...(provider==="sensenova"?{healthySlots:senseNovaHealthySlots}:{}),
       dailyUsage: usage[provider]?.daily || null,
       minuteUsage: usage[provider]?.minute || null,
       providerPaused: Boolean(hold),
@@ -90,6 +95,8 @@ export async function onRequestGet({ env }) {
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
+    else if (provider==="sensenova" && configured[provider] > 0 && senseNovaHealthySlots===0)
+      warnings[provider] = "Las claves de SenseNova están temporalmente inhabilitadas por respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; el chat seguirá usando otros motores.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
