@@ -6,7 +6,7 @@ import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-rou
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { findConversations } from '../src/conversation-search.js';
-import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX } from '../src/sidebar-gestures.js';
+import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX, installMobileSidebarGestures } from '../src/sidebar-gestures.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
@@ -819,5 +819,69 @@ assert.match(uiMain,/installMobileSidebarGestures\(\{sidebar,backdrop,menu\}\)/)
 const sidebarGesturesSource=readFileSync(new URL('../src/sidebar-gestures.js',import.meta.url),'utf8');
 assert.match(sidebarGesturesSource,/touchmove',move,\{passive:false,capture:true\}/);
 assert.match(sidebarGesturesSource,/intent==='vertical'/);
+
+
+// Exercise the actual touch handlers, not only the direction classifier.
+// This detects regressions where gestures classify correctly but fail to
+// change the CSS class that opens the drawer.
+const makeClasses=initial=>{
+ const values=new Set(initial);
+ return {
+  add:v=>values.add(v),remove:v=>values.delete(v),
+  contains:v=>values.has(v),
+  toggle:(v,force)=>{
+   if(force===true){values.add(v);return true;}
+   if(force===false){values.delete(v);return false;}
+   if(values.has(v)){values.delete(v);return false;}
+   values.add(v);return true;
+  }
+ };
+};
+const mockSidebar={classList:makeClasses([]),
+ style:{removeProperty(k){delete this[k];}},
+ getBoundingClientRect(){return {width:300,right:300};}};
+const mockBackdrop={classList:makeClasses([]),
+ style:{removeProperty(k){delete this[k];}}};
+const mockMenu={attrs:{},setAttribute(k,v){this.attrs[k]=v;}};
+const touchListeners={};
+const mockDocument={
+ addEventListener(name,fn){touchListeners[name]=fn;},
+ removeEventListener(name){delete touchListeners[name];}
+};
+const previousWindow=globalThis.window;
+globalThis.window={matchMedia:()=>({matches:true}),
+ addEventListener(){},removeEventListener(){}};
+const cleanupGestures=installMobileSidebarGestures({
+ sidebar:mockSidebar,backdrop:mockBackdrop,menu:mockMenu,
+ body:{classList:makeClasses([])},documentTarget:mockDocument,mobile:()=>true
+});
+function touchPoint(x,y){return {identifier:9,clientX:x,clientY:y};}
+function dispatchTouch(name,point){
+ let blocked=false;
+ touchListeners[name]?.({
+  target:{closest(){return null;}},
+  touches:name==='touchend'?[]:[point],
+  changedTouches:[point],cancelable:true,
+  preventDefault(){blocked=true;}
+ });
+ return blocked;
+}
+dispatchTouch('touchstart',touchPoint(9,210));
+assert.equal(dispatchTouch('touchmove',touchPoint(105,213)),true,'Horizontal drag is captured');
+dispatchTouch('touchend',touchPoint(105,213));
+assert.equal(mockSidebar.classList.contains('open'),true,'Gesture must open actual sidebar');
+assert.equal(mockBackdrop.classList.contains('open'),true);
+assert.equal(mockMenu.attrs['aria-expanded'],'true');
+dispatchTouch('touchstart',touchPoint(125,270));
+assert.equal(dispatchTouch('touchmove',touchPoint(130,430)),false,
+ 'Vertical scrolling inside drawer must never be prevented');
+dispatchTouch('touchend',touchPoint(130,430));
+assert.equal(mockSidebar.classList.contains('open'),true,'Vertical scroll must not close sidebar');
+dispatchTouch('touchstart',touchPoint(250,260));
+assert.equal(dispatchTouch('touchmove',touchPoint(100,265)),true);
+dispatchTouch('touchend',touchPoint(100,265));
+assert.equal(mockSidebar.classList.contains('open'),false,'Swipe left must close sidebar');
+cleanupGestures();
+globalThis.window=previousWindow;
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
