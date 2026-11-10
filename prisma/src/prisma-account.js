@@ -213,7 +213,7 @@ export function openPrismaAuthForGuestLimit(){
  // A dismissed dialog may be revisited. The send button stays gated until
  // a real account session exists; browsing and downloads remain accessible.
  $('#auth-guest')?.classList.add('hidden');
- info('Completaste tus 4 tareas de prueba. Crea una cuenta gratis o inicia sesión para seguir usando Prisma Core.','info');
+ info('Ya completaste 4 trabajos con archivos. Regístrate gratis o inicia sesión para seguir adjuntando, procesando o generando archivos. El chat de texto sigue disponible sin cuenta.','info');
  showAuth(true,{focus:false});
  return true;
 }
