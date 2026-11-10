@@ -8,6 +8,7 @@ let syncTimer=0,pendingAuth=false,recovering=false,handledWelcome=false;
 const STORAGE='prisma-core-chats-v2';
 const SYNC_KEY='prisma-user-sync-consent-v1';
 const OAUTH_PENDING='prisma-account-oauth-pending';
+const SIGNUP_PENDING='prisma-account-signup-confirm-pending';
 const SCREENS=['intro','email','phone','reset','recovery','confirm','welcome','account'];
 
 export function validateAccountPassword(password,confirmation=null){
@@ -84,6 +85,16 @@ function setProviderAvailability(){
  if(availability)availability.textContent=config.enabled
   ?'Correo y contraseña disponibles. Otros métodos se habilitarán cuando estén configurados.'
   :'Las cuentas no están disponibles en este momento. Puedes seguir usando Prisma sin registrarte.';
+}
+function showEmailConfirmation(email,kind='signup'){
+ const title=$('#auth-confirm-title'),description=$('#auth-confirm-description');
+ if(title)title.textContent=kind==='reset'?'Revisa tu correo':'Confirma tu cuenta';
+ if(description)description.textContent=kind==='reset'
+  ?'Si existe una cuenta con ese correo, recibirás un enlace para crear una contraseña nueva.'
+  :'Te enviamos un enlace de confirmación. Ábrelo para activar tu cuenta.';
+ $('#auth-confirm-email').textContent=email;
+ $('#auth-resend-signup')?.classList.toggle('hidden',kind!=='signup');
+ showScreen('confirm');
 }
 function updateTabs(){
  const signup=authMode==='signup';
@@ -277,8 +288,11 @@ async function onSignedIn(newUser,{fromInteraction=false}={}){
  ensureProfile().catch(()=>{});
  if(selectedSync())setTimeout(()=>doSync().catch(()=>{}),750);
  const oauth=sessionStorage.getItem(OAUTH_PENDING);
- const welcome=fromInteraction||pendingAuth||Boolean(oauth);
+ const signupPending=Number(sessionStorage.getItem(SIGNUP_PENDING)||0);
+ const pendingSignupValid=signupPending>0&&Date.now()-signupPending<86400000;
+ const welcome=fromInteraction||pendingAuth||Boolean(oauth)||pendingSignupValid;
  if(oauth)sessionStorage.removeItem(OAUTH_PENDING);
+ if(pendingSignupValid)sessionStorage.removeItem(SIGNUP_PENDING);
  pendingAuth=false;
  if(recovering)return;
  if(welcome&&!handledWelcome){
@@ -343,8 +357,8 @@ function bindForms(){
     :await api.auth.signInWithPassword({email,password});
    if(authError)throw authError;
    if(signup&&!data?.session){
-    $('#auth-confirm-email').textContent=email;
-    showScreen('confirm');
+    sessionStorage.setItem(SIGNUP_PENDING,String(Date.now()));
+    showEmailConfirmation(email,'signup');
     info('Revisa tu correo para confirmar tu cuenta.','success');
     return;
    }
@@ -396,8 +410,7 @@ function bindForms(){
     redirectTo:location.origin+location.pathname
    });
    if(error)throw error;
-   $('#auth-confirm-email').textContent=email;
-   showScreen('confirm');
+   showEmailConfirmation(email,'reset');
    info('Si existe una cuenta con ese correo, recibirás un enlace.','success');
   });
  });
@@ -415,6 +428,18 @@ function bindForms(){
    $('#auth-new-password-confirm').value='';
    showScreen('account');
    info('Tu contraseña se actualizó correctamente.','success');
+  });
+ });
+ $('#auth-resend-signup')?.addEventListener('click',()=>{
+  const button=$('#auth-resend-signup');
+  withBusy(button,async()=>{
+   if(!api)throw Error('El servicio de correo no está disponible.');
+   const email=String($('#auth-confirm-email')?.textContent||'').trim();
+   if(!email)throw Error('No se encontró el correo para reenviar.');
+   const {error}=await api.auth.resend({type:'signup',email,
+    options:{emailRedirectTo:location.origin+location.pathname}});
+   if(error)throw error;
+   info('Si la cuenta está pendiente, llegará una nueva confirmación. Espera unos minutos antes de volver a intentarlo.','success');
   });
  });
  $('#auth-confirm-done')?.addEventListener('click',()=>showAuth(false));
