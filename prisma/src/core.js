@@ -421,7 +421,7 @@ function renderMessages({forceBottom=false}={}){
   list.replaceChildren();
   if(!messages.length){
     const welcome=document.createElement('div');welcome.className='core-welcome';
-    welcome.innerHTML='<span class="eyebrow core-welcome-eyebrow">PRISMA CORE · TU ASISTENTE</span><h2>¿Qué necesitas hacer?<span class="core-welcome-gradient">Déjaselo a Prisma.</span></h2><p>No necesitas saber qué herramienta usar. Escríbeme en lenguaje natural o adjunta un archivo y me encargo de organizar el trabajo.</p>';
+    welcome.innerHTML='<span class="eyebrow core-welcome-eyebrow">PRISMA CORE · TU ASISTENTE</span><h2>¿Qué necesitas hacer?<span class="core-welcome-gradient">Déjaselo a Prisma.</span></h2><p>Cuéntame qué necesitas o adjunta un archivo. Prisma organiza el resto.</p>';
     const examples=document.createElement('div');examples.className='core-examples';
     examples.innerHTML=['Divide este PDF y guarda cada página por separado','Convierte este PDF en un Word editable','Analiza este documento y resume lo importante','Prepara esta imagen para Instagram','Crea una página web para mi negocio'].map((x,i)=>'<button type="button" data-example="'+i+'">'+escapeHtml(x)+'</button>').join('');
     welcome.append(examples);list.append(welcome);
