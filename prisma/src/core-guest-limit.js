@@ -16,7 +16,9 @@ export function isGuestFileTask({text='',attachments=[]}={}){
  const output=/(?:descarga|descargar|archivo descargable|guardar (?:como|en) (?:pdf|word|excel|mp3|png|jpg|zip)|exporta|exportar|convierte|convertir|comprime|comprimir|transcribe|transcribir|genera|generar|crea|crear|haz|prepara|edita|editar|reduce|transforma|separa|divide|extrae)/;
  const artifact=/\b(?:archivos?|documentos?|pdf|docx?|word|xlsx?|excel|csv|zip|png|jpe?g|webp|gif|imagenes?|fotos?|audios?|mp3|wav|videos?|mp4|mov|miniaturas?|logos?|flyers?|banners?|portadas?|html descargable)\b/;
  const directFile=/\b(?:subir|adjuntar|cargar|procesar|comprimir|convertir|descargar|exportar|transcribir)\b/;
- return (output.test(q)&&artifact.test(q))||(directFile.test(q)&&artifact.test(q));
+ const produce=/\b(?:quiero|necesito|dame|hazme|puedes hacer|dibujame|dibuja|disena|disename|fabricame|renderiza)\b/;
+ return (output.test(q)&&artifact.test(q))||(directFile.test(q)&&artifact.test(q))||
+   (produce.test(q)&&/\b(?:una?\s+)?(?:imagen|foto|logo|miniatura|flyer|banner|video|audio|mp3|pdf|zip|archivo|documento descargable)\b/.test(q));
 }
 export function canGuestSubmit({signedIn=false,count=0,fileTask=true}={}){
  return signedIn||!fileTask||Number(count)<GUEST_TASK_LIMIT;
