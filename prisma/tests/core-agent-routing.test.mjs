@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { reconcileIosPwaViewport } from '../src/pwa-viewport.js';
 import { isVideoCompressionIntent, isVideoFile, preferNativeVideoCompression, videoCompressionSettings, chooseNativeRecordingType, localizedVideoError, compressVideoNative } from '../src/video-compression.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
-import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
+import { getCredentialSlots, getCredentialStatus, getHealthyCredentialCount, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { findConversations } from '../src/conversation-search.js';
 import { mergeConversationLists, normalizeConversation } from '../src/conversation-sync.js';
@@ -326,6 +326,18 @@ const credentialPoolSource=readFileSync(new URL('../functions/_lib/credential-po
 assert.match(credentialPoolSource,/crypto\.subtle\.digest\('SHA-256',bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
 assert.match(credentialPoolSource,/await credentialHealthKey\(provider, slot\)/,'A replaced secret must not inherit its prior slot cooldown');
 assert.match(credentialPoolSource,/La credencial recibió HTTP/,'Provider health should retain the actual upstream status');
+assert.equal(await getHealthyCredentialCount(senseKeys,'sensenova'),6,'All slots must be considered healthy when D1 is unavailable');
+const rejectedSenseKeys={
+ ...senseKeys,
+ PRISMA_RATE_DB:{
+  prepare(){return {bind(){return {async first(){return {state:'auth_error',valid_until:9999999999};}};}};}
+ }
+};
+assert.equal(await getHealthyCredentialCount(rejectedSenseKeys,'sensenova'),0,'Rejected SenseNova keys must not remain advertised as available');
+const providerStatusSource=readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
+assert.match(providerStatusSource,/senseNovaHealthySlots>0/,'Prisma must not route to SenseNova when all six keys are on auth cooldown');
+assert.match(providerStatusSource,/HTTP 401\/403/,'Provider panel must explain authentication rejection clearly');
+
 
 const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"/,'SenseNova must enable valid-key auth sweep');
