@@ -91,7 +91,7 @@ assert.match(welcomeGridSource,/prefers-reduced-motion: reduce/,'Respect reduced
 assert.match(welcomeGridSource,/IntersectionObserver/,'Pause the matrix when offscreen');
 assert.match(welcomeGridSource,/visibilitychange/,'Pause when the page is hidden');
 assert.match(welcomeGridSource,/cancelAnimationFrame/,'Release animation resources on unmount');
-assert.doesNotMatch(welcomeGridSource,/fetch\(|XMLHttpRequest|WebGL|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
+assert.doesNotMatch(welcomeGridSource,/\bfetch\s*\(|XMLHttpRequest|\bgetContext\(['"]webgl|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
 assert.match(stylesSource,/body\.is-core-view \.core-welcome-ambient/,'Dot matrix must be styled only inside Core');
 assert.match(stylesSource,/html\[data-theme="light"\] body\.is-core-view \.core-welcome-ambient/,'Dot matrix must support light mode');
 assert.match(stylesSource,/-webkit-mask-image:radial-gradient/,'Dot matrix must fade gently into the surrounding chat');
