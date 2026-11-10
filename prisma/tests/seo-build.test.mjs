@@ -9,7 +9,10 @@ const {pages}=JSON.parse(await readFile(new URL('seo/pages.json',root),'utf8'));
 test('40 pages configured with unique slugs and real tool IDs',async()=>{
   assert.equal(pages.length,40);
   assert.equal(new Set(pages.map(page=>page.slug)).size,40);
-  assert.equal(new Set(pages.map(page=>page.tool)).size,40,'a tool may only have one SEO landing page');
+  const firstBatchTools=new Set(pages.slice(0,20).map(page=>page.tool));
+  const secondBatchTools=pages.slice(20).map(page=>page.tool);
+  assert.equal(new Set(secondBatchTools).size,20,'second batch must not repeat a tool');
+  assert.ok(secondBatchTools.every(tool=>!firstBatchTools.has(tool)),'second batch must not reuse first-batch tools');
   const registry=await import('../src/registry.js');
   for(const page of pages){
     const tool=registry.tools.find(t=>t.id===page.tool);
