@@ -500,6 +500,508 @@
           "Sí, puedes introducir una URL y generar un código QR para compartirla."
         ]
       ]
+    },
+    {
+      "slug": "imagen-a-texto",
+      "tool": "image-ocr",
+      "title": "Imagen a texto gratis con OCR en español | Prisma Space",
+      "h1": "Convertir imagen a texto con OCR",
+      "description": "Extrae texto de fotografías y documentos escaneados con OCR. Elige español, inglés o ambos idiomas y revisa el resultado antes de copiarlo.",
+      "intro": "Si tienes una foto de apuntes, un recibo o una hoja impresa, volver a escribir cada línea lleva tiempo. El OCR de Prisma Space analiza la imagen y reconoce sus caracteres para recuperar el contenido en texto que puedas copiar y reutilizar.",
+      "details": "Puedes seleccionar español, inglés o una combinación de ambos idiomas. En la primera ejecución se descargan los datos de idioma necesarios en el navegador. La precisión depende de la nitidez, la iluminación, el contraste y la orientación del documento.",
+      "steps": [
+        "Selecciona una fotografía o imagen que contenga texto impreso.",
+        "Elige español, inglés o ambos idiomas en el selector de OCR.",
+        "Ejecuta el reconocimiento, revisa las palabras detectadas y copia el texto."
+      ],
+      "tip": "El OCR puede confundir letras, números, tildes y columnas. Comprueba nombres, fechas y cifras contra la imagen original.",
+      "faqs": [
+        [
+          "¿Puedo convertir un PDF escaneado directamente?",
+          "Esta herramienta recibe imágenes. Si tienes un PDF, convierte primero sus páginas a imágenes y después ejecuta el OCR."
+        ],
+        [
+          "¿Reconoce escritura a mano?",
+          "Está orientado principalmente a texto impreso. El reconocimiento de manuscritos puede ser impreciso y requiere revisión."
+        ]
+      ]
+    },
+    {
+      "slug": "marca-de-agua-pdf",
+      "tool": "pdf-watermark",
+      "title": "Marca de agua en PDF gratis | Prisma Space",
+      "h1": "Añadir una marca de agua a un PDF",
+      "description": "Inserta un texto diagonal y semitransparente en las páginas de un PDF desde tu navegador, sin reemplazar el documento original.",
+      "intro": "Cuando compartes un borrador, una muestra o un documento de trabajo, una marca de agua ayuda a identificar visualmente su estado o procedencia. Prisma Space permite escribir un texto y aplicarlo sobre las páginas de una copia del PDF.",
+      "details": "La marca se representa en diagonal y con transparencia para que el contenido del documento siga siendo legible. Puedes usar un nombre, una indicación como BORRADOR o una referencia de tu organización. El resultado es un nuevo PDF descargable.",
+      "steps": [
+        "Selecciona el archivo PDF al que quieres añadir la marca.",
+        "Escribe el texto que aparecerá como marca de agua.",
+        "Ejecuta el proceso y revisa el PDF resultante antes de compartirlo."
+      ],
+      "tip": "Una marca de agua visual no cifra el documento ni impide que alguien copie su contenido. Para información confidencial, utiliza controles de acceso adecuados.",
+      "faqs": [
+        [
+          "¿La marca aparece en todas las páginas?",
+          "La herramienta aplica el texto sobre las páginas del documento procesado."
+        ],
+        [
+          "¿La marca de agua protege el PDF con contraseña?",
+          "No. Añade una identificación visual, pero no sustituye el cifrado ni la protección mediante contraseña."
+        ]
+      ]
+    },
+    {
+      "slug": "generador-citas-apa-vancouver",
+      "tool": "citation-generator",
+      "title": "Generador de citas APA 7, Vancouver y MLA | Prisma Space",
+      "h1": "Generar referencias bibliográficas en APA 7, Vancouver y MLA",
+      "description": "Da formato a referencias con autor, año, título, revista o editorial y DOI. Elige APA 7, Vancouver o MLA 9 y revisa los datos de la fuente.",
+      "intro": "Preparar la bibliografía de un trabajo académico exige mantener un formato coherente. Este generador organiza los datos que introduces y crea versiones de la referencia en tres estilos habituales: APA 7, Vancouver y MLA 9.",
+      "details": "Añade autor, año y título, e incorpora la revista, editorial, DOI o URL cuando corresponda. Prisma Space no busca automáticamente los metadatos de una publicación ni verifica que sean correctos: el resultado depende de la información que escribas.",
+      "steps": [
+        "Introduce los autores, el año y el título de la publicación.",
+        "Añade la revista, editorial, DOI o URL si tienes esos datos.",
+        "Selecciona APA 7, Vancouver o MLA 9 y comprueba la referencia generada."
+      ],
+      "tip": "Consulta siempre la guía oficial del estilo exigido por tu universidad. Revisa el orden de autores, mayúsculas, volumen, número, páginas y DOI.",
+      "faqs": [
+        [
+          "¿El generador busca un artículo usando su DOI?",
+          "No. Puedes escribir el DOI o su URL como dato de la referencia, pero la herramienta no consulta automáticamente una base bibliográfica."
+        ],
+        [
+          "¿Puedo generar referencias Vancouver y APA 7?",
+          "Sí. La herramienta muestra versiones APA 7, Vancouver y MLA 9 a partir de los datos que proporcionas."
+        ]
+      ]
+    },
+    {
+      "slug": "recortar-imagen",
+      "tool": "image-crop",
+      "title": "Recortar imagen online gratis | Prisma Space",
+      "h1": "Recortar una imagen online",
+      "description": "Recorta fotografías e imágenes ajustando el ancho y el alto del recorte en porcentaje. Descarga una copia sin instalar un editor.",
+      "intro": "Una fotografía puede necesitar un encuadre más compacto para una publicación, una ficha o una presentación. Esta herramienta recorta la imagen desde el centro y permite definir cuánto de su ancho y alto conservar.",
+      "details": "Puedes indicar porcentajes independientes para el ancho y el alto del recorte. El resultado se genera en el navegador y se descarga como un archivo nuevo. Esta versión aplica un recorte centrado; todavía no ofrece selección libre arrastrando un marco con el ratón.",
+      "steps": [
+        "Selecciona la fotografía que quieres recortar.",
+        "Indica el porcentaje de ancho y alto que deseas conservar.",
+        "Genera y descarga la imagen recortada; comprueba que el encuadre sea adecuado."
+      ],
+      "tip": "Como el recorte se centra automáticamente, coloca el sujeto cerca del centro antes de usar esta versión. Conserva el original por si necesitas otro encuadre.",
+      "faqs": [
+        [
+          "¿Puedo mover el marco de recorte con el ratón?",
+          "Esta versión realiza un recorte centrado mediante porcentajes. No incluye todavía un marco de selección libre."
+        ],
+        [
+          "¿Se modifica la imagen original?",
+          "No. Prisma genera una copia recortada para descargar; tu archivo de origen permanece intacto."
+        ]
+      ]
+    },
+    {
+      "slug": "marca-de-agua-imagen",
+      "tool": "image-watermark",
+      "title": "Poner marca de agua a una imagen online | Prisma Space",
+      "h1": "Añadir una marca de agua a una imagen",
+      "description": "Firma fotografías con texto personalizable: elige posición, tamaño, color y opacidad y descarga la imagen resultante.",
+      "intro": "Si publicas fotografías, diseños o imágenes de trabajo, puedes añadir una firma visual para indicar su autoría o procedencia. Prisma Space incorpora un texto sobre la imagen y te permite ajustar cómo se presenta.",
+      "details": "Configura el contenido de la marca, su ubicación, el tamaño en píxeles, el color y la opacidad. Puedes colocarla en las esquinas o en el centro. La herramienta exporta una nueva imagen sin alterar el archivo original.",
+      "steps": [
+        "Carga la fotografía o imagen que quieres identificar.",
+        "Escribe la marca y ajusta posición, tamaño, color y opacidad.",
+        "Aplica el texto y descarga la imagen con la marca incorporada."
+      ],
+      "tip": "Una marca discreta puede ser más legible y menos invasiva. Revisa el resultado en el tamaño real en que publicarás la fotografía.",
+      "faqs": [
+        [
+          "¿Puedo poner mi nombre o el logo de mi marca?",
+          "Esta herramienta añade una marca de agua de texto. Puedes escribir un nombre, una web o el nombre de tu marca; no inserta un logotipo como archivo independiente."
+        ],
+        [
+          "¿Puedo cambiar la transparencia?",
+          "Sí. Puedes ajustar la opacidad y elegir la ubicación, el tamaño y el color del texto."
+        ]
+      ]
+    },
+    {
+      "slug": "collage-de-fotos",
+      "tool": "image-collage",
+      "title": "Crear collage de fotos online gratis | Prisma Space",
+      "h1": "Crear un collage de fotos online",
+      "description": "Combina de 2 a 12 fotografías en un mosaico cuadrado. Elige un fondo y descarga la composición en JPG.",
+      "intro": "Un collage permite reunir varias fotografías en una sola imagen para compartir recuerdos, comparar resultados o preparar una publicación. Prisma Space organiza las fotos seleccionadas en una cuadrícula automática.",
+      "details": "Puedes combinar entre dos y doce imágenes. El sistema calcula filas y columnas según la cantidad de archivos, adapta cada fotografía a una celda cuadrada y permite escoger un fondo blanco, oscuro o turquesa claro. No es un editor de composición libre.",
+      "steps": [
+        "Selecciona al menos dos fotografías y hasta doce archivos compatibles.",
+        "Elige el color de fondo del mosaico.",
+        "Genera el collage y descarga la composición en formato JPG."
+      ],
+      "tip": "Las fotografías se ajustan a celdas cuadradas y pueden perder parte de sus bordes. Utiliza imágenes con el sujeto centrado para obtener un resultado más uniforme.",
+      "faqs": [
+        [
+          "¿Cuántas fotos puedo juntar?",
+          "Puedes seleccionar de dos a doce imágenes en una misma composición."
+        ],
+        [
+          "¿Puedo mover cada foto o cambiar su tamaño por separado?",
+          "La cuadrícula se genera automáticamente. Esta versión no permite arrastrar y organizar cada foto de forma manual."
+        ]
+      ]
+    },
+    {
+      "slug": "comprimir-video",
+      "tool": "video-compress",
+      "title": "Comprimir vídeo online gratis sin subirlo | Prisma Space",
+      "h1": "Comprimir un vídeo online",
+      "description": "Reduce el tamaño de vídeos MP4, MOV, M4V, WebM o MKV con procesamiento local. Descarga el resultado solo si realmente pesa menos.",
+      "intro": "Los vídeos grabados con teléfonos y cámaras pueden ocupar demasiado espacio para enviarlos o guardarlos. Prisma Space permite volver a codificar un vídeo con un nivel de compresión elegido desde el navegador.",
+      "details": "Puedes priorizar un archivo más pequeño, un equilibrio o una calidad superior. La herramienta conserva el audio y compara el tamaño final con el original: si el resultado no pesa menos, no ofrece una copia que empeore el archivo sin ahorrar espacio.",
+      "steps": [
+        "Selecciona el vídeo que quieres comprimir.",
+        "Elige entre archivo pequeño, equilibrado o mayor calidad.",
+        "Espera a que termine la codificación y descarga el resultado si se ha reducido su tamaño."
+      ],
+      "tip": "La compresión puede tardar aproximadamente lo mismo que la duración del vídeo, especialmente en teléfonos. Mantén la pestaña abierta y evita cerrar el navegador durante el proceso.",
+      "faqs": [
+        [
+          "¿Se sube mi vídeo a un servidor?",
+          "La compresión está diseñada para ejecutarse localmente en el navegador o mediante codificación nativa del dispositivo cuando está disponible."
+        ],
+        [
+          "¿Siempre se reduce el peso del vídeo?",
+          "No. Si la nueva codificación no consigue un archivo más pequeño, la herramienta informa del resultado y conserva el original."
+        ]
+      ]
+    },
+    {
+      "slug": "video-a-gif",
+      "tool": "video-gif",
+      "title": "Convertir vídeo a GIF online gratis | Prisma Space",
+      "h1": "Convertir un vídeo a GIF animado",
+      "description": "Transforma un fragmento corto de vídeo en un GIF en bucle. Selecciona el segundo de inicio y crea una animación descargable.",
+      "intro": "Un GIF animado sirve para mostrar una reacción, un gesto o una demostración breve sin compartir un vídeo completo. Prisma Space permite seleccionar un fragmento de un archivo de vídeo y convertirlo en una animación.",
+      "details": "La herramienta genera GIF de hasta doce segundos, con una salida optimizada de aproximadamente 640 píxeles de ancho y doce fotogramas por segundo. El motor multimedia se descarga al primer uso y procesa el archivo en el navegador.",
+      "steps": [
+        "Carga un vídeo compatible desde tu dispositivo.",
+        "Indica el segundo de inicio y la duración del fragmento, hasta doce segundos.",
+        "Genera el GIF en bucle y descarga el archivo resultante."
+      ],
+      "tip": "Los GIF pueden pesar más que un vídeo corto. Utiliza fragmentos breves y evita escenas con mucho movimiento si buscas un archivo ligero.",
+      "faqs": [
+        [
+          "¿Puedo convertir un vídeo completo a GIF?",
+          "La herramienta está pensada para fragmentos de hasta doce segundos, no para convertir vídeos largos completos."
+        ],
+        [
+          "¿El GIF tiene sonido?",
+          "No. El formato GIF contiene animación visual, no una pista de audio."
+        ]
+      ]
+    },
+    {
+      "slug": "extraer-audio-de-video",
+      "tool": "video-audio",
+      "title": "Extraer audio de un vídeo online gratis | Prisma Space",
+      "h1": "Extraer el audio de un vídeo",
+      "description": "Separa la pista de sonido de un archivo de vídeo y guárdala como WAV desde el navegador, sin cargar el vídeo a Prisma.",
+      "intro": "Quizá grabaste una entrevista, una clase o una presentación y necesitas escuchar únicamente su contenido sonoro. Extraer el audio permite guardar la pista por separado para reproducirla o editarla.",
+      "details": "Prisma Space utiliza un motor multimedia en el navegador para separar la pista de audio del vídeo y exportarla como WAV. El primer uso puede requerir descargar los componentes de procesamiento; la duración y el tamaño del archivo influyen en el tiempo de espera.",
+      "steps": [
+        "Selecciona el vídeo que contiene el audio que necesitas.",
+        "Ejecuta la extracción de la pista sonora.",
+        "Descarga el archivo WAV y reprodúcelo para verificar que el sonido está completo."
+      ],
+      "tip": "El resultado es WAV, no MP3. Si necesitas otro formato, puedes abrir después el conversor de audio de Prisma Space.",
+      "faqs": [
+        [
+          "¿Puedo extraer audio de MP4?",
+          "Sí, la herramienta admite archivos de vídeo compatibles, incluidos MP4 y otros formatos habituales."
+        ],
+        [
+          "¿En qué formato se descarga el audio?",
+          "La extracción genera un archivo WAV de audio."
+        ]
+      ]
+    },
+    {
+      "slug": "recortar-video",
+      "tool": "video-trim",
+      "title": "Recortar vídeo online gratis por segundos | Prisma Space",
+      "h1": "Recortar un vídeo por tiempo",
+      "description": "Extrae un fragmento de un vídeo indicando el segundo de inicio y la duración. Descarga el clip resultante en MP4.",
+      "intro": "Para compartir una escena concreta no siempre necesitas enviar la grabación completa. Esta herramienta permite indicar en qué momento comienza el fragmento y cuánto debe durar.",
+      "details": "El recorte se define mediante segundos de inicio y duración, en lugar de una línea de tiempo visual. El motor multimedia se ejecuta en el navegador y prepara un archivo MP4 que puedes revisar antes de compartir.",
+      "steps": [
+        "Selecciona el vídeo que deseas recortar.",
+        "Escribe el segundo de inicio y la duración del clip.",
+        "Ejecuta el recorte y descarga el MP4 resultante."
+      ],
+      "tip": "Reproduce el resultado antes de publicarlo. Según los puntos de codificación del vídeo original, el corte puede no coincidir con un fotograma exacto.",
+      "faqs": [
+        [
+          "¿Puedo elegir el inicio y el final del clip?",
+          "Sí. Indicas el tiempo de inicio y la duración deseada en segundos."
+        ],
+        [
+          "¿Se necesita instalar un editor?",
+          "No. El procesamiento se realiza en el navegador; la primera ejecución puede descargar el motor multimedia."
+        ]
+      ]
+    },
+    {
+      "slug": "quitar-audio-video",
+      "tool": "video-mute",
+      "title": "Quitar audio de un vídeo online gratis | Prisma Space",
+      "h1": "Quitar el sonido de un vídeo",
+      "description": "Crea una copia MP4 de un vídeo sin su pista de audio. Conserva el flujo de imagen y descarga el archivo silencioso.",
+      "intro": "Cuando una grabación contiene conversaciones de fondo, ruido o música que no quieres compartir, puedes crear una versión sin sonido. Prisma Space elimina la pista de audio y conserva el vídeo.",
+      "details": "La operación copia el flujo de vídeo y omite la pista sonora, sin necesidad de volver a codificar la imagen. El resultado es una copia MP4 silenciosa; el archivo original no se modifica.",
+      "steps": [
+        "Selecciona el vídeo al que quieres quitarle el sonido.",
+        "Ejecuta la eliminación de la pista de audio.",
+        "Descarga el MP4 sin sonido y comprueba que la imagen se conserva."
+      ],
+      "tip": "Esta operación elimina la pista de audio completa. Si solo quieres bajar el volumen o conservar una parte del sonido, necesitas un editor de audio o vídeo más avanzado.",
+      "faqs": [
+        [
+          "¿Se pierde calidad de imagen?",
+          "La herramienta copia el flujo de vídeo sin volver a codificarlo, por lo que no aplica una nueva compresión de imagen."
+        ],
+        [
+          "¿Puedo recuperar el audio después?",
+          "El archivo original permanece intacto. La copia descargada no contiene la pista de audio."
+        ]
+      ]
+    },
+    {
+      "slug": "cambiar-velocidad-video",
+      "tool": "video-speed",
+      "title": "Cambiar velocidad de vídeo online | Prisma Space",
+      "h1": "Acelerar o ralentizar un vídeo",
+      "description": "Cambia la velocidad de reproducción a cámara lenta o rápida, desde 0,5× hasta 2×, y descarga una nueva versión.",
+      "intro": "A veces necesitas ralentizar una demostración para observar sus pasos o acelerar una grabación para resumir una actividad. Prisma Space permite ajustar la velocidad de un vídeo mediante valores predefinidos.",
+      "details": "Puedes elegir 0,5×, 0,75×, 1,25×, 1,5× o 2×. El vídeo se vuelve a codificar para ajustar imagen y audio, por lo que la duración final cambia y el tiempo de procesamiento depende del archivo.",
+      "steps": [
+        "Carga el vídeo que quieres acelerar o ralentizar.",
+        "Selecciona la velocidad de reproducción deseada.",
+        "Procesa el archivo y descarga el vídeo con la nueva velocidad."
+      ],
+      "tip": "La cámara lenta no crea detalles que no estaban grabados. En vídeos con pocos fotogramas por segundo, los movimientos pueden verse menos fluidos.",
+      "faqs": [
+        [
+          "¿Puedo crear cámara lenta?",
+          "Sí. Selecciona 0,5× o 0,75× para reducir la velocidad."
+        ],
+        [
+          "¿Qué opciones de velocidad hay?",
+          "La herramienta ofrece 0,5×, 0,75×, 1,25×, 1,5× y 2×."
+        ]
+      ]
+    },
+    {
+      "slug": "cambiar-resolucion-video",
+      "tool": "video-resize",
+      "title": "Cambiar resolución de vídeo online | Prisma Space",
+      "h1": "Cambiar el tamaño y formato de un vídeo",
+      "description": "Adapta un vídeo a formatos vertical, retrato, cuadrado, horizontal o HD para distintos usos y plataformas.",
+      "intro": "Un mismo vídeo puede necesitar formatos diferentes para una historia vertical, una publicación cuadrada o una pantalla horizontal. Prisma Space adapta las dimensiones del archivo mediante formatos predefinidos.",
+      "details": "Puedes elegir 1080 × 1920 vertical, 1080 × 1350 retrato, 1080 × 1080 cuadrado, 1920 × 1080 horizontal o 1280 × 720 HD. La herramienta mantiene la proporción original y completa el espacio restante con bandas, en lugar de estirar la imagen.",
+      "steps": [
+        "Selecciona el vídeo que quieres adaptar.",
+        "Elige el formato vertical, retrato, cuadrado, horizontal o HD.",
+        "Procesa el archivo y revisa las dimensiones y el encuadre del resultado."
+      ],
+      "tip": "El formato vertical no garantiza que el sujeto quede centrado. Revisa las bandas y el encuadre antes de subir el vídeo a una red social.",
+      "faqs": [
+        [
+          "¿Puedo crear un vídeo vertical para historias?",
+          "Sí. El formato vertical disponible es 1080 × 1920 píxeles."
+        ],
+        [
+          "¿La herramienta estira la imagen para llenar el formato?",
+          "No. Mantiene la proporción del vídeo y completa el espacio sobrante con bandas."
+        ]
+      ]
+    },
+    {
+      "slug": "girar-video",
+      "tool": "video-rotate",
+      "title": "Girar vídeo online 90 o 180 grados | Prisma Space",
+      "h1": "Girar un vídeo online",
+      "description": "Corrige la orientación de un vídeo girándolo 90 grados a la derecha, 90 a la izquierda o 180 grados.",
+      "intro": "Una grabación puede aparecer de lado o invertida por la orientación del teléfono o la cámara. Girar el vídeo permite corregir cómo se muestra sin tener que grabarlo de nuevo.",
+      "details": "Prisma Space ofrece tres opciones: giro de 90 grados a la derecha, 90 grados a la izquierda o 180 grados. El archivo se vuelve a codificar en el navegador, por lo que el procesamiento puede tardar según su tamaño y duración.",
+      "steps": [
+        "Selecciona el vídeo que aparece con la orientación incorrecta.",
+        "Elige 90° a la derecha, 90° a la izquierda o 180°.",
+        "Ejecuta el giro y reproduce el archivo descargado para verificar la orientación."
+      ],
+      "tip": "La recodificación puede modificar el tamaño y la calidad final. Conserva el vídeo original hasta revisar el resultado.",
+      "faqs": [
+        [
+          "¿Puedo girar un vídeo 90 grados?",
+          "Sí. Puedes girarlo 90 grados a la derecha o a la izquierda."
+        ],
+        [
+          "¿También permite ponerlo boca abajo?",
+          "Sí. Selecciona el giro de 180 grados."
+        ]
+      ]
+    },
+    {
+      "slug": "extraer-miniatura-video",
+      "tool": "video-thumbnail",
+      "title": "Extraer fotograma y miniatura de un vídeo | Prisma Space",
+      "h1": "Extraer una imagen de un vídeo",
+      "description": "Captura un fotograma en el segundo que elijas y guárdalo como imagen para usarlo como referencia o miniatura.",
+      "intro": "Si necesitas una imagen fija de una grabación, puedes capturar un instante concreto en lugar de hacer una captura de pantalla mientras el vídeo se reproduce. Prisma Space extrae el fotograma indicado.",
+      "details": "La herramienta solicita el segundo del vídeo que quieres capturar y procesa el archivo localmente. El resultado es una imagen independiente que puedes revisar, guardar o utilizar como base para una miniatura diseñada en otro editor.",
+      "steps": [
+        "Carga el vídeo del que quieres obtener una imagen.",
+        "Indica el segundo exacto o aproximado que quieres capturar.",
+        "Genera el fotograma y descarga la imagen resultante."
+      ],
+      "tip": "Elige un instante con buena iluminación y movimiento reducido. Esta herramienta captura un fotograma, pero no añade títulos, textos ni diseños de miniatura.",
+      "faqs": [
+        [
+          "¿Puedo elegir el momento de la captura?",
+          "Sí. Introduce el segundo del vídeo que quieres convertir en imagen."
+        ],
+        [
+          "¿La herramienta diseña una miniatura de YouTube?",
+          "No. Extrae un fotograma; puedes usarlo después como base para diseñar una miniatura."
+        ]
+      ]
+    },
+    {
+      "slug": "convertir-audio-mp3-wav-ogg",
+      "tool": "audio-convert",
+      "title": "Convertir audio a MP3, WAV u OGG | Prisma Space",
+      "h1": "Convertir archivos de audio a MP3, WAV u OGG",
+      "description": "Cambia el formato de una grabación de audio y descarga una copia en MP3, WAV u OGG desde el navegador.",
+      "intro": "Un reproductor, editor o plataforma puede pedir un formato de audio distinto al que tienes. Este conversor permite seleccionar una grabación y exportarla en uno de los formatos habituales.",
+      "details": "Puedes elegir MP3, WAV u OGG como formato de salida. El procesamiento se realiza en el navegador mediante un motor multimedia que puede descargarse la primera vez. La conversión no mejora una grabación que ya tenga ruido o baja calidad.",
+      "steps": [
+        "Selecciona el archivo de audio que quieres convertir.",
+        "Elige MP3, WAV u OGG como formato de salida.",
+        "Ejecuta la conversión y descarga el nuevo archivo de audio."
+      ],
+      "tip": "MP3 suele ser práctico para compartir, mientras que WAV puede ocupar más espacio. Comprueba qué formato admite el programa o dispositivo de destino.",
+      "faqs": [
+        [
+          "¿Puedo convertir WAV a MP3?",
+          "Sí. Selecciona el archivo de origen y elige MP3 como formato de salida."
+        ],
+        [
+          "¿Qué formatos de salida ofrece?",
+          "Puedes exportar a MP3, WAV u OGG."
+        ]
+      ]
+    },
+    {
+      "slug": "normalizar-volumen-audio",
+      "tool": "audio-normalize",
+      "title": "Normalizar volumen de audio online | Prisma Space",
+      "h1": "Normalizar el volumen de un audio",
+      "description": "Equilibra la sonoridad de una grabación para conseguir un nivel de escucha más uniforme y exporta el resultado en M4A.",
+      "intro": "Una grabación puede escucharse demasiado baja o presentar diferencias de volumen entre sus partes. La normalización de sonoridad ajusta el nivel general para que la reproducción resulte más uniforme.",
+      "details": "Prisma Space aplica un objetivo aproximado de -16 LUFS, habitual para voz y contenido digital, y genera un archivo M4A. El procesamiento se ejecuta en el navegador mediante el motor multimedia; el resultado debe escucharse antes de publicarlo.",
+      "steps": [
+        "Selecciona el archivo de audio que quieres normalizar.",
+        "Ejecuta el ajuste automático de sonoridad.",
+        "Descarga el archivo M4A y escucha el resultado con auriculares o altavoces."
+      ],
+      "tip": "La normalización no elimina automáticamente ruido de fondo, eco ni distorsión. Si la grabación está saturada, el resultado seguirá necesitando edición.",
+      "faqs": [
+        [
+          "¿Qué significa normalizar a -16 LUFS?",
+          "Es un objetivo aproximado de sonoridad integrado usado como referencia para voz y contenido digital."
+        ],
+        [
+          "¿En qué formato se descarga?",
+          "La herramienta exporta el audio normalizado en formato M4A."
+        ]
+      ]
+    },
+    {
+      "slug": "texto-a-voz-ia",
+      "tool": "ai-voice",
+      "title": "Texto a voz con IA: convierte texto en audio | Prisma Space",
+      "h1": "Convertir texto a voz con inteligencia artificial",
+      "description": "Genera una narración a partir de texto con distintas voces y modelos de IA. Escucha y descarga el audio en MP3, WAV u Opus.",
+      "intro": "Una narración puede servir para escuchar un texto, preparar una voz en off o crear una pieza de contenido. Prisma Space transforma un texto breve en un archivo de audio generado por inteligencia artificial.",
+      "details": "Puedes elegir entre varias voces, seleccionar el modelo de voz y exportar MP3, WAV u Opus. Cada operación admite hasta 1.500 caracteres. La generación utiliza proveedores de voz externos y está sujeta a su disponibilidad, cuotas y presupuesto configurado.",
+      "steps": [
+        "Escribe o pega un texto de hasta 1.500 caracteres.",
+        "Selecciona el motor, el modelo, la voz y el formato de audio.",
+        "Genera la narración, escúchala y descarga el archivo si el resultado te convence."
+      ],
+      "tip": "No introduzcas contraseñas, datos personales sensibles ni información confidencial. La voz generada puede requerir revisión de pronunciación y pausas.",
+      "faqs": [
+        [
+          "¿Puedo elegir una voz masculina o femenina?",
+          "Sí. Hay distintas voces disponibles, con opciones femeninas, masculinas y neutras."
+        ],
+        [
+          "¿Puedo convertir un libro o texto muy largo de una sola vez?",
+          "Cada operación admite hasta 1.500 caracteres. Divide el contenido en fragmentos y revisa la continuidad entre audios."
+        ]
+      ],
+      "privacyNote": "La generación utiliza un proveedor externo de voz IA. No introduzcas información confidencial; el servicio depende de las cuotas y disponibilidad del motor."
+    },
+    {
+      "slug": "transcribir-audio-ia",
+      "tool": "ai-transcribe",
+      "title": "Transcribir audio a texto con IA | Prisma Space",
+      "h1": "Transcribir audio a texto con inteligencia artificial",
+      "description": "Convierte grabaciones compatibles en texto con reconocimiento automático de voz. Selecciona español, inglés o detección automática.",
+      "intro": "Una entrevista, una clase o una nota de voz puede contener información que necesitas consultar por escrito. La transcripción automática convierte el habla de una grabación compatible en texto que puedes revisar y reutilizar.",
+      "details": "Prisma Space puede utilizar motores de transcripción disponibles en su configuración, como Groq Whisper, Cloudflare Whisper o proveedores alternativos autorizados. La disponibilidad depende de las conexiones, las cuotas y los límites de cada servicio; los resultados automáticos pueden contener errores.",
+      "steps": [
+        "Selecciona una grabación de audio compatible desde tu dispositivo.",
+        "Indica español, inglés o detección automática y elige el motor disponible.",
+        "Inicia la transcripción, revisa el texto y corrige nombres, cifras y términos técnicos."
+      ],
+      "tip": "La transcripción no sustituye la revisión humana. Comprueba especialmente nombres propios, conversaciones con ruido, acentos y vocabulario especializado.",
+      "faqs": [
+        [
+          "¿Puede transcribir una grabación en español?",
+          "Sí. Puedes seleccionar español como idioma o utilizar la detección automática cuando esté disponible."
+        ],
+        [
+          "¿La transcripción es ilimitada?",
+          "No. Depende de los motores habilitados, sus cuotas, créditos y límites temporales."
+        ]
+      ],
+      "privacyNote": "El audio se envía al motor de transcripción seleccionado mediante los servicios habilitados. Evita subir grabaciones confidenciales o de terceros sin autorización."
+    },
+    {
+      "slug": "crear-subtitulos-srt",
+      "tool": "subtitle-srt-local",
+      "title": "Crear subtítulos SRT online desde un texto | Prisma Space",
+      "h1": "Crear un archivo de subtítulos SRT desde texto",
+      "description": "Convierte un guion en un archivo .srt con tiempos aproximados y duración configurable para editarlo en CapCut u otros programas.",
+      "intro": "Si ya tienes el guion de un vídeo, puedes transformarlo en un archivo de subtítulos que luego se importa en un editor. Prisma Space separa el texto en fragmentos y crea una estructura SRT descargable.",
+      "details": "Puedes introducir una frase por línea o pegar un texto completo, definir los segundos aproximados por subtítulo y ajustar el máximo de caracteres. Los tiempos se calculan de forma estimada: la herramienta no escucha el audio ni sincroniza automáticamente las frases con la voz.",
+      "steps": [
+        "Pega el guion o escribe una frase por línea.",
+        "Ajusta la duración aproximada y los caracteres máximos de cada subtítulo.",
+        "Genera y descarga el archivo SRT; impórtalo en CapCut u otro editor y sincroniza los tiempos."
+      ],
+      "tip": "Revisa cada entrada SRT junto al vídeo. Para transcribir automáticamente una grabación, utiliza una herramienta de transcripción y después ajusta los subtítulos.",
+      "faqs": [
+        [
+          "¿La herramienta transcribe el audio del vídeo?",
+          "No. Crea subtítulos a partir del texto que proporcionas y asigna tiempos aproximados."
+        ],
+        [
+          "¿El archivo sirve para CapCut?",
+          "Sí. Descarga un archivo .srt que puedes importar en CapCut y otros editores compatibles."
+        ]
+      ]
     }
   ]
 }
