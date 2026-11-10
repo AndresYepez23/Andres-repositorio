@@ -33,7 +33,8 @@ export function buildConversationContext(history = [], query = '', options = {})
   // When asked to revise a previous draft, retain the actual previous output
   // instead of silently truncating the lyrics, code or text to 1,900 chars.
   const revision=/\b(?:cambia|corrige|reescribe|revisa|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|el anterior|la anterior|esa cancion|ese texto|ese codigo|el coro|la estrofa|la respuesta)\b/.test(fold(query));
-  const previousAssistantIndex=revision?entries.findLastIndex(item=>item.role==='assistant'):-1;
+  const followup=isCoreFollowUp(query);
+  const previousAssistantIndex=(revision||followup)?entries.findLastIndex(item=>item.role==='assistant'):-1;
   const recentStart = entries.length - recentCount;
   const selected = new Set(entries.map((_, index) => index).slice(recentStart));
   const words = keywords(query);
@@ -61,7 +62,7 @@ export function buildConversationContext(history = [], query = '', options = {})
   for (const index of chosen) {
     if (result.length >= limit || remaining < 120) break;
     const recent = index >= recentStart;
-    const cap = index===previousAssistantIndex ? 6500 : recent ? (entries[index].role==='user' ? 1900 : 1450) : 1200;
+    const cap = index===previousAssistantIndex ? 6500 : recent ? (entries[index].role==='user' ? 2300 : 2400) : 1400;
     const content = entries[index].content.slice(0, Math.min(cap, remaining));
     if (content) {
       result.push({ index, role: entries[index].role, content });
@@ -73,6 +74,15 @@ export function buildConversationContext(history = [], query = '', options = {})
 }
 
 
+// Context-dependent questions need the prior answer even when they are short.
+// Avoid falsely interpreting an unrelated one-word follow-up as a new task.
+export function isCoreFollowUp(value=''){
+ const q=fold(value).replace(/[¿?¡!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
+ if(!q)return false;
+ if(/^(?:y|pero|entonces|ahora|eso|esa|ese|esta|este|estos|estas|ahi|aqui|por que|como asi|y por que|y como|y eso|y esa|y esta|y este|y la otra|y los otros|la anterior|el anterior|el mismo|la misma)(?:\s|$)/.test(q))return true;
+ return /\b(?:lo anterior|la respuesta anterior|lo que dijiste|de eso|de esa|de ese|de aquello|explicalo mejor|amplia eso|continua con eso|y las demas|y los demas|ese resultado|tu respuesta|lo ultimo|la misma idea|esos datos|esos archivos)\b/.test(q);
+}
+
 /**
  * Adapt conversation history to the user's actual task. Short, independent
  * questions do not need thirteen old messages sent to an external model.
@@ -80,8 +90,8 @@ export function buildConversationContext(history = [], query = '', options = {})
  */
 export function chooseCoreContextOptions(task='conversation',text=''){
  const q=fold(text).replace(/^[¿?¡!\s]+/,'').trim();
- const revision=/\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\b/.test(q);
- const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\b/.test(q);
+ const revision=/\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\b/.test(q)||isCoreFollowUp(q);
+ const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\b/.test(q)&&!isCoreFollowUp(q);
  if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
   return {maxMessages:13,maxChars:14500};
  if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500};
@@ -91,14 +101,15 @@ export function chooseCoreContextOptions(task='conversation',text=''){
 
 export function chooseCoreReasoning(task = 'conversation', text = '') {
   const q = fold(text).replace(/^[¿?¡!\s]+/,'').trim();
-  const deep = /\b(depura|debug|refactoriza|implementa|reescribe|arquitectura|analiza|investiga|demuestra|demostrar|resuelve|evalua|razonamiento|argumenta|exhaustivo|profundo|a fondo|detalladamente|paso a paso)\b/.test(q);
+  const deep = /\b(depura|debug|refactoriza|implementa|reescribe|arquitectura|analiza|investiga|demuestra|demostrar|resuelve|evalua|razonamiento|argumenta|exhaustivo|profundo|a fondo|detalladamente|paso a paso|diagnostica|por que falla|por que no funciona|comparame|recomiendame|explica las causas)\b/.test(q);
   if (task === 'coding') {
     if(q.length < 180 && /^(?:que es|para que sirve|cual es|explica brevemente|dame un ejemplo)\b/.test(q) && !deep) return 'balanced';
     return 'smart';
   }
   if (task === 'reasoning') return q.length < 130 && !deep ? 'balanced' : 'smart';
   if (task === 'songwriting' || task === 'creative') return 'balanced';
-  if ((task === 'conversation' || task === 'general') && q.length <= 160 && !deep) return 'fast';
+  if ((task === 'conversation' || task === 'general') && (deep||q.length>220)) return 'smart';
+  if ((task === 'conversation' || task === 'general') && q.length <= 100 && !deep && !isCoreFollowUp(q)) return 'fast';
   return 'balanced';
 }
 
@@ -113,6 +124,10 @@ export function chooseCoreResponseLength(task = 'conversation', text = '') {
   if(brief) return 'short';
   if(task === 'coding') return q.length < 150 && /^(?:que es|para que sirve|explica|dame un ejemplo)\b/.test(q) ? 'medium' : 'long';
   if(task === 'reasoning') return q.length < 130 ? 'medium' : 'long';
-  if(task === 'conversation' || task === 'quick' || task === 'general') return q.length < 160 ? 'short' : 'medium';
+  if(task === 'conversation' || task === 'quick' || task === 'general'){
+    if(/^(?:hola|holi|hey|gracias|muchas gracias|buenas|ok|listo)[.!\s]*$/.test(q))return 'short';
+    if(q.length>260||/\b(?:explica|analiza|compara|porque|por que|como funciona|ejemplos|alternativas|recomendacion|desarrolla|relaciona|profundiza)\b/.test(q))return 'long';
+    return 'medium';
+  }
   return 'medium';
 }
