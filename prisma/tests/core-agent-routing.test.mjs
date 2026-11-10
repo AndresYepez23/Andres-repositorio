@@ -779,6 +779,7 @@ assert.match(coreSource,/Continúa esta solicitud anterior con el archivo adjunt
 const videoEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(videoEngineSource,/if\(id==='video-compress'\)\{/);
 assert.match(videoEngineSource,/compressVideoNative\(file,p,cb\)/);
+assert.match(videoEngineSource,/trunc\(iw\*min\(1,/,'Portrait videos must limit longest dimension, not just width');
 assert.match(videoEngineSource,/preferNativeVideoCompression/);
 assert.match(videoEngineSource,/blob\.size>=files\[0\]\.size/,'Do not report success for larger files');
 const videoMainSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
