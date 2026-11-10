@@ -2165,3 +2165,14 @@ body.is-core-view #core-thinking {
   padding-bottom:3px!important;
  }
 }
+
+/* Keep iOS search results above the software keyboard. Unlike a full-screen
+   page, this temporary finder follows the visual viewport when focused. */
+@media(max-width:750px){
+ .conversation-search-layer:not(.hidden){
+  inset:auto 0 auto 0;
+  top:var(--prisma-search-vp-top,0px);
+  height:var(--prisma-search-viewport,100dvh);
+  max-height:var(--prisma-search-viewport,100dvh);
+ }
+}

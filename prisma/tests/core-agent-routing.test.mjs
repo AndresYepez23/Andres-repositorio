@@ -701,4 +701,11 @@ assert.match(stylesSource,/body\.is-prisma-ios\.is-prisma-standalone #tool-modal
 assert.match(stylesSource,/padding-top:max\(64px/,'iPhone PWA tool heading must clear the island');
 assert.match(stylesSource,/body\.is-core-view\.is-prisma-ios\.is-prisma-standalone:not\(\.is-keyboard-open\) \.core-composer\{/);
 
+
+assert.match(uiMain,/--prisma-search-viewport/,'Search must track mobile viewport');
+assert.match(uiMain,/searchFocused\?visible/,'Keyboard-open search must shrink');
+assert.match(uiMain,/event\.target===searchInput/,'Search focus must recalculate viewport');
+assert.match(stylesSource,/\.conversation-search-layer:not\(\.hidden\)/);
+assert.match(stylesSource,/height:var\(--prisma-search-viewport,100dvh\)/);
+
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
