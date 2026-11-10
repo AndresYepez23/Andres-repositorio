@@ -451,10 +451,10 @@ function renderMessages({forceBottom=false}={}){
   list.classList.toggle('is-empty',messages.length===0);
   const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
-  // Keep one animated dot field attached to the whole chat column.
-  // It must remain behind the transcript and composer, including after messages arrive.
+  // Mount the animated field across the full Core content viewport, not the
+  // centered welcome card or the narrower chat column. The top app bar stays clear.
   if(!disposeWelcomeGrid){
-    const chatSurface=list.closest('.core-chat-column')||list;
+    const chatSurface=document.getElementById('page-content')||list.closest('.core-chat-column')||list;
     disposeWelcomeGrid=mountCoreWelcomeGrid(chatSurface);
   }
   if(answerRevealFrame){cancelAnimationFrame(answerRevealFrame);answerRevealFrame=0;}
