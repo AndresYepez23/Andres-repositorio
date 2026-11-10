@@ -521,16 +521,50 @@ function setBusy(value){
   if(value)setProgress(.02,'Preparando…');
   else $('#core-progress')?.classList.add('hidden');
 }
+const attachmentPreviewUrls=new Map();
+function attachmentKind(file){
+ const type=String(file.type||'').toLowerCase();
+ const filename=String(file.name||'').toLowerCase();
+ if(type.startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp|avif)$/i.test(filename))return 'image';
+ if(type.startsWith('video/')||/\.(?:mp4|mov|webm|m4v)$/i.test(filename))return 'video';
+ if(type==='application/pdf'||filename.endsWith('.pdf'))return 'PDF';
+ if(/\.(?:docx?|odt)$/i.test(filename))return 'DOC';
+ if(/\.(?:xlsx?|csv)$/i.test(filename))return 'XLS';
+ if(type.startsWith('audio/'))return 'AUDIO';
+ return (filename.split('.').pop()||'FILE').slice(0,4).toUpperCase();
+}
 function renderAttachments(){
-  const list=$('#core-attachments');if(!list)return;
-  list.replaceChildren();
-  attachments.forEach((file,index)=>{
-    const item=document.createElement('span');item.className='core-attachment';
-    const name=document.createElement('span');name.textContent=file.name+' · '+(file.size/1024/1024).toFixed(2)+' MB';
-    const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','Quitar '+file.name);
-    remove.addEventListener('click',()=>{attachments.splice(index,1);renderAttachments();});
-    item.append(name,remove);list.append(item);
-  });
+ const list=$('#core-attachments');if(!list)return;
+ // Blob URLs are local-only and released when a preview is removed.
+ for(const [file,url] of attachmentPreviewUrls){
+  if(!attachments.includes(file)){URL.revokeObjectURL(url);attachmentPreviewUrls.delete(file);}
+ }
+ list.replaceChildren();
+ attachments.forEach((file,index)=>{
+  const item=document.createElement('span');item.className='core-attachment core-attachment-preview';
+  const kind=attachmentKind(file);
+  if(kind==='image'||kind==='video'){
+   let url=attachmentPreviewUrls.get(file);
+   if(!url){url=URL.createObjectURL(file);attachmentPreviewUrls.set(file,url);}
+   const media=document.createElement(kind==='image'?'img':'video');
+   media.className='core-attachment-thumb';
+   media.src=url;
+   if(kind==='image'){media.alt='Vista previa de '+file.name;media.loading='lazy';media.decoding='async';}
+   else{media.muted=true;media.preload='metadata';media.setAttribute('aria-label','Vista previa de video '+file.name);}
+   media.addEventListener('error',()=>{media.replaceWith(Object.assign(document.createElement('span'),{className:'core-attachment-type',textContent:kind==='image'?'IMG':'VIDEO'}));},{once:true});
+   item.append(media);
+  }else{
+   const icon=document.createElement('span');icon.className='core-attachment-type';icon.textContent=kind;
+   icon.setAttribute('aria-hidden','true');item.append(icon);
+  }
+  const details=document.createElement('span');details.className='core-attachment-details';
+  const name=document.createElement('span');name.className='core-attachment-filename';name.textContent=file.name;name.title=file.name;
+  const size=document.createElement('small');size.textContent=(file.size>=1024*1024?(file.size/1024/1024).toFixed(1)+' MB':Math.max(1,Math.ceil(file.size/1024))+' KB');
+  details.append(name,size);
+  const remove=document.createElement('button');remove.type='button';remove.className='core-attachment-remove';remove.textContent='×';remove.setAttribute('aria-label','Quitar '+file.name);
+  remove.addEventListener('click',()=>{attachments.splice(index,1);renderAttachments();});
+  item.append(details,remove);list.append(item);
+ });
 }
 function parsePlan(raw){
   const text=String(raw||'').trim().replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'');
