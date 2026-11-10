@@ -298,6 +298,34 @@ assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3"]'},'re
 assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3","r4"]'},'requesty').poolValid,false,'Requesty JSON cannot exceed three credentials');
 assert.equal(getCredentialSlots({GROQ_API_KEY:'q1',GROQ_API_KEY_BACKUP:'q2'},'groq').length,2,'legacy BACKUP aliases remain supported');
 
+// SenseNova authentication failures must try every configured independent key
+// but must never rotate credentials to evade 429/402 quota restrictions.
+const senseKeys={SENSENOVA_API_KEYS_JSON:JSON.stringify(['s1','s2','s3','s4','s5','s6'])};
+let senseAttempts=[];
+const authRecovery=await requestWithCredentialPool(senseKeys,'sensenova',async(key)=>{
+ senseAttempts.push(key);
+ return new Response(key==='s6'?'OK':'Unauthorized',{status:key==='s6'?200:401});
+},{startIndex:0,sweepAuthSlots:true});
+assert.equal(authRecovery.status,200,'SenseNova should reach the sixth valid API key after five rejected keys');
+assert.deepEqual(senseAttempts,['s1','s2','s3','s4','s5','s6']);
+let quotaAttempts=0;
+const limitedSense=await requestWithCredentialPool(senseKeys,'sensenova',async()=>{
+ quotaAttempts++;
+ return new Response('Rate limited',{status:429});
+},{startIndex:0,sweepAuthSlots:true});
+assert.equal(limitedSense.status,429);
+assert.equal(quotaAttempts,1,'Quota limits must never trigger account/key rotation');
+let networkAttempts=0;
+const networkSense=await requestWithCredentialPool(senseKeys,'sensenova',async()=>{
+ networkAttempts++;
+ return new Response('Gateway error',{status:502});
+},{startIndex:0,sweepAuthSlots:true});
+assert.equal(networkSense.status,502);
+assert.equal(networkAttempts,2,'Network outages should not exhaust all six slots');
+const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
+assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"/,'SenseNova must enable valid-key auth sweep');
+assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
+
 // Cost-aware provider selection: one best-fit model first, sequential fallbacks only.
 const allProviders = new Set(['groq','cloudflare','gemini','pollinations','huggingface','openrouter','kilo','requesty','sensenova','zai','aihubmix']);
 const availableAll = name => allProviders.has(name);
