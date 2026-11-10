@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { reconcileIosPwaViewport } from '../src/pwa-viewport.js';
+import { isVideoCompressionIntent, isVideoFile, preferNativeVideoCompression, videoCompressionSettings, chooseNativeRecordingType, localizedVideoError, compressVideoNative } from '../src/video-compression.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
@@ -736,5 +737,51 @@ assert.doesNotMatch(uiMain,/\bMath\.max\([^\n]*screen\.height/,
  'Never expand the PWA to physical screen.height and cover the home indicator');
 assert.match(stylesSource,/PWA screen reconciliation:/);
 assert.match(stylesSource,/height:var\(--prisma-core-viewport,100dvh\)/);
+
+
+// Video conversion regression: user uploaded an iPhone ScreenRecording MP4
+// with "Comprímeme ese video". A planner must not choose video-trim or make
+// an LLM call, and Safari must not leak "The operation is insecure".
+assert.equal(isVideoCompressionIntent('Comprímeme ese video'),true);
+assert.equal(isVideoCompressionIntent('Comprime mi ScreenRecording.mp4'),true);
+assert.equal(isVideoCompressionIntent('Reduce el tamaño del vídeo'),true);
+assert.equal(isVideoCompressionIntent('¿Cómo comprimir un video?'),false);
+assert.equal(isVideoCompressionIntent('Recorta este video'),false);
+assert.equal(isVideoCompressionIntent('Es una gran canción'),false);
+assert.equal(isVideoFile({name:'ScreenRecording_11-09-2026 23-19-47_1.mp4',type:'video/mp4'}),true);
+assert.equal(isVideoFile({name:'captura.MOV',type:''}),true);
+assert.equal(isVideoFile({name:'documento.pdf',type:'application/pdf'}),false);
+assert.equal(preferNativeVideoCompression({userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X)'}),true);
+assert.equal(preferNativeVideoCompression({userAgent:'Mozilla/5.0 (X11; Linux x86_64) Chrome/132'}),false);
+const mobileSettings=videoCompressionSettings({
+ width:1170,height:2532,fileSize:40*1024*1024,duration:48,quality:'balanced'
+});
+assert.ok(mobileSettings.width<=960&&mobileSettings.height<=960,'Portrait video should not be upscaled');
+assert.ok(mobileSettings.videoBitsPerSecond>150000,'Actual encoder bitrate must be set');
+assert.equal(mobileSettings.width%2,0);
+assert.equal(mobileSettings.height%2,0);
+assert.throws(()=>videoCompressionSettings({width:1000,height:720,fileSize:100,duration:200}),/3 minutos/);
+const recordingTypes=['video/mp4;codecs="avc1.42E01E,mp4a.40.2"','video/mp4'];
+assert.match(chooseNativeRecordingType({isTypeSupported:type=>recordingTypes.includes(type)}),/video\/mp4/);
+assert.equal(chooseNativeRecordingType({isTypeSupported:()=>false}),null);
+assert.match(localizedVideoError({name:'SecurityError',message:'The operation is insecure.'}),/restricción de seguridad/);
+assert.doesNotMatch(localizedVideoError({name:'SecurityError',message:'The operation is insecure.'}),/the operation is insecure/i);
+await assert.rejects(
+ ()=>compressVideoNative({name:'reporte.pdf',type:'application/pdf',size:100}),
+ /Adjunta un archivo de vídeo válido/
+);
+assert.ok(registered.some(tool=>tool.id==='video-compress'&&tool.file&&tool.status==='beta'));
+assert.match(coreSource,/isVideoCompressionIntent\(userText\)/);
+assert.match(coreSource,/tool_id:'video-compress'/);
+assert.match(coreSource,/attachments\.filter\(isVideoFile\)/);
+assert.match(coreSource,/localizedVideoError\(error\)/);
+assert.match(coreSource,/Continúa esta solicitud anterior con el archivo adjunto/);
+const videoEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(videoEngineSource,/if\(id==='video-compress'\)\{/);
+assert.match(videoEngineSource,/compressVideoNative\(file,p,cb\)/);
+assert.match(videoEngineSource,/preferNativeVideoCompression/);
+assert.match(videoEngineSource,/blob\.size>=files\[0\]\.size/,'Do not report success for larger files');
+const videoMainSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+assert.match(videoMainSource,/case 'video-compress':return selectField/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
