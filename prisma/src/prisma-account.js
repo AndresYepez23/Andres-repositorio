@@ -197,7 +197,7 @@ function openAccount(){
 }
 export function openPrismaAuth(){openAccount();}
 function selectedSync(){
- return !!user&&profile?.sync_enabled===true&&localStorage.getItem(SYNC_KEY)===user.id;
+ return !!user&&profile?.sync_enabled===true;
 }
 function sanitizeChats(){
  let chats=[];
