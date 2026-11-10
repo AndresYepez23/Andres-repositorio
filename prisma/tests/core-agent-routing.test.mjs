@@ -551,15 +551,15 @@ const revisionContext=buildConversationContext([
 assert.ok(revisionContext.some(item=>item.role==='assistant'&&item.content.includes('FIN DEL CORO')),
  'An explicit revision must preserve the complete previous draft, not just 1900 chars.');
 const economyEngine=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
-assert.match(economyEngine,/selectInferenceCandidates\\(/);
-assert.match(economyEngine,/stopInferenceFallback\\(/);
-assert.match(economyEngine,/recordInferenceUsage\\(provider,usage\\)/);
+assert.match(economyEngine,/selectInferenceCandidates\(/);
+assert.match(economyEngine,/stopInferenceFallback\(/);
+assert.match(economyEngine,/recordInferenceUsage\(provider,usage\)/);
 assert.match(economyEngine,/preferred!=='auto'/,'Personal keys cannot be spent by Core automatic text routing');
 const economyCore=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
-assert.match(economyCore,/chooseCoreContextOptions\\(task,taskText\\)/);
+assert.match(economyCore,/chooseCoreContextOptions\(task,taskText\)/);
 assert.match(economyCore,/asksAboutPrisma/,'Provider catalog must not be sent with every question');
 const economyMain=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
-assert.match(economyMain,/readInferenceUsage\\(\\)/);
+assert.match(economyMain,/readInferenceUsage\(\)/);
 assert.match(economyMain,/tokens reportados/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
