@@ -1,0 +1,319 @@
+/* PRISMA SPACE | AURORA DESIGN SYSTEM
+   Unifies the existing product without replacing layouts, event handlers or logic.
+   Site-wide tokens, view surfaces, accessible states and responsive finishing. */
+
+/* 01. Foundations: dark Aurora and an independent, readable light theme. */
+:root{
+ --bg:#0e121d;--panel:#161d2b;--panel-2:#1c2535;--panel-3:#243146;
+ --text:#f0f4fb;--muted:#a4aec1;--subtle:#78869e;
+ --line:rgba(178,202,233,.11);--line-strong:rgba(178,202,233,.21);
+ --accent:#91dbd5;--accent-2:#b1a2ee;--accent-dark:#1e3b45;
+ --shadow:0 24px 76px rgba(2,7,19,.36);
+ --aurora-cyan:#91dbd5;--aurora-blue:#84bce9;--aurora-violet:#b9a3f1;
+ --aurora-surface:linear-gradient(145deg,rgba(26,39,56,.95),rgba(23,27,47,.95));
+ --aurora-soft:linear-gradient(126deg,rgba(87,197,195,.09),rgba(118,151,219,.075) 56%,rgba(167,124,219,.08));
+ --aurora-edge:rgba(145,191,220,.22);
+ --aurora-focus:#9ee5df;
+}
+:root[data-theme="light"]{
+ --bg:#f3f7fc;--panel:#fff;--panel-2:#f0f5fa;--panel-3:#e5edf6;
+ --text:#1c293d;--muted:#53637b;--subtle:#66778e;
+ --line:rgba(47,75,105,.12);--line-strong:rgba(47,75,105,.23);
+ --accent:#247b78;--accent-2:#6957b0;--accent-dark:#dff3f1;
+ --shadow:0 22px 66px rgba(34,70,111,.13);
+ --aurora-cyan:#257b7a;--aurora-blue:#3b72ab;--aurora-violet:#725ab0;
+ --aurora-surface:linear-gradient(145deg,rgba(255,255,255,.98),rgba(241,247,253,.97));
+ --aurora-soft:linear-gradient(126deg,rgba(92,192,180,.11),rgba(110,159,221,.09) 56%,rgba(175,144,218,.09));
+ --aurora-edge:rgba(78,119,155,.20);--aurora-focus:#167d84;
+}
+html{scrollbar-color:var(--line-strong) transparent}
+body{background:
+ radial-gradient(ellipse 50% 40% at 95% 3%,color-mix(in srgb,var(--aurora-blue) 7%,transparent),transparent 86%),
+ var(--bg);}
+:where(button,a,input,textarea,select):focus-visible{outline:2px solid var(--aurora-focus);outline-offset:3px}
+::selection{background:color-mix(in srgb,var(--aurora-blue) 32%,transparent);color:var(--text)}
+
+/* 02. Chrome and navigation: consistent across Core, Explore, lab and account. */
+.sidebar{
+ background:linear-gradient(165deg,var(--panel) 0%,color-mix(in srgb,var(--panel) 93%,var(--aurora-blue)) 61%,var(--panel) 100%);
+ border-right-color:var(--aurora-edge);
+}
+.sidebar-header{border-color:var(--line)}
+.brand-mark{color:var(--aurora-cyan);filter:drop-shadow(0 0 12px color-mix(in srgb,var(--aurora-cyan) 24%,transparent))}
+.brand-copy strong{letter-spacing:.135em}
+.topbar{
+ background:color-mix(in srgb,var(--bg) 91%,transparent);
+ border-bottom-color:var(--aurora-edge);
+}
+.breadcrumb strong{color:var(--text)}
+.nav-item,.category-item{border:1px solid transparent;border-radius:12px}
+.nav-item.active,.category-item.active{
+ color:var(--accent);
+ background:var(--aurora-soft);
+ border-color:var(--aurora-edge);
+}
+.nav-item:hover:not(.active),.category-item:hover:not(.active){
+ background:color-mix(in srgb,var(--accent) 7%,var(--panel-2));
+}
+.sidebar-header-button,.icon-button,.view-button{transition:background-color .2s,border-color .2s,color .2s}
+.sidebar-header-button:hover,.icon-button:hover,.view-button:hover{
+ background:color-mix(in srgb,var(--aurora-blue) 11%,var(--panel-2));
+ border-color:var(--aurora-edge);
+}
+.global-search,.explore-query-wrap,.explore-specialty,
+.conversation-search-field-slot{border-color:var(--line-strong);background:var(--panel-2)}
+.global-search:focus-within,.explore-query-wrap:focus-within,.explore-specialty:focus-within{
+ border-color:var(--aurora-cyan);box-shadow:0 0 0 3px color-mix(in srgb,var(--aurora-cyan) 12%,transparent);
+}
+.privacy-card,.pwa-banner{
+ background:var(--aurora-soft);border-color:var(--aurora-edge);
+}
+.status-led{background:var(--aurora-cyan)}
+.main-footer{border-top-color:var(--aurora-edge)}
+
+/* 03. Cohesive buttons, pills and search affordances. */
+.button-primary,.auth-submit:not(:disabled),.pwa-banner-install{
+ background:linear-gradient(110deg,#8ddcd3 0%,#8bc3e9 56%,#b3a7ef 100%);
+ color:#11202e;border-color:transparent;font-weight:750;
+ box-shadow:0 8px 24px rgba(88,162,199,.10);
+}
+.button-primary:hover:not(:disabled),.auth-submit:hover:not(:disabled){
+ filter:brightness(1.05);box-shadow:0 9px 28px rgba(85,158,200,.19);
+}
+.button-quiet,.mini-button{
+ border-color:var(--line-strong);color:var(--text);
+}
+.button-quiet:hover,.mini-button:hover{border-color:var(--aurora-edge);background:var(--aurora-soft)}
+.button:disabled,.auth-submit:disabled{opacity:.58;cursor:not-allowed;box-shadow:none}
+.status-pill,.provider-connection-status,.provider-stage,.tool-status{
+ border-radius:999px;
+}
+.eyebrow{color:var(--accent);letter-spacing:.15em}
+
+/* 04. Landing: Aurora prism remains triangular, clear and inviting. */
+body:not(.is-core-view) .hero-section{
+ border-color:var(--aurora-edge);
+ background:
+ radial-gradient(ellipse 56% 72% at 78% 50%,rgba(64,148,199,.20),transparent 84%),
+ radial-gradient(ellipse 60% 75% at 92% 92%,rgba(140,103,209,.16),transparent 82%),
+ linear-gradient(145deg,#101728,#122a40 58%,#24203c);
+ box-shadow:0 22px 70px rgba(6,15,33,.11);
+}
+body:not(.is-core-view) .hero-copy h1 em{
+ background:linear-gradient(100deg,#94e4d8,#8bbdf2 52%,#c2a4f5);
+ background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+}
+body:not(.is-core-view) .hero-art{transform:translateZ(0)}
+body:not(.is-core-view) .hero-prism{filter:drop-shadow(0 0 27px rgba(115,193,232,.25))}
+body:not(.is-core-view) .art-tag{backdrop-filter:blur(12px)}
+body:not(.is-core-view) .metric-strip{border-bottom-color:var(--aurora-edge)}
+body:not(.is-core-view) .metric strong{color:var(--text)}
+body:not(.is-core-view) .metric-note{color:var(--muted)}
+
+/* 05. Discover: goal cards, workflows, recents, catalog, filtering. */
+.home-dashboard-heading h2,.section-heading h2,.ai-section h2{
+ letter-spacing:-.05em;line-height:1.18;
+}
+.home-local-pill,.workflow-hub-note,.tool-tag{
+ border-color:var(--aurora-edge);background:var(--aurora-soft);
+}
+.workflow-hub,.home-panel,.goal-card,.mini-tool-card,
+.tool-card,.ai-principles > div,.provider-card,.provider-connect-card{
+ border-color:var(--line-strong);
+ background:var(--aurora-surface);
+ box-shadow:0 8px 28px rgba(0,0,0,.025);
+}
+.workflow-hub,.home-panel{border-radius:20px}
+.workflow-card,.goal-card,.tool-card,.mini-tool-card{
+ transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background-color .2s ease;
+}
+.workflow-card:hover,.goal-card:hover,.tool-card:hover:not(.is-disabled),.mini-tool-card:hover{
+ border-color:var(--aurora-edge);
+ box-shadow:0 13px 30px color-mix(in srgb,var(--aurora-blue) 9%,transparent);
+}
+.workflow-card-icon,.goal-icon,.tool-icon,.mini-tool-icon{
+ background:var(--aurora-soft);
+ border:1px solid var(--aurora-edge);
+ color:var(--accent);
+}
+.workflow-card-copy strong,.goal-card strong,.mini-tool-copy strong,.tool-card h3{
+ color:var(--text);
+}
+.workflow-card-copy small,.goal-card small,.mini-tool-copy small,.tool-card p{
+ color:var(--muted);
+}
+.tool-card{overflow:hidden}
+.tool-card::before{
+ content:"";position:absolute;top:0;left:15px;right:15px;height:1px;
+ background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--aurora-cyan) 24%,transparent),transparent);
+ pointer-events:none;
+}
+.tool-card:hover::before{background:linear-gradient(90deg,transparent,var(--aurora-cyan),var(--aurora-violet),transparent)}
+.tool-favorite.active{color:var(--aurora-violet)}
+.tool-card-launch:focus-visible{outline:2px solid var(--aurora-focus);outline-offset:4px;border-radius:7px}
+.explore-query-wrap,.explore-specialty{border-radius:14px}
+.explore-query-wrap input,.explore-specialty select{color:var(--text)}
+.filter-chip,.quick-tool-actions button{
+ border-color:var(--line-strong);
+ background:var(--panel);border-radius:999px;
+}
+.filter-chip.active,.filter-chip:hover,.quick-tool-actions button:hover{
+ border-color:var(--aurora-edge);background:var(--aurora-soft);color:var(--accent);
+}
+.view-switch{border-color:var(--line-strong);background:var(--panel-2)}
+.view-button.active{background:var(--aurora-soft);color:var(--accent)}
+.empty-state{border:1px dashed var(--aurora-edge);border-radius:18px;background:var(--aurora-soft)}
+.result-count{color:var(--muted)}
+
+/* 06. AI laboratory and provider connections: different content, same design. */
+.ai-section .ai-intro{color:var(--muted);max-width:760px}
+.ai-principles > div,.provider-card{border-radius:17px}
+.ai-principles > div > span{color:var(--accent)}
+.ai-connection-card{
+ border-color:var(--aurora-edge);border-radius:21px;
+ background:var(--aurora-soft);
+ box-shadow:0 10px 34px rgba(0,0,0,.04);
+}
+.provider-connect-grid > *{min-width:0}
+.ai-feature-card{
+ background:radial-gradient(ellipse at 82% 47%,color-mix(in srgb,var(--aurora-violet) 17%,transparent),transparent 68%),
+ var(--aurora-surface);
+ border-color:var(--aurora-edge);border-radius:22px;
+}
+.ai-orb{box-shadow:0 0 35px color-mix(in srgb,var(--aurora-violet) 18%,transparent)}
+.provider-heading{border-color:var(--line)}
+.provider-kind,.provider-note,.provider-connection-detail{color:var(--muted)}
+.provider-tags span,.provider-stage{border-color:var(--aurora-edge);background:var(--aurora-soft)}
+.notice-panel{
+ border-color:var(--aurora-edge);border-radius:15px;
+ background:var(--aurora-soft);color:var(--accent);
+}
+
+/* 07. Prisma Core: conversation, history, top actions and composer.
+   Size, scroll, keyboard and PWA safe-area rules stay untouched. */
+body.is-core-view .core-message.assistant{
+ background:var(--aurora-surface);border-color:var(--line-strong);
+}
+body.is-core-view .core-message.user{
+ background:color-mix(in srgb,var(--aurora-blue) 10%,var(--panel-2));
+ border-color:var(--aurora-edge);
+}
+body.is-core-view .core-message{border-radius:17px}
+body.is-core-view .core-message-engine{color:var(--subtle)}
+body.is-core-view .core-history,body.is-core-view .core-side-card{
+ border-color:var(--aurora-edge);background:var(--aurora-surface);
+}
+body.is-core-view .core-composer{
+ border-color:var(--aurora-edge);
+}
+body.is-core-view .core-voice-button{
+ background:var(--aurora-soft);border-color:var(--aurora-edge);
+}
+body.is-core-view .core-welcome-gradient{
+ background:linear-gradient(105deg,#92ded5,#88c3ed 53%,#bca5f2);
+ background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+}
+body.is-core-view .core-prism-scene{
+ filter:drop-shadow(0 0 25px rgba(98,179,224,.20));
+}
+body.is-core-view #core-messages.is-empty .core-examples button{
+ border-color:var(--aurora-edge);
+}
+body.is-core-view .core-sidebar-conversation.active{
+ border-color:var(--aurora-edge);background:var(--aurora-soft);
+}
+
+/* 08. Dialogs, editors, voice, authentication, account, notifications. */
+.tool-modal,.auth-panel,.voice-panel,.core-editor-panel,
+.conversation-search-panel,.pwa-instructions > section{
+ border-color:var(--aurora-edge);
+ background:var(--panel);
+ box-shadow:0 30px 88px rgba(4,9,22,.37);
+}
+.tool-modal,.auth-panel,.voice-panel,.core-editor-panel{background-image:
+ radial-gradient(ellipse 70% 22% at 90% 0%,color-mix(in srgb,var(--aurora-blue) 8%,transparent),transparent 85%)}
+.modal-header,.modal-footer,.conversation-search-header{
+ border-color:var(--aurora-edge);
+ background:color-mix(in srgb,var(--panel) 91%,var(--aurora-blue));
+}
+.modal-kicker{color:var(--accent)}
+.modal-icon{background:var(--aurora-soft);color:var(--accent);border-color:var(--aurora-edge)}
+.modal-body :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select),
+.auth-panel :is(input,select),.core-editor-controls :is(input:not([type="checkbox"]),select){
+ background:var(--panel-2);border-color:var(--line-strong);
+ color:var(--text);border-radius:11px;
+}
+.modal-body :is(input,textarea,select):focus,
+.auth-panel :is(input,select):focus,.core-editor-controls :is(input,select):focus{
+ border-color:var(--aurora-cyan);
+ box-shadow:0 0 0 3px color-mix(in srgb,var(--aurora-cyan) 12%,transparent);
+}
+.auth-identity{
+ border-color:var(--aurora-edge);
+}
+.auth-identity img{filter:drop-shadow(0 0 11px color-mix(in srgb,var(--aurora-cyan) 22%,transparent))}
+.auth-tabs,.auth-provider-grid button,.auth-email-choice,.auth-account-actions button{
+ border-color:var(--line-strong);
+}
+.auth-tabs .active,.auth-provider-grid button:hover:not(:disabled),.auth-email-choice:hover{
+ background:var(--aurora-soft);border-color:var(--aurora-edge);
+}
+.auth-account-avatar{
+ background:linear-gradient(135deg,var(--aurora-cyan),var(--aurora-blue),var(--aurora-violet));
+ color:#0c1a2b;
+}
+.voice-orb,.ai-art-spark{color:var(--aurora-violet)}
+.conversation-search-results button:hover{background:var(--aurora-soft)}
+.toast{border-color:var(--aurora-edge);background:var(--panel-2);border-radius:12px}
+.pwa-banner-install{border-radius:12px}
+
+/* 09. Light mode: the previous dark-only landing and Core welcome now adapt. */
+:root[data-theme="light"] body:not(.is-core-view) .hero-section{
+ background:radial-gradient(ellipse 55% 85% at 76% 50%,rgba(106,176,227,.23),transparent 80%),
+ radial-gradient(ellipse 53% 75% at 90% 90%,rgba(166,136,220,.18),transparent 82%),
+ linear-gradient(145deg,#f8fcff,#e5f2fa 55%,#eeeafa);
+ border-color:var(--aurora-edge);box-shadow:0 18px 48px rgba(65,99,153,.07);
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-copy h1{color:#1c2b43}
+:root[data-theme="light"] body:not(.is-core-view) .hero-copy h1 em{
+ background:linear-gradient(105deg,#197e83,#346ea8 52%,#785db0);
+ background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+}
+:root[data-theme="light"] body:not(.is-core-view) .hero-description,
+:root[data-theme="light"] body:not(.is-core-view) .art-tag{color:#425b77}
+:root[data-theme="light"] body:not(.is-core-view) .hero-copy .eyebrow{color:#237d7c}
+:root[data-theme="light"] body:not(.is-core-view) .art-tag{background:rgba(255,255,255,.85);border-color:var(--line-strong)}
+:root[data-theme="light"] body:not(.is-core-view) .hero-section::before{opacity:.28}
+:root[data-theme="light"] body.is-core-view .core-welcome-gradient{
+ background:linear-gradient(105deg,#147f83,#3f80ae 50%,#785eaf);
+ background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty > .core-welcome-ambient{
+ background:radial-gradient(ellipse 75% 75% at 50% 45%,rgba(104,183,217,.12),transparent 80%)!important;
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-examples button{
+ background:#fff;color:#24334d;
+}
+
+/* 10. Consistent smaller screens and accessibility; do not override safe areas. */
+@media(max-width:850px){
+ .sidebar{background:var(--panel)}
+ .workflow-hub,.ai-connection-card,.ai-feature-card{border-radius:17px}
+ .tool-modal,.core-editor-panel{border-radius:0}
+}
+@media(max-width:620px){
+ body:not(.is-core-view) .hero-section{padding:27px 17px 22px}
+ body:not(.is-core-view) .hero-copy h1{font-size:clamp(33px,9.1vw,43px)}
+ body:not(.is-core-view) .hero-actions .button{min-height:45px}
+ body:not(.is-core-view) .hero-art{height:245px}
+ .workflow-card,.goal-card,.tool-card,.mini-tool-card{border-radius:14px}
+ .tool-grid{gap:9px}
+ .section-heading{gap:12px}
+ .ai-connection-card{padding:15px}
+ .auth-panel{border-radius:22px}
+ .modal-footer{gap:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .workflow-card,.goal-card,.tool-card,.mini-tool-card,
+ .button,.icon-button,.nav-item{transition:none!important}
+}
