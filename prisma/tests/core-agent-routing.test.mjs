@@ -610,7 +610,8 @@ assert.throws(()=>extractWebsiteHtml('<html><head></head><body><script src="http
 assert.equal(registered.filter(tool=>tool.id==='ai-webpage').length,1,'A real website tool must exist in the registry');
 assert.equal(router.coreToolCatalog().find(tool=>tool.id==='ai-webpage')?.status,'beta');
 assert.match(coreSource,/handleWebsiteConversation\(userText\)/,'Capability route missing in Core');
-assert.match(coreSource,/websiteBrief:chat\.websiteBrief/,'Website context must survive page reload in this browser');
+assert.match(coreSource,/serializeConversation\(/,'Conversation persistence uses the shared loss-resistant serializer');
+assert.equal(normalizeConversation({id:'website-context',websiteBrief:{summary:'Saved context'},messages:[]}).websiteBrief.summary,'Saved context','Website context must survive conversation serialization');
 assert.match(coreSource,/routeWebsiteRequest\(/);
 assert.match(coreSource,/validateAgentStepResult\(tool\.id,result\)/,'Agent must validate each tool output');
 assert.match(coreSource,/sandbox.{0,3}allow-scripts/,'HTML preview must be sandboxed');
