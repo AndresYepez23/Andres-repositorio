@@ -730,7 +730,7 @@ assert.equal(reconcileIosPwaViewport({
 assert.equal(reconcileIosPwaViewport({innerHeight:0,visualHeight:0}),240);
 assert.match(uiMain,/reconcileIosPwaViewport\(\{/);
 assert.match(uiMain,/getComputedStyle\(dvhProbe\)\.height/,'Measure actual CSS 100dvh');
-assert.match(uiMain,/standalone&&!keyboardOpen\?layoutHeight:visible/,
+assert.match(uiMain,/standalone&&!keyboardOpen\?layoutHeight(?:\+recovery)?:visible/,
  'Keyboard must keep a separate viewport height');
 assert.doesNotMatch(uiMain,/\bMath\.max\([^\n]*screen\.height/,
  'Never expand the PWA to physical screen.height and cover the home indicator');
@@ -748,7 +748,7 @@ const iphoneGap={
 };
 assert.equal(recoverIosStandaloneBottomGap(iphoneGap),19,
  'Must extend the ROOT chat 19 CSS pixels, unlike ineffective padding-only fixes');
-assert.equal(793+recoverIosStandaloneBottomGap(iphoneGap),810);
+assert.equal(793+recoverIosStandaloneBottomGap(iphoneGap),812);
 assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,safeInsetBottom:0}),19,
  'Tall iPhone with an under-reported CSS env inset must still reserve 34px');
 assert.equal(recoverIosStandaloneBottomGap({...iphoneGap,layoutHeight:810}),0,
