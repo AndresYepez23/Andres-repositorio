@@ -340,3 +340,254 @@ body.is-core-view .core-sidebar-conversation.active{
  body:not(.is-core-view) .filter-chip{font-size:10px;padding:8px 11px}
  body:not(.is-core-view) .quick-tool-actions button{font-size:10px}
 }
+
+
+/* 12. AURORA 2 — visible, cohesive redesign across the entire product.
+   Presentation-only: existing routes, tools, handlers and provider controls stay intact. */
+:root{
+ --aurora-night:#0b1222;--aurora-ink:#121c30;--aurora-deep:#1b2440;
+ --aurora-glow:linear-gradient(110deg,#91e5d7 0%,#8bbfea 53%,#b7a1f2 100%);
+}
+body:not(.is-core-view) .page-content{
+ background:radial-gradient(ellipse 64% 16% at 90% 0%,rgba(82,142,225,.075),transparent 85%);
+}
+.sidebar{
+ background:radial-gradient(ellipse 140% 46% at 0% 0%,rgba(70,124,190,.19),transparent 74%),
+ linear-gradient(170deg,#111a2b 0%,#12172a 53%,#111827 100%);
+ border-right:1px solid rgba(151,193,237,.19);
+ box-shadow:14px 0 44px rgba(3,7,18,.13);
+}
+.sidebar .brand-mark{
+ color:#9bdfdc;
+ filter:drop-shadow(0 0 11px rgba(116,206,221,.29));
+}
+.sidebar .brand-copy strong{
+ background:var(--aurora-glow);background-clip:text;-webkit-background-clip:text;
+ color:transparent;letter-spacing:-.025em;
+}
+.sidebar .side-label{color:#8297b4;letter-spacing:.17em}
+.sidebar .nav-item,.sidebar .category-item{
+ border:1px solid transparent;border-radius:13px;
+ min-height:43px;transition:background .2s,border-color .2s,color .2s,transform .2s;
+}
+.sidebar .nav-item:hover,.sidebar .category-item:hover{
+ background:rgba(137,180,231,.075);border-color:rgba(142,186,235,.14);
+}
+.sidebar .nav-item.active,.sidebar .category-item.active{
+ background:linear-gradient(110deg,rgba(77,172,180,.22),rgba(91,133,210,.16) 60%,rgba(166,122,221,.13));
+ border-color:rgba(131,209,219,.25);color:#c4f0ed;
+ box-shadow:inset 3px 0 #91e5d7,0 7px 20px rgba(4,11,25,.13);
+}
+.sidebar .nav-item.active .nav-icon{color:#9fe7df}
+.sidebar .core-nav-badge,.sidebar .nav-count,.sidebar .nav-item kbd{
+ border:1px solid rgba(149,193,226,.15);background:rgba(125,157,207,.10);color:#a7bcd7;
+}
+.sidebar .privacy-card{
+ background:linear-gradient(125deg,rgba(96,198,190,.13),rgba(118,137,225,.09),rgba(164,116,211,.07));
+ border:1px solid rgba(146,201,224,.22);border-radius:16px;
+}
+.sidebar .sidebar-bottom{background:transparent}
+.sidebar .sidebar-header-button{border-radius:11px}
+.topbar{
+ background:linear-gradient(95deg,rgba(14,20,34,.96),rgba(20,24,42,.95));
+ border-bottom:1px solid rgba(145,194,231,.16);
+ box-shadow:0 8px 26px rgba(3,8,20,.13);
+}
+.topbar .breadcrumb strong{font-weight:750}
+.topbar .breadcrumb span:first-child{letter-spacing:.11em}
+body:not(.is-core-view) .hero-section{
+ border:1px solid rgba(145,201,238,.22);
+ border-radius:27px;padding:clamp(22px,4vw,54px);
+ margin:24px 0 0;overflow:hidden;position:relative;
+ background:radial-gradient(ellipse 65% 95% at 80% 62%,rgba(52,138,222,.42),transparent 80%),
+ radial-gradient(ellipse 65% 65% at 28% 100%,rgba(122,102,210,.20),transparent 85%),
+ linear-gradient(132deg,#111c30,#142b48 59%,#24213d);
+ box-shadow:0 22px 58px rgba(4,12,31,.24),inset 0 1px rgba(192,232,255,.12);
+}
+body:not(.is-core-view) .hero-section:before{
+ content:"";position:absolute;inset:0;pointer-events:none;opacity:.28;
+ background-image:radial-gradient(circle,rgba(157,213,241,.7) 1px,transparent 1.5px);
+ background-size:23px 23px;mask-image:linear-gradient(90deg,transparent 12%,black 100%);
+}
+body:not(.is-core-view) .hero-section>*{position:relative;z-index:1}
+body:not(.is-core-view) .hero-copy h1{
+ letter-spacing:-.055em;line-height:1.11;text-wrap:balance;
+}
+body:not(.is-core-view) .hero-description{color:#c2d1e6;max-width:610px}
+body:not(.is-core-view) .metric-strip{
+ border:1px solid rgba(145,190,234,.15);border-radius:19px;
+ padding:17px 19px;margin:18px 0 0;
+ background:linear-gradient(115deg,rgba(30,43,67,.64),rgba(22,28,47,.46));
+}
+body:not(.is-core-view) .metric strong{
+ background:linear-gradient(110deg,#eaf8ff,#9edce2);background-clip:text;
+ -webkit-background-clip:text;color:transparent;
+}
+body:not(.is-core-view) .home-dashboard{padding-top:27px}
+body:not(.is-core-view) .workflow-hub{
+ border:1px solid rgba(142,191,231,.21);border-radius:24px;
+ padding:clamp(16px,2.6vw,27px);
+ background:radial-gradient(ellipse at 100% 0%,rgba(89,143,221,.14),transparent 65%),
+ linear-gradient(155deg,#17243a,#1a2036 78%);
+ box-shadow:0 14px 40px rgba(4,10,25,.15);
+}
+body:not(.is-core-view) .workflow-hub-heading h3{font-size:clamp(17px,2.2vw,23px)}
+body:not(.is-core-view) .workflow-card{
+ position:relative;border-radius:17px;padding:16px;min-height:96px;
+ border:1px solid rgba(158,192,229,.17);
+ background:linear-gradient(135deg,rgba(25,38,57,.95),rgba(29,32,53,.93));
+ box-shadow:inset 0 1px rgba(210,231,255,.045);
+}
+body:not(.is-core-view) .workflow-card-icon,body:not(.is-core-view) .goal-icon{
+ background:linear-gradient(140deg,rgba(72,179,175,.24),rgba(99,132,205,.17));
+ border:1px solid rgba(136,220,214,.14);color:#9ce5df;
+}
+body:not(.is-core-view) .workflow-card:hover,body:not(.is-core-view) .goal-card:hover,
+body:not(.is-core-view) .tool-card:hover{
+ transform:translateY(-2px);border-color:rgba(151,214,230,.48);
+ box-shadow:0 13px 34px rgba(4,12,30,.18);
+}
+body:not(.is-core-view) .home-goals{gap:13px}
+body:not(.is-core-view) .goal-card{
+ min-height:126px;border-radius:19px;padding:18px;
+ background:linear-gradient(145deg,#192438,#1b2133);
+ border:1px solid rgba(151,191,227,.18);
+}
+body:not(.is-core-view) .goal-card:nth-child(3n+2){
+ background:linear-gradient(145deg,#1b253c,#22213c);
+}
+body:not(.is-core-view) .goal-card:nth-child(3n+3){
+ background:linear-gradient(145deg,#172b38,#1d243a);
+}
+body:not(.is-core-view) .mini-tool-card,
+body:not(.is-core-view) .recent-panel,
+body:not(.is-core-view) .recommended-panel{
+ border-radius:19px;border-color:rgba(155,193,230,.16);
+}
+body:not(.is-core-view) .tools-section{padding-top:48px}
+body:not(.is-core-view) .section-heading h2{
+ font-size:clamp(26px,3.1vw,38px);letter-spacing:-.055em;
+}
+body:not(.is-core-view) .filter-row{gap:13px}
+body:not(.is-core-view) .filter-chip{
+ border-radius:999px;border-color:rgba(143,188,224,.2);
+}
+body:not(.is-core-view) .filter-chip.active{
+ background:linear-gradient(115deg,rgba(68,165,170,.27),rgba(104,126,212,.18));
+ border-color:rgba(143,217,219,.44);color:#b2ece7;
+}
+body:not(.is-core-view) .tool-grid{gap:14px}
+body:not(.is-core-view) .tool-card{
+ border-radius:20px;padding:19px;min-height:190px;
+ border:1px solid rgba(158,192,229,.17);
+ background:linear-gradient(145deg,#182338,#1b2032);
+ box-shadow:inset 0 1px rgba(217,237,255,.035);
+}
+body:not(.is-core-view) .tool-card:nth-child(3n+2){
+ background:linear-gradient(145deg,#19273b,#222239);
+}
+body:not(.is-core-view) .tool-card:nth-child(3n+3){
+ background:linear-gradient(145deg,#18293a,#1c2236);
+}
+body:not(.is-core-view) .tool-card:before{
+ left:0;right:0;height:2px;opacity:.7;
+ background:linear-gradient(90deg,#78d6cf,#82b4eb,#b39bf1);
+}
+body:not(.is-core-view) .tool-icon{
+ border-radius:14px;background:linear-gradient(145deg,rgba(70,174,174,.2),rgba(119,146,222,.15));
+ border:1px solid rgba(150,210,222,.16);color:#a0e3df;
+}
+body:not(.is-core-view) .tool-card h3{font-size:15px;letter-spacing:-.025em}
+body:not(.is-core-view) .tool-card p{line-height:1.55}
+body:not(.is-core-view) .ai-section{padding-top:34px}
+body:not(.is-core-view) .ai-principles{gap:14px;margin-bottom:32px}
+body:not(.is-core-view) .ai-principles>div{
+ border:1px solid rgba(154,193,233,.19);border-radius:19px;
+ background:linear-gradient(145deg,#19263b,#202137);
+ padding:21px;
+}
+body:not(.is-core-view) .ai-connection-card{
+ background:radial-gradient(ellipse at 100% 0%,rgba(92,148,229,.15),transparent 70%),
+ linear-gradient(145deg,#17253a,#1d2238);
+ border:1px solid rgba(148,199,230,.26);border-radius:24px;
+}
+body:not(.is-core-view) .provider-card,
+body:not(.is-core-view) .provider-connect-grid>*{
+ background:linear-gradient(145deg,#111a2b,#1a2135);
+ border:1px solid rgba(148,185,229,.18);border-radius:17px;
+}
+body:not(.is-core-view) .ai-feature-card{
+ border-radius:24px;background:radial-gradient(ellipse at 80% 55%,rgba(109,123,224,.23),transparent 68%),
+ linear-gradient(130deg,#162c39,#1e223c);
+}
+body:not(.is-core-view) .main-footer{margin-top:40px;border-top-color:rgba(146,189,228,.16)}
+:root[data-theme="light"] .sidebar{
+ background:linear-gradient(165deg,#edf5fc,#e9eff9);
+ border-right-color:rgba(70,115,163,.18);
+}
+:root[data-theme="light"] .sidebar .brand-copy strong{
+ background:linear-gradient(100deg,#247b78,#4d70ae,#7863b5);
+ background-clip:text;-webkit-background-clip:text;color:transparent;
+}
+:root[data-theme="light"] .sidebar .side-label{color:#60718a}
+:root[data-theme="light"] .sidebar .nav-item.active,
+:root[data-theme="light"] .sidebar .category-item.active{
+ color:#1c646c;background:linear-gradient(115deg,#d9f0ed,#e4e8fa);
+}
+:root[data-theme="light"] .topbar{background:rgba(245,249,254,.95)}
+:root[data-theme="light"] body:not(.is-core-view) .metric-strip,
+:root[data-theme="light"] body:not(.is-core-view) .workflow-hub,
+:root[data-theme="light"] body:not(.is-core-view) .workflow-card,
+:root[data-theme="light"] body:not(.is-core-view) .goal-card,
+:root[data-theme="light"] body:not(.is-core-view) .tool-card,
+:root[data-theme="light"] body:not(.is-core-view) .ai-principles>div,
+:root[data-theme="light"] body:not(.is-core-view) .ai-connection-card,
+:root[data-theme="light"] body:not(.is-core-view) .provider-card,
+:root[data-theme="light"] body:not(.is-core-view) .provider-connect-grid>*{
+ background:linear-gradient(145deg,#ffffff,#edf4fb);
+ border-color:rgba(74,116,161,.18);box-shadow:0 7px 25px rgba(32,71,116,.055);
+}
+:root[data-theme="light"] body:not(.is-core-view) .tool-card:nth-child(3n+2),
+:root[data-theme="light"] body:not(.is-core-view) .goal-card:nth-child(3n+2){background:linear-gradient(145deg,#fff,#f0effb)}
+:root[data-theme="light"] body:not(.is-core-view) .tool-card:nth-child(3n+3),
+:root[data-theme="light"] body:not(.is-core-view) .goal-card:nth-child(3n+3){background:linear-gradient(145deg,#fff,#eaf8f7)}
+:root[data-theme="light"] body:not(.is-core-view) .metric strong{color:#225f7c;background:none}
+:root[data-theme="light"] body:not(.is-core-view) .filter-chip.active{color:#216c73}
+@media(max-width:850px){
+ .sidebar{background:radial-gradient(ellipse at 0 0,rgba(78,140,201,.22),transparent 62%),linear-gradient(165deg,#111b2c,#161929)}
+ .topbar{min-height:68px}
+}
+@media(max-width:620px){
+ .topbar{height:64px;min-height:64px;padding-inline:17px}
+ .topbar .breadcrumb{font-size:11px}
+ body:not(.is-core-view) .page-content{padding-left:17px;padding-right:17px;padding-bottom:max(26px,env(safe-area-inset-bottom))}
+ body:not(.is-core-view) .hero-section{
+  margin:13px 0 0;border-radius:22px;padding:26px 20px;
+  box-shadow:0 12px 32px rgba(4,12,31,.19);
+ }
+ body:not(.is-core-view) .hero-section:before{background-size:19px 19px}
+ body:not(.is-core-view) .metric-strip{border-radius:15px;padding:14px 11px}
+ body:not(.is-core-view) .workflow-hub{border-radius:20px;padding:17px}
+ body:not(.is-core-view) .workflow-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+ body:not(.is-core-view) .workflow-card{
+  min-height:76px;border-radius:14px;padding:13px 14px;
+ }
+ body:not(.is-core-view) .workflow-card-copy strong{font-size:13px}
+ body:not(.is-core-view) .workflow-card-copy small{font-size:11px}
+ body:not(.is-core-view) .home-goals{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ body:not(.is-core-view) .goal-card{min-height:114px;border-radius:16px;padding:14px}
+ body:not(.is-core-view) .tools-section{padding-top:31px}
+ body:not(.is-core-view) .tool-grid{gap:10px}
+ body:not(.is-core-view) .tool-card{min-height:180px;border-radius:16px;padding:14px}
+ body:not(.is-core-view) .tool-card h3{font-size:13px}
+ body:not(.is-core-view) .tool-card p{font-size:11px;line-height:1.48}
+ body:not(.is-core-view) .ai-section{padding-top:24px}
+ body:not(.is-core-view) .ai-principles>div{padding:16px;border-radius:15px}
+ body:not(.is-core-view) .ai-connection-card{padding:16px;border-radius:18px}
+ body:not(.is-core-view) .provider-card{border-radius:15px}
+ .sidebar{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+ .sidebar .sidebar-bottom{padding-bottom:4px}
+}
+@media(max-width:370px){
+ body:not(.is-core-view) .tool-grid{grid-template-columns:minmax(0,1fr)}
+}
