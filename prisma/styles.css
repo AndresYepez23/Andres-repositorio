@@ -2483,3 +2483,70 @@ body.is-core-view #core-thinking {
  }
  #auth-modal .auth-identity{margin-bottom:20px}
 }
+
+
+/* Prisma Core welcome · reactive halftone matrix.
+   Decorative only. Never intercept gestures, chat actions or typing. */
+body.is-core-view .core-welcome{
+  position:relative;
+  isolation:isolate;
+}
+body.is-core-view .core-welcome > :not(.core-welcome-ambient){
+  position:relative;
+  z-index:1;
+}
+body.is-core-view .core-welcome-ambient{
+  position:absolute;
+  inset:-64px -102px -56px;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  user-select:none;
+  border-radius:32px;
+  opacity:.95;
+  background:
+    radial-gradient(ellipse 56% 52% at 50% 49%,rgba(78,191,190,.075),transparent 78%),
+    radial-gradient(ellipse 38% 48% at 64% 51%,rgba(123,109,214,.048),transparent 88%);
+  -webkit-mask-image:radial-gradient(ellipse 72% 69% at 50% 48%,#000 29%,transparent 100%);
+  mask-image:radial-gradient(ellipse 72% 69% at 50% 48%,#000 29%,transparent 100%);
+}
+body.is-core-view .core-welcome-dots{
+  display:block;
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+body.is-core-view .core-welcome h2{
+  position:relative;
+  z-index:2;
+}
+body.is-core-view .core-welcome .core-examples{
+  position:relative;
+  z-index:2;
+}
+html[data-theme="light"] body.is-core-view .core-welcome-ambient{
+  opacity:.84;
+  background:
+    radial-gradient(ellipse 55% 55% at 50% 49%,rgba(44,157,161,.056),transparent 78%),
+    radial-gradient(ellipse 39% 48% at 64% 51%,rgba(113,96,194,.032),transparent 88%);
+}
+@media(max-width:620px){
+  body.is-core-view .core-welcome-ambient{
+    inset:-45px -15px -33px;
+    opacity:.81;
+    border-radius:22px;
+    -webkit-mask-image:radial-gradient(ellipse 78% 66% at 50% 46%,#000 24%,transparent 100%);
+    mask-image:radial-gradient(ellipse 78% 66% at 50% 46%,#000 24%,transparent 100%);
+  }
+  html[data-theme="light"] body.is-core-view .core-welcome-ambient{
+    opacity:.71;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.is-core-view .core-welcome-ambient{
+    transition:none!important;
+    animation:none!important;
+  }
+}
