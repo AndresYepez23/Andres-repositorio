@@ -1431,6 +1431,13 @@ function setupPrismaCoreViewport(){
       const top=standalone&&!keyboardOpen?0:Math.max(0,Math.round(pageTop));
       root.style.setProperty('--prisma-core-viewport',Math.round(height)+'px');
       root.style.setProperty('--prisma-vp-top',top+'px');
+      // Size the temporary search surface to the visible screen when the
+      // software keyboard opens; never hide search matches behind it.
+      const searchFocused=document.activeElement===document.querySelector('#core-history-search');
+      const searchHeight=searchFocused?visible:(standalone?layoutHeight:visible);
+      const searchTop=standalone?0:Math.max(0,Math.round(vv?.offsetTop||0));
+      root.style.setProperty('--prisma-search-viewport',Math.round(searchHeight)+'px');
+      root.style.setProperty('--prisma-search-vp-top',searchTop+'px');
       document.body.classList.toggle('is-prisma-standalone',standalone);
       document.body.classList.toggle('is-keyboard-open',keyboardOpen);
       if(keyboardOpen&&focused){
@@ -1448,6 +1455,9 @@ function setupPrismaCoreViewport(){
   };
   document.addEventListener('focusin',event=>{if(event.target===input)settle();});
   document.addEventListener('focusout',event=>{if(event.target===input)settle();});
+  const searchInput=document.querySelector('#core-history-search');
+  document.addEventListener('focusin',event=>{if(event.target===searchInput)settle();});
+  document.addEventListener('focusout',event=>{if(event.target===searchInput)settle();});
   window.visualViewport?.addEventListener('resize',sync,{passive:true});
   window.visualViewport?.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
