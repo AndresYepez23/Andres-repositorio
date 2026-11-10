@@ -2783,3 +2783,109 @@ body.is-core-view .core-guest-register-actions button:focus-visible{
    background:var(--line-strong);
  }
 }
+
+
+/* Attached files: compact, accessible previews that never expand the composer. */
+body.is-core-view .core-attachments{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:7px;
+  max-width:100%;
+  max-height:74px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  padding:2px 2px 7px;
+  scrollbar-width:thin;
+  margin-bottom:3px;
+}
+body.is-core-view .core-attachment-preview{
+  display:flex;
+  flex:0 0 auto;
+  min-width:0;
+  width:min(198px,60vw);
+  max-width:198px;
+  height:56px;
+  padding:5px 5px 5px 6px;
+  gap:7px;
+  align-items:center;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:var(--panel-2);
+  color:var(--text);
+  box-sizing:border-box;
+}
+body.is-core-view .core-attachment-preview .core-attachment-thumb,
+body.is-core-view .core-attachment-preview .core-attachment-type{
+  display:flex;
+  flex:0 0 43px;
+  width:43px;
+  height:43px;
+  align-items:center;
+  justify-content:center;
+  object-fit:cover;
+  border-radius:8px;
+  border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line));
+  background:color-mix(in srgb,var(--accent) 9%,var(--bg));
+  color:var(--accent);
+  font:750 10px/1 Manrope,system-ui,sans-serif;
+  overflow:hidden;
+}
+body.is-core-view .core-attachment-preview .core-attachment-details{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  min-width:0;
+  gap:4px;
+}
+body.is-core-view .core-attachment-preview .core-attachment-filename{
+  display:block;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font:650 10px/1.3 Manrope,system-ui,sans-serif;
+}
+body.is-core-view .core-attachment-preview small{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1;
+}
+body.is-core-view .core-attachment-preview .core-attachment-remove{
+  flex:0 0 22px;
+  width:22px;
+  height:25px;
+  min-width:22px;
+  padding:0;
+  border:0;
+  background:transparent;
+  font-size:20px;
+  line-height:1;
+  color:var(--muted);
+}
+body.is-core-view .core-attachment-preview .core-attachment-remove:focus-visible{
+  outline:2px solid var(--accent);
+}
+@media(max-width:620px){
+  body.is-core-view .core-attachments{max-height:68px;padding-bottom:4px;}
+  body.is-core-view .core-attachment-preview{width:min(175px,64vw);max-width:175px;height:53px;}
+  body.is-core-view .core-attachment-preview .core-attachment-thumb,
+  body.is-core-view .core-attachment-preview .core-attachment-type{width:39px;height:39px;flex-basis:39px;}
+}
+/* Assistant answer reveal: optical cursor, never applied to saved chat history. */
+body.is-core-view .core-message-body.is-revealing::after{
+  content:'';
+  display:inline-block;
+  width:2px;
+  height:1em;
+  margin-left:3px;
+  vertical-align:-.15em;
+  background:var(--accent);
+  opacity:.8;
+  animation:core-reveal-caret .75s steps(2,end) infinite;
+}
+@keyframes core-reveal-caret{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+ body.is-core-view .core-message-body.is-revealing::after{animation:none;opacity:0}
+}
