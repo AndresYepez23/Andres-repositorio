@@ -14,7 +14,7 @@ function openDatabase() {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: 'key' });
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => { request.result.onversionchange = () => { request.result.close(); opening = null; }; resolve(request.result); };
     request.onerror = () => reject(request.error || new Error('No se pudo abrir el almacenamiento local.'));
     request.onblocked = () => reject(new Error('El almacenamiento local está ocupado por otra pestaña.'));
   }).catch(error => {
@@ -31,7 +31,7 @@ export async function readConversationSnapshot() {
     const request = transaction.objectStore(STORE_NAME).get(SNAPSHOT_KEY);
     request.onsuccess = () => resolve(Array.isArray(request.result?.records) ? request.result.records : []);
     request.onerror = () => reject(request.error || new Error('No se pudo leer el historial local.'));
-    transaction.oncomplete = () => db.close();
+    transaction.oncomplete = () => {};
     transaction.onerror = () => reject(transaction.error || new Error('Falló la lectura del historial local.'));
   });
 }
@@ -45,7 +45,7 @@ export async function saveConversationSnapshot(records) {
       savedAt: Date.now(),
       records: Array.isArray(records) ? records : []
     });
-    transaction.oncomplete = () => { db.close(); resolve(true); };
+    transaction.oncomplete = () => resolve(true);
     transaction.onerror = () => reject(transaction.error || new Error('No se pudo guardar el historial local.'));
     transaction.onabort = () => reject(transaction.error || new Error('Se canceló el guardado del historial local.'));
   });
