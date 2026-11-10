@@ -263,7 +263,7 @@ async function doSync(){
   const remoteDeleted=new Set(remoteRows.filter(row=>row.deleted_at).map(row=>row.id));
   const queuedDeleted=new Set(readDeletedIds());
   const deleted=new Set([...remoteDeleted,...queuedDeleted]);
-  const remoteActive=remoteRows.filter(row=>!row.deleted_at).map(row=>normalizeConversation({
+  const remoteActive=remoteRows.filter(row=>!row.deleted_at&&!deleted.has(row.id)).map(row=>normalizeConversation({
    ...(row.data&&typeof row.data==='object'?row.data:{}),
    id:row.id,title:row.title,pinned:row.pinned
   })).filter(Boolean);
