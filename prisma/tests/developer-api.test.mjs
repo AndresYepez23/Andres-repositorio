@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getPrismaDeveloperCatalog, planWithPrismaCore, onRequestGet, onRequestPost } from "../src/developer-api.js";
+import { getPrismaDeveloperCatalog, getPrismaDeveloperWorkflows, planWithPrismaCore, onRequestGet, onRequestPost } from "../src/developer-api.js";
 
 test("catalog mirrors the live Prisma registry without exposing executable internals", () => {
   const catalog = getPrismaDeveloperCatalog({ limit: 100 });
@@ -62,4 +62,11 @@ test("plan endpoint validates JSON and returns a Core plan", async () => {
   const data = await response.json();
   assert.equal(data.ok, true);
   assert.ok(data.counts.total > 0);
+});
+
+test("developer catalog exposes the ten original intelligent workflows", () => {
+  const workflows = getPrismaDeveloperWorkflows();
+  assert.equal(workflows.length, 10);
+  assert.ok(workflows.some((workflow) => workflow.id === "image-pipeline"));
+  assert.ok(workflows.some((workflow) => workflow.id === "study-studio"));
 });
