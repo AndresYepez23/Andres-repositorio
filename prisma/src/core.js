@@ -10,6 +10,7 @@ import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
+import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
@@ -96,12 +97,12 @@ function newChatRecord(content=[]){
  const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
  const first=content.find(message=>message.role==='user'&&message.content?.trim());
  return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
-   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,pinned:false};
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false};
 }
 function persistChatHistory(activeSerialized=null){
  try{
   const records=conversations.slice().sort((a,b)=>b.updated-a.updated).slice(0,MAX_CHATS).map(chat=>({
-   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,pinned:!!chat.pinned,
+   id:chat.id,title:chat.title,titled:!!chat.titled,created:chat.created,updated:chat.updated,thumbnailBrief:chat.thumbnailBrief||null,websiteBrief:chat.websiteBrief||null,pinned:!!chat.pinned,
    messages:chat.id===activeConversationId&&activeSerialized
     ?activeSerialized:chat.messages.slice(-60).map(message=>({
      id:message.id||'',role:message.role,content:String(message.content||'').slice(0,22000),time:message.time,
@@ -132,7 +133,7 @@ function loadChatHistory(){
  try{
   const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
   if(Array.isArray(records))stored=records.filter(chat=>chat&&typeof chat.id==='string'&&Array.isArray(chat.messages))
-    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null,pinned:!!chat.pinned}));
+    .slice(0,MAX_CHATS).map(chat=>({id:chat.id,title:String(chat.title||'Nueva conversación').slice(0,70),titled:!!chat.titled,created:Number(chat.created)||Date.now(),updated:Number(chat.updated)||Date.now(),messages:chat.messages.slice(-60),thumbnailBrief:chat.thumbnailBrief||null,websiteBrief:chat.websiteBrief||null,pinned:!!chat.pinned}));
  }catch{}
  if(!stored.length){
   let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old.slice(-60);}catch{}
@@ -465,6 +466,7 @@ function toolParamsHint(id){
     'pdf-text':'No requiere parámetros; devuelve texto extraído.',
     'pdf-to-image':'Usa params.pages opcional y params.scale: 1, 1.5 o 2.',
     'ai-assistant':'Usa params.prompt con la instrucción completa, params.context opcional, params.tone y params.length.',
+    'ai-webpage':'Usa params.prompt con el tipo de página y su propósito, más estilo y secciones si se conocen. Produce un solo archivo HTML responsive descargable; nunca afirma publicarla ni crear backend real.',
     'music-lyrics':'Usa params.prompt con la idea, tema, idioma, género y ambiente. Entrega letra original completa y un prompt de producción; no afirmes que se generó audio.',
     'image-gen':'Usa params.prompt con una descripción visual completa y params.ratio/style si aplica.',
     'ai-voice':'Usa params.prompt con el texto real para sintetizar (máximo 1.500 caracteres), params.model="openai/tts-1", params.voice="nova", params.format="mp3". Entrega audio binario descargable; nunca simules la voz con texto.',
@@ -928,6 +930,57 @@ async function generateVisualRequest(text,creds,kind){
  });
  status('Imagen lista para descargar y editar.','success');
 }
+// Local intent check first: capability questions never spend an AI request.
+// A real brief uses exactly one web-generation task; no hosting is simulated.
+async function handleWebsiteConversation(text){
+ const chat=conversations.find(item=>item.id===activeConversationId);
+ if(!chat||attachments.length)return false;
+ const route=routeWebsiteRequest(text,chat.websiteBrief,false);
+ if(!route)return false;
+ if(route.type==='abandon'){
+  chat.websiteBrief=null;persistChatHistory();return false;
+ }
+ if(route.type==='cancel'){
+  chat.websiteBrief=null;persistChatHistory();
+  addMessage('assistant',route.message);status('Proyecto web pendiente cancelado.','info');return true;
+ }
+ if(route.type==='ask'||route.type==='answer'){
+  chat.websiteBrief={started:Date.now()};
+  persistChatHistory();
+  addMessage('assistant',route.message);
+  status('Esperando el tipo de página, sin gastar ninguna API.','info');
+  return true;
+ }
+ if(route.type!=='build')return false;
+ chat.websiteBrief=null;persistChatHistory();
+ try{
+  status('Preparando una página web en un archivo descargable…');
+  const central=await getCentralProviderStatus();
+  centralProviders=central.providers||centralProviders;
+  centralFeatures=central.features||centralFeatures;
+  centralModelCatalog=central.modelCatalog||centralModelCatalog;
+  if(!Object.values(centralProviders).some(Boolean))
+   throw Error('No hay motores de texto compartidos disponibles. El diseño puede retomarse cuando se recupere la cuota.');
+  const result=await runTool('ai-webpage',[],{
+   ...credentials(),prompt:route.description,provider:'auto',reasoning:'smart',length:'long'
+  },(p,msg)=>{status(msg||'Generando el archivo HTML…');
+   setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Diseñando tu página…');});
+  if(!result?.blob||!String(result.blob.type||'').startsWith('text/html'))
+   throw Error('No se recibió un archivo HTML verificable.');
+  addMessage('assistant','Preparé una primera versión funcional de tu página web. Puedes previsualizarla y descargar el HTML. No está publicada en Internet: para ponerla en un dominio se requiere un paso posterior.',{
+   engine:result.provider,model:result.model,
+   fallbackFrom:result.fallbackFrom,fallbackReason:result.fallbackReason,
+   results:[{name:'Página web HTML',reason:'Archivo generado para '+route.description.slice(0,130),result}]
+  });
+  status('Página creada y lista para descargar.','success');
+ }catch(error){
+  const detail=String(error?.message||'Falló la generación.').slice(0,300);
+  addMessage('assistant','Entendí qué tipo de página quieres, pero el motor no pudo completar el HTML. No voy a presentarte código incompleto como un sitio terminado. '+detail+' Puedes repetir tu solicitud cuando haya un motor disponible.');
+  status('No se pudo completar el documento web.','warning');
+ }
+ return true;
+}
+
 async function handleImageCreationRequest(text){
  const chat=conversations.find(item=>item.id===activeConversationId);
  if(!chat)return false;
@@ -1136,6 +1189,14 @@ async function requestPlan(userText){
   if(!attachments.length){
     const productAnswer=resolvePrismaProductQuestion(userText,messages.slice(-16,-1),centralProviders);
     if(productAnswer){addMessage('assistant',productAnswer);status('Información de Prisma.','success');return;}
+  }
+  // Before tools or models, distinguish a question about what Core CAN do
+  // from permission to execute it. Retain one missing website detail per chat.
+  if(await handleWebsiteConversation(userText))return;
+  if(!attachments.length){
+    const capabilityAnswer=resolveGeneralCapabilityQuestion(userText);
+    if(capabilityAnswer){addMessage('assistant',capabilityAnswer);
+      status('Capacidad explicada sin consumir IA.','success');return;}
   }
   // Universal discovery is local and cost-free. The assistant knows the full
   // ready/beta registry and suggests related tools without provider requests.
