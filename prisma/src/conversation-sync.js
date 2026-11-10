@@ -23,6 +23,18 @@ export function hasConversationMessages(conversation) {
   return Array.isArray(conversation?.messages) && conversation.messages.length > 0;
 }
 
+// An unsent conversation exists in memory only. Hydrating saved history
+// must not navigate away from the user's currently open blank chat.
+export function retainActiveConversationDraft(current, incoming, activeId) {
+  const saved = mergeConversationLists(incoming).filter(hasConversationMessages);
+  const draft = Array.isArray(current)
+    ? current.find(chat => chat?.id === activeId && !hasConversationMessages(chat))
+    : null;
+  if (!draft || saved.some(chat => chat.id === activeId)) return saved;
+  const normalized = normalizeConversation(draft);
+  return normalized ? [normalized, ...saved] : saved;
+}
+
 function stableLegacyMessageId(chatId, message, index) {
   const source = [chatId, index, message?.role || '', message?.time || '', message?.content || ''].join('|');
   let hash = 2166136261;

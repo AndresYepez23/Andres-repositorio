@@ -18,7 +18,7 @@ import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conv
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
 import { findConversations } from './conversation-search.js';
-import { mergeConversationLists, serializeConversation, hasConversationMessages } from './conversation-sync.js';
+import { mergeConversationLists, serializeConversation, hasConversationMessages, retainActiveConversationDraft } from './conversation-sync.js';
 import { readConversationSnapshot, saveConversationSnapshot, clearConversationSnapshot } from './conversation-storage.js';
 import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
@@ -202,12 +202,14 @@ async function restoreIndexedHistory(){
   const current=conversations.filter(hasConversationMessages);
   const merged=mergeConversationLists(current,indexed).filter(hasConversationMessages);
   if(!merged.length){await saveConversationSnapshot([]);return;}
-  conversations=merged;
+  // The open, unsent draft survives asynchronous IndexedDB restoration.
+  conversations=retainActiveConversationDraft(conversations,merged,activeConversationId);
   const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
   activeConversationId=active.id;
   messages=active.messages.slice();
-  try{localStorage.setItem(CHATS_KEY,JSON.stringify(conversations));}catch{}
-  saveConversationSnapshot(conversations).catch(error=>console.warn('Prisma IndexedDB snapshot:',error?.message||error));
+  // Never persist the draft: write only the valid saved conversations.
+  try{localStorage.setItem(CHATS_KEY,JSON.stringify(merged));}catch{}
+  saveConversationSnapshot(merged).catch(error=>console.warn('Prisma IndexedDB snapshot:',error?.message||error));
   renderConversationList();
   renderMessages({forceBottom:true});
   updateChatScreen();
@@ -312,10 +314,13 @@ function startNewConversation(){
  speechSynthesisStop();
  const active=conversations.find(chat=>chat.id===activeConversationId);
  if(active&&!active.messages.length){closeConversationDrawer();$('#core-input')?.focus();return;}
- const record=newChatRecord();conversations.unshift(record);activeConversationId=record.id;
+ // Keep exactly one unsent draft in memory, without adding it to the history.
+ const record=newChatRecord();conversations=conversations.filter(hasConversationMessages);
+ conversations.unshift(record);activeConversationId=record.id;
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
  messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');
- persistChatHistory();renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
+ // Creating a blank draft must not trigger storage writes or cloud sync.
+ renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
  status('Nueva conversación. El historial anterior sigue disponible.','success');
  $('#core-input')?.focus();
 }
@@ -2192,7 +2197,8 @@ export function initPrismaCore(){
     if(busy||executionActive)return;
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
     if(remote){
-      conversations=mergeConversationLists(remote).filter(hasConversationMessages);
+      const synced=mergeConversationLists(remote).filter(hasConversationMessages);
+      conversations=retainActiveConversationDraft(conversations,synced,activeConversationId);
       if(!conversations.length)conversations=[newChatRecord()];
       const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
       activeConversationId=active.id;messages=active.messages.slice();
