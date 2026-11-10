@@ -7,6 +7,7 @@ import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWit
 import { renderMarkdownSafe } from '../src/core-markdown.js';
 import { findConversations } from '../src/conversation-search.js';
 import { mergeConversationLists, normalizeConversation } from '../src/conversation-sync.js';
+import { GUEST_TASK_LIMIT, GUEST_TASK_STORAGE_KEY, readGuestTaskCount, canGuestSubmit, recordGuestTask } from '../src/core-guest-limit.js';
 import { validateAccountPassword, accountAuthMessage, isAccountProviderAvailable } from '../src/prisma-account.js';
 import { classifySidebarSwipe, shouldCommitSidebarSwipe, SIDEBAR_EDGE_PX, installMobileSidebarGestures } from '../src/sidebar-gestures.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
@@ -67,7 +68,36 @@ for (const [request, files, toolId] of scenarios) {
 assert.ok(router.describeCoreTools('herramientas para editar un video', video).includes('herramientas'));
 
 // Validate typed tool handoffs: never pass a ZIP to PDF/image editing.
+// Guest onboarding: 4 successful operations, across all chats on this browser.
+const guestMemory=new Map();
+const guestStorage={
+ getItem:key=>guestMemory.get(key)||null,
+ setItem:(key,value)=>guestMemory.set(key,String(value))
+};
+assert.equal(GUEST_TASK_LIMIT,4);
+assert.equal(readGuestTaskCount(guestStorage),0);
+assert.equal(canGuestSubmit({signedIn:false,count:0}),true);
+for(let n=1;n<=4;n++){
+ const result=recordGuestTask(guestStorage,{signedIn:false});
+ assert.equal(result.count,n);
+ assert.equal(result.justReachedLimit,n===4);
+}
+assert.equal(guestMemory.get(GUEST_TASK_STORAGE_KEY),'4');
+assert.equal(canGuestSubmit({signedIn:false,count:4}),false,'Fifth guest task must require an account');
+assert.equal(canGuestSubmit({signedIn:true,count:4}),true,'Signed-in users must never be blocked');
+assert.equal(recordGuestTask(guestStorage,{signedIn:false}).count,4,'Guest task limit must not overflow');
+assert.equal(recordGuestTask(guestStorage,{signedIn:true}).count,4,'Signed-in tasks must not spend guest allowance');
+assert.equal(readGuestTaskCount({getItem:()=>{throw Error('Storage disabled');}}),0,'Storage failure must not crash Core');
 const coreSource=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(coreSource,/if\(!canGuestSubmit\(\{signedIn:isPrismaAuthenticated\(\),count:readGuestTaskCount\(localStorage\)\}\)\)/,'Guest sign-up gate must run BEFORE adding a new user message');
+assert.match(coreSource,/openPrismaAuthForGuestLimit\(\)/,'Core must open its real Supabase login/sign-up modal when the trial ends');
+assert.match(coreSource,/input\.blur\(\);\s*openPrismaAuthForGuestLimit\(\);\s*return/,'Blocked task must keep the message and attachments untouched');
+assert.match(coreSource,/recordCompletedCoreTask\(\)/,'Count completed tasks rather than file uploads');
+assert.match(coreSource,/successful=true;[\s\S]*?recordCompletedCoreTask\(\)/,'Completed tools must count once per complete workflow');
+const guestAccountSource=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
+assert.match(guestAccountSource,/export function isPrismaAuthenticated\(\)/,'Auth check must use live Supabase session state');
+assert.match(guestAccountSource,/export function openPrismaAuthForGuestLimit\(\)/,'Guest gate must open account signup or login');
+
 const generatedFileStorageSource=readFileSync(new URL('../src/core-result-storage.js',import.meta.url),'utf8');
 assert.match(generatedFileStorageSource,/indexedDB\.open\(DB_NAME, 1\)/,'Generated videos must be retained in a dedicated IndexedDB store');
 assert.match(generatedFileStorageSource,/files\.createIndex\('chatId'/,'Results must be associated with their conversation for cleanup');
