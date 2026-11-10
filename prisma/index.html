@@ -77,7 +77,6 @@
           </button>
         </div>
       </div>
-      <div class="sidebar-search-slot" id="sidebar-search-slot" aria-label="Buscar conversaciones"></div>
       <div class="sidebar-new-chat-slot" id="sidebar-new-chat-slot"></div>
       <div class="side-label">TU ASISTENTE</div>
       <nav class="primary-nav" aria-label="Navegación principal">
@@ -351,6 +350,20 @@
 </div>
 <div class="voice-backdrop hidden" id="voice-modal" role="dialog" aria-modal="true" aria-labelledby="voice-title"><section class="voice-panel"><button class="auth-close" type="button" id="voice-close" aria-label="Cerrar voz">×</button><span class="voice-orb" aria-hidden="true">✦</span><h2 id="voice-title">Conversación por voz</h2><p>Habla por turnos con Prisma. La IA responde y tu dispositivo puede leer su mensaje. No es una llamada continua en tiempo real.</p><div class="voice-transcript" id="voice-transcript" role="status">Pulsa el micrófono para hablar.</div><div class="voice-controls"><button type="button" id="voice-record">Hablar</button><button type="button" id="voice-stop">Detener voz</button><button type="button" class="hidden" id="voice-play-reply">Escuchar respuesta</button></div><small>La transcripción puede usar el servicio de voz del dispositivo o Groq, según disponibilidad y permiso.</small></section></div>
 <div class="pwa-instructions hidden" id="pwa-instructions" role="dialog" aria-modal="true" aria-label="Instalar Prisma"><section><button type="button" id="pwa-instructions-close" aria-label="Cerrar">×</button><img src="./assets/prisma-app-icon.svg" width="50" height="50" alt=""><h2>Instala Prisma Space</h2><p id="pwa-instructions-text">Abre el menú de compartir de Safari y elige «Añadir a pantalla de inicio».</p><button type="button" class="auth-submit" id="pwa-instructions-done">Entendido</button></section></div>
+  <!-- Search is a temporary surface rather than a persistent sidebar field. -->
+  <div class="conversation-search-layer hidden" id="conversation-search-layer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="conversation-search-title">
+    <div class="conversation-search-backdrop" id="conversation-search-backdrop"></div>
+    <section class="conversation-search-panel" aria-describedby="conversation-search-hint">
+      <div class="conversation-search-header">
+        <h2 id="conversation-search-title">Buscar conversaciones</h2>
+        <button type="button" id="conversation-search-close" aria-label="Cerrar búsqueda" title="Cerrar búsqueda">✕</button>
+      </div>
+      <div id="conversation-search-field-slot" class="conversation-search-field-slot"></div>
+      <div class="conversation-search-section-head"><span id="conversation-search-count">Recientes</span><span class="conversation-search-private">Solo en este dispositivo</span></div>
+      <div class="conversation-search-results" id="conversation-search-results" aria-live="polite"></div>
+      <p id="conversation-search-hint" class="conversation-search-hint">Busca por el título o por mensajes de tus conversaciones.</p>
+    </section>
+  </div>
   <div class="modal-backdrop hidden" id="tool-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title">
     <section class="tool-modal">
       <header class="modal-header"><div class="modal-title-wrap"><span class="modal-icon" id="modal-icon"></span><div><div class="modal-kicker" id="modal-kicker">HERRAMIENTA</div><h2 id="modal-title">Herramienta</h2></div></div><button type="button" class="icon-button" id="modal-close" aria-label="Cerrar herramienta" title="Cerrar herramienta" data-icon="x"></button></header>
