@@ -344,7 +344,12 @@ assert.equal(networkAttempts,2,'Network outages should not exhaust all six slots
 const credentialPoolSource=readFileSync(new URL('../functions/_lib/credential-pool.js',import.meta.url),'utf8');
 assert.match(credentialPoolSource,/crypto\.subtle\.digest\('SHA-256',bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
 assert.match(credentialPoolSource,/await credentialHealthKey\(provider, slot\)/,'A replaced secret must not inherit its prior slot cooldown');
-assert.match(credentialPoolSource,/La credencial recibió HTTP/,'Provider health should retain the actual upstream status');
+assert.match(credentialPoolSource,/El proveedor devolvió HTTP 401/,'Provider health should identify upstream authentication errors');
+assert.match(credentialPoolSource,/response.status === 401\) \{/,'Only 401 should put an individual credential on authentication cooldown');
+let forbiddenAttempts=0;
+const forbiddenResponse=await requestWithCredentialPool(senseKeys,'sensenova',async()=>{forbiddenAttempts++;return new Response('Model not permitted',{status:403});},{startIndex:0,sweepAuthSlots:true});
+assert.equal(forbiddenResponse.status,403);
+assert.equal(forbiddenAttempts,1,'Model permission errors must not sweep or invalidate other keys');
 assert.equal(await getHealthyCredentialCount(senseKeys,'sensenova'),6,'All slots must be considered healthy when D1 is unavailable');
 const rejectedSenseKeys={
  ...senseKeys,
