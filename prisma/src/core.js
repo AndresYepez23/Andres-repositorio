@@ -10,7 +10,7 @@ import { renderMarkdownSafe } from './core-markdown.js';
 import { initPrismaVoice } from './prisma-voice.js';
 import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
-import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength } from './core-context.js';
+import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -1002,16 +1002,20 @@ async function answerConversation(text,creds,task='conversation'){
    task==='reasoning'&&/\b(revisa|revisar|revision|corrige|critica|contradicciones|coherencia|mejora este texto)\b/.test(normalizedTask)?'ai-text-review':
    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
-  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,{
-   maxMessages:13,maxChars:14000
-  });
+  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,
+   chooseCoreContextOptions(task,taskText));
   const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
   if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
   const providerContext=connected.length
     ?'Motores de texto configurados en el servidor: '+connected.join(', ')+'. Configurado no significa disponibilidad garantizada: respeta sus cuotas y no inventes cuál respondió.'
     :'No se ha confirmado ningún motor compartido conectado en este momento. No afirmes que un proveedor está disponible.';
-  const assistantContext=[instruction,coreCapabilityContext(),providerContext].join('\n\n').slice(0,1950);
+  // Tool catalog and provider list are irrelevant to ordinary conversation.
+  // Send them only when someone asks about Prisma's actual capabilities.
+  const asksAboutPrisma=/\b(?:prisma|core|herramientas|funciones disponibles|que puedes hacer|motores|modelos disponibles|proveedores de ia|conexiones)\b/.test(normalizedTask);
+  const assistantContext=[instruction,
+   ...(asksAboutPrisma?[coreCapabilityContext(),providerContext]:[])
+  ].join('\n\n').slice(0,1950);
   const response=await runTool(toolId,[],{
     prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
     reasoning:chooseCoreReasoning(task,taskText),
@@ -1239,7 +1243,9 @@ async function requestPlan(userText){
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
   const creds=credentials();
-  const hasConnectedModel=!!(creds.polliToken||creds.hfToken||creds.geminiKey||creds.groqKey||Object.values(centralProviders).some(Boolean));
+  // Personal Pollinations Connect is deliberately excluded from Core auto
+  // inference. It is available only on explicitly selected personal routes.
+  const hasConnectedModel=Object.values(centralProviders).some(Boolean);
   // Las peticiones de generación visual ya fueron atendidas por el flujo contextual.
   const directTask=directCoreTask(userText);
   if(directTask){
