@@ -649,7 +649,7 @@ const capacityWithMoreKeys = {
 };
 assert.equal(getProviderDailyLimit(capacityEnv,'groq'),80);
 assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
-assert.equal(getSharedDailyBudget(capacityEnv),200);
+assert.equal(getSharedDailyBudget(capacityEnv),180);
 assert.equal(getVisitorDailyLimit(capacityEnv),90);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
 assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),15);
