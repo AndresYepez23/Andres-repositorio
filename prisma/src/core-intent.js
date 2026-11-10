@@ -4,7 +4,7 @@
 const fold=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().replace(/[¿?¡!.,;:]/g,' ').replace(/\s+/g,' ').trim();
 
-const WEB=/\b(?:pagina(?:s)? web|sitio(?:s)? web|website|landing(?: page)?|pagina de internet|web de|web para|sitio de internet)\b/;
+const WEB=/\b(?:pagina(?:s)? web|sitio(?:s)? web|website|landing(?: page)?|pagina de internet|web de|web para|sitio de internet|web)\b/;
 const CREATE=/\b(?:haz(?:me)?|hacer|crea(?:r)?|generar?|disena(?:r)?|constru(?:ye|ir)|desarrolla(?:r)?|programa(?:r)?|prepara(?:r)?|necesito|quiero|puedes|podrias|sabes|serias capaz)\b/;
 const QUESTION=/^(?:(?:me )?(?:puedes|podrias|sabes|serias capaz de|es posible|se puede|es posible que|puede prisma)\b)/;
 const UNRELATED=/^(?:hola|buenas|adios|gracias|que hora es|cuanto es|que es|quien es|explica|resume|analiza|investiga|ayudame con otra|cambia de tema)\b/;
@@ -27,7 +27,10 @@ export function routeWebsiteRequest(text,pending=null,hasAttachments=false,now=D
  const active=pending&&Number(pending.started)>0&&now-Number(pending.started)<24*60*60*1000;
  const mentioned=WEB.test(q);
  if(active&&CANCEL.test(q))return {type:'cancel',message:'Entendido. Cancelé la página web pendiente.'};
- if(active&&UNRELATED.test(q)&&!mentioned)return {type:'abandon'};
+ if(active&&(UNRELATED.test(q)||/^(?:dame|crea|haz|necesito|quiero).{0,40}\\b(?:imagen|miniatura|video|cancion|audio|pdf|otra cosa)\\b/.test(q))&&!mentioned)
+  return {type:'abandon'};
+ if(/\\b(?:imagen|foto|video|audio|miniatura|logo|banner|texto|pdf)\\b.{0,45}\\b(?:para|en)\\s+(?:mi|la|una)\\s+web\\b/.test(q))
+  return null;
  if(mentioned){
   // Questions about cost, definitions and tutorials are not a creation task.
   if(/^(?:cuanto cuesta|que es|como se hace|como hacer|como funciona|cual es el precio|donde puedo|que necesito para|por que|cual recomiendas)\b/.test(q))
