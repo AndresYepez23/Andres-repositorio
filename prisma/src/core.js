@@ -2032,6 +2032,9 @@ async function sendMessage(){
   }
   const filesNow=[...attachments];
   addMessage('user',text||'Procesa los archivos adjuntos.',{files:filesNow.map(file=>file.name)});
+  // Hide the submitted file tray immediately. The processing pipeline keeps
+  // the File objects until it completes; they are cleared in finally.
+  $('#core-attachments')?.classList.add('hidden');
   input.value='';input.style.height='39px';
   // An attachment-only reply should continue a pending PDF editing request,
   // instead of launching an unrelated AI analysis of the uploaded document.
@@ -2062,6 +2065,7 @@ async function sendMessage(){
     // The requestPlan pipeline has already completed or failed at this point.
     // This also prevents the same image being sent repeatedly by accident.
     attachments=[];renderAttachments();
+    $('#core-attachments')?.classList.remove('hidden');
     const fileInput=$('#core-file-input');
     if(fileInput)fileInput.value='';
   }
