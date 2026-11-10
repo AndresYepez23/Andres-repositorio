@@ -273,9 +273,9 @@ async function doSync(){
    user_id:activeUserId,id:chat.id,title:chat.title,pinned:!!chat.pinned,
    updated_at:new Date(Math.max(1,chat.updated)).toISOString(),deleted_at:null,data:chat
   }));
-  for(let offset=0;offset<upserts.length;offset+=10){
+  for(let offset=0;offset<upserts.length;offset+=3){
    const {error}=await api.from('prisma_conversations')
-    .upsert(upserts.slice(offset,offset+10),{onConflict:'user_id,id'});
+    .upsert(upserts.slice(offset,offset+3),{onConflict:'user_id,id'});
    if(error){
     if(/prisma_conversation_payload_limit|check constraint|octet_length/i.test(error.message||'')){
      throw new Error('Una conversación supera el límite seguro de 5 MB para sincronizarse. Prisma no recortó ni borró su historial local.');
