@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { PRISMA_AVATARS, prismaAvatar, prismaFirstName } from '../src/profile-avatars.js';
 import { planFileConversion } from '../src/file-conversions.js';
 import { planPdfSplit } from '../src/pdf-split-options.js';
 import { reconcileIosPwaViewport } from '../src/pwa-viewport.js';
@@ -1192,7 +1193,7 @@ for(const method of ['signUp','signInWithPassword','signInWithOAuth','signInWith
  assert.ok(prismaAccountCode.includes('auth.'+method),method+' must call the real Supabase Auth SDK');
 }
 assert.match(prismaAccountCode,/api\.from\('prisma_profiles'\)/,'Profiles are stored in actual protected database');
-assert.match(prismaAccountCode,/onConflict:'user_id'/);
+assert.match(prismaAccountCode,/\.update\(fields\)\.eq\('user_id',id\)/,'Profile edits preserve existing sync settings');
 assert.match(prismaAccountCode,/localStorage\.setItem\(SYNC_KEY,user\.id\)/,'Sync consent is remembered on each device');
 assert.match(prismaAccountCode,/sync_enabled/,'Sync preference is account-wide in the protected profile');
 assert.match(prismaAccountCode,/\.range\(offset,offset\+pageSize-1\)/,'Remote history must be fetched with pagination');
@@ -1272,3 +1273,28 @@ assert.match(splitUiSource,/planPdfSplit\(readParams\(\),count\)/);
 assert.match(splitUiSource,/case 'pdf-split':return selectField/);
 assert.match(readFileSync(new URL('../src/engines.js',import.meta.url),'utf8'),/planPdfSplit\(p,total\)/);
 assert.match(readFileSync(new URL('../src/core.js',import.meta.url),'utf8'),/newPdfCommand/);
+
+
+// Account customization uses safe static avatars, without storing user images
+// or adding auth roles/permissions to editable user metadata.
+assert.equal(PRISMA_AVATARS.length,6);
+assert.deepEqual(new Set(PRISMA_AVATARS.map(item=>item.id)).size,PRISMA_AVATARS.length);
+assert.equal(prismaAvatar('nova').symbol,'✳');
+assert.equal(prismaAvatar('script:<img>').id,'prism','Unknown metadata never becomes markup or a remote URL');
+assert.equal(prismaAvatar(null).id,'prism');
+assert.equal(prismaFirstName('  María Teresa   '),'María');
+const prismaAccountHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const prismaAccountLogic=readFileSync(new URL('../src/prisma-account.js',import.meta.url),'utf8');
+const prismaAvatarCss=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+assert.doesNotMatch(prismaAccountHtml,/id="profile-toggle"[^>]*><span>I<\/span>/);
+assert.match(prismaAccountHtml,/id="profile-avatar-face"[^>]*data-prisma-avatar="prism"/);
+assert.match(prismaAccountHtml,/id="auth-signup-avatar-choices"/);
+assert.match(prismaAccountHtml,/id="auth-profile-avatar-choices"/);
+assert.match(prismaAccountHtml,/id="auth-signup-name-preview"/);
+assert.match(prismaAccountLogic,/data:\{full_name:chosenName,prisma_avatar:prismaAvatar\(signupAvatarChoice\)\.id\}/);
+assert.match(prismaAccountLogic,/api\.auth\.updateUser\(\{data:\{prisma_avatar:avatar\}\}\)/);
+assert.match(prismaAccountLogic,/nameInput\.required=signup/);
+assert.match(prismaAccountLogic,/paintAvatar\(\$\('#profile-avatar-face'\),user\?storedAvatar\(\):'prism'\)/);
+assert.match(prismaAccountLogic,/\.update\(fields\)\.eq\('user_id',id\)/,
+ 'Editing avatars must not reset sync_enabled on the profile');
+assert.match(prismaAvatarCss,/auth-avatar-choice:has\(input\[type="radio"\]:checked\)/);

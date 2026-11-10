@@ -129,9 +129,9 @@
             </div>
           </div>
           <div class="profile-wrap">
-            <button type="button" class="profile-chip" id="profile-toggle" aria-label="Tu espacio" aria-haspopup="true" aria-expanded="false"><span>I</span></button>
+            <button type="button" class="profile-chip" id="profile-toggle" aria-label="Abrir tu espacio en Prisma" aria-haspopup="true" aria-expanded="false"><span class="prisma-avatar-face" id="profile-avatar-face" data-prisma-avatar="prism"><img src="./assets/prisma-app-icon.svg" alt=""></span></button>
             <div class="profile-menu hidden" id="profile-menu" role="menu" aria-label="Espacio personal">
-              <div class="profile-menu-top"><img src="./assets/prisma-app-icon.svg" alt="" width="36" height="36"><div><strong>Prisma Space</strong><small id="account-menu-state">Continuar como invitado</small></div></div>
+              <div class="profile-menu-top"><img src="./assets/prisma-app-icon.svg" alt="" width="36" height="36"><div><strong id="profile-menu-title">Prisma Space</strong><small id="account-menu-state">Continuar como invitado</small></div></div>
               <div class="profile-menu-section">
                 <button type="button" id="open-account-auth" class="profile-menu-action" role="menuitem"><span aria-hidden="true">◎</span><span id="profile-login-label">Iniciar sesión o crear cuenta</span></button>
                 <button type="button" id="theme-toggle" class="profile-menu-action" aria-label="Cambiar tema" role="menuitem"><span aria-hidden="true">◐</span><span id="theme-mode-label">Cambiar a tema claro</span></button>
@@ -378,9 +378,19 @@
         <button type="button" id="auth-tab-signup">Crear cuenta</button>
       </div>
       <form id="auth-form" autocomplete="on">
-        <label id="auth-name-label" class="hidden">Nombre para mostrar
-          <input type="text" id="auth-display-name" autocomplete="nickname" maxlength="60" placeholder="¿Cómo quieres que te llamemos?">
+        <label id="auth-name-label" class="hidden">¿Cómo quieres que te llamemos?
+          <input type="text" id="auth-display-name" autocomplete="nickname" maxlength="60" minlength="2" placeholder="Tu nombre o apodo">
         </label>
+        <div class="auth-signup-personalization hidden" id="auth-signup-personalization">
+          <div class="auth-personal-preview">
+            <span class="prisma-avatar-face auth-personal-preview-avatar" id="auth-signup-avatar-preview" data-prisma-avatar="prism"><img src="./assets/prisma-app-icon.svg" alt=""></span>
+            <span><strong id="auth-signup-name-preview">Tu espacio en Prisma</strong><small>Un perfil que se parece más a ti</small></span>
+          </div>
+          <fieldset class="auth-avatar-field">
+            <legend>Elige tu avatar <small>· Podrás cambiarlo después</small></legend>
+            <div class="auth-avatar-choices" id="auth-signup-avatar-choices" role="radiogroup" aria-label="Avatar para tu nueva cuenta"></div>
+          </fieldset>
+        </div>
         <label>Correo electrónico
           <input type="email" id="auth-email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="tu@correo.com">
         </label>
@@ -450,13 +460,17 @@
     </div>
     <div id="auth-account-screen" class="auth-screen hidden">
       <h2>Tu cuenta de Prisma</h2>
-      <div class="auth-account-identity"><span class="auth-account-avatar" id="auth-account-avatar">P</span><span><strong id="auth-account-name">Mi cuenta</strong><small id="auth-account-email">Sesión iniciada</small></span></div>
+      <div class="auth-account-identity"><span class="auth-account-avatar prisma-avatar-face" id="auth-account-avatar" data-prisma-avatar="prism"><img src="./assets/prisma-app-icon.svg" alt=""></span><span><strong id="auth-account-name">Mi cuenta</strong><small id="auth-account-email">Sesión iniciada</small></span></div>
       <p class="auth-account-verification" id="auth-account-verification"></p>
       <form id="auth-profile-form">
         <label>Nombre visible
-          <input type="text" id="auth-profile-name" autocomplete="nickname" maxlength="60" placeholder="Tu nombre en Prisma">
+          <input type="text" id="auth-profile-name" autocomplete="nickname" maxlength="60" placeholder="Tu nombre o apodo">
         </label>
-        <button type="submit" class="auth-submit" id="auth-profile-save">Guardar cambios</button>
+        <fieldset class="auth-avatar-field">
+          <legend>Tu avatar <small>· Elige tu estilo</small></legend>
+          <div class="auth-avatar-choices" id="auth-profile-avatar-choices" role="radiogroup" aria-label="Cambiar avatar de perfil"></div>
+        </fieldset>
+        <button type="submit" class="auth-submit" id="auth-profile-save">Guardar mi perfil</button>
       </form>
       <div class="auth-account-actions">
         <button type="button" id="auth-account-sync">Sincronizar mis conversaciones</button>
