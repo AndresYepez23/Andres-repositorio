@@ -287,7 +287,7 @@ function setupProfileMenu(){
     ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
     ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
     document.dispatchEvent(new Event('prisma:clear-local-history'));
-    closeProfileMenu();location.reload();
+    Promise.resolve(window.__prismaClearHistoryPromise).finally(()=>{closeProfileMenu();location.reload();});
   });
 }
 function setupHomeDashboard(){
