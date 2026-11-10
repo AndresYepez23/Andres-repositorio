@@ -1225,6 +1225,15 @@ function directCoreTask(text){
  if(attachments.length)return null;
  const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const isPrompt=/(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b|\bplan\b).{0,40}(?:imagen|miniatura|video|audio)|(?:imagen|miniatura|video).{0,40}(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b)/.test(q);
+ // A question ABOUT a file/tool is not permission to run a tool. Keep
+ // explanations in the general chatbot even when they mention PDF/OCR.
+ const explanation=/^(?:que es|que significa|para que sirve|como funciona|por que|cuales son|cual es la diferencia|diferencias entre|explica(?:me)?|explicacion de|ventajas de|desventajas de|como se puede|como puedo|como hago para)\b/.test(q);
+ const explicitExecution=/\b(?:hazlo|hazme|creame|generame|convierteme|comprímeme|comprimeme|descargame|adjunto|aqui esta el archivo|procesa este|ejecuta|realiza ahora)\b/.test(q);
+ if(explanation&&!explicitExecution){
+   if(/\b(codigo|programacion|javascript|typescript|python|sql|script)\b/.test(q))return 'coding';
+   if(/\b(compara|diferencias|ventajas|desventajas|cual conviene|mejor)\b/.test(q))return 'reasoning';
+   return 'conversation';
+ }
  if(/\b(pdf|docx|xlsx|excel|csv|zip|ocr|archivo|subir|descargar|comprimir|convertir formato|rotar paginas|extraer paginas|codigo qr|codigo de barras|quitar fondo|eliminar fondo|redimensionar|transcribir audio|procesar video)\b/.test(q))return null;
  if(!isPrompt&&/(?:gener|crea|crear|haz|hacer|dibuja|editar|produce|producir|renderiza|conviert).{0,55}\b(imagen|foto|ilustracion|miniatura|poster|video|audio|mp3|wav|archivo 3d|modelo 3d)\b/.test(q))return null;
   const mentionsSong=/\b(letra|cancion|compon|composicion musical|estrofa|verso|coro|alabanza|balada)\b/.test(q);
@@ -1242,7 +1251,7 @@ async function answerConversation(text,creds,task='conversation'){
    ? 'Respeta si se pide una canción nueva o una revisión de una canción anterior. Conserva título, tema y partes no solicitadas al editar. No simules haber generado audio.'
    : task==='creative'?'Entrega la pieza creativa solicitada, lista para copiar o adaptar.'
    : task==='coding'?'Resuelve la solicitud de programación e incluye código. No simules ejecución.'
-   : 'Responde de forma natural a la solicitud actual, atendiendo correctamente los turnos anteriores.';
+   : 'Responde de forma natural y sustantiva a la solicitud actual, atendiendo correctamente los turnos anteriores. Si el usuario pide interpretación, explicación o análisis, desarrolla el significado, las causas y una recomendación útil en lugar de limitarte a repetir datos. Responde a cada parte del pedido; distingue observaciones de inferencias.';
   const taskText=String(text||'');
   const normalizedTask=taskText.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const toolId=task==='songwriting'?'music-lyrics':
