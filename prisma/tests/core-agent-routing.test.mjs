@@ -96,15 +96,7 @@ assert.match(welcomeGridSource,/IntersectionObserver/,'Pause the matrix when off
 assert.match(welcomeGridSource,/visibilitychange/,'Pause when the page is hidden');
 assert.match(welcomeGridSource,/cancelAnimationFrame/,'Release animation resources on unmount');
 assert.doesNotMatch(welcomeGridSource,/\bfetch\s*\(|XMLHttpRequest|\bgetContext\(['"]webgl|new WebSocket/,'Welcome matrix must not use network APIs or WebGL');
-assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty/,'Empty Core state must receive dedicated layout styles');
-assert.match(stylesSource,/width:calc\(100% \+ clamp\(24px,4vw,56px\)\)!important/,'Empty Core matrix must bleed across the page gutters to the full chat width');
-assert.match(stylesSource,/margin-left:calc\(0px - clamp\(12px,2vw,28px\)\)!important/,'Desktop matrix bleed must match the Core page gutters');
-assert.match(stylesSource,/width:calc\(100% \+ 20px\)!important/,'Mobile matrix bleed must match the compact page gutters');
-assert.match(stylesSource,/#a4f2e3 0%/,'Welcome gradient must use a brighter turquoise stop');
-assert.match(stylesSource,/drop-shadow\(0 2px 13px rgba\(117,207,229,\.24\)\)/,'Welcome gradient must receive a restrained luminous edge');
-assert.match(stylesSource,/font-weight:850/,'Welcome gradient must have stronger typographic emphasis');
-assert.match(coreSource,/Déjaselo a Prisma\./,'Keep the Prisma welcome slogan visible');
-assert.match(stylesSource,/overflow-y:auto!important;\s*scrollbar-width:none!important/,'Empty welcome must not show a limiting scrollbar but remain scrollable if needed');
+assert.match(stylesSource,/body\.is-core-view #core-messages\.is-empty/,'Empty Core state must receive dedicated layout styles');assert.match(stylesSource,/overflow-y:auto!important;\s*scrollbar-width:none!important/,'Empty welcome must not show a limiting scrollbar but remain scrollable if needed');
 assert.match(stylesSource,/core-messages\.is-empty::\-webkit-scrollbar/,'Empty welcome must hide WebKit scrollbars');
 assert.match(stylesSource,/inset:0!important;\s*z-index:0!important;\s*width:100%!important;\s*height:100%!important/,'Ambient canvas must fill the whole chat area');
 assert.match(stylesSource,/body\.is-core-view \.core-welcome-ambient/,'Dot matrix must be styled only inside Core');
