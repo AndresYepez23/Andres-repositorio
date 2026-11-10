@@ -1,4 +1,5 @@
 import { initPrismaCore } from './core.js';
+import { recoverIosPwaBottomSpace } from './pwa-viewport.js';
 import { readInferenceUsage } from './core-economy.js';
 import { initPrismaExperience } from './prisma-experience.js';
 import { initPrismMotion } from './prism-motion.js';
@@ -1398,6 +1399,17 @@ function setupPrismaCoreViewport(){
   const isIOS=()=>/iPad|iPhone|iPod/i.test(navigator.userAgent)||
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   document.body.classList.toggle('is-prisma-ios',isIOS());
+  // Read the actual CSS environment inset, not a guessed iPhone constant.
+  // The inset can vary by device and display orientation.
+  const measureBottomSafeInset=()=>{
+    const probe=document.createElement('div');
+    probe.style.cssText='position:absolute;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';
+    document.body.append(probe);
+    const inset=parseFloat(getComputedStyle(probe).paddingBottom)||0;
+    probe.remove();
+    return inset;
+  };
+  let safeBottomInset=measureBottomSafeInset();
   let raf=0,lastUnfocusedHeight=0;
   const sync=()=>{
     if(raf)cancelAnimationFrame(raf);
@@ -1423,7 +1435,17 @@ function setupPrismaCoreViewport(){
       const keyboardOpen=focused&&keyboardGap>110;
       // An installed PWA must never extend below its webview. The previous
       // Math.max(..., screen.height) caused the clipped input reported on iPhone.
-      const height=standalone&&!keyboardOpen?layoutHeight:visible;
+      // iOS PWA may leave a measurable strip between the layout viewport
+      // and the home-indicator safe area. Prior CSS padding was already 0px,
+      // so merely changing margins could not reclaim that unused space.
+      const searchFocused=document.activeElement===document.querySelector('#core-history-search');
+      const recovery=recoverIosPwaBottomSpace({
+        isIOS:isIOS(),standalone,
+        keyboardOpen:keyboardOpen||searchFocused&&lastUnfocusedHeight-visible>110,
+        layoutHeight,screenHeight:window.screen?.height,screenWidth:window.screen?.width,
+        viewportWidth:window.innerWidth,safeBottom:safeBottomInset,scale:vv?.scale||1
+      });
+      const height=(standalone&&!keyboardOpen?layoutHeight:visible)+recovery;
       // pageTop is measured in document coordinates. Unlike offsetTop alone
       // it also follows Safari's implicit focus scrolling on WebKit.
       const pageTop=Number.isFinite(vv?.pageTop)?vv.pageTop:
@@ -1431,9 +1453,9 @@ function setupPrismaCoreViewport(){
       const top=standalone&&!keyboardOpen?0:Math.max(0,Math.round(pageTop));
       root.style.setProperty('--prisma-core-viewport',Math.round(height)+'px');
       root.style.setProperty('--prisma-vp-top',top+'px');
+      root.style.setProperty('--prisma-pwa-bottom-recovery',recovery+'px');
       // Size the temporary search surface to the visible screen when the
       // software keyboard opens; never hide search matches behind it.
-      const searchFocused=document.activeElement===document.querySelector('#core-history-search');
       const searchHeight=searchFocused?visible:(standalone?layoutHeight:visible);
       const searchTop=standalone?0:Math.max(0,Math.round(vv?.offsetTop||0));
       root.style.setProperty('--prisma-search-viewport',Math.round(searchHeight)+'px');
@@ -1462,7 +1484,7 @@ function setupPrismaCoreViewport(){
   window.visualViewport?.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
   window.addEventListener('scroll',sync,{passive:true});
-  window.addEventListener('orientationchange',()=>{lastUnfocusedHeight=0;settle();},{passive:true});
+  window.addEventListener('orientationchange',()=>{lastUnfocusedHeight=0;safeBottomInset=measureBottomSafeInset();settle();},{passive:true});
   window.addEventListener('pageshow',settle,{passive:true});
   sync();
 }
