@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialSlots, getCredentialStatus, maxCredentialSlots, requestWithCredentialPool, CREDENTIAL_ROOTS, CREDENTIAL_POOL_VARIABLES } from '../functions/_lib/credential-pool.js';
 import { renderMarkdownSafe } from '../src/core-markdown.js';
+import { findConversations } from '../src/conversation-search.js';
 import { getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getVisitorDailyLimit } from '../functions/_lib/limits.js';
 import { CHAT_MODELS } from '../functions/_lib/model-catalog.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from '../src/core-conversation.js';
@@ -664,5 +665,39 @@ const engineSource5=readFileSync(new URL('../src/engines.js',import.meta.url),'u
 assert.match(engineSource5,/if\(id==='ai-webpage'\)return generateWebsite\(p,cb\)/);
 assert.match(engineSource5,/extractWebsiteHtml\(response.text\)/,'HTML must be validated before delivering the file');
 assert.match(engineSource5,/filename:'prisma-sitio-web.html'/);
+
+
+// PWA layout / searchable conversations: the sidebar search should no longer
+// occupy its own row. Search is instant, local, and accent-insensitive.
+const searchFixture=[
+ {id:'a',title:'Clínica dental',updated:100,messages:[{role:'user',content:'Tratamiento de implantes cerámicos'}]},
+ {id:'b',title:'Nueva conversación',updated:300,messages:[{role:'user',content:'Hola, cómo estás'}]},
+ {id:'c',title:'Videos de música',updated:200,messages:[{role:'user',content:'Miniaturas de YouTube para Navidad'}]}
+];
+assert.equal(findConversations(searchFixture,'clinica')[0].id,'a');
+assert.equal(findConversations(searchFixture,'IMPLANTES')[0].id,'a');
+assert.equal(findConversations(searchFixture,'Návidad')[0].id,'c');
+assert.equal(findConversations(searchFixture,'zzzzz').length,0);
+assert.deepEqual(findConversations(searchFixture,'').map(x=>x.id),['b','c','a']);
+assert.equal(findConversations(searchFixture,'',1).length,1);
+assert.match(findConversations(searchFixture,'implantes')[0].preview,/implantes/);
+const uiHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const uiMain=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+assert.match(uiHtml,/id="conversation-search-layer"/);
+assert.match(uiHtml,/id="conversation-search-results"/);
+assert.match(uiHtml,/id="conversation-search-field-slot"/);
+assert.doesNotMatch(uiHtml,/id="sidebar-search-slot"/,'The search row must not reserve sidebar height');
+assert.match(coreSource,/findConversations\(conversations,q,q\?35:14\)/);
+assert.match(coreSource,/searchOverlaySlot\.append\(chatSearch\)/);
+assert.match(coreSource,/prisma:close-conversation-search/);
+assert.match(uiMain,/function openSidebarSearch\(\)/);
+assert.match(uiMain,/conversation-search-backdrop/);
+assert.match(uiMain,/closeSidebarSearch\(\{restoreFocus:true\}\)/);
+assert.match(uiMain,/event\.key\.toLowerCase\(\)==='k'/);
+assert.match(stylesSource,/\.conversation-search-layer\{/);
+assert.match(stylesSource,/\.conversation-search-results\{/);
+assert.match(stylesSource,/body\.is-prisma-ios\.is-prisma-standalone #tool-modal \.modal-header\{/);
+assert.match(stylesSource,/padding-top:max\(64px/,'iPhone PWA tool heading must clear the island');
+assert.match(stylesSource,/body\.is-core-view\.is-prisma-ios\.is-prisma-standalone:not\(\.is-keyboard-open\) \.core-composer\{/);
 
 console.log('Prisma Core agent: registry index, local actions and artifact compatibility verified.');
