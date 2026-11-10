@@ -56,7 +56,7 @@ export async function clearConversationSnapshot() {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     transaction.objectStore(STORE_NAME).delete(SNAPSHOT_KEY);
-    transaction.oncomplete = () => { db.close(); resolve(true); };
+    transaction.oncomplete = () => resolve(true);
     transaction.onerror = () => reject(transaction.error || new Error('No se pudo limpiar el historial local.'));
     transaction.onabort = () => reject(transaction.error || new Error('Se canceló la limpieza del historial local.'));
   });
