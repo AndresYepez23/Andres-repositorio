@@ -3,6 +3,7 @@ create table if not exists public.prisma_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
   theme text check (theme in ('light','dark')),
+  sync_enabled boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -13,10 +14,13 @@ create table if not exists public.prisma_conversations (
   pinned boolean not null default false,
   updated_at timestamptz not null default now(),
   data jsonb not null default '{}'::jsonb,
+  deleted_at timestamptz,
   primary key (user_id,id),
-  constraint prisma_conversation_payload_limit check (octet_length(data::text)<=250000)
+  constraint prisma_conversation_payload_limit check (octet_length(data::text)<=5000000)
 );
 create index if not exists prisma_chats_recent_idx on public.prisma_conversations(user_id,updated_at desc);
+create index if not exists prisma_conversations_active_recent_idx on public.prisma_conversations(user_id,updated_at desc) where deleted_at is null;
+create index if not exists prisma_conversations_deleted_idx on public.prisma_conversations(user_id,deleted_at) where deleted_at is not null;
 alter table public.prisma_profiles enable row level security;
 alter table public.prisma_conversations enable row level security;
 revoke all on public.prisma_profiles from anon;
