@@ -1,7 +1,7 @@
 // Prisma Space account and session management. Separate Supabase project;
 // OAuth and SMS are never presented as active without backend configuration.
 // No passwords, OTP codes or tokens enter application analytics.
-import { mergeConversationLists, normalizeConversation, serializeConversation } from './conversation-sync.js';
+import { mergeConversationLists, normalizeConversation, serializeConversation, hasConversationMessages } from './conversation-sync.js';
 import { readConversationSnapshot, saveConversationSnapshot } from './conversation-storage.js';
 const $=selector=>document.querySelector(selector);
 let api=null,user=null,profile=null;
@@ -249,7 +249,7 @@ function selectedSync(){
 function sanitizeChats(){
  let chats=[];
  try{chats=JSON.parse(localStorage.getItem(STORAGE)||'[]');}catch{}
- return Array.isArray(chats)?chats.map(serializeConversation).filter(Boolean):[];
+ return Array.isArray(chats)?chats.map(serializeConversation).filter(Boolean).filter(hasConversationMessages):[];
 }
 function readDeletedIds(){
  try{
@@ -304,8 +304,8 @@ async function doSync(){
   await (window.__prismaHistoryWrite||Promise.resolve());
   let local=sanitizeChats();
   try{
-   const indexed=await readConversationSnapshot();
-   if(indexed.length)local=mergeConversationLists(local,indexed);
+   const indexed=(await readConversationSnapshot()).map(serializeConversation).filter(Boolean).filter(hasConversationMessages);
+   if(indexed.length)local=mergeConversationLists(local,indexed).filter(hasConversationMessages);
   }catch(error){console.warn('Prisma: no se pudo leer la copia IndexedDB antes de sincronizar.',error?.message||error);}
   const remoteRows=[];
   const pageSize=200;
@@ -325,9 +325,9 @@ async function doSync(){
   const remoteActive=remoteRows.filter(row=>!row.deleted_at&&!deleted.has(row.id)).map(row=>normalizeConversation({
    ...(row.data&&typeof row.data==='object'?row.data:{}),
    id:row.id,title:row.title,pinned:row.pinned
-  })).filter(Boolean);
-  const localActive=local.filter(chat=>!deleted.has(chat.id));
-  const merged=mergeConversationLists(remoteActive,localActive);
+  })).filter(Boolean).filter(hasConversationMessages);
+  const localActive=local.filter(chat=>!deleted.has(chat.id)&&hasConversationMessages(chat));
+  const merged=mergeConversationLists(remoteActive,localActive).filter(hasConversationMessages);
   const upserts=merged.filter(chat=>conversationNeedsUpload(chat,remoteById.get(chat.id))).map(chat=>({
    user_id:activeUserId,id:chat.id,title:chat.title,pinned:!!chat.pinned,
    updated_at:new Date(Math.max(1,chat.updated)).toISOString(),deleted_at:null,data:chat
@@ -342,7 +342,15 @@ async function doSync(){
     throw error;
    }
   }
-  const pendingTombstones=[...queuedDeleted].filter(id=>!remoteDeleted.has(id));
+  const localMessageIds=new Set(localActive.map(chat=>chat.id));
+  const emptyRemoteIds=remoteRows.filter(row=>!row.deleted_at&&!deleted.has(row.id)).filter(row=>{
+   const chat=normalizeConversation({
+    ...(row.data&&typeof row.data==='object'?row.data:{}),
+    id:row.id,title:row.title,pinned:row.pinned
+   });
+   return !!chat&&!hasConversationMessages(chat)&&!localMessageIds.has(row.id);
+  }).map(row=>row.id);
+  const pendingTombstones=[...new Set([...queuedDeleted,...emptyRemoteIds])].filter(id=>!remoteDeleted.has(id));
   if(pendingTombstones.length){
    const now=new Date().toISOString();
    const tombstones=pendingTombstones.map(id=>{

@@ -18,7 +18,7 @@ import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conv
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
 import { findConversations } from './conversation-search.js';
-import { mergeConversationLists, serializeConversation } from './conversation-sync.js';
+import { mergeConversationLists, serializeConversation, hasConversationMessages } from './conversation-sync.js';
 import { readConversationSnapshot, saveConversationSnapshot, clearConversationSnapshot } from './conversation-storage.js';
 import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
@@ -148,7 +148,7 @@ function persistChatHistory(activeSerialized=null){
  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).map(chat=>serializeConversation({
   ...chat,
   messages:chat.id===activeConversationId&&activeSerialized?activeSerialized:chat.messages
- })).filter(Boolean);
+ })).filter(Boolean).filter(hasConversationMessages);
  try{localStorage.setItem(CHATS_KEY,JSON.stringify(records));}
  catch(error){
   console.warn('Prisma: el historial supera la capacidad de localStorage; se conservará en IndexedDB.',error?.message||error);
@@ -161,28 +161,38 @@ function persistChatHistory(activeSerialized=null){
  document.dispatchEvent(new Event('prisma:chats-changed'));
 }
 function loadChatHistory(){
- let stored=[];
+ let stored=[],needsCleanup=false;
  try{
   const records=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]');
-  if(Array.isArray(records))stored=records.map(serializeConversation).filter(Boolean);
+  if(Array.isArray(records)){
+   const normalized=records.map(serializeConversation).filter(Boolean);
+   stored=normalized.filter(hasConversationMessages);
+   needsCleanup=stored.length!==normalized.length;
+  }
  }catch(error){console.warn('Prisma: no se pudo leer el historial rápido local.',error?.message||error);}
  if(!stored.length){
   let legacy=[];try{const old=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(old))legacy=old;}catch{}
-  stored=[newChatRecord(legacy)];
+  if(legacy.length){stored=[newChatRecord(legacy)];needsCleanup=true;}
  }
+ // A blank draft exists only in memory. It becomes history after the first message.
+ if(!stored.length)stored=[newChatRecord()];
  conversations=stored;
  conversations.sort((a,b)=>b.updated-a.updated);
  activeConversationId=conversations[0]?.id||'';
  messages=conversations[0]?.messages?.slice()||[];
+ if(needsCleanup)persistChatHistory();
  renderConversationList();
 }
 async function restoreIndexedHistory(){
  try{
-  const indexed=await readConversationSnapshot();
-  if(!Array.isArray(indexed)||!indexed.length)return;
-  const current=conversations.filter(chat=>chat.messages?.length||chat.titled||chat.pinned);
-  const merged=mergeConversationLists(current,indexed);
-  if(!merged.length)return;
+  const indexedRaw=await readConversationSnapshot();
+  if(!Array.isArray(indexedRaw)||!indexedRaw.length)return;
+  const indexed=indexedRaw.map(serializeConversation).filter(Boolean).filter(hasConversationMessages);
+  // Older builds could snapshot an empty draft. Remove those records from IndexedDB.
+  if(!indexed.length){await saveConversationSnapshot([]);return;}
+  const current=conversations.filter(hasConversationMessages);
+  const merged=mergeConversationLists(current,indexed).filter(hasConversationMessages);
+  if(!merged.length){await saveConversationSnapshot([]);return;}
   conversations=merged;
   const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
   activeConversationId=active.id;
@@ -199,7 +209,7 @@ function renderConversationSearch(){
  const results=$('#conversation-search-results');
  if(!results)return;
  const q=String(conversationSearch||'').trim();
- const matches=findConversations(conversations,q,q?35:14);
+ const matches=findConversations(conversations.filter(hasConversationMessages),q,q?35:14);
  const count=$('#conversation-search-count');
  if(count)count.textContent=q?(matches.length+' resultado'+(matches.length===1?'':'s')):'Abierto recientemente';
  results.replaceChildren();
@@ -235,7 +245,7 @@ function renderConversationSearch(){
 function renderConversationList(){
  const list=$('#core-conversation-list');if(!list)return;
  renderConversationSearch();
- const sorted=conversations.slice().sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||b.updated-a.updated);
+ const sorted=conversations.filter(hasConversationMessages).slice().sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||b.updated-a.updated);
  const visible=sorted.filter(chat=>!conversationSearch||
   chat.title.toLocaleLowerCase('es').includes(conversationSearch)||
   chat.messages.some(message=>String(message.content||'').toLocaleLowerCase('es').includes(conversationSearch)));
@@ -2173,13 +2183,14 @@ export function initPrismaCore(){
     if(busy||executionActive)return;
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
     if(remote){
-      conversations=mergeConversationLists(remote);
+      conversations=mergeConversationLists(remote).filter(hasConversationMessages);
       if(!conversations.length)conversations=[newChatRecord()];
       const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
       activeConversationId=active.id;messages=active.messages.slice();
-      try{localStorage.setItem(CHATS_KEY,JSON.stringify(conversations));}catch{}
+      const persisted=conversations.filter(hasConversationMessages);
+      try{localStorage.setItem(CHATS_KEY,JSON.stringify(persisted));}catch{}
+      saveConversationSnapshot(persisted).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
     }else loadChatHistory();
-    saveConversationSnapshot(conversations).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
     renderConversationList();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
   });
   document.addEventListener('prisma:clear-local-history',()=>{
