@@ -113,7 +113,7 @@ function persistChatHistory(activeSerialized=null){
   console.warn('Prisma: el historial supera la capacidad de localStorage; se conservará en IndexedDB.',error?.message||error);
   document.dispatchEvent(new Event('prisma:history-storage-warning'));
  }
- saveConversationSnapshot(records).catch(error=>{
+ window.__prismaHistoryWrite=saveConversationSnapshot(records).catch(error=>{
   console.error('Prisma: no se pudo guardar la copia local completa en IndexedDB.',error?.message||error);
   document.dispatchEvent(new Event('prisma:history-storage-error'));
  });
@@ -139,7 +139,8 @@ async function restoreIndexedHistory(){
  try{
   const indexed=await readConversationSnapshot();
   if(!Array.isArray(indexed)||!indexed.length)return;
-  const merged=mergeConversationLists(conversations,indexed);
+  const current=conversations.filter(chat=>chat.messages?.length||chat.titled||chat.pinned);
+  const merged=mergeConversationLists(current,indexed);
   if(!merged.length)return;
   conversations=merged;
   const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
