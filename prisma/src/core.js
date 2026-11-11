@@ -2297,9 +2297,14 @@ export function initPrismaCore(){
   const messagesList=$('#core-messages');
   messagesList.addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom(messagesList);},{passive:true});
   messagesList.addEventListener('wheel',()=>{userScrollRevision++;},{passive:true});
-  messagesList.addEventListener('touchstart',()=>{userScrollRevision++;},{passive:true});
   messagesList.addEventListener('touchmove',()=>{userScrollRevision++;},{passive:true});
-  messagesList.addEventListener('pointerdown',()=>{userScrollRevision++;},{passive:true});
+  messagesList.addEventListener('pointerdown',event=>{
+    const bounds=messagesList.getBoundingClientRect();
+    if(event.pointerType==='mouse'&&event.clientX>=bounds.right-20)userScrollRevision++;
+  },{passive:true});
+  messagesList.addEventListener('keydown',event=>{
+    if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key))userScrollRevision++;
+  });
   $('#core-send').addEventListener('click',sendMessage);
   const miniButton=$('#core-mini-toggle');
   miniButton?.addEventListener('click',async()=>{
