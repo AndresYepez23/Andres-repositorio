@@ -51,6 +51,15 @@ export async function saveConversationSnapshot(records) {
   });
 }
 
+// Multiple UI events can schedule snapshots before IndexedDB commits finish.
+// Serialize them so an older snapshot can never overwrite a newer chat reply.
+let snapshotWrite = Promise.resolve();
+export function queueConversationSnapshot(records) {
+  const snapshot = Array.isArray(records) ? records : [];
+  snapshotWrite = snapshotWrite.catch(() => {}).then(() => saveConversationSnapshot(snapshot));
+  return snapshotWrite;
+}
+
 export async function clearConversationSnapshot() {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
