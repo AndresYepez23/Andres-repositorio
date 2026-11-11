@@ -503,7 +503,32 @@ async function signInProvider(provider){
   info('No fue posible continuar con '+(provider==='google'?'Google':'Apple')+': '+accountAuthMessage(error),'error');
  }
 }
-async function onSignedIn(newUser,{fromInteraction=false}={}){
+function signupRedirectUrl(){
+ const target=new URL(location.origin+location.pathname);
+ target.searchParams.set('prisma_welcome','1');
+ return target.toString();
+}
+async function sendWelcomeEmailIfEligible(newUser){
+ const target=new URL(location.href);
+ if(target.searchParams.get('prisma_welcome')!=='1'||!api||!newUser?.id)return;
+ try{
+  const {data,error}=await api.auth.getSession();
+  const session=data?.session;
+  if(error||!session?.access_token||session.user?.id!==newUser.id)return;
+  const response=await fetch('/api/auth/welcome',{
+   method:'POST',
+   headers:{Authorization:'Bearer '+session.access_token,Accept:'application/json'}
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.pending)throw Error('HTTP '+response.status+' '+(result.pending?'welcome email is pending':''));
+  target.searchParams.delete('prisma_welcome');
+  history.replaceState(history.state,'',target.pathname+target.search+target.hash);
+  sessionStorage.removeItem(SIGNUP_PENDING);
+ }catch(error){
+  console.warn('Prisma welcome email:',error?.message||error);
+ }
+}
+async function onSignedIn(newUser,{fromInteraction=false,isNewSignup=false}={}){
  if(!newUser?.id)return;
  const changed=user?.id!==newUser.id;
  user=newUser;
@@ -523,6 +548,15 @@ async function onSignedIn(newUser,{fromInteraction=false}={}){
  if(pendingSignupValid)sessionStorage.removeItem(SIGNUP_PENDING);
  pendingAuth=false;
  if(recovering)return;
+ const currentUrl=new URL(location.href);
+ const welcomeFromVerification=currentUrl.searchParams.get('prisma_welcome')==='1';
+ const createdAt=Date.parse(newUser.created_at||'');
+ const freshOAuthSignup=Boolean(oauth)&&Number.isFinite(createdAt)&&Date.now()-createdAt<10*60*1000;
+ if(isNewSignup||welcomeFromVerification||freshOAuthSignup){
+  currentUrl.searchParams.set('prisma_welcome','1');
+  history.replaceState(history.state,'',currentUrl.pathname+currentUrl.search+currentUrl.hash);
+  void sendWelcomeEmailIfEligible(newUser);
+ }
  if(welcome&&!handledWelcome){
   handledWelcome=true;
   const title=$('#auth-welcome-title');
@@ -589,7 +623,7 @@ function bindForms(){
     ?await api.auth.signUp({
       email,password,options:{
        data:{full_name:chosenName,prisma_avatar:prismaAvatar(signupAvatarChoice).id},
-       emailRedirectTo:location.origin+location.pathname
+       emailRedirectTo:signupRedirectUrl()
       }
      })
     :await api.auth.signInWithPassword({email,password});
@@ -601,7 +635,7 @@ function bindForms(){
     return;
    }
    pendingAuth=true;
-   if(data?.user)await onSignedIn(data.user,{fromInteraction:true});
+   if(data?.user)await onSignedIn(data.user,{fromInteraction:true,isNewSignup:signup});
   });
  });
  $('#auth-google')?.addEventListener('click',()=>signInProvider('google'));
@@ -675,7 +709,7 @@ function bindForms(){
    const email=String($('#auth-confirm-email')?.textContent||'').trim();
    if(!email)throw Error('No se encontró el correo para reenviar.');
    const {error}=await api.auth.resend({type:'signup',email,
-    options:{emailRedirectTo:location.origin+location.pathname}});
+    options:{emailRedirectTo:signupRedirectUrl()}});
    if(error)throw error;
    info('Si la cuenta está pendiente, llegará una nueva confirmación. Espera unos minutos antes de volver a intentarlo.','success');
   });
