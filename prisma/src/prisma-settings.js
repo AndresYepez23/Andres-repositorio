@@ -68,15 +68,17 @@ function positionProfileHelp() {
   help.style.top = top + 'px';
   help.style.width = width + 'px';
 }
+const isMobileSettings = () => window.matchMedia('(max-width: 760px)').matches;
 function openSettings(section = 'general') {
   const panel = $('#prisma-settings');
   if (!panel) return;
   closeProfileMenu();
-  setSettingsSection(section);
+  // Mobile: show a section list first, never a squeezed desktop sidebar.
+  setSettingsSection(section === 'home' && !isMobileSettings() ? 'general' : section);
   panel.classList.remove('hidden');
   panel.setAttribute('aria-hidden', 'false');
   document.body.classList.add('prisma-settings-open');
-  $('#settings-close')?.focus();
+  (isMobileSettings() ? $('#settings-mobile-close') : $('#settings-close'))?.focus();
 }
 function closeSettings() {
   const panel = $('#prisma-settings');
@@ -86,22 +88,67 @@ function closeSettings() {
   document.body.classList.remove('prisma-settings-open');
   $('#profile-toggle')?.focus();
 }
+function mobileHomeRow(section, icon, title, description = '') {
+  return '<button type="button" class="settings-home-row" data-settings-open="' + section + '">' +
+    '<span class="settings-home-row-icon" data-icon="' + icon + '" aria-hidden="true"></span>' +
+    '<span class="settings-home-row-label"><strong>' + title + '</strong>' +
+    (description ? '<small>' + description + '</small>' : '') + '</span>' +
+    '<span class="settings-home-row-chevron" data-icon="chevron-right" aria-hidden="true"></span></button>';
+}
+function mobileHomeContent() {
+  const signedIn = !$('#account-signout')?.classList.contains('hidden');
+  return [
+    '<div class="settings-mobile-home">',
+      '<button type="button" class="settings-home-profile" data-settings-open="account">',
+        '<span class="settings-home-avatar" aria-hidden="true" id="settings-home-avatar"></span>',
+        '<span class="settings-home-profile-label"><strong id="settings-home-name"></strong><small id="settings-home-email"></small></span>',
+        '<span data-icon="chevron-right" class="settings-home-profile-chevron" aria-hidden="true"></span>',
+      '</button>',
+      '<section class="settings-home-group"><h2>Personalización</h2><div class="settings-home-list">',
+        mobileHomeRow('personalization','palette','Apariencia y personalización','Tema, presentación y animaciones'),
+        mobileHomeRow('account','user-round','Perfil y cuenta','Identidad y sincronización'),
+      '</div></section>',
+      '<section class="settings-home-group"><h2>Configuración de la aplicación</h2><div class="settings-home-list">',
+        mobileHomeRow('general','settings','General','Pantalla de inicio, idioma y envío'),
+        mobileHomeRow('shortcuts','keyboard','Atajos de teclado'),
+        mobileHomeRow('privacy','shield-check','Privacidad y datos'),
+        '<button type="button" class="settings-home-row" data-settings-action="open-ai"><span class="settings-home-row-icon" data-icon="sparkles" aria-hidden="true"></span><span class="settings-home-row-label"><strong>Modelos y conexiones IA</strong><small>Administrar proveedores en Laboratorio IA</small></span><span class="settings-home-row-chevron" data-icon="chevron-right" aria-hidden="true"></span></button>',
+      '</div></section>',
+      '<section class="settings-home-group"><h2>Ayuda y soporte</h2><div class="settings-home-list">',
+        mobileHomeRow('help','life-buoy','Centro de ayuda'),
+        mobileHomeRow('whatsNew','book-open','Notas de la versión'),
+      '</div></section>',
+      signedIn ? '<button type="button" id="settings-home-signout" class="settings-home-signout"><span data-icon="log-out"></span>Cerrar sesión</button>' : '',
+      '<p class="settings-home-footer">PRISMA SPACE 1.0 · BETA</p>',
+    '</div>'
+  ].join('');
+}
 function generalContent() {
   const shortcut = (() => {
     try { return localStorage.getItem(SETTINGS_KEY) === 'ctrl-enter' ? 'ctrl-enter' : 'enter'; }
     catch { return 'enter'; }
   })();
+  const initialView = (() => {
+    try { return localStorage.getItem('prisma-start-view') === 'explore' ? 'explore' : 'core'; }
+    catch { return 'core'; }
+  })();
   return [
-    '<section class="settings-card">',
-      '<div class="settings-row"><div><strong>Idioma</strong><small>Idioma de la interfaz de Prisma Space.</small></div><span class="settings-static-value">Español</span></div>',
-      '<div class="settings-row"><div><strong>Atajo para enviar</strong><small>Elige cuándo Enter envía tu mensaje o inserta una nueva línea.</small></div>',
+    '<section class="settings-card settings-general-card">',
+      '<div class="settings-row"><span class="settings-field-icon" data-icon="house"></span><div><strong>Pantalla de inicio</strong><small>Elige dónde empieza Prisma cuando abras la aplicación.</small></div>',
+        '<select class="settings-select" id="settings-start-view" aria-label="Pantalla de inicio">',
+          '<option value="core"' + (initialView === 'core' ? ' selected' : '') + '>Prisma Core</option>',
+          '<option value="explore"' + (initialView === 'explore' ? ' selected' : '') + '>Herramientas</option>',
+        '</select>',
+      '</div>',
+      '<div class="settings-row"><span class="settings-field-icon" data-icon="globe"></span><div><strong>Idioma</strong><small>Idioma disponible para la interfaz.</small></div><span class="settings-static-value">Español</span></div>',
+      '<div class="settings-row"><span class="settings-field-icon" data-icon="keyboard"></span><div><strong>Atajo para enviar</strong><small>Controla cuándo Enter envía tu mensaje.</small></div>',
         '<select class="settings-select" id="settings-send-shortcut" aria-label="Atajo para enviar">',
           '<option value="enter"' + (shortcut === 'enter' ? ' selected' : '') + '>Enter</option>',
           '<option value="ctrl-enter"' + (shortcut === 'ctrl-enter' ? ' selected' : '') + '>Ctrl + Enter</option>',
         '</select>',
       '</div>',
     '</section>',
-    '<p class="settings-footnote">Shift + Enter siempre inserta una nueva línea. En Mac también puedes usar ⌘ + Enter cuando selecciones esa opción.</p>'
+    '<p class="settings-footnote">Shift + Enter siempre inserta una nueva línea. En Mac puedes usar ⌘ + Enter si seleccionas el segundo atajo.</p>'
   ].join('');
 }
 function personalizationContent() {
@@ -167,13 +214,20 @@ function shortcutsContent() {
 }
 function helpContent() {
   return [
+    '<div class="settings-detail-section-label">Ayuda y soporte</div>',
+    '<section class="settings-card settings-help-links">',
+      '<a class="settings-help-link" href="./privacy.html#privacidad"><span class="settings-help-link-icon" data-icon="shield-check"></span><span>Centro de privacidad</span><span class="settings-help-link-chevron" data-icon="chevron-right"></span></a>',
+      '<a class="settings-help-link" href="https://github.com/AndresYepez23/PRISMA/issues/new" target="_blank" rel="noopener noreferrer"><span class="settings-help-link-icon" data-icon="bug"></span><span>Informar de un problema</span><span class="settings-help-link-chevron" data-icon="external-link"></span></a>',
+      '<a class="settings-help-link" href="https://github.com/AndresYepez23/PRISMA/issues" target="_blank" rel="noopener noreferrer"><span class="settings-help-link-icon" data-icon="life-buoy"></span><span>Comunidad y soporte</span><span class="settings-help-link-chevron" data-icon="external-link"></span></a>',
+      '<button type="button" class="settings-help-link" id="settings-help-install"><span class="settings-help-link-icon" data-icon="download"></span><span>Instalar Prisma Space</span><span class="settings-help-link-chevron" data-icon="chevron-right"></span></button>',
+    '</section>',
+    '<div class="settings-detail-section-label">Preguntas frecuentes</div>',
     '<section class="settings-card settings-help-card">',
       '<details><summary>¿Necesito una cuenta para utilizar Prisma?</summary><p>No. Puedes explorar el catálogo y utilizar las herramientas disponibles sin registrarte. La cuenta permite acceder a funciones de perfil y sincronización cuando estén disponibles.</p></details>',
-      '<details><summary>¿Dónde se procesan mis archivos?</summary><p>Las herramientas locales procesan los archivos en tu dispositivo. Las herramientas que utilizan servicios externos envían los datos necesarios al proveedor correspondiente; revisa la información de privacidad antes de compartir contenido sensible.</p></details>',
-      '<details><summary>¿Cómo instalo Prisma Space?</summary><p>Abre el menú de ayuda y selecciona «Descargar aplicaciones». En iPhone y iPad, utiliza Compartir en Safari y elige «Añadir a pantalla de inicio».</p></details>',
-      '<details><summary>¿Cómo puedo reportar un problema?</summary><p>Describe los pasos para reproducirlo, el navegador y, si es posible, adjunta una captura sin datos privados.</p><a href="https://github.com/AndresYepez23/PRISMA/issues/new" target="_blank" rel="noopener noreferrer">Informar de un error en GitHub <span data-icon="external-link"></span></a></details>',
-    '</section>',
-    '<div class="settings-help-actions"><a class="settings-action-button" href="./privacy.html#privacidad">Centro de privacidad <span data-icon="arrow-right"></span></a><a class="settings-action-button" href="https://github.com/AndresYepez23/PRISMA/issues" target="_blank" rel="noopener noreferrer">Comunidad y soporte <span data-icon="external-link"></span></a><button type="button" class="settings-action-button" id="settings-help-install"><span data-icon="download"></span> Descargar aplicaciones</button></div>'
+      '<details><summary>¿Dónde se procesan mis archivos?</summary><p>Las herramientas locales procesan los archivos en tu dispositivo. Las herramientas que utilizan servicios externos envían los datos necesarios al proveedor correspondiente. Revisa nuestra política de privacidad antes de compartir contenido sensible.</p></details>',
+      '<details><summary>¿Cómo instalo Prisma en mi teléfono?</summary><p>En iPhone, abre Prisma en Safari, pulsa Compartir y elige «Añadir a pantalla de inicio». En Android, usa la opción Instalar del navegador.</p></details>',
+      '<details><summary>¿Cómo puedo informar de un error?</summary><p>Describe los pasos para reproducirlo y el navegador. Si adjuntas una captura, oculta cualquier dato personal.</p><a href="https://github.com/AndresYepez23/PRISMA/issues/new" target="_blank" rel="noopener noreferrer">Abrir informe de errores <span data-icon="external-link"></span></a></details>',
+    '</section>'
   ].join('');
 }
 function whatsNewContent() {
@@ -210,7 +264,17 @@ function paintIcons(root) {
     const paths = {
       'user-round': '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
       'arrow-right': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
-      'arrow-right': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+      'chevron-right': '<path d="m9 18 6-6-6-6"/>',
+      'house': '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
+      'globe': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 4-5 14 0 18m0-18c5 4 5 14 0 18"/>',
+      'keyboard': '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M9 9h.01M12 9h.01M15 9h.01M18 9h.01M7 12h.01M10 12h.01M13 12h.01M16 12h.01M8 15h8"/>',
+      'settings': '<circle cx="12" cy="12" r="3"/><path d="m19.4 15 1.1.9-1.2 2.1-1.4-.5-1.4.8-.3 1.5h-2.4l-.3-1.5-1.5-.8-1.3.5-1.2-2.1 1.1-.9a7 7 0 0 1 0-1.7l-1.1-.9 1.2-2.1 1.3.5 1.5-.8.3-1.4h2.4l.3 1.4 1.4.8 1.4-.5 1.2 2.1-1.1.9a7 7 0 0 1 0 1.7Z"/>',
+      'palette': '<path d="M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 1.7-4.3 1.8 1.8 0 0 1 1.2-3.1H19a2 2 0 0 0 2-2A9 9 0 0 0 12 3Z"/><circle cx="7" cy="10" r="1"/><circle cx="10" cy="7" r="1"/>',
+      'shield-check': '<path d="M12 22c5-2 8-6 8-11V5l-8-3-8 3v6c0 5 3 9 8 11Z"/><path d="m9 12 2 2 4-4"/>',
+      'sparkles': '<path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7Z"/><path d="m19 17 .8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8Z"/>',
+      'life-buoy': '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="m5.6 5.6 4.3 4.3m4.2 4.2 4.3 4.3m0-12.8-4.3 4.3m-4.2 4.2-4.3 4.3"/>',
+      'book-open': '<path d="M12 7v14m0-14C9.5 4.8 6.3 4.5 3 5v14c3.3-.5 6.5-.2 9 2m0-14c2.5-2.2 5.7-2.5 9-2v14c-3.3-.5-6.5-.2-9 2"/>',
+      'bug': '<rect x="7" y="7" width="10" height="14" rx="5"/><path d="M8 8 6 6m10 2 2-2M9 4h6M4 13h3m10 0h3M5 18l3-2m11 2-3-2"/>',
       'cloud': '<path d="M20 16.2A4.8 4.8 0 0 0 18 7h-1.2A7 7 0 1 0 4 16.3"/>',
       'log-out': '<path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>',
       'external-link': '<path d="M14 3h7v7m0-7-9 9"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
@@ -221,13 +285,17 @@ function paintIcons(root) {
   });
 }
 function setSettingsSection(section) {
-  const selected = sections[section] ? section : 'general';
+  const selected = section === 'home' && isMobileSettings() ? 'home' : (sections[section] ? section : 'general');
   const panel = $('#prisma-settings');
   if (!panel) return;
   panel.dataset.section = selected;
-  $('#settings-title').textContent = sections[selected].title;
-  $('#settings-description').textContent = sections[selected].description;
-  $('#settings-content').innerHTML = sectionContent(selected);
+  const isHome = selected === 'home';
+  $('#settings-title').textContent = isHome ? 'Configuración' : sections[selected].title;
+  $('#settings-description').textContent = isHome ? 'Personaliza Prisma Space.' : sections[selected].description;
+  $('#settings-mobile-title').textContent = isHome ? 'Configuración' : sections[selected].title;
+  $('#settings-mobile-back')?.classList.toggle('hidden', isHome);
+  $('#settings-mobile-back')?.setAttribute('aria-label', isHome ? 'Cerrar configuración' : 'Volver a configuración');
+  $('#settings-content').innerHTML = isHome ? mobileHomeContent() : sectionContent(selected);
   panel.querySelectorAll('[data-settings-section]').forEach(button => {
     const active = button.dataset.settingsSection === selected;
     button.classList.toggle('active', active);
@@ -237,6 +305,13 @@ function setSettingsSection(section) {
     $('#settings-account-name').textContent = $('#profile-menu-title')?.textContent?.trim() || 'Tu espacio en Prisma';
     $('#settings-account-email').textContent = $('#account-menu-state')?.textContent?.trim() || 'Modo invitado';
   }
+  if (isHome) {
+    const name = $('#profile-menu-title')?.textContent?.trim() || 'Tu espacio en Prisma';
+    $('#settings-home-name').textContent = name;
+    $('#settings-home-email').textContent = $('#account-menu-state')?.textContent?.trim() || 'Modo invitado';
+    $('#settings-home-avatar').textContent = name === 'Prisma Space'
+      ? 'P' : (name.split(/\s+/).slice(0, 2).map(word => word[0]).join('').toLocaleUpperCase('es') || 'P');
+  }
   paintIcons($('#settings-content'));
   $('#settings-content').scrollTop = 0;
   updateThemeChoices();
@@ -245,6 +320,13 @@ function setSettingsSection(section) {
       applyThemePreference(button.dataset.themeChoice);
       updateThemeChoices();
     });
+  });
+  $('#settings-start-view')?.addEventListener('change', event => {
+    try { localStorage.setItem('prisma-start-view', event.target.value === 'explore' ? 'explore' : 'core'); } catch {}
+  });
+  $('#settings-home-signout')?.addEventListener('click', () => { closeSettings(); $('#account-signout')?.click(); });
+  $('#settings-content').querySelectorAll('[data-settings-action="open-ai"]').forEach(button => {
+    button.addEventListener('click', () => { closeSettings(); document.querySelector('[data-view="ai"]')?.click(); });
   });
   $('#settings-send-shortcut')?.addEventListener('change', event => {
     try { localStorage.setItem(SETTINGS_KEY, event.target.value === 'ctrl-enter' ? 'ctrl-enter' : 'enter'); } catch {}
@@ -310,19 +392,32 @@ function initProfileHelp() {
 export function initPrismaSettings() {
   applyAppearancePreferences();
   initProfileHelp();
-  $('#profile-open-settings')?.addEventListener('click', () => openSettings('general'));
+  $('#profile-open-settings')?.addEventListener('click', () => openSettings('home'));
   $('#prisma-settings')?.querySelectorAll('[data-settings-section]').forEach(button => {
     button.addEventListener('click', () => setSettingsSection(button.dataset.settingsSection));
   });
   $('#settings-close')?.addEventListener('click', closeSettings);
   $('#settings-back')?.addEventListener('click', closeSettings);
+  $('#settings-mobile-close')?.addEventListener('click', closeSettings);
+  $('#settings-mobile-back')?.addEventListener('click', () => {
+    if ($('#prisma-settings')?.dataset.section === 'home') closeSettings();
+    else setSettingsSection('home');
+  });
   $('#prisma-settings')?.addEventListener('click', event => {
     const link = event.target.closest('a[href]');
     if (link) return;
     const action = event.target.closest('[data-settings-open]');
-    if (action) openSettings(action.dataset.settingsOpen);
+    if (action) setSettingsSection(action.dataset.settingsOpen);
   });
   document.addEventListener('prisma:theme-changed', updateThemeChoices);
+  const viewportQuery = window.matchMedia('(max-width: 760px)');
+  const syncResponsiveView = () => {
+    const panel = $('#prisma-settings');
+    if (panel && !panel.classList.contains('hidden') && !viewportQuery.matches && panel.dataset.section === 'home')
+      setSettingsSection('general');
+  };
+  if (viewportQuery.addEventListener) viewportQuery.addEventListener('change', syncResponsiveView);
+  else viewportQuery.addListener?.(syncResponsiveView);
   const media = window.matchMedia?.('(prefers-color-scheme: dark)');
   const handleSystemTheme = () => {
     if (currentThemePreference() === 'system') applyThemePreference('system');
