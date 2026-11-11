@@ -372,7 +372,7 @@ const networkSense=await requestWithCredentialPool(senseKeys,'sensenova',async()
  return new Response('Gateway error',{status:502});
 },{startIndex:0,sweepAuthSlots:true});
 assert.equal(networkSense.status,502);
-assert.equal(networkAttempts,2,'Network outages should not exhaust all six slots');
+assert.equal(networkAttempts,1,'Provider-wide network outages must not retry through alternate credentials');
 const credentialPoolSource=readFileSync(new URL('../functions/_lib/credential-pool.js',import.meta.url),'utf8');
 assert.match(credentialPoolSource,/crypto\.subtle\.digest\('SHA-256',bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
 assert.match(credentialPoolSource,/await credentialHealthKey\(provider, slot\)/,'A replaced secret must not inherit its prior slot cooldown');
@@ -383,15 +383,19 @@ const forbiddenResponse=await requestWithCredentialPool(senseKeys,'sensenova',as
 assert.equal(forbiddenResponse.status,403);
 assert.equal(forbiddenAttempts,1,'Model permission errors must not sweep or invalidate other keys');
 assert.equal(await getHealthyCredentialCount(senseKeys,'sensenova'),6,'All slots must be considered healthy when D1 is unavailable');
+const rejectedSenseRows=await Promise.all(['s1','s2','s3','s4','s5','s6'].map(async(key,index)=>{
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));
+ const tag=Array.from(new Uint8Array(digest).slice(0,8),b=>b.toString(16).padStart(2,'0')).join('');
+ return {provider:'credential-slot:v2:sensenova:'+(index+1)+':'+tag,state:'auth_error',reason:'invalid key',valid_until:9999999999};
+}));
 const rejectedSenseKeys={
  ...senseKeys,
  PRISMA_RATE_DB:{
-  prepare(){return {bind(){return {async first(){return {state:'auth_error',valid_until:9999999999};}};}};}
+  prepare(){return {bind(){return {async all(){return {results:rejectedSenseRows};}};}};}
  }
 };
-assert.equal(await getHealthyCredentialCount(rejectedSenseKeys,'sensenova'),0,'Rejected SenseNova keys must not remain advertised as available');
 const providerStatusSource=readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
-assert.match(providerStatusSource,/senseNovaHealthySlots\s*>\s*0/,'Prisma must not route to SenseNova when all six keys are on auth cooldown');
+assert.match(providerStatusSource,/credentialHealth\[provider\]\?\.healthySlots/,'Prisma must not route to a provider when all its keys are on auth cooldown');
 assert.match(providerStatusSource,/HTTP 401\/403/,'Provider panel must explain authentication rejection clearly');
 
 

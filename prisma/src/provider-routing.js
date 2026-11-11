@@ -114,17 +114,26 @@ const DEFAULT_MODELS = {
 };
 
 export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},now=Date.now()}={}) {
-  const order=[...new Set(preferred==="auto"?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])]
-    .filter(name=>available(name));
+  const order=[...new Set(preferred==="auto"?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])].filter(name=>available(name));
   if(preferred!=="auto")return order;
   return order.map((name,index)=>{
-    const record=health[name+":"+task]||{};
-    const recent=now-Number(record.at||0)<15*60*1000;
+    const record=health[name+":"+task]||{},recent=now-Number(record.at||0)<30*60*1000;
     const cooling=recent&&Number(record.coolingUntil||0)>now;
-    const failures=recent?Math.min(4,Number(record.failures||0)):0;
-    const latency=recent&&Number(record.averageMs||0)>0?Math.min(3,Number(record.averageMs)/10000):0;
-    return {name,score:index*10+(cooling?100:0)+failures*3+latency+(name==='openrouter'?1000:0)};
+    const failures=recent?Math.min(4,Math.max(0,Number(record.failures)||0)):0;
+    const successes=recent?Math.min(4,Math.max(0,Number(record.successes)||0)):0;
+    const averageMs=recent?Math.max(0,Number(record.averageMs)||0):0;
+    const latency=averageMs?Math.min(18,averageMs/1800):0;
+    const reliability=failures*6-Math.min(6,successes*1.5);
+    return {name,score:index*12+latency+reliability+(cooling?1000:0)+(name==='openrouter'?10000:0)};
   }).sort((a,b)=>a.score-b.score).map(item=>item.name);
+}
+
+export function adaptiveProviderDeadline({averageMs=0,baseMs=21000,minMs=12000,multiplier=2.5,overheadMs=3000}={}) {
+  const base=Number.isFinite(Number(baseMs))?Math.max(1000,Number(baseMs)):21000;
+  const minimum=Number.isFinite(Number(minMs))?Math.max(1000,Math.min(base,Number(minMs))):Math.min(base,12000);
+  const observed=Math.max(0,Number(averageMs)||0);
+  if(!observed)return base;
+  return Math.max(minimum,Math.min(base,Math.round(observed*multiplier+overheadMs)));
 }
 
 export function selectTaskModel(provider,task="general",tier="balanced",catalog=[]) {
