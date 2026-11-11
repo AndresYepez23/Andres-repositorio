@@ -13,7 +13,7 @@ Prisma Space dispone de un proyecto separado de Supabase (`hyoxywiwhnhfekakhivp`
 1. Crear Prisma Space en la organización autorizada de Supabase. Registrar URL y publishable key (NO service_role).
 2. Ejecutar `prisma/sql/001_prisma_profiles_chats.sql` SOLO en el nuevo proyecto.
 3. En **Cloudflare Pages / prisma**, configurar `PRISMA_SUPABASE_URL` y `PRISMA_SUPABASE_PUBLISHABLE_KEY`. El endpoint público `/api/auth/config` revela solamente la clave publicable.
-4. En Supabase Authentication → URL Configuration: Site URL `https://prismaspace.pages.dev`; redirect permitido `https://prismaspace.pages.dev/**`. Añadir dominios propios al cambiar.
+4. En Supabase Authentication → URL Configuration: Site URL `https://prismaspace.space`; redirect permitido `https://prismaspace.space/**`. Añadir dominios propios al cambiar.
 5. Email: habilitar verificación y configurar SMTP dedicado para Prisma; Resend es opcional y requiere dominio/remitente verificado. No copiar sin autorización configuración específica de OdontoUdeC.
 6. Google: crear OAuth web en Google Cloud, dar de alta Supabase callback, habilitar proveedor y luego `PRISMA_AUTH_GOOGLE_ENABLED=1`.
 7. Apple: configurar Services ID y firma con Apple Developer; habilitar proveedor y luego `PRISMA_AUTH_APPLE_ENABLED=1`. El secreto para OAuth web debe rotarse según Apple.
@@ -39,8 +39,8 @@ El modo local de Prisma puede responder a preguntas básicas sobre identidad y l
 ## Terminación del registro
 
 Antes de invitar usuarios, confirmar en Supabase:
-- Authentication → URL Configuration → Site URL: `https://prismaspace.pages.dev`.
-- Redirect URLs → añadir `https://prismaspace.pages.dev/**` y otros dominios propios que se vayan a usar.
+- Authentication → URL Configuration → Site URL: `https://prismaspace.space`.
+- Redirect URLs → añadir `https://prismaspace.space/**` y otros dominios propios que se vayan a usar.
 - Correo de confirmación, límites antiabuso y SMTP remitente verificado. La cuenta de Resend de otra aplicación **no** se copia automáticamente.
 - Google, Apple y SMS solo se activan al instalar proveedores con sus credenciales y flags correspondientes.
 

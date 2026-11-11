@@ -1,7 +1,7 @@
 # Prisma Space — checklist maestro SEO
 
 Última actualización: 2026-11-10  
-Dominio canónico: https://prismaspace.pages.dev/
+Dominio canónico: https://prismaspace.space/
 
 ## Reglas para no repetir páginas
 
@@ -88,7 +88,7 @@ Este apartado sustituye la antigua restricción de comparar IDs como si cada her
 - [x] Crear 100 páginas justificadas: 140 páginas individuales, 132 herramientas cubiertas.
 - [x] Eliminar límites rígidos; pruebas de catálogos de 1, 50, 70, 100 y 200 páginas.
 - [x] Directorio y categorías derivados del catálogo publicado.
-- [x] Canónicas, sitemap y robots derivados de `SEO_BASE` en `config.mjs`, todavía pages.dev.
+- [x] Canónicas, sitemap y robots derivados de `SEO_BASE` en `config.mjs`, ya en prismaspace.space.
 - [x] Enlaces relacionados circulares por familia; todas las landings reciben enlaces contextuales.
 - [x] Admitir únicamente presets `format` ya soportados por main.js; no modificar la aplicación.
 - [x] Verificar estructura HTML con analizador HTML5 y sitemap con analizador XML.
