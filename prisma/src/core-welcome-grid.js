@@ -2,6 +2,8 @@
 // Purely decorative: no external services, WebGL, tracking or layout shifts.
 // Mounted once on the complete chat column and kept behind messages and composer.
 const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
+// Smooth taper toward each edge; changes opacity only, never dot placement.
+const smoothEdge=value=>{const t=clamp(value,0,1);return t*t*(3-2*t);};
 
 export function mountCoreWelcomeGrid(container){
  if(!container||typeof document==='undefined'||typeof window==='undefined')return ()=>{};
@@ -53,8 +55,10 @@ export function mountCoreWelcomeGrid(container){
   theme=dark?'dark':'light';
   const midX=width*.50,midY=height*.49;
   const glow=ctx.createRadialGradient(midX,midY,8,midX,midY,Math.max(width*.76,height*1.08));
-  glow.addColorStop(0,dark?'rgba(68,205,198,.105)':'rgba(55,155,160,.078)');
-  glow.addColorStop(.48,dark?'rgba(54,112,176,.052)':'rgba(80,141,162,.027)');
+  // Gentle Prisma-blue bloom, deliberately softer than the Baidu reference.
+  glow.addColorStop(0,dark?'rgba(68,205,198,.094)':'rgba(55,155,160,.064)');
+  glow.addColorStop(.48,dark?'rgba(54,112,176,.045)':'rgba(80,141,162,.024)');
+  glow.addColorStop(.78,dark?'rgba(136,113,197,.014)':'rgba(118,100,180,.011)');
   glow.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
 
@@ -83,11 +87,16 @@ export function mountCoreWelcomeGrid(container){
    for(let x=offsetX,col=0;x<width;x+=space,col++){
     const ex=(x-midX)/envelopeX,ey=(y-midY)/envelopeY;
     const falloff=Math.exp(-.72*(ex*ex+ey*ey));
+    // Fade the matrix naturally at the screen edges, including after messages.
+    // The renderer, viewport dimensions and chat lifecycle remain unchanged.
+    const fadeX=smoothEdge(Math.min(x,width-x)/Math.max(24,width*.16));
+    const fadeY=smoothEdge(Math.min(y,height-y)/Math.max(22,height*.14));
+    const edgeFade=fadeX*fadeY;
     const distance=Math.hypot(x-pointerX,y-pointerY);
     const near=strength*Math.exp(-Math.pow(distance/hoverRadius,2)*1.85);
     const topology=Math.sin(x*.029+y*.021+now*.00034)*.5+.5;
-    const alpha=clamp((dark?.105:.092)+(dark?.235:.19)*falloff+
-      (.085+breathe)*falloff*topology+near*(dark?.72:.53),0,.98);
+    const alpha=clamp(((dark?.105:.092)+(dark?.235:.19)*falloff+
+      (.085+breathe)*falloff*topology+near*(dark?.72:.53))*edgeFade,0,.98);
     const radius=.76+.48*falloff+near*1.22;
     const tint=(col*7+row*3)%17;
     const rgb=tint<10?(dark?'135,222,218':'45,127,133'):
@@ -98,8 +107,8 @@ export function mountCoreWelcomeGrid(container){
     ctx.arc(x,y,radius,0,Math.PI*2);
     ctx.fill();
     // A few brighter anchor pixels reinforce the subtle circuit-grid look.
-    if((col+row*5)%19===0&&falloff>.30){
-     ctx.fillStyle=dark?'rgba(167,241,234,.34)':'rgba(47,131,145,.25)';
+    if((col+row*5)%19===0&&falloff>.30&&edgeFade>.06){
+     ctx.fillStyle=dark?'rgba(167,241,234,'+(.34*edgeFade).toFixed(3)+')':'rgba(47,131,145,'+(.25*edgeFade).toFixed(3)+')';
      ctx.fillRect(x-.55,y-.55,1.1,1.1);
     }
    }
@@ -116,7 +125,9 @@ export function mountCoreWelcomeGrid(container){
      if((col*13+row*7)%5!==0)continue;
      const x=offsetX+col*space,y=offsetY+row*space;
      const distance=Math.hypot(x-pointerX,y-pointerY);
-     const near=clamp(1-distance/hoverRadius,0,1)*strength;
+     const fade=smoothEdge(Math.min(x,width-x)/Math.max(24,width*.16))*
+       smoothEdge(Math.min(y,height-y)/Math.max(22,height*.14));
+     const near=clamp(1-distance/hoverRadius,0,1)*strength*fade;
      if(near<.10)continue;
      ctx.strokeStyle=dark?'rgba(127,234,222,'+(near*.27).toFixed(3)+')':
        'rgba(38,125,139,'+(near*.22).toFixed(3)+')';
