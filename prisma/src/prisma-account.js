@@ -15,7 +15,7 @@ const OAUTH_PENDING='prisma-account-oauth-pending';
 const SIGNUP_PENDING='prisma-account-signup-confirm-pending';
 const SCREENS=['intro','email','phone','reset','recovery','confirm','welcome','account'];
 let guestGateModalActive=false;
-let signupAvatarChoice='prism',profileAvatarChoice='prism';
+let profileAvatarChoice='prism';
 
 export function validateAccountPassword(password,confirmation=null){
  const value=String(password||'');
@@ -117,11 +117,6 @@ function renderAvatarChoices(id,name,selected,onChange){
   root.append(label);
  }
 }
-function updateSignupPreview(){
- const title=$('#auth-signup-name-preview');
- if(title)title.textContent=fullName($('#auth-display-name')?.value)||'Tu espacio en Prisma';
- paintAvatar($('#auth-signup-avatar-preview'),signupAvatarChoice);
-}
 function prepareAccountAvatarChoices(){
  profileAvatarChoice=storedAvatar();
  renderAvatarChoices('auth-profile-avatar-choices','prisma-profile-avatar',profileAvatarChoice,id=>{profileAvatarChoice=id;});
@@ -134,18 +129,22 @@ function displayName(){
 }
 function setProviderAvailability(){
  for(const provider of ['google','apple','phone']){
-  const btn=$('#auth-'+provider);
-  if(!btn)continue;
-  // Apple is intentionally unavailable until its OAuth integration is prepared.
+  // Google appears on the intro screen and both email tabs, with the same OAuth flow.
+  const buttons=provider==='google'
+   ?[$('#auth-google'),$('#auth-google-email')]
+   :[$('#auth-'+provider)];
   const ready=provider!=='apple'&&config.enabled&&isAccountProviderAvailable(config.features,provider);
-  btn.disabled=!ready;
-  btn.setAttribute('aria-disabled',String(!ready));
-  if(provider==='apple'){
-   btn.title='Próximamente';
-   btn.setAttribute('aria-label','Continuar con Apple. Próximamente');
+  for(const btn of buttons){
+   if(!btn)continue;
+   btn.disabled=!ready;
+   btn.setAttribute('aria-disabled',String(!ready));
+   if(provider==='apple'){
+    btn.title='Próximamente';
+    btn.setAttribute('aria-label','Continuar con Apple. Próximamente');
+   }
+   const label=btn.querySelector('small');
+   if(label)label.textContent=ready?'Disponible':provider==='apple'?'Próximamente':provider==='phone'?'Requiere configurar SMS':'Por configurar';
   }
-  const label=btn.querySelector('small');
-  if(label)label.textContent=ready?'Disponible':provider==='apple'?'Próximamente':provider==='phone'?'Requiere configurar SMS':'Por configurar';
  }
  const email=$('#auth-email-choice');
  if(email)email.disabled=!config.enabled;
@@ -175,10 +174,8 @@ function updateTabs(){
  $('#auth-tab-login')?.classList.toggle('active',!signup);
  $('#auth-tab-signup')?.classList.toggle('active',signup);
  $('#auth-name-label')?.classList.toggle('hidden',!signup);
- $('#auth-signup-personalization')?.classList.toggle('hidden',!signup);
  const nameInput=$('#auth-display-name');
  if(nameInput)nameInput.required=signup;
- if(signup)updateSignupPreview();
  $('#auth-password-confirm-label')?.classList.toggle('hidden',!signup);
  const confirm=$('#auth-password-confirm');
  if(confirm)confirm.required=signup;
@@ -193,8 +190,8 @@ function updateTabs(){
  if(title)title.textContent=signup?'Crear cuenta en Prisma':'Accede a tu cuenta';
  const description=$('#auth-email-description');
  if(description)description.textContent=signup
-  ?'Crea tu espacio personal con un correo y una contraseña segura.'
-  :'Bienvenido de nuevo. Introduce tus datos para continuar.';
+  ?'Continúa con Google o crea tu cuenta con correo. Personaliza tu avatar después.'
+  :'Bienvenido de nuevo. Continúa con Google o introduce tus datos.';
  const submit=$('#auth-submit');
  if(submit)submit.textContent=signup?'Crear mi cuenta':'Iniciar sesión';
  $('#auth-reset')?.classList.toggle('hidden',signup);
@@ -590,11 +587,6 @@ async function onSignedIn(newUser,{fromInteraction=false,isNewSignup=false}={}){
  }else if(screen==='account')refreshIdentity();
 }
 function bindForms(){
- renderAvatarChoices('auth-signup-avatar-choices','prisma-signup-avatar',signupAvatarChoice,id=>{
-  signupAvatarChoice=id;updateSignupPreview();
- });
- $('#auth-display-name')?.addEventListener('input',updateSignupPreview);
- updateSignupPreview();
  $('#auth-close')?.addEventListener('click',()=>showAuth(false));
  $('#auth-guest')?.addEventListener('click',()=>showAuth(false));
  $('#auth-modal')?.addEventListener('click',event=>{
@@ -645,7 +637,7 @@ function bindForms(){
    const {data,error:authError}=signup
     ?await api.auth.signUp({
       email,password,options:{
-       data:{full_name:chosenName,prisma_avatar:prismaAvatar(signupAvatarChoice).id},
+       data:{full_name:chosenName},
        emailRedirectTo:signupRedirectUrl()
       }
      })
@@ -661,7 +653,9 @@ function bindForms(){
    if(data?.user)await onSignedIn(data.user,{fromInteraction:true,isNewSignup:signup});
   });
  });
- $('#auth-google')?.addEventListener('click',()=>signInProvider('google'));
+ for(const selector of ['#auth-google','#auth-google-email']){
+  $(selector)?.addEventListener('click',()=>signInProvider('google'));
+ }
  $('#auth-apple')?.addEventListener('click',()=>signInProvider('apple'));
  $('#auth-phone')?.addEventListener('click',()=>{
   if(!isAccountProviderAvailable(config.features,'phone'))return;

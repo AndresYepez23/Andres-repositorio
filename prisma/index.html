@@ -395,24 +395,18 @@
       <button class="auth-back" type="button" data-auth-back="intro">← Todos los métodos</button>
       <h2 id="auth-email-title">Accede a tu cuenta</h2>
       <p class="auth-description" id="auth-email-description">Usa tu correo electrónico y contraseña.</p>
-      <div class="auth-tabs" role="group" aria-label="Acceso por correo">
+      <div class="auth-tabs" role="group" aria-label="Acceso a Prisma">
         <button type="button" id="auth-tab-login" class="active">Iniciar sesión</button>
         <button type="button" id="auth-tab-signup">Crear cuenta</button>
       </div>
+      <div class="auth-provider-grid auth-email-provider" aria-label="Acceder con Google">
+        <button type="button" id="auth-google-email" disabled><span class="auth-provider-g" aria-hidden="true">G</span><span>Continuar con Google</span><small>Comprobando…</small></button>
+      </div>
+      <div class="auth-divider auth-email-divider"><span>o con correo y contraseña</span></div>
       <form id="auth-form" autocomplete="on">
         <label id="auth-name-label" class="hidden">¿Cómo quieres que te llamemos?
           <input type="text" id="auth-display-name" autocomplete="nickname" maxlength="60" minlength="2" placeholder="Tu nombre o apodo">
         </label>
-        <div class="auth-signup-personalization hidden" id="auth-signup-personalization">
-          <div class="auth-personal-preview">
-            <span class="prisma-avatar-face auth-personal-preview-avatar" id="auth-signup-avatar-preview" data-prisma-avatar="prism"><img src="./assets/prisma-app-icon.svg" alt=""></span>
-            <span><strong id="auth-signup-name-preview">Tu espacio en Prisma</strong><small>Un perfil que se parece más a ti</small></span>
-          </div>
-          <fieldset class="auth-avatar-field">
-            <legend>Elige tu avatar <small>· Podrás cambiarlo después</small></legend>
-            <div class="auth-avatar-choices" id="auth-signup-avatar-choices" role="radiogroup" aria-label="Avatar para tu nueva cuenta"></div>
-          </fieldset>
-        </div>
         <label>Correo electrónico
           <input type="email" id="auth-email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="tu@correo.com">
         </label>
