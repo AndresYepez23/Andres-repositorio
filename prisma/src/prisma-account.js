@@ -504,7 +504,7 @@ async function signInProvider(provider){
  }
 }
 function signupRedirectUrl(){
- const target=new URL(location.href);
+ const target=new URL(location.origin+location.pathname);
  target.searchParams.set('prisma_welcome','1');
  return target.toString();
 }
