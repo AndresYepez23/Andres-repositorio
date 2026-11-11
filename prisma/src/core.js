@@ -2237,8 +2237,10 @@ export function initPrismaCore(){
   document.addEventListener('prisma:core-rename-request',renameActiveChat);
   document.addEventListener('prisma:core-delete-request',deleteActiveChat);
   document.addEventListener('prisma:remote-chats-ready',event=>{
-    if(busy||executionActive)return;
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
+    // Always merge cloud updates, including while a tool is executing.
+    // Only defer the visual re-render until the active response finishes.
+    if(!remote&&(busy||executionActive))return;
     if(remote){
       // Cloud sync may lag behind a just-completed reply; never discard local messages.
       const synced=mergeConversationLists(remote,conversations).filter(hasConversationMessages);
@@ -2250,6 +2252,7 @@ export function initPrismaCore(){
       try{localStorage.setItem(CHATS_KEY,JSON.stringify(persisted));}catch{}
       queueConversationSnapshot(persisted).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
     }else loadChatHistory();
+    if(busy||executionActive)return;
     renderConversationList();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
   });
   document.addEventListener('prisma:clear-local-history',()=>{
