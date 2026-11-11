@@ -571,7 +571,8 @@
         },
         {
           "title": "Corrige en una copia",
-          "body": "Haz los ajustes necesarios en tu herramienta de hoja de cálculo o editor y vuelve a inspeccionar el archivo."
+          "body": "Haz los ajustes necesarios en tu herramienta de hoja de cálculo o editor y vuelve a inspeccionar el archivo.",
+          "toolId": "csv-profile-local"
         }
       ],
       "primaryPageSlug": "auditar-archivo-csv",
@@ -637,7 +638,8 @@
         },
         {
           "title": "Contrasta y corrige",
-          "body": "Compara el resultado con la guía de estilo y las instrucciones de tu facultad o revista."
+          "body": "Compara el resultado con la guía de estilo y las instrucciones de tu facultad o revista.",
+          "toolId": "citation-generator"
         }
       ],
       "primaryPageSlug": "generador-citas-apa-vancouver",
