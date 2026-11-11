@@ -197,6 +197,30 @@ test('exact PDF pages: relative, named and grouped ranges preserve user selectio
  assert.throws(()=>planPdfSplit({mode:'selected',pages:'last:9'},6),/No hay tantas páginas/);
  assert.throws(()=>planPdfSplit({mode:'selected',pages:'penultima'},1),/penúltima/);
 });
+test('natural singular-page references and video orientations route to their real tools',()=>{
+ const pages=[
+  ['Extrae únicamente la página 3','pdf-extract',{pages:'3'}],
+  ['Extrae la página 2','pdf-extract',{pages:'2'}],
+  ['Elimina la página 4','pdf-remove-pages',{pages:'4'}]
+ ];
+ for(const [text,id,params] of pages){
+   const core=planCapabilityRequest(text,pdf),dev=planWithPrismaCore({text,files:pdf});
+   assert.deepEqual(ids(core),[id],text);
+   assert.deepEqual(ids(dev.planner),[id],text);
+   for(const [key,value] of Object.entries(params))assert.equal(core.steps[0].params[key],value,text);
+ }
+ const video=[new File(['test'],'video.mp4',{type:'video/mp4'})];
+ for(const [text,orientation] of [
+  ['Cambia este vídeo a formato vertical','vertical'],
+  ['Pasa este vídeo a horizontal','landscape'],
+  ['Adapta el vídeo a cuadrado','square']
+ ]){
+  const core=planCapabilityRequest(text,video),dev=planWithPrismaCore({text,files:video});
+  assert.deepEqual(ids(core),['video-resize'],text);
+  assert.deepEqual(ids(dev.planner),['video-resize'],text);
+  assert.equal(dev.planner.steps[0].params.resolution,orientation,text);
+ }
+});
 test('multi-step intent does not silently lose conversion or compression',()=>{
  const req='Comprime esta imagen a menos de 200 KB y conviértela a PNG';
  const core=planCapabilityRequest(req,picture), dev=planWithPrismaCore({text:req,files:picture});
