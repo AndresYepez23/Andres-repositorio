@@ -576,6 +576,63 @@
         ]
       ],
       "note": "No introduzcas secretos, claves privadas ni credenciales en herramientas públicas. Verifica las salidas dentro de tu propio entorno de desarrollo."
+    },
+    {
+      "slug": "crear-contenido-con-ia",
+      "title": "Crear contenido con inteligencia artificial | Prisma Space",
+      "h1": "Crea borradores y recursos con herramientas de IA",
+      "description": "Explora asistentes de escritura, generación de imágenes, mejora de prompts y voz con IA, revisando los requisitos de cada motor.",
+      "primaryQuery": "crear contenido con inteligencia artificial",
+      "intro": "La IA puede ayudar a pasar de una idea a un primer borrador, proponer alternativas o preparar recursos creativos. Para obtener resultados útiles, define el público, el objetivo y las restricciones; después revisa datos, derechos y tono antes de publicar. Las funciones de Prisma están en beta o dependen de proveedores y claves disponibles.",
+      "toolIds": [
+        "ai-assistant",
+        "ai-prompt-lab",
+        "image-gen",
+        "ai-voice",
+        "music-lyrics",
+        "ai-text-review",
+        "ai-action-plan",
+        "ai-compare-options"
+      ],
+      "categorySlugs": [
+        "inteligencia-artificial"
+      ],
+      "guideSlugs": [
+        "transcribir-audio-con-ia"
+      ],
+      "steps": [
+        {
+          "title": "Define la tarea y el contexto",
+          "body": "Explica el objetivo, el público, el formato y las restricciones. Evita incluir información privada o secretos.",
+          "toolId": "ai-prompt-lab"
+        },
+        {
+          "title": "Prepara un primer borrador",
+          "body": "Usa el asistente de texto para estructurar ideas o redactar una primera versión que puedas revisar.",
+          "toolId": "ai-assistant"
+        },
+        {
+          "title": "Crea o adapta un recurso",
+          "body": "Cuando la función esté disponible, utiliza el generador de imágenes o voz para preparar un recurso complementario.",
+          "toolId": "image-gen"
+        },
+        {
+          "title": "Revisa antes de utilizarlo",
+          "body": "Comprueba hechos, derechos de uso, sesgos, tono y datos sensibles. No publiques una salida de IA sin revisión humana.",
+          "toolId": "ai-text-review"
+        }
+      ],
+      "faqs": [
+        [
+          "¿El contenido generado por IA está listo para publicar?",
+          "No necesariamente. Revisa exactitud, tono, originalidad, derechos y políticas de la plataforma antes de utilizarlo."
+        ],
+        [
+          "¿Todas las funciones de IA tienen uso gratuito?",
+          "No. Algunas están en beta, requieren proveedor conectado o clave propia y pueden consumir créditos externos."
+        ]
+      ],
+      "note": "Las funciones de IA pueden cambiar según proveedor, disponibilidad y cuotas. No introduzcas datos confidenciales ni presentes contenido generado como información verificada sin comprobarlo."
     }
   ]
 }
