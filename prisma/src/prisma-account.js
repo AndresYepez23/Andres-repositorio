@@ -190,8 +190,8 @@ function updateTabs(){
  if(title)title.textContent=signup?'Crear cuenta en Prisma':'Accede a tu cuenta';
  const description=$('#auth-email-description');
  if(description)description.textContent=signup
-  ?'Crea tu espacio personal con un correo y una contraseña segura.'
-  :'Bienvenido de nuevo. Introduce tus datos para continuar.';
+  ?'Continúa con Google o crea tu cuenta con correo. Personaliza tu avatar después.'
+  :'Bienvenido de nuevo. Continúa con Google o introduce tus datos.';
  const submit=$('#auth-submit');
  if(submit)submit.textContent=signup?'Crear mi cuenta':'Iniciar sesión';
  $('#auth-reset')?.classList.toggle('hidden',signup);
