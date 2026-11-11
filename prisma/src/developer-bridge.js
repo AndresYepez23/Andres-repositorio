@@ -77,7 +77,7 @@ async function registerSession() {
     cache: "no-store",
     redirect: "error",
     headers: { ...HEADERS, Authorization: "Bearer " + accessToken },
-    body: JSON.stringify({ device: "Prisma Space · " + (navigator.userAgent.includes("Mobile") ? "Móvil" : "Navegador") })
+    body: JSON.stringify({ device: "Prisma Space · " + (navigator.userAgent.includes("Mobile") ? "Móvil" : "Navegador") + " · archivos-ChatGPT-v2" })
   });
   if (!response.ok) {
     dispatchStatus(response.status === 401 ? "owner-required" : "unavailable", { httpStatus: response.status });
