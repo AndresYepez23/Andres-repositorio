@@ -27,6 +27,8 @@ import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsa
 import { selectImageCandidates, imageFailureDecision } from '../src/image-routing.js';
 import { runLocalCreatorTool } from '../src/local-creator-tools.js';
 import { compareJsonDocuments, extractAcademicIdentifiers, redactSensitiveText } from '../src/advanced-text-tools.js';
+import { speechIntent, inlineSpeechText } from '../src/core-speech-intent.js';
+import { captureScrollAnchor, restoreScrollAnchor } from '../src/core-scroll.js';
 
 // Smoke test the same registry and zero-API router that ship to the PWA.
 // No provider keys, no model downloads, no cloud quotas and no user files.
@@ -258,7 +260,7 @@ assert.equal(isAcknowledgementMessage('Gracias'),true);
 assert.equal(isAcknowledgementMessage('Muy buena canción, crea otra'),false);
 assert.match(buildAcknowledgementReply('Muy buena canción','Aquí está la letra completa de la canción.'),/esta misma/);
 assert.match(buildAcknowledgementReply('Gracias',''),/Con gusto/);
-const directTaskStart=coreSource.indexOf('function directCoreTask(text){');
+const directTaskStart=coreSource.indexOf('function directCoreTask(text,history=[]){');
 const directTaskEnd=coreSource.indexOf('async function answerConversation',directTaskStart);
 assert.ok(directTaskStart>=0&&directTaskEnd>directTaskStart,'Core conversation task router not found');
 const directTask=new Function('attachments',coreSource.slice(directTaskStart,directTaskEnd)+';return directCoreTask;')([]);
@@ -268,6 +270,53 @@ assert.equal(directTask('Analiza las consecuencias de tres estrategias'),'reason
 assert.equal(directTask('Me encanta la canción'),'conversation');
 assert.equal(directTask('Crea una canción original'),'songwriting');
 assert.equal(directTask('Una canción sobre esperanza'),'songwriting');
+assert.equal(directTask('Dame una canción'),'songwriting-clarify',
+ 'A broad song request should ask for a style before composing.');
+assert.equal(directTask('Dame una canción sobre esperanza'),'songwriting',
+ 'A song request with a clear theme can proceed without another question.');
+assert.equal(directTask('urbana',[
+ {role:'user',content:'Dame una canción'},
+ {role:'assistant',content:'¡Claro! ¿Qué estilo de canción te gustaría: urbana, romántica, cristiana, pop, vallenato u otro?'}
+]),'songwriting','A short answer to the style question must continue the original song request.');
+assert.equal(speechIntent('Federico tiene cojones convierte a audio'),true);
+assert.equal(inlineSpeechText('Federico tiene cojones convierte a audio'),'Federico tiene cojones',
+ 'TTS must extract the text when the conversion command is at the end.');
+assert.equal(inlineSpeechText('Federico tiene cojones, conviértelo a audio.'),'Federico tiene cojones');
+assert.equal(inlineSpeechText('Convierte a audio Federico tiene cojones'),'Federico tiene cojones',
+ 'TTS must continue supporting the conversion command at the beginning.');
+assert.equal(inlineSpeechText('Convierte Federico tiene cojones a audio'),'Federico tiene cojones');
+assert.equal(speechIntent('Transcribe este audio a texto'),false);
+
+const makeRow=(id,top,bottom)=>({dataset:{messageId:id},getBoundingClientRect:()=>({top,bottom})});
+const scrollBox={
+ scrollTop:200,scrollHeight:1000,clientHeight:300,clientTop:0,
+ children:[makeRow('visible-message',70,120),makeRow('later-message',150,200)],
+ getBoundingClientRect:()=>({top:100,bottom:400})
+};
+const scrollSnapshot=captureScrollAnchor(scrollBox);
+assert.equal(scrollSnapshot.nearBottom,false);
+assert.equal(scrollSnapshot.anchorId,'visible-message');
+scrollBox.scrollTop=0;
+scrollBox.children=[makeRow('visible-message',150,200),makeRow('later-message',230,280)];
+restoreScrollAnchor(scrollBox,scrollSnapshot);
+assert.equal(scrollBox.scrollTop,80,'A re-render must preserve the visible message anchor.');
+scrollBox.scrollTop=680;
+const bottomSnapshot=captureScrollAnchor(scrollBox);
+assert.equal(bottomSnapshot.nearBottom,true);
+scrollBox.scrollTop=0;
+restoreScrollAnchor(scrollBox,bottomSnapshot);
+assert.equal(scrollBox.scrollTop,700,'Users already at the bottom should continue following new messages.');
+
+const remoteStart=coreSource.indexOf("document.addEventListener('prisma:remote-chats-ready'");
+const remoteEnd=coreSource.indexOf("document.addEventListener('prisma:clear-local-history'",remoteStart);
+const remoteHandler=coreSource.slice(remoteStart,remoteEnd);
+assert.match(remoteHandler,/renderMessages\(\{preserveScroll:true\}\)/,
+ 'Remote history sync must preserve the current reading position.');
+assert.match(remoteHandler,/if\(activeConversationChanged\)renderMessages\(\{forceBottom:true\}\);\s*else renderMessages\(\{preserveScroll:true\}\)/,
+ 'Only a real active-conversation switch may reset the scroll position.');
+assert.match(coreSource,/renderMessages\(\{preserveScroll:true\}\)/,
+ 'Asynchronous IndexedDB restoration must preserve the reading position.');
+
 assert.match(coreSource,/core-message-row/,'messages must render inside a shared alignment lane');
 assert.match(stylesSource,/body\.is-core-view \.core-message-row/,'chat lane layout CSS is missing');
 assert.equal(directTask('Muy buena canción, crea otra'),'songwriting');
