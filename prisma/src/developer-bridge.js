@@ -6,8 +6,28 @@ import { runWorkflow, workflows } from "./workflows.js";
 import { tools } from "./registry.js";
 
 const BRIDGE_URL = "https://prisma-developer-mcp.andressimonyepezarrieta23.workers.dev";
-const SESSION_KEY = "prisma-developer-bridge-session-v2";
+// The build step stamps this with the currently deployed engine version.
+const RUNTIME_BUILD_ID = "__PRISMA_RUNTIME_BUILD_ID__";
+const ENGINE_GENERATION = "core-precision-v3";
+const SESSION_KEY = "prisma-developer-bridge-session-v3";
 const HEADERS = { "Content-Type": "application/json" };
+let nextVersionProbe = 0;
+let isReloadingForUpdate = false;
+async function checkForEngineUpdate() {
+  if (activeJob || document.hidden || isReloadingForUpdate || Date.now() < nextVersionProbe ||
+      RUNTIME_BUILD_ID.startsWith("__PRISMA_RUNTIME_")) return;
+  nextVersionProbe = Date.now() + 90_000;
+  try {
+    const response = await fetch("/prisma-build.json", { cache: "no-store" });
+    if (!response.ok) return;
+    const remote = await response.json();
+    if (typeof remote?.build === "string" && remote.build !== RUNTIME_BUILD_ID) {
+      isReloadingForUpdate = true;
+      dispatchStatus("updating", { message: "Prisma recibió una versión más reciente. Actualizando el motor para ejecutar las tareas de forma segura." });
+      window.location.reload();
+    }
+  } catch { /* temporary offline mode; never interrupt an ongoing job */ }
+}
 let initialized = false;
 let running = false;
 let pollTimer = 0;
@@ -77,7 +97,7 @@ async function registerSession() {
     cache: "no-store",
     redirect: "error",
     headers: { ...HEADERS, Authorization: "Bearer " + accessToken },
-    body: JSON.stringify({ device: "Prisma Space · " + (navigator.userAgent.includes("Mobile") ? "Móvil" : "Navegador") + " · archivos-ChatGPT-v2" })
+    body: JSON.stringify({ device: "Prisma Space · " + (navigator.userAgent.includes("Mobile") ? "Móvil" : "Navegador") + " · archivos-ChatGPT-v3 · " + ENGINE_GENERATION })
   });
   if (!response.ok) {
     dispatchStatus(response.status === 401 ? "owner-required" : "unavailable", { httpStatus: response.status });
@@ -351,6 +371,8 @@ async function executeJob(job) {
 
 async function pollOnce() {
   if (!running || !sessionToken || activeJob) return;
+  await checkForEngineUpdate();
+  if (isReloadingForUpdate) return;
   const response = await bridgeRequest("/bridge/poll", {
     method: "POST",
     body: JSON.stringify({ attachments: metadata(getPrismaCoreAttachments()) })

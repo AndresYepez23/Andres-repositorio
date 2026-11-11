@@ -21,9 +21,19 @@ for (const dir of ["src", "assets"]) {
   await cp(new URL("./" + dir, import.meta.url), new URL("./dist/" + dir, import.meta.url), { recursive: true });
 }
 
-// Cache version changes on every deploy; prevent stale PWA shells and exclude API/auth responses.
+// Stamp the deployed bridge and public build manifest with the same immutable
+// generation. An idle PWA can detect stale JS and reload before claiming jobs.
+const deploymentBuild = /^[a-f0-9]{7,40}$/i.test(process.env.CF_PAGES_COMMIT_SHA || "")
+  ? process.env.CF_PAGES_COMMIT_SHA : Date.now().toString(36);
+const bridgePath = new URL("./dist/src/developer-bridge.js", import.meta.url);
+const bridgeSource = await readFile(bridgePath, "utf8");
+if(!bridgeSource.includes("__PRISMA_RUNTIME_BUILD_ID__"))
+  throw new Error("Prisma Developer bridge lost its build version token.");
+await writeFile(bridgePath, bridgeSource.replace("__PRISMA_RUNTIME_BUILD_ID__", deploymentBuild));
+await writeFile(new URL("./dist/prisma-build.json", import.meta.url),
+  JSON.stringify({ build: deploymentBuild, engineGeneration: "core-precision-v3" }));
 const sw = await readFile(new URL("./sw.js", import.meta.url), "utf8");
-await writeFile(new URL("./dist/sw.js", import.meta.url), sw.replace("__BUILD_VERSION__", Date.now().toString(36)));
+await writeFile(new URL("./dist/sw.js", import.meta.url), sw.replace("__BUILD_VERSION__", deploymentBuild));
 await generateSeoPages(output);
 // Validate the generated static HTML as part of the Cloudflare deployment gate.
 await import("./tests/seo-build.test.mjs");
