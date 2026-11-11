@@ -1,4 +1,4 @@
-import { planCapabilityRequest } from './core-capabilities.js';
+import { planCapabilityRequest, isInformationalIntent } from './core-capabilities.js';
 import { planFileConversion } from './file-conversions.js';
 import { tools, categories } from "./registry.js";
 import {
@@ -140,8 +140,14 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
   // Use the same capability and conversion resolvers as the user-facing Core.
   // A newer format follow-up must never revive an older PDF split.
   const capabilityPlan = planCapabilityRequest(request,safeAttachments);
-  const conversionPlan = planFileConversion(request,safeAttachments,recent);
-  const bestReady = ready(conversionPlan)?{source:"prisma-conversion-routing",...conversionPlan}
+  // An informational question cannot become a destructive conversion through
+  // a lower-priority text matcher (e.g. "¿Puedes convertir este PDF?").
+  const conversionPlan = isInformationalIntent(request)?null:planFileConversion(request,safeAttachments,recent);
+  // A multi-step request outranks a single conversion; do not silently
+  // discard "compress" when someone asks "compress and convert to PNG".
+  const bestReady = ready(capabilityPlan)&&capabilityPlan.steps.length>1
+    ? {source:"prisma-core-capabilities",...capabilityPlan}
+    : ready(conversionPlan)?{source:"prisma-conversion-routing",...conversionPlan}
     : ready(capabilityPlan)?{source:"prisma-core-capabilities",...capabilityPlan}:null;
   const selected = bestReady || (capabilityPlan
     ? {source:"prisma-core-capabilities",...capabilityPlan}

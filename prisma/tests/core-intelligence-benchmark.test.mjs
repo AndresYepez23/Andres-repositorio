@@ -153,6 +153,61 @@ test('Prisma Developer uses current PDF intent and latest format after upload',(
  const fresh=planWithPrismaCore({text:'Dividir PDF',files,history:['Pasar de PDF a Word','A Word']});
  assert.deepEqual(fresh.planner.steps.map(s=>s.tool_id),['pdf-split']);
 });
+test('real-user safety: questions and negative instructions never trigger PDF or image edits',()=>{
+ const specs=[
+  ['¿Cuál es la última página de este PDF?',pdf,'needs-input'],
+  ['Explícame cómo dividir este PDF',pdf,'needs-input'],
+  ['¿Puedes convertir este PDF a Word?',pdf,'needs-input'],
+  ['No extraigas la última página del PDF, solo explica su estructura',pdf,'needs-input'],
+  ['No comprimas la imagen',picture,'needs-input']
+ ];
+ for(const [query,files,expected] of specs){
+  const a=planCapabilityRequest(query,files);
+  const b=planWithPrismaCore({text:query,files});
+  assert.equal(a?.type,expected,query+' Core');
+  assert.equal(b.planner.type,expected,query+' Developer');
+  assert.deepEqual(ids(b.planner),[],query);
+ }
+ assert.deepEqual(ids(planCapabilityRequest('No quites el fondo, solamente comprime la imagen',picture)),['image-compress']);
+ assert.deepEqual(ids(planCapabilityRequest('No dividas el PDF, conviértelo a Word',pdf)),['pdf-to-word']);
+ const noTrim=planWithPrismaCore({text:'No recortes el vídeo, solo comprímelo sin cambiar duración',files:[new File(['v'],'v.mp4',{type:'video/mp4'})]});
+ assert.deepEqual(ids(noTrim.planner),['video-compress']);
+});
+test('exact PDF pages: relative, named and grouped ranges preserve user selections',()=>{
+ const named=[
+  ['La última página',['pdf-split'],{mode:'selected',pages:'last'},[[5]]],
+  ['Extrae la primera y la última página',['pdf-extract'],{pages:'first,last'},null],
+  ['Extrae las últimas dos páginas',['pdf-extract'],{pages:'last:2'},null],
+  ['Extrae la penúltima página',['pdf-extract'],{pages:'penultima'},null],
+  ['Elimina la última página de este PDF',['pdf-remove-pages'],{pages:'last'},null],
+  ['Divide este PDF en dos archivos: páginas 1-3 y 4-6',['pdf-split'],{mode:'ranges',ranges:'1-3;4-6'},[[0,1,2],[3,4,5]]],
+  ['Separa la página 6 y la 2 en dos archivos',['pdf-split'],{mode:'selected',pages:'6,2'},[[1],[5]]],
+  ['Gira únicamente las páginas 2 y 3 90 grados',['pdf-rotate'],{pages:'2,3',degrees:90},null]
+ ];
+ for(const [query,expected,params,groups] of named){
+  const a=planCapabilityRequest(query,pdf);
+  const b=planWithPrismaCore({text:query,files:pdf});
+  assert.deepEqual(ids(a),expected,query+' Core');
+  assert.deepEqual(ids(b.planner),expected,query+' Developer');
+  const p=a.steps[0].params;
+  for(const [key,value] of Object.entries(params))assert.deepEqual(p[key],value,query+' '+key);
+  if(groups)assert.deepEqual(planPdfSplit(p,6).groups.map(x=>x.indices),groups,query+' groups');
+ }
+ assert.deepEqual(planPdfSplit({mode:'ranges',ranges:'first,last;2-4'},6).groups.map(x=>x.indices),[[0,5],[1,2,3]]);
+ assert.throws(()=>planPdfSplit({mode:'selected',pages:'last:9'},6),/No hay tantas páginas/);
+ assert.throws(()=>planPdfSplit({mode:'selected',pages:'penultima'},1),/penúltima/);
+});
+test('multi-step intent does not silently lose conversion or compression',()=>{
+ const req='Comprime esta imagen a menos de 200 KB y conviértela a PNG';
+ const core=planCapabilityRequest(req,picture), dev=planWithPrismaCore({text:req,files:picture});
+ assert.deepEqual(ids(core),['image-compress','image-convert']);
+ assert.deepEqual(ids(dev.planner),['image-compress','image-convert']);
+ assert.equal(core.steps[0].params.maxBytes,200*1024);
+ assert.equal(core.steps[1].params.format,'image/png');
+ const p=planCapabilityRequest('Quita el fondo, comprime y extrae los colores',picture);
+ assert.deepEqual(ids(p),['image-bg','image-compress','image-palette']);
+ assert.equal(planCapabilityRequest('Explícame cómo funciona JSON',[]),null,'Information without files remains a regular conversation');
+});
 test('telemetry rejects personal data fields and never exposes a read endpoint',async()=>{
  assert.deepEqual(metricEvent('word-count','succeeded',{text:'SECRET',filename:'personal.pdf',duration:20,files:2}),{id:'word-count',event:'succeeded',duration:20,files:2});
  assert.equal(metricEvent('arbitrary-secret','succeeded'),null);

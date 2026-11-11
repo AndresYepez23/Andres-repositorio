@@ -3,11 +3,26 @@
 export function parsePdfPageSelection(value,total){
  const chosen=new Set(),spec=String(value??'').trim();
  if(!spec)throw Error('Indica las páginas que deseas separar, por ejemplo 2, 4-6.');
- const normalized=spec.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- if(/^(?:la\s+)?(?:ultima|ultimo|last)(?:\s+(?:pagina|hoja))?$/.test(normalized))return [total-1];
- for(const part of spec.split(',')){
-  const found=part.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);
-  if(!found)throw Error('Formato de páginas inválido. Usa números y rangos: 2, 4-6.');
+ const normalized=spec.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const normalizedParts=normalized.split(',').map(s=>s.trim()).filter(Boolean);
+ if(!normalizedParts.length)throw Error('Selecciona al menos una página.');
+ for(const rawPart of normalizedParts){
+  const part=rawPart.replace(/^(?:la|el)\s+/,'').replace(/\s+(?:pagina|paginas|hoja|hojas)$/,'');
+  if(/^(?:ultima|ultimo|last)$/.test(part)){chosen.add(total-1);continue;}
+  if(/^(?:primera|primero|first)$/.test(part)){chosen.add(0);continue;}
+  if(/^(?:penultima|penultimo|second-last)$/.test(part)){
+   if(total<2)throw Error('El documento no tiene penúltima página.');
+   chosen.add(total-2);continue;
+  }
+  const final=part.match(/^last:(\d+)$/);
+  if(final){
+   const n=Number(final[1]);
+   if(!Number.isSafeInteger(n)||n<1||n>total)throw Error('No hay tantas páginas al final del PDF.');
+   for(let page=total-n;page<total;page++)chosen.add(page);
+   continue;
+  }
+  const found=part.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+  if(!found)throw Error('Formato de páginas inválido. Usa 2, 4-6, first, last o last:2.');
   const from=Number(found[1]),to=found[2]?Number(found[2]):from;
   if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<1||to<from||to>total)
    throw Error('El rango de páginas está fuera del documento (1-'+total+').');
