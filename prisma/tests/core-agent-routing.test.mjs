@@ -514,8 +514,8 @@ const transientResult=await requestWithCredentialPool(transientEnv,'openrouter',
  transientSlots.push(slot);
  return new Response(slot===1?'upstream error':'ok',{status:slot===1?503:200});
 },{startIndex:0});
-assert.equal(transientResult.status,200);
-assert.deepEqual(transientSlots,[1,2],'transient upstream errors may try one backup key only');
+assert.equal(transientResult.status,503);
+assert.deepEqual(transientSlots,[1],'Provider-wide 5xx outages must not rotate through equivalent API keys');
 
 const requestyThreeSlotEnv=mockCredentialEnv({
  REQUESTY_API_KEYS_JSON:JSON.stringify(['r1','r2','r3'])
