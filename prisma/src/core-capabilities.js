@@ -48,10 +48,35 @@ export function extractPayload(raw){
  const quote=s.match(/[“"]([^”"]+)[”"]\s*$/);if(quote)return {instruction:s.slice(0,quote.index),text:quote[1]};
  return {instruction:s,text:''};
 }
+// Questions and explanations are NOT permission to modify an uploaded file.
+// Keep this guard shared by Core chat and Prisma Developer's MCP planner.
+export function isInformationalIntent(raw){
+ const {instruction}=extractPayload(raw);
+ const q=normalizeIntent(instruction).trim().replace(/^[¿¡\s]+/,'');
+ return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
+  /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|dime|informame)\b/.test(q);
+}
+function positiveClauses(original) {
+ const parts=original.split(/[,;]|\bpero\b|\s+y\s+(?=(?:no|solo|solamente|unicamente)\b)/).map(v=>v.trim()).filter(Boolean);
+ let negated=0;
+ const keep=[];
+ for(const raw of parts){
+  const c=raw.replace(/^(?:y|pero)\s+/,'');
+  if(/^(?:no\s+(?:quiero|necesito|vayas|hagas|uses|utilices|extraigas|dividas|elimines|quites|borres|conviertas|recortes|comprimas|gires|rot[ae]s|cambies|reduzcas|generes|exportes|guardes|incluyas)\b|sin\s+(?:recortar|extraer|dividir|eliminar|quitar|borrar|convertir|generar|rotar)\b)/.test(c)){negated++;continue;}
+  keep.push(c.replace(/^(?:solo|solamente|unicamente)\s+/,''));
+ }
+ return {value:keep.join(', '),negated};
+}
 const need=message=>({type:'needs-input',message,steps:[],confidence:0});
 const mime=q=>/\bwebp\b/.test(q)?'image/webp':/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'';
 export function planCapabilityRequest(raw,files=[],task=null){
  let {instruction,text}=extractPayload(raw);let q=normalizeIntent(instruction).trim();
+ if(isInformationalIntent(raw))return need('Esta es una consulta informativa: no modificaré el archivo. Puedo explicarte la herramienta y sus límites; solicita explícitamente una operación cuando quieras ejecutarla.');
+ const positive=positiveClauses(q);
+ if(positive.negated&&!positive.value)return need('Entendido: no ejecutaré la operación que has descartado. Indica qué quieres hacer en su lugar.');
+ if(positive.negated)q=positive.value;
+ if(positive.negated&&/^(?:explica|describe|dime|indica|informa)\b/.test(q))
+  return need('No modificaré el archivo: has solicitado información, no una transformación.');
  q=q.replace(/\bsin cambiar (?:las )?dimensiones\b/g,'conservando dimensiones');
  if(task?.text&&!text&&/^(?:ahora|tambien|mejor|con menos)/.test(q))text=task.text;
  if(task&&/^ahora al contrario[.!\s]*$/.test(q)){
@@ -74,11 +99,45 @@ export function planCapabilityRequest(raw,files=[],task=null){
  const kinds=new Set(files.map(fileKind));
  let kind=kinds.size===1?[...kinds][0]:/\b(?:foto|imagen|fotograf|png|webp)\w*\b/.test(q)?'image':/\bpdf\b/.test(q)?'pdf':'text';
  if(kinds.size>1)return need('Hay tipos de archivo distintos. Selecciona un grupo compatible para procesarlo sin omitir archivos.');
- // A relative page means one exact output, not a split of every page.
- // Resolve "last" only after the PDF engine knows its actual page count.
- if(kind==='pdf'&&/\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)&&!/\b(?:elimina|quita|borra)\b/.test(q)){
-  if(!files.length)return need('Adjunta el PDF para extraer únicamente su última página.');
-  return {type:'ready',confidence:1,message:'Extraeré solo la última página del PDF en un archivo independiente.',steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:'last'},reason:'Seleccionar exclusivamente la última página'}]};
+ // Resolve page numbers with the *actual* PDF page count at execution time.
+ // Questions are filtered above, and negative clauses cannot trigger edits.
+ if(kind==='pdf'){
+  const single=id=>({type:'ready',confidence:1,message:'Procesaré únicamente las páginas indicadas.',steps:[{tool_id:id,params:{pages:'last'},reason:'Referencia relativa a la última página'}]});
+  if(/\b(?:elimina|quita|borra)\b.*\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para eliminar su última página.');
+   return single('pdf-remove-pages');
+  }
+  if(/(?:primera|primer)\s+(?:y\s+(?:la\s+)?)?(?:ultima|ultimo)\s+(?:pagina|hoja)|(?:primera|primer)\s+(?:pagina|hoja)\s+y\s+(?:la\s+)?(?:ultima|ultimo)/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer la primera y la última página.');
+   return {type:'ready',confidence:1,message:'Extraeré la primera y la última página en un único PDF.',steps:[{tool_id:'pdf-extract',params:{pages:'first,last'},reason:'Extraer dos páginas relativas sin suponer el total'}]};
+  }
+  if(/\b(?:ultimas|ultimos)\s+(?:dos|2)\s+(?:paginas|hojas)\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer sus dos últimas páginas.');
+   return {type:'ready',confidence:1,message:'Extraeré las dos últimas páginas en un único PDF.',steps:[{tool_id:'pdf-extract',params:{pages:'last:2'},reason:'Dos últimas páginas relativas al total'}]};
+  }
+  if(/\b(?:penultima|penultimo)\s+(?:pagina|hoja)\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer su penúltima página.');
+   return {type:'ready',confidence:1,message:'Extraeré únicamente la penúltima página.',steps:[{tool_id:'pdf-extract',params:{pages:'penultima'},reason:'Referencia relativa penúltima página'}]};
+  }
+  if(/\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer únicamente su última página.');
+   return {type:'ready',confidence:1,message:'Extraeré solo la última página del PDF en un archivo independiente.',steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:'last'},reason:'Seleccionar exclusivamente la última página'}]};
+  }
+  const splitting=/\b(?:divide|dividir|separa|separar|partir|parte)\b/.test(q);
+  const ranges=[...q.matchAll(/\b(\d{1,5})\s*[-–]\s*(\d{1,5})\b/g)].map(m=>m[1]+'-'+m[2]);
+  if(splitting&&ranges.length>=2){
+   if(!files.length)return need('Adjunta el PDF para dividirlo por los rangos que indicaste.');
+   return {type:'ready',confidence:1,message:'Dividiré el PDF en '+ranges.length+' rangos exactos, sin repartir páginas arbitrariamente.',steps:[{tool_id:'pdf-split',params:{mode:'ranges',ranges:ranges.join(';')},reason:'Respetar los límites explícitos de cada grupo'}]};
+  }
+  const twoDistinct=q.match(/\b(?:pagina|paginas|hoja|hojas)\s+(\d+)\s+y\s+(?:la\s+)?(\d+)\b/);
+  if(splitting&&twoDistinct&&/\b(?:dos|2)\s+archivos\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer las páginas por separado.');
+   return {type:'ready',confidence:1,message:'Crearé un PDF independiente por cada página seleccionada.',steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:twoDistinct[1]+','+twoDistinct[2]},reason:'Páginas específicas, no partes iguales'}]};
+  }
+ }
+ if(kind==='video'&&/\b(?:comprim|comprime|comprimir|reduce\s+(?:el\s+)?peso|optimiza)\w*\b/.test(q)&&!/\b(?:recorta|corta)\b/.test(q)){
+  if(!files.length)return need('Adjunta el vídeo que quieres comprimir.');
+  return {type:'ready',confidence:1,message:'Comprimiré el vídeo conservando su duración y su pista de audio.',steps:[{tool_id:'video-compress',params:{quality:'balanced'},reason:'Compresión sin recorte de duración'}]};
  }
  if(kind==='image'&&/a pdf|en pdf|como pdf/.test(q))return null;
  if(kind==='pdf'&&/divid|separ|partir|fragment|troce/.test(q)&&!/(?:paginas|hojas)\s*\d/.test(q))return buildSmartLocalFlow(raw,files,[]);
@@ -87,11 +146,13 @@ export function planCapabilityRequest(raw,files=[],task=null){
  let found=CAPABILITIES.filter(c=>(c.kind===kind||c.kind==='text'&&!files.length)&&c.pattern.test(q));
  if(!found.length)return null;
  // Negation is not authorization, and unsupported clauses may not disappear.
- if(/\bno\s+(?:comprim|quit|elimin|convier|extra|gener|cambi)/.test(q))return need('Hay una instrucción negativa. Confirma únicamente las operaciones que sí quieres aplicar.');
+ // Explicit negative clauses were removed before matching; positive steps may proceed.
  if(/borra.*objeto|cambia.*fondo|reduc.*ruido|sube.*(?:web|instagram)|publica|envia.*correo/.test(q))return need('La petición incluye una operación que este plan local no puede completar. Separa esa operación para no omitirla.');
  if(found.some(c=>c.id==='image-bg')&&!/(?:a|en) (?:webp|jpe?g)/.test(q))found=found.filter(c=>c.id!=='image-convert');
  if(found.some(c=>c.id==='pdf-extract'))found=found.filter(c=>c.id!=='pdf-split');
- if(found.some(c=>c.id==='image-compress'))found=found.filter(c=>c.id!=='image-convert');
+ if(found.some(c=>c.id==='image-compress')&&found.some(c=>c.id==='image-convert')&&
+    !/\b(?:y|luego|despues|tambien|primero)\b.*\b(?:convierte|convertir|pasa|exporta|guarda)\b/.test(q))
+   found=found.filter(c=>c.id!=='image-convert');
  const clauses=q.split(/[,;]|\s+(?:y|luego|despues|tambien)\s+/);
  const unknown=clauses.find(clause=>/\b(?:cambia|borra|quita|elimina|crea|genera|convierte|traduce|resume|envia|publica|recorta|comprime|extrae|ordena|organiza|redimensiona|rota|gira)\b/.test(clause)&&!found.some(c=>c.pattern.test(clause))&&!/conserva|sin cambiar|dimensiones|calidad/.test(clause)&&!(found.some(c=>c.id==='image-bg')&&/sujeto|detras|objeto/.test(clause)));
  if(unknown)return need('No he podido asociar todas las operaciones a un flujo seguro. Aclara esta parte: «'+unknown.trim().slice(0,120)+'».');
@@ -115,7 +176,15 @@ export function planCapabilityRequest(raw,files=[],task=null){
   if(c.id==='image-resize'){const d=q.match(/(\d{2,4})\s*[x×]\s*(\d{2,4})/);if(!d)return need('Indica ancho y alto en píxeles, por ejemplo 1080 × 720.');p.width=+d[1];p.height=+d[2];p.keep=!/exact|deforma/.test(q);}
   if(['pdf-extract','pdf-remove-pages'].includes(c.id)){const m=q.match(/(?:paginas|hojas)\s*(\d+(?:\s*(?:-|al|a|,|y)\s*\d+)*)/);if(!m)return need('Indica las páginas, por ejemplo 2-4, 7.');p.pages=m[1].replace(/\s+(?:al|a)\s+/g,'-').replace(/\s+y\s+/g,',');}
   if(c.id==='pdf-merge'&&files.length<2)return need('Adjunta al menos dos PDF para unirlos.');
-  if(c.id==='pdf-rotate'){const d=q.match(/(90|180|270)/);if(!d&&!/izquierda|derecha/.test(q))return need('Indica 90, 180 o 270 grados, o izquierda/derecha.');p.degrees=d?+d[1]:/izquierda/.test(q)?270:90;}
+  if(c.id==='pdf-rotate'){
+   const d=q.match(/(90|180|270)/);
+   if(!d&&!/izquierda|derecha/.test(q))return need('Indica 90, 180 o 270 grados, o izquierda/derecha.');
+   p.degrees=d?+d[1]:/izquierda/.test(q)?270:90;
+   const selected=q.match(/(?:paginas?|hojas?)\s+(\d+(?:\s*(?:-|al|a|,|y)\s*\d+)*)/);
+   if(selected)p.pages=selected[1].replace(/\s+(?:al|a)\s+/g,'-').replace(/\s+y\s+/g,',');
+   if(/(?:solo|solamente|unicamente)\s+(?:las?\s+)?(?:paginas?|hojas?)/.test(q)&&!selected)
+    return need('Indica qué páginas deseas girar. No modificaré el resto del documento.');
+  }
   if(c.id==='pdf-watermark'){p.watermark=String(raw).match(/marca de agua\s*(?:que diga|:|=)\s*["“]?([^"”\n]+)/i)?.[1];if(!p.watermark)return need('¿Qué texto debe llevar la marca de agua?');}
   if(c.kind==='text'&&steps.some(s=>CAPABILITIES.find(x=>x.id===s.tool_id)?.kind==='text')&&c.id!=='text-diff')delete p.text;
   steps.push({tool_id:c.id,params:p,reason:'Capacidad y parámetros identificados localmente',input:'current'});
