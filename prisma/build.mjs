@@ -9,6 +9,7 @@ import "./tests/developer-api.test.mjs";
 import "./tests/cloudflare-whisper.test.mjs";
 import "./tests/welcome-email.test.mjs";
 import "./tests/settings-ui.test.mjs";
+import "./tests/core-mobile-prism-layout.test.mjs";
 
 const output = new URL("./dist/", import.meta.url);
 await rm(output, { recursive: true, force: true });
