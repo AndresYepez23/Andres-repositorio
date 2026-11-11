@@ -105,4 +105,30 @@ test('guest buttons open the requested authentication screen without an extra in
   assert.match(account, /export function openPrismaAuth\(mode='intro'\)\{openAccount\(mode\);\}/);
 });
 
+
+test('login and signup tabs both show a working Google entry point', () => {
+  const emailScreen = html.split('id="auth-email-screen"')[1]?.split('id="auth-phone-screen"')[0] || '';
+  assert.match(emailScreen, /id="auth-tab-login"/);
+  assert.match(emailScreen, /id="auth-tab-signup"/);
+  assert.match(emailScreen, /id="auth-google-email"/);
+  assert.match(emailScreen, /Continuar con Google/);
+  assert.ok(emailScreen.indexOf('id="auth-google-email"') < emailScreen.indexOf('id="auth-form"'));
+  assert.match(account, /#auth-google'\),\$\('#auth-google-email'\)/);
+  assert.match(account, /for\(const selector of \['#auth-google','#auth-google-email'\]\)/);
+  assert.match(account, /signInProvider\('google'\)/);
+  assert.match(account, /api\.auth\.signInWithOAuth\(\{/);
+  assert.match(styles, /#auth-modal \.auth-email-provider button/);
+});
+
+test('registration does not require avatar selection, but profile editing retains it', () => {
+  assert.doesNotMatch(html, /id="auth-signup-avatar-choices"/);
+  assert.doesNotMatch(html, /id="auth-signup-personalization"/);
+  assert.doesNotMatch(account, /signupAvatarChoice/);
+  assert.match(html, /id="auth-display-name"/);
+  assert.match(html, /id="auth-password-confirm"/);
+  assert.match(account, /data:\{full_name:chosenName\}/);
+  assert.match(html, /id="auth-profile-avatar-choices"/);
+  assert.match(account, /renderAvatarChoices\('auth-profile-avatar-choices'/);
+  assert.match(account, /api\.auth\.updateUser\(\{data:\{prisma_avatar:avatar\}\}\)/);
+});
 console.log('Prisma account/settings regressions: compact menu, non-dimming surface, preferences, help and send shortcut verified.');
