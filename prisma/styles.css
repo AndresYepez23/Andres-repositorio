@@ -3899,6 +3899,8 @@ body.is-core-view #core-messages.is-empty .core-welcome-gradient-solid{
 body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
   color:#9ddde2;
   -webkit-text-fill-color:#9ddde2;
+  /* A fine outline preserves legibility at normal phone headline sizes. */
+  -webkit-text-stroke:.55px rgba(166,228,232,.58);
 }
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
   body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
@@ -3919,6 +3921,7 @@ body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
 }
 :root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
   color:#3379a5;-webkit-text-fill-color:#3379a5;
+  -webkit-text-stroke:.55px rgba(52,119,150,.52);
 }
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
   :root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
@@ -3929,7 +3932,7 @@ body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
 @media(max-width:620px){
   body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
     /* Smaller phones need more dot density to keep text legible at the same font size. */
-    background-size:4.1px 4.1px;
+    background-size:4.5px 4.5px;
   }
 }
 @media(prefers-reduced-motion:reduce){
