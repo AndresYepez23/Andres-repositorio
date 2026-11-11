@@ -15,8 +15,8 @@ export const CAPABILITIES = [
  ['image-favicon','image',/favicon|iconos.*(?:web|pwa)|crea.*iconos/],
  ['image-grayscale','image',/blanco y negro|escala de grises/],
  ['pdf-merge','pdf',/\b(?:une|unir|junta\w*|combina\w*|fusiona\w*|pega|reune|unifica|agrupa)\b|un (?:solo|unico) pdf|todo en un documento/],
- ['pdf-extract','pdf',/(?:extra|conserva|quedate|saca|solo quiero|guarda|selecciona|aisla|dame|deja|separa|necesito).*(?:paginas|hojas)/],
- ['pdf-remove-pages','pdf',/(?:elimina|quita|borra).*(?:paginas|hojas)/],
+ ['pdf-extract','pdf',/(?:extra|conserva|quedate|saca|solo quiero|guarda|selecciona|aisla|dame|deja|separa|necesito).*(?:paginas?|hojas?)/],
+ ['pdf-remove-pages','pdf',/(?:elimina|quita|borra).*(?:paginas?|hojas?)/],
  ['pdf-split','pdf',/(?:divide|dividir|separa|separar).*(?:pdf|documento|archivos|partes)|una pagina por archivo/],
  ['pdf-text','pdf',/(?:extra|saca|pasa|dame|quiero|lee|obten|copia|necesito|convierte).*?(?:texto|contenido escrito|contenido textual|palabras)|texto del documento|pdf a texto/],
  ['pdf-compress','pdf',/comprim|pese menos|baja\w* el peso|reduce.*peso/],
@@ -145,6 +145,16 @@ export function planCapabilityRequest(raw,files=[],task=null){
    return {type:'ready',confidence:1,message:'Crearé un PDF independiente por cada página seleccionada.',steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:twoDistinct[1]+','+twoDistinct[2]},reason:'Páginas específicas, no partes iguales'}]};
   }
  }
+ if(kind==='video'&&
+    /\b(?:cambia|cambiar|pasa|pasar|convierte|convertir|transforma|adapta|ajusta|redimensiona|pon)\b/.test(q)&&
+    /(?:a|en|como)\s+(?:formato\s+)?(?:vertical|horizontal|cuadrado|apaisado)\b|\bformato\s+(?:vertical|horizontal|cuadrado|apaisado)\b/.test(q)){
+  if(!files.length)return need('Adjunta el vídeo que quieres adaptar.');
+  const resolution=/\b(?:cuadrado)\b/.test(q)?'square':
+    /\b(?:horizontal|apaisado)\b/.test(q)?'landscape':'vertical';
+  return {type:'ready',confidence:1,
+    message:'Adaptaré el vídeo al formato '+(resolution==='square'?'cuadrado':resolution==='landscape'?'horizontal':'vertical')+' conservando su contenido y audio.',
+    steps:[{tool_id:'video-resize',params:{resolution},reason:'Orientación y proporción, no conversión de contenedor'}]};
+ }
  if(kind==='video'&&/\b(?:comprim|comprime|comprimir|reduce\s+(?:el\s+)?peso|optimiza)\w*\b/.test(q)&&!/\b(?:recorta|corta)\b/.test(q)){
   if(!files.length)return need('Adjunta el vídeo que quieres comprimir.');
   return {type:'ready',confidence:1,message:'Comprimiré el vídeo conservando su duración y su pista de audio.',steps:[{tool_id:'video-compress',params:{quality:'balanced'},reason:'Compresión sin recorte de duración'}]};
@@ -184,7 +194,7 @@ export function planCapabilityRequest(raw,files=[],task=null){
    if(target)p.maxBytes=Math.floor(Number(target[1].replace(',','.'))*(target[2]==='mb'?1024*1024:1024));
   }
   if(c.id==='image-resize'){const d=q.match(/(\d{2,4})\s*[x×]\s*(\d{2,4})/);if(!d)return need('Indica ancho y alto en píxeles, por ejemplo 1080 × 720.');p.width=+d[1];p.height=+d[2];p.keep=!/exact|deforma/.test(q);}
-  if(['pdf-extract','pdf-remove-pages'].includes(c.id)){const m=q.match(/(?:paginas|hojas)\s*(\d+(?:\s*(?:-|al|a|,|y)\s*\d+)*)/);if(!m)return need('Indica las páginas, por ejemplo 2-4, 7.');p.pages=m[1].replace(/\s+(?:al|a)\s+/g,'-').replace(/\s+y\s+/g,',');}
+  if(['pdf-extract','pdf-remove-pages'].includes(c.id)){const m=q.match(/(?:paginas?|hojas?)\s*(\d+(?:\s*(?:-|al|a|,|y)\s*\d+)*)/);if(!m)return need('Indica las páginas, por ejemplo 2-4, 7.');p.pages=m[1].replace(/\s+(?:al|a)\s+/g,'-').replace(/\s+y\s+/g,',');}
   if(c.id==='pdf-merge'&&files.length<2)return need('Adjunta al menos dos PDF para unirlos.');
   if(c.id==='pdf-rotate'){
    const d=q.match(/(90|180|270)/);
