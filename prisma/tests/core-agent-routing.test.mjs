@@ -1343,10 +1343,10 @@ const prismaAccountLogic=readFileSync(new URL('../src/prisma-account.js',import.
 const prismaAvatarCss=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
 assert.doesNotMatch(prismaAccountHtml,/id="profile-toggle"[^>]*><span>I<\/span>/);
 assert.match(prismaAccountHtml,/id="profile-avatar-face"[^>]*data-prisma-avatar="prism"/);
-assert.match(prismaAccountHtml,/id="auth-signup-avatar-choices"/);
+assert.doesNotMatch(prismaAccountHtml,/id="auth-signup-avatar-choices"/);
 assert.match(prismaAccountHtml,/id="auth-profile-avatar-choices"/);
-assert.match(prismaAccountHtml,/id="auth-signup-name-preview"/);
-assert.match(prismaAccountLogic,/data:\{full_name:chosenName,prisma_avatar:prismaAvatar\(signupAvatarChoice\)\.id\}/);
+assert.match(prismaAccountHtml,/id="auth-display-name"/);
+assert.match(prismaAccountLogic,/data:\{full_name:chosenName\}/);
 assert.match(prismaAccountLogic,/api\.auth\.updateUser\(\{data:\{prisma_avatar:avatar\}\}\)/);
 assert.match(prismaAccountLogic,/nameInput\.required=signup/);
 assert.match(prismaAccountLogic,/paintAvatar\(\$\('#profile-avatar-face'\),user\?storedAvatar\(\):'prism'\)/);
