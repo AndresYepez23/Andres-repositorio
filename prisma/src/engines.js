@@ -1,7 +1,7 @@
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { recordCoreMetric } from './core-telemetry.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
-import { planPdfSplit } from './pdf-split-options.js';
+import { planPdfSplit, parsePdfPageSelection } from './pdf-split-options.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { extractWebsiteHtml } from './core-intent.js';
 import { compressVideoNative, preferNativeVideoCompression, localizedVideoError } from './video-compression.js';
@@ -22,16 +22,9 @@ const fileName=f=>(f.name||'archivo').replace(/\.[^.]+$/,'');
 const progress=(cb,p,msg)=>cb?.(p,msg);
 const makeBlob=(bytes,type)=>new Blob([bytes],{type});
 function parsePages(value,total){
- const pages=new Set();
- for(const part of String(value||'').split(',')){
-  const s=part.trim();if(!s)continue;
-  const m=s.match(/^(\d+)(?:\s*-\s*(\d+))?$/);if(!m)throw Error('Formato de páginas inválido.');
-  const a=Number(m[1]),b=Number(m[2]||m[1]);if(a<1||b<a||b>total)throw Error('Rango de páginas fuera del documento.');
-  for(let i=a;i<=b;i++)pages.add(i-1);
- }
- if(!pages.size)throw Error('Indica al menos una página.');
- return [...pages].sort((a,b)=>a-b);
+ return parsePdfPageSelection(value,total);
 }
+
 async function pdfTool(id,files,p,cb){
  const {PDFDocument, StandardFonts, rgb, degrees}=await load(PDF_LIB);
  if(id==='pdf-merge'){
@@ -106,7 +99,7 @@ async function pdfTool(id,files,p,cb){
   progress(cb,1,'Se extrajeron '+selected.length+' páginas del PDF.');
   return download(makeBlob(await out.save(),'application/pdf'),fileName(files[0])+'-paginas-seleccionadas.pdf');
  }
- if(id==='pdf-rotate'){src.getPages().forEach(pg=>pg.setRotation(degrees((pg.getRotation().angle+Number(p.degrees))%360)));return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-rotado.pdf');}
+ if(id==='pdf-rotate'){const all=src.getPages(),selected=p.pages?parsePages(p.pages,total):all.map((_,i)=>i);selected.forEach(i=>{const pg=all[i];pg.setRotation(degrees((pg.getRotation().angle+Number(p.degrees))%360));});return {...download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-rotado.pdf'),summary:selected.length+' de '+total+' páginas giradas; el resto conserva su orientación.'};}
  if(id==='pdf-remove-pages'){const ids=parsePages(p.pages,total);ids.sort((a,b)=>b-a).forEach(i=>src.removePage(i));if(!src.getPageCount())throw Error('No puedes eliminar todas las páginas del documento.');return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-sin-paginas.pdf');}
  if(id==='pdf-page-numbers'){const font=await src.embedFont(StandardFonts.Helvetica);src.getPages().forEach((pg,i)=>{const {width,height}=pg.getSize(),text=String(i+1)+' / '+total;const size=10,w=font.widthOfTextAtSize(text,size),position=p.position||'bottom';pg.drawText(text,{x:(width-w)/2,y:position==='top'?height-24:18,size,font,color:rgb(.42,.45,.5),opacity:.9});});return download(makeBlob(await src.save(),'application/pdf'),fileName(files[0])+'-numerado.pdf');}
  if(id==='pdf-watermark'){
@@ -176,7 +169,14 @@ async function imageTool(id,files,p,cb){
   for(let attempt=0;blob.size>target&&attempt<8&&type!=='image/png';attempt++){quality=Math.max(.1,quality-.1);blob=await new Promise(r=>canvas.toBlob(r,type,quality));if(!blob)throw Error('No se pudo codificar la imagen.');if(quality===.1)break;}
   if(blob.size>target)throw Error('No se alcanzó el peso solicitado conservando las dimensiones. Prueba WebP/JPG o autoriza reducir las dimensiones.');
  }
- const ext=type.split('/')[1].replace('jpeg','jpg');return {...download(blob,fileName(f)+'-prisma.'+ext),previewUrl:URL.createObjectURL(blob),summary:img.width+' × '+img.height+' px'};
+ // Safari and other browsers may silently return PNG when WebP/JPEG output
+ // is unavailable. Never label PNG bytes as .webp or report MIME incorrectly.
+ const actualType=String(blob.type||type).toLowerCase();
+ const ext=(actualType.split('/')[1]||'png').replace('jpeg','jpg');
+ const fallback=actualType!==type;
+ const summary=img.width+' × '+img.height+' px'+(fallback?'. El navegador devolvió '+actualType+' en lugar de '+type+'.':'')+
+   (id==='image-compress'&&blob.size>=f.size?' No se redujo el peso del archivo; prueba otra calidad o formato.':'');
+ return {...download(blob,fileName(f)+'-prisma.'+ext),previewUrl:URL.createObjectURL(blob),summary};
  }finally{URL.revokeObjectURL(url);}
 }
 async function runVideo(id,files,p,cb){
