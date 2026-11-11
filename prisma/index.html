@@ -7,13 +7,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script>
     (() => {
-      let theme = 'dark';
+      let preference = 'dark';
       try {
         const saved = localStorage.getItem('prisma-theme');
-        if (saved === 'light' || saved === 'dark') theme = saved;
+        if (saved === 'light' || saved === 'dark' || saved === 'system') preference = saved;
       } catch {}
+      const theme = preference === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : preference;
       document.documentElement.dataset.theme = theme;
-      const color = theme === 'light' ? '#f3f7fc' : '#0e121d';
+      const color = theme === 'light' ? '#f4f5f8' : '#101218';
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) themeMeta.content = color;
       const statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
@@ -131,19 +134,33 @@
           <div class="profile-wrap">
             <button type="button" class="profile-chip" id="profile-toggle" aria-label="Abrir tu espacio en Prisma" aria-haspopup="true" aria-expanded="false"><span class="prisma-avatar-face" id="profile-avatar-face" data-prisma-avatar="prism"><img src="./assets/prisma-app-icon.svg" alt=""></span></button>
             <div class="profile-menu hidden" id="profile-menu" role="menu" aria-label="Espacio personal">
-              <div class="profile-menu-top"><img src="./assets/prisma-app-icon.svg" alt="" width="36" height="36"><div><strong id="profile-menu-title">Prisma Space</strong><small id="account-menu-state">Continuar como invitado</small></div></div>
+              <button type="button" id="open-account-auth" class="profile-menu-top profile-menu-account" role="menuitem">
+                <img src="./assets/prisma-app-icon.svg" alt="" width="38" height="38">
+                <span><strong id="profile-menu-title">Prisma Space</strong><small id="account-menu-state">Continuar como invitado</small></span>
+                <span class="profile-menu-chevron" data-icon="chevron-right" aria-hidden="true"></span>
+              </button>
               <div class="profile-menu-section">
-                <button type="button" id="open-account-auth" class="profile-menu-action" role="menuitem"><span aria-hidden="true">◎</span><span id="profile-login-label">Iniciar sesión o crear cuenta</span></button>
-                <button type="button" id="theme-toggle" class="profile-menu-action" aria-label="Cambiar tema" role="menuitem"><span aria-hidden="true">◐</span><span id="theme-mode-label">Cambiar a tema claro</span></button>
-                <button type="button" id="profile-install" class="profile-menu-action" role="menuitem"><span aria-hidden="true">↧</span><span>Instalar aplicación</span></button>
-                <a href="./privacy.html#privacidad" class="profile-menu-action" role="menuitem"><span aria-hidden="true">◇</span><span>Privacidad y uso</span></a>
+                <button type="button" id="profile-open-settings" class="profile-menu-action" role="menuitem"><span data-icon="settings" aria-hidden="true"></span><span>Configuración</span></button>
+                <button type="button" id="theme-toggle" class="profile-menu-action" aria-label="Cambiar tema" role="menuitem"><span data-icon="moon" aria-hidden="true"></span><span id="theme-mode-label">Cambiar a tema claro</span></button>
+                <button type="button" id="profile-open-help" class="profile-menu-action" role="menuitem" aria-haspopup="true" aria-expanded="false"><span data-icon="circle-help" aria-hidden="true"></span><span>Ayuda</span><span class="profile-menu-trailing" data-icon="chevron-right" aria-hidden="true"></span></button>
               </div>
               <div class="profile-menu-section">
-                <button type="button" id="clear-local-data" class="profile-menu-action danger" role="menuitem"><span aria-hidden="true">⌫</span><span>Borrar datos de este dispositivo</span></button>
-                <button type="button" id="account-sync" class="profile-menu-action hidden" role="menuitem"><span aria-hidden="true">☁</span><span>Sincronizar mis conversaciones</span></button>
-                <button type="button" id="account-signout" class="profile-menu-action hidden" role="menuitem"><span aria-hidden="true">↪</span><span>Cerrar sesión</span></button>
+                <button type="button" id="account-sync" class="profile-menu-action hidden" role="menuitem"><span data-icon="cloud" aria-hidden="true"></span><span>Sincronizar ahora</span></button>
+                <button type="button" id="account-signout" class="profile-menu-action hidden" role="menuitem"><span data-icon="log-out" aria-hidden="true"></span><span>Cerrar sesión</span></button>
               </div>
-              <p class="profile-menu-privacy" id="profile-menu-privacy">Prisma es gratis sin cuenta. El historial se guarda en este navegador; registrarte permitirá sincronizarlo.</p>
+              <p class="profile-menu-privacy" id="profile-menu-privacy">Prisma es gratis sin cuenta. El historial se guarda en este navegador.</p>
+            </div>
+            <div class="profile-help-menu hidden" id="profile-help-menu" role="menu" aria-label="Ayuda y soporte">
+              <div class="profile-help-heading">Ayuda y soporte</div>
+              <button type="button" class="profile-menu-action" data-help-section="help" role="menuitem"><span data-icon="life-buoy"></span><span>Centro de ayuda</span></button>
+              <a href="./privacy.html#privacidad" class="profile-menu-action" role="menuitem"><span data-icon="shield-check"></span><span>Centro de privacidad</span></a>
+              <button type="button" class="profile-menu-action" data-help-section="whatsNew" role="menuitem"><span data-icon="book-open"></span><span>Notas de la versión</span></button>
+              <button type="button" id="help-profile-install" class="profile-menu-action" role="menuitem"><span data-icon="download"></span><span>Descargar aplicaciones</span></button>
+              <button type="button" class="profile-menu-action" data-help-section="shortcuts" role="menuitem"><span data-icon="keyboard"></span><span>Atajos de teclado</span></button>
+              <div class="profile-help-divider"></div>
+              <a href="./privacy.html#condiciones" class="profile-menu-action" role="menuitem"><span data-icon="file-text"></span><span>Términos de servicio</span></a>
+              <a href="./privacy.html#privacidad" class="profile-menu-action" role="menuitem"><span data-icon="lock"></span><span>Política de privacidad</span></a>
+              <a href="https://github.com/AndresYepez23/PRISMA/issues/new" target="_blank" rel="noopener noreferrer" class="profile-menu-action" role="menuitem"><span data-icon="bug"></span><span>Informar de un error</span></a>
             </div>
           </div>
         </div>
@@ -503,6 +520,31 @@
       <header class="modal-header"><div class="modal-title-wrap"><span class="modal-icon" id="modal-icon"></span><div><div class="modal-kicker" id="modal-kicker">HERRAMIENTA</div><h2 id="modal-title">Herramienta</h2></div></div><button type="button" class="icon-button" id="modal-close" aria-label="Cerrar herramienta" title="Cerrar herramienta" data-icon="x"></button></header>
       <div class="modal-body" id="modal-body" aria-live="polite" aria-busy="false"></div>
       <div class="modal-footer"><span class="modal-privacy"><span data-icon="shield-check"></span> Procesamiento local cuando está disponible</span><button type="button" class="button button-quiet" id="modal-cancel">Cerrar</button><button class="button button-primary" id="modal-run"><span data-icon="play"></span> Ejecutar herramienta</button></div>
+    </section>
+  </div>
+  <div class="prisma-settings hidden" id="prisma-settings" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settings-title">
+    <aside class="prisma-settings-sidebar">
+      <div class="settings-brand"><img src="./assets/prisma-app-icon.svg" alt="" width="36" height="36"><span><strong>PRISMA SPACE</strong><small>CONFIGURACIÓN</small></span></div>
+      <button type="button" class="settings-back" id="settings-back"><span data-icon="arrow-left"></span> Volver a Prisma Space</button>
+      <nav class="settings-navigation" aria-label="Configuración">
+        <div class="settings-nav-label">PERSONAL</div>
+        <button type="button" class="settings-nav-item active" data-settings-section="general"><span data-icon="sliders"></span>General</button>
+        <button type="button" class="settings-nav-item" data-settings-section="personalization"><span data-icon="palette"></span>Personalización</button>
+        <button type="button" class="settings-nav-item" data-settings-section="account"><span data-icon="user-round"></span>Perfil y cuenta</button>
+        <button type="button" class="settings-nav-item" data-settings-section="privacy"><span data-icon="shield-check"></span>Privacidad y datos</button>
+        <div class="settings-nav-label settings-nav-label-spaced">AYUDA</div>
+        <button type="button" class="settings-nav-item" data-settings-section="shortcuts"><span data-icon="keyboard"></span>Atajos de teclado</button>
+        <button type="button" class="settings-nav-item" data-settings-section="help"><span data-icon="life-buoy"></span>Centro de ayuda</button>
+        <button type="button" class="settings-nav-item" data-settings-section="whatsNew"><span data-icon="book-open"></span>Notas de la versión</button>
+      </nav>
+      <div class="settings-sidebar-footer"><span class="settings-status-dot"></span> PRISMA SPACE 1.0 · BETA</div>
+    </aside>
+    <section class="prisma-settings-main">
+      <header class="settings-page-header">
+        <div><div class="settings-breadcrumb">PRISMA SPACE <span>/</span> CONFIGURACIÓN</div><h1 id="settings-title">General</h1><p id="settings-description">Configura el comportamiento básico de Prisma Space.</p></div>
+        <button type="button" class="settings-close" id="settings-close" aria-label="Cerrar configuración" title="Cerrar configuración" data-icon="x"></button>
+      </header>
+      <div class="settings-content" id="settings-content"></div>
     </section>
   </div>
   <div class="toast-region" id="toast-region" aria-live="polite"></div>
