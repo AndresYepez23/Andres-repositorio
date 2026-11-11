@@ -207,6 +207,9 @@ function refreshIdentity(){
  if(login)login.textContent=user?'Mi perfil y preferencias':'Iniciar sesión o crear cuenta';
  const menuTitle=$('#profile-menu-title');
  if(menuTitle)menuTitle.textContent=user?'Hola, '+prismaFirstName(displayName()):'Prisma Space';
+ $('#profile-guest-actions')?.classList.toggle('hidden',Boolean(user?.id));
+ const accountEntry=$('#open-account-auth');
+ if(accountEntry)accountEntry.setAttribute('aria-label',user?'Abrir mi perfil y preferencias':'Abrir acceso a Prisma: iniciar sesión o crear cuenta');
  const toggle=$('#profile-toggle');
  if(toggle)toggle.setAttribute('aria-label',user?'Abrir el espacio de '+displayName():'Abrir tu espacio en Prisma');
  paintAvatar($('#profile-avatar-face'),user?storedAvatar():'prism');
@@ -259,14 +262,17 @@ async function ensureProfile(){
  if(created&&!createError){profile=created;refreshIdentity();}
  else if(createError)console.warn('Prisma: perfil pendiente de sincronizar');
 }
-function openAccount(){
+function openAccount(mode='intro'){
  guestGateModalActive=false;
  if(user){
   prepareAccountAvatarChoices();
   showScreen('account');
   refreshIdentity();
  }else{
-  showScreen('intro');
+  const directMode=mode==='login'||mode==='signup';
+  authMode=mode==='signup'?'signup':'login';
+  updateTabs();
+  showScreen(directMode?'email':'intro');
   const title=$('#auth-title');
   if(title)title.textContent='Bienvenido a Prisma';
   const description=$('#auth-intro-screen .auth-description');
@@ -276,7 +282,7 @@ function openAccount(){
  info('');
  showAuth(true,{focus:true});
 }
-export function openPrismaAuth(){openAccount();}
+export function openPrismaAuth(mode='intro'){openAccount(mode);}
 export function isPrismaAuthenticated(){return Boolean(user?.id);}
 export async function getPrismaSessionAccessToken(){
  if(!api)return '';
