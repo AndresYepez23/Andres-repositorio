@@ -21,6 +21,8 @@ import { resolvePrismaProductQuestion, localQuotaExplanation } from './core-inte
 import { resolveIndependentCoreRequest, resolveContextualCoreRequest } from './core-independent-intelligence.js';
 import { isAcknowledgementMessage, buildAcknowledgementReply } from './core-conversation.js';
 import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-intent.js';
+import { speechIntent, inlineSpeechText } from './core-speech-intent.js';
+import { captureScrollAnchor, restoreScrollAnchor } from './core-scroll.js';
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
 import { findConversations } from './conversation-search.js';
 import { mergeConversationLists, serializeConversation, hasConversationMessages, retainActiveConversationDraft } from './conversation-sync.js';
@@ -36,6 +38,7 @@ let conversations = [];
 let activeConversationId = '';
 let conversationSearch = '';
 const MAX_STEPS = 10;
+const SONG_STYLE_QUESTION = '¡Claro! ¿Qué estilo de canción te gustaría: urbana, romántica, cristiana, pop, vallenato u otro?';
 let messages = [];
 let disposeWelcomeGrid = null;
 let coreViewActive = true;
@@ -78,6 +81,7 @@ let centralProviders = { gemini: false, huggingface: false, groq: false, cloudfl
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let userPinnedToBottom = true;
+let userScrollRevision = 0;
 let localBrainEnabled = false;
 let voiceReading = false;
 let voiceUtterance = 0;
@@ -218,7 +222,7 @@ async function restoreIndexedHistory(){
   try{localStorage.setItem(CHATS_KEY,JSON.stringify(merged));}catch{}
   queueConversationSnapshot(merged).catch(error=>console.warn('Prisma IndexedDB snapshot:',error?.message||error));
   renderConversationList();
-  renderMessages({forceBottom:true});
+  renderMessages({preserveScroll:true});
   updateChatScreen();
   document.dispatchEvent(new Event('prisma:local-history-restored'));
  }catch(error){console.warn('Prisma: no se pudo restaurar IndexedDB.',error?.message||error);}
@@ -509,10 +513,11 @@ function renderMessageActions(message){
 function isNearBottom(list,threshold=120){
   return list.scrollHeight-list.scrollTop-list.clientHeight<threshold;
 }
-function renderMessages({forceBottom=false}={}){
+function renderMessages({forceBottom=false,preserveScroll=true}={}){
   const list=$('#core-messages');if(!list)return;
+  const scrollSnapshot=preserveScroll?captureScrollAnchor(list):null;
+  const scrollRevision=userScrollRevision;
   list.classList.toggle('is-empty',messages.length===0);
-  const shouldStick=forceBottom||userPinnedToBottom||!list.childElementCount||isNearBottom(list);
   if(forceBottom)userPinnedToBottom=true;
   // Mount only for the empty welcome state while Prisma Core is actually visible.
   syncWelcomeGrid();
@@ -545,11 +550,19 @@ function renderMessages({forceBottom=false}={}){
     if(message.role==='assistant'&&message.content?.trim())bubble.append(renderMessageActions(message));
     const row=document.createElement('div');
     row.className='core-message-row '+(message.role==='user'?'user':'assistant');
+    row.dataset.messageId=String(message.id||'');
     row.append(bubble);
     list.append(row);
   }
-  if(shouldStick){
-    requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight;userPinnedToBottom=true;});
+  if(forceBottom||preserveScroll){
+    requestAnimationFrame(()=>{
+      if(!list.isConnected)return;
+      // A new wheel/touch/scrollbar gesture wins over a pending restoration.
+      if(!forceBottom&&scrollRevision!==userScrollRevision)return;
+      if(forceBottom)list.scrollTop=list.scrollHeight;
+      else restoreScrollAnchor(list,scrollSnapshot);
+      userPinnedToBottom=isNearBottom(list);
+    });
   }
   list.querySelectorAll('img.core-result-preview').forEach(img=>{
     const keepVisible=()=>{if(userPinnedToBottom){list.scrollTop=list.scrollHeight;}};
@@ -1287,7 +1300,7 @@ async function handleImageCreationRequest(text){
  }
  return true;
 }
-function directCoreTask(text){
+function directCoreTask(text,history=[]){
  if(attachments.length)return null;
  const q=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const isPrompt=/(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b|\bplan\b).{0,40}(?:imagen|miniatura|video|audio)|(?:imagen|miniatura|video).{0,40}(?:\bprompt\b|\bidea\b|\bguion\b|\bdescripcion\b|\btexto\b)/.test(q);
@@ -1302,6 +1315,14 @@ function directCoreTask(text){
  }
  if(/\b(pdf|docx|xlsx|excel|csv|zip|ocr|archivo|subir|descargar|comprimir|convertir formato|rotar paginas|extraer paginas|codigo qr|codigo de barras|quitar fondo|eliminar fondo|redimensionar|transcribir audio|procesar video)\b/.test(q))return null;
  if(!isPrompt&&/(?:gener|crea|crear|haz|hacer|dibuja|editar|produce|producir|renderiza|conviert).{0,55}\b(imagen|foto|ilustracion|miniatura|poster|video|audio|mp3|wav|archivo 3d|modelo 3d)\b/.test(q))return null;
+  const foldTask=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const broadSongRequest=value=>/^(?:por favor\s+)?(?:dame|quiero|necesito|hazme)\s+(?:una?\s+)?(?:cancion|letra|alabanza|balada)(?:\s+original)?(?:\s+por favor)?[.! ]*$/.test(foldTask(value))||
+    /^(?:(?:una|otra|nueva)\s+)?(?:cancion|letra|alabanza|balada)[.! ]*$/.test(foldTask(value));
+  const priorAssistant=[...history].reverse().find(item=>item?.role==='assistant'&&String(item.content||'').trim());
+  const priorUser=[...history].reverse().find(item=>item?.role==='user'&&String(item.content||'').trim());
+  const awaitingSongStyle=priorAssistant&&/que estilo de cancion te gustaria/.test(foldTask(priorAssistant.content))&&broadSongRequest(priorUser?.content);
+  if(awaitingSongStyle&&!/^(?:no|cancelar|cancela|olvida|cambia de tema|otra cosa|dejalo)\b/.test(q))return 'songwriting';
+  if(broadSongRequest(q))return 'songwriting-clarify';
   const mentionsSong=/\b(letra|cancion|compon|composicion musical|estrofa|verso|coro|alabanza|balada)\b/.test(q);
   const requestsSong=/^(?:por favor )?(?:(?:crea|crear|haz(?:me)?|escribe|compone|compon|genera|prepara|dame|quiero|necesito|inventa|produce|redacta|puedes hacer|me gustaria)\b|(?:(?:una|otra|nueva|otra nueva) )?(?:cancion|letra|alabanza|balada)\b|y si (?:hacemos|creamos|escribimos)\b)/.test(q)||/\b(?:crea|crear|haz|hazme|hazla|escribe|compone|compon|genera|prepara|dame|produce|inventa|redacta|modifica|cambia|ajusta|reescribe)\s+(?:(?:otra|una|nueva)\s+)?(?:cancion|letra|alabanza|balada)?\b/.test(q);
   if(mentionsSong&&requestsSong)return 'songwriting';
@@ -1314,7 +1335,7 @@ function directCoreTask(text){
 async function answerConversation(text,creds,task='conversation'){
   status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
   const instruction=task==='songwriting'
-   ? 'Respeta si se pide una canción nueva o una revisión de una canción anterior. Conserva título, tema y partes no solicitadas al editar. No simules haber generado audio.'
+   ? 'Respeta si se pide una canción nueva o una revisión de una canción anterior. Conserva título, tema y partes no solicitadas al editar. Si el último mensaje responde a una pregunta de aclaración, aplícalo a la solicitud original y no lo trates como un tema independiente. No simules haber generado audio.'
    : task==='creative'?'Entrega la pieza creativa solicitada, lista para copiar o adaptar.'
    : task==='coding'?'Resuelve la solicitud de programación e incluye código. No simules ejecución.'
    : 'Responde de forma natural y sustantiva a la solicitud actual, atendiendo correctamente los turnos anteriores. Si el usuario pide interpretación, explicación o análisis, desarrolla el significado, las causas y una recomendación útil en lugar de limitarte a repetir datos. Responde a cada parte del pedido; distingue observaciones de inferencias.';
@@ -1355,35 +1376,6 @@ async function answerConversation(text,creds,task='conversation'){
   /* Chat de texto: no consume tareas con archivos. */
 }
 
-function speechIntent(message){
- const q=String(message||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
- if(/(?:audio|voz)\s+a\s+texto|transcrib|subtitul/.test(q))return false;
- if(/(?:cancion|musica|melodia|instrumental|banda sonora)/.test(q)&&!/(?:letra|texto).*\b(?:voz|narrac|habla)/.test(q))return false;
- if(/^[¿?\s]*(?:que es|como funciona|para que sirve|cuanto cuesta|es posible|puedes explicar)\b/.test(q))return false;
- if(/^[¿?\s]*(?:por que|por qué|no me|me falla|error|fallo|problema)\b/.test(q))return false;
- const narration=/(?:leeme|\blee\b|lectura en voz alta|\bnarra\b|narrame|ponle voz|hablalo|dilo en voz alta|escuchar.*(?:texto|respuesta|mensaje))/.test(q);
- const generation=/(?:pas(?:a|ar|ame|alo|ala)|conviert|convert|transform|genera|generar|crea|crear|haz(?:me)?|graba|produce|quiero|necesito|guardar|guarda).{0,85}(?:audio|mp3|voz|narracion|hablado)/.test(q);
- const reverse=/(?:texto|archivo|documento|respuesta|mensaje|frase).{0,65}(?:a\s+audio|a\s+voz|en\s+audio|en\s+mp3)/.test(q);
- return narration||generation||reverse||/(?:texto\s+a\s+(?:voz|audio)|text\s*to\s*speech|\btts\b)/.test(q);
-}
-function inlineSpeechText(command){
- const full=String(command||'').trim();
- const quoted=full.match(/[«“"]([^«”"]{2,1600})[»”"]/);
- if(quoted)return quoted[1].trim();
- const separator=full.match(/(?:texto|frase|mensaje|contenido|que diga|lo siguiente)\s*[:：]\s*([\s\S]{2,})$/i);
- if(separator)return separator[1].trim();
- const natural=full.match(/^(?:convierte|convertir|pasa|pasame|pásame|hazme|genera|graba|narra|léeme|leeme)\s+(?:(?:este|el|mi|un)\s+)?(?:(?:texto|mensaje|frase)\s+)?(?:a|en)\s+(?:audio|voz|mp3)\s*[,;:\-]?\s+([\s\S]{2,})$/i);
- if(natural&&!/^(?:este texto|el texto|el archivo|un documento|mi documento|el documento)\s*$/i.test(natural[1].trim()))return natural[1].trim();
- const casual=full.match(/^(?:hazme|genera(?:me)?|crea(?:me)?|graba(?:me)?|quiero|necesito|dame|prepara(?:me)?|pon|dilo|di|narra|leeme|léeme)\s+(?:un\s+)?(?:audio|mp3|voz|locucion|locución)?\s*(?:que\s+(?:diga|suene|lea)|con\s+(?:la\s+)?frase|de\s+)?\s*[:,-]?\s*([\s\S]{3,})$/i);
- if(casual&&casual[1]&&!/^(?:este|el|mi)\s+(?:texto|archivo|documento|pdf|word)\s*$/i.test(casual[1].trim()))return casual[1].trim();
- const spoken=full.match(/(?:que\s+diga|para\s+decir)\s*[:,-]?\s*([\s\S]{3,})$/i);
- if(spoken)return spoken[1].trim();
- const colon=full.match(/[:：]\s*([^\n]{2,}(?:\n[\s\S]*)?)$/);
- if(colon)return colon[1].trim();
- const newlines=full.split(/\n+/).slice(1).join('\n').trim();
- if(newlines.length>2)return newlines;
- return '';
-}
 async function fulfillSpeechRequest(userText){
  const q=String(userText||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  let content=inlineSpeechText(userText);
@@ -1736,7 +1728,12 @@ async function requestPlan(userText){
   // inference. It is available only on explicitly selected personal routes.
   const hasConnectedModel=Object.values(centralProviders).some(Boolean);
   // Las peticiones de generación visual ya fueron atendidas por el flujo contextual.
-  const directTask=directCoreTask(userText);
+  const directTask=directCoreTask(userText,messages.slice(0,-1));
+  if(directTask==='songwriting-clarify'){
+    addMessage('assistant',SONG_STYLE_QUESTION);
+    status('Falta elegir el estilo musical.','info');
+    return;
+  }
   if(directTask){
     if(hasConnectedModel)await answerConversation(userText,creds,directTask);
     else {addMessage('assistant','Puedo ayudarte con esta petición, pero los motores de texto no están disponibles ahora. Las herramientas locales siguen funcionando. Revisa Laboratorio IA o vuelve a intentarlo.');status('Motores de texto no disponibles.','warning');}
@@ -2238,22 +2235,36 @@ export function initPrismaCore(){
   document.addEventListener('prisma:core-delete-request',deleteActiveChat);
   document.addEventListener('prisma:remote-chats-ready',event=>{
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
-    // Always merge cloud updates, including while a tool is executing.
-    // Only defer the visual re-render until the active response finishes.
+    const previousActiveId=activeConversationId;
+    let activeConversationChanged=false;
+    // Merge remote history without changing the user's reading position.
     if(!remote&&(busy||executionActive))return;
     if(remote){
-      // Cloud sync may lag behind a just-completed reply; never discard local messages.
       const synced=mergeConversationLists(remote,conversations).filter(hasConversationMessages);
       conversations=retainActiveConversationDraft(conversations,synced,activeConversationId);
       if(!conversations.length)conversations=[newChatRecord()];
       const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
-      activeConversationId=active.id;messages=active.messages.slice();
+      activeConversationId=active.id;
+      messages=active.messages.slice();
+      activeConversationChanged=active.id!==previousActiveId;
       const persisted=conversations.filter(hasConversationMessages);
       try{localStorage.setItem(CHATS_KEY,JSON.stringify(persisted));}catch{}
       queueConversationSnapshot(persisted).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
-    }else loadChatHistory();
+    }else{
+      // A notification without payload may refresh local history, but must not
+      // switch away from the conversation the user already has open.
+      loadChatHistory();
+      const active=conversations.find(chat=>chat.id===previousActiveId);
+      if(active){
+        activeConversationId=previousActiveId;
+        messages=active.messages.slice();
+      }else activeConversationChanged=true;
+    }
     if(busy||executionActive)return;
-    renderConversationList();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
+    renderConversationList();
+    if(activeConversationChanged)renderMessages({forceBottom:true});
+    else renderMessages({preserveScroll:true});
+    updateChatScreen();
   });
   document.addEventListener('prisma:clear-local-history',()=>{
     window.__prismaClearHistoryPromise=Promise.all([
@@ -2283,7 +2294,12 @@ export function initPrismaCore(){
   $('#core-history-close')?.addEventListener('click',closeConversationDrawer);
   $('#core-history-backdrop')?.addEventListener('click',closeConversationDrawer);
   $('#core-history-new')?.addEventListener('click',startNewConversation);
-  $('#core-messages').addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom($('#core-messages'));},{passive:true});
+  const messagesList=$('#core-messages');
+  messagesList.addEventListener('scroll',()=>{userPinnedToBottom=isNearBottom(messagesList);},{passive:true});
+  messagesList.addEventListener('wheel',()=>{userScrollRevision++;},{passive:true});
+  messagesList.addEventListener('touchstart',()=>{userScrollRevision++;},{passive:true});
+  messagesList.addEventListener('touchmove',()=>{userScrollRevision++;},{passive:true});
+  messagesList.addEventListener('pointerdown',()=>{userScrollRevision++;},{passive:true});
   $('#core-send').addEventListener('click',sendMessage);
   const miniButton=$('#core-mini-toggle');
   miniButton?.addEventListener('click',async()=>{
