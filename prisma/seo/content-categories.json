@@ -53,7 +53,7 @@
     {
       "slug": "imagenes",
       "name": "Imágenes",
-      "title": "Herramientas de imágenes online: comprimir, convertir y editar | Prisma Space",
+      "title": "Herramientas de imágenes online | Prisma Space",
       "h1": "Herramientas online para comprimir, convertir y preparar imágenes",
       "description": "Comprime, redimensiona, recorta y convierte imágenes entre JPG, PNG y WebP. Explora las herramientas de imagen de Prisma Space y sus opciones.",
       "primaryQuery": "herramientas para imágenes online",
@@ -197,7 +197,7 @@
     {
       "slug": "texto",
       "name": "Texto y escritura",
-      "title": "Herramientas de texto online para limpiar, convertir y analizar | Prisma Space",
+      "title": "Herramientas de texto online | Prisma Space",
       "h1": "Herramientas de texto para limpiar, transformar y organizar contenido",
       "description": "Cuenta palabras, limpia texto, cambia mayúsculas, extrae datos y convierte formatos de texto con las utilidades de Prisma Space.",
       "primaryQuery": "herramientas de texto online",
@@ -244,7 +244,7 @@
     {
       "slug": "utilidades",
       "name": "Utilidades",
-      "title": "Utilidades online gratuitas: QR, calculadoras y conversores | Prisma Space",
+      "title": "Utilidades online gratis: QR y calculadoras | Prisma Space",
       "h1": "Utilidades online para cálculos, conversiones y códigos QR",
       "description": "Usa calculadoras, conversores de unidades y fechas, generadores QR, códigos de barras y otras utilidades rápidas de Prisma Space.",
       "primaryQuery": "utilidades online gratuitas",
@@ -291,7 +291,7 @@
     {
       "slug": "desarrollo-web",
       "name": "Desarrollo web y programación",
-      "title": "Herramientas para desarrolladores web y programación | Prisma Space",
+      "title": "Herramientas para programar online | Prisma Space",
       "h1": "Herramientas para desarrollo web, código y APIs",
       "description": "Formatea código, valida estructuras, prueba expresiones regulares, decodifica JWT y explora APIs con utilidades para desarrolladores.",
       "primaryQuery": "herramientas para desarrolladores online",
@@ -386,7 +386,7 @@
     {
       "slug": "privacidad-archivos",
       "name": "Privacidad y archivos",
-      "title": "Herramientas de privacidad para revisar archivos y metadatos | Prisma Space",
+      "title": "Privacidad y metadatos de archivos | Prisma Space",
       "h1": "Herramientas para revisar la privacidad de tus archivos",
       "description": "Inspecciona archivos, consulta metadatos y elimina información EXIF o datos sensibles antes de compartir documentos e imágenes.",
       "primaryQuery": "eliminar metadatos de archivos online",
