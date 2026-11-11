@@ -54,7 +54,7 @@ export function isInformationalIntent(raw){
  const {instruction}=extractPayload(raw);
  const q=normalizeIntent(instruction).trim().replace(/^[¿¡\s]+/,'');
  return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
-  /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|dime|informame)\b/.test(q);
+  /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
 }
 function positiveClauses(original) {
  const parts=original.split(/[,;]|\bpero\b|\s+y\s+(?=(?:no|solo|solamente|unicamente)\b)/).map(v=>v.trim()).filter(Boolean);
@@ -71,6 +71,12 @@ const need=message=>({type:'needs-input',message,steps:[],confidence:0});
 const mime=q=>/\bwebp\b/.test(q)?'image/webp':/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'';
 export function planCapabilityRequest(raw,files=[],task=null){
  let {instruction,text}=extractPayload(raw);let q=normalizeIntent(instruction).trim();
+ // In file-edit instructions, a colon may introduce page ranges rather than
+ // content payload: "Divide el PDF en dos: páginas 1-3 y 4-6".
+ if(/^(?:divide|dividir|separa|separar|extrae|extraer|quita|elimina|gira|rota)\b/.test(q)&&
+    /^\s*(?:paginas?|hojas?)\b/i.test(normalizeIntent(text))){
+  q=normalizeIntent(instruction+' '+text).trim();text='';
+ }
  if(isInformationalIntent(raw))return files.length?need('Esta es una consulta informativa: no modificaré el archivo. Puedo explicarte la herramienta y sus límites; solicita explícitamente una operación cuando quieras ejecutarla.'):null;
  const positive=positiveClauses(q);
  if(positive.negated&&!positive.value)return need('Entendido: no ejecutaré la operación que has descartado. Indica qué quieres hacer en su lugar.');
@@ -190,7 +196,7 @@ export function planCapabilityRequest(raw,files=[],task=null){
   steps.push({tool_id:c.id,params:p,reason:'Capacidad y parámetros identificados localmente',input:'current'});
  }
  // Shared transformation first, read-only/branch results last. No duplicated calls.
- const order=id=>id==='image-bg'?0:id==='image-strip-metadata'?1:id==='image-resize'?2:id==='image-compress'?3:id==='image-palette'?4:id==='image-favicon'?5:2;
+ const order=id=>id==='image-bg'?0:id==='image-strip-metadata'?1:id==='image-resize'?2:id==='image-compress'?3:id==='image-convert'?4:id==='image-palette'?5:id==='image-favicon'?6:2;
  if(kind==='image')steps.sort((a,b)=>order(a.tool_id)-order(b.tool_id));
  return {type:'ready',confidence:1,message:'Voy a ejecutar '+steps.length+' operación(es), procesando todos los archivos compatibles y comprobando cada resultado.',steps};
 }
