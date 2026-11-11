@@ -97,6 +97,14 @@ export function initPrismaExperience(){
  initPrismaDeveloperBridge();
  initPrismaAccount().catch(error=>console.warn('Cuenta Prisma no conectada:',error?.message||error));
  $('#open-account-auth')?.addEventListener('click',()=>{document.dispatchEvent(new Event('prisma:close-profile'));openPrismaAuth();});
+ $('#profile-guest-login')?.addEventListener('click',()=>{
+  document.dispatchEvent(new Event('prisma:close-profile'));
+  openPrismaAuth('login');
+ });
+ $('#profile-guest-signup')?.addEventListener('click',()=>{
+  document.dispatchEvent(new Event('prisma:close-profile'));
+  openPrismaAuth('signup');
+ });
  document.addEventListener('prisma:close-profile',()=>{
   $('#profile-menu')?.classList.add('hidden');document.body.classList.remove('profile-open');$('#profile-toggle')?.setAttribute('aria-expanded','false');
  });
