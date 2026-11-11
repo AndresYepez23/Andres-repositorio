@@ -68,7 +68,7 @@ function positionProfileHelp() {
   help.style.top = top + 'px';
   help.style.width = width + 'px';
 }
-const isMobileSettings = () => window.matchMedia('(max-width: 760px)').matches;
+const isMobileSettings = () => window.matchMedia('(max-width: 900px)').matches;
 function openSettings(section = 'general') {
   const panel = $('#prisma-settings');
   if (!panel) return;
@@ -342,8 +342,14 @@ function setSettingsSection(section) {
   });
   $('#settings-manage-account')?.addEventListener('click', () => { closeSettings(); openPrismaAuth(); });
   $('#settings-sync-account')?.addEventListener('click', () => $('#account-sync')?.click());
-  $('#settings-signout')?.addEventListener('click', () => $('#account-signout')?.click());
-  $('#settings-help-install')?.addEventListener('click', () => document.dispatchEvent(new Event('prisma:request-install')));
+  $('#settings-signout')?.addEventListener('click', () => {
+    closeSettings();
+    $('#account-signout')?.click();
+  });
+  $('#settings-help-install')?.addEventListener('click', () => {
+    closeSettings();
+    document.dispatchEvent(new Event('prisma:request-install'));
+  });
 }
 function updateThemeChoices() {
   const selected = currentThemePreference();
@@ -410,7 +416,7 @@ export function initPrismaSettings() {
     if (action) setSettingsSection(action.dataset.settingsOpen);
   });
   document.addEventListener('prisma:theme-changed', updateThemeChoices);
-  const viewportQuery = window.matchMedia('(max-width: 760px)');
+  const viewportQuery = window.matchMedia('(max-width: 900px)');
   const syncResponsiveView = () => {
     const panel = $('#prisma-settings');
     if (panel && !panel.classList.contains('hidden') && !viewportQuery.matches && panel.dataset.section === 'home')
