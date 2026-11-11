@@ -18,27 +18,7 @@ export function renderWelcomeEmail(user){
   'La sincronización es opcional: tus conversaciones no se comparten hasta que tú la actives.\n\n'+
   'Entrar a Prisma Space: https://prismaspace.space/\n\n'+
   'Prisma Space · Cuenta y seguridad';
- const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style type="text/css">
-:root{color-scheme:light dark;supported-color-schemes:light dark}
-@media (prefers-color-scheme:dark){
-.aurora-outer{background-color:#0e121d!important;background:#0e121d!important}
-.aurora-card{background-color:#161d2b!important;background:#161d2b!important;border-color:#2b3a50!important}
-.aurora-heading{color:#f0f4fb!important}
-.aurora-title{color:#f4f7fc!important}
-.aurora-copy{color:#b8c5d7!important}
-.aurora-secondary{color:#a4b1c4!important}
-.aurora-muted{color:#8291a8!important}
-.aurora-caption{color:#708198!important}
-.aurora-accent{color:#91dbd5!important}
-.aurora-badge{background:#1e303b!important;border-color:#385365!important}
-.aurora-line{border-color:#2b3a50!important}
-.aurora-stripe{background:#91dbd5!important;background-image:linear-gradient(90deg,#91dbd5,#84bce9,#b9a3f1)!important}
-.aurora-button{background:#91dbd5!important;background-image:linear-gradient(105deg,#91dbd5,#84bce9,#b9a3f1)!important}
-.aurora-button-label{color:#11202e!important}
-.aurora-preheader{color:#0e121d!important}
-}
-@media only screen and (max-width:600px){.aurora-content{padding-left:22px!important;padding-right:22px!important}}
-</style></head>'+
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style type="text/css">:root{color-scheme:light dark;supported-color-schemes:light dark}@media (prefers-color-scheme:dark){.aurora-outer{background-color:#0e121d!important;background:#0e121d!important}.aurora-card{background-color:#161d2b!important;background:#161d2b!important;border-color:#2b3a50!important}.aurora-heading{color:#f0f4fb!important}.aurora-title{color:#f4f7fc!important}.aurora-copy{color:#b8c5d7!important}.aurora-secondary{color:#a4b1c4!important}.aurora-muted{color:#8291a8!important}.aurora-caption{color:#708198!important}.aurora-accent{color:#91dbd5!important}.aurora-badge{background:#1e303b!important;border-color:#385365!important}.aurora-line{border-color:#2b3a50!important}.aurora-stripe{background:#91dbd5!important;background-image:linear-gradient(90deg,#91dbd5,#84bce9,#b9a3f1)!important}.aurora-button{background:#91dbd5!important;background-image:linear-gradient(105deg,#91dbd5,#84bce9,#b9a3f1)!important}.aurora-button-label{color:#11202e!important}.aurora-preheader{color:#0e121d!important}}@media only screen and (max-width:600px){.aurora-content{padding-left:22px!important;padding-right:22px!important}}</style></head>'+
  '<body class="aurora-outer aurora-heading" style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#21364e;">'+
  '<div class="aurora-preheader" style="display:none;font-size:1px;color:#f3f6fb;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Tu cuenta de Prisma Space ya está activa. Tu espacio te espera.</div>'+
  '<table class="aurora-outer" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#f3f6fb;"><tr><td align="center" style="padding:32px 12px;">'+
