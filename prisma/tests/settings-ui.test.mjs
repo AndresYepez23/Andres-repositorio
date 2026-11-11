@@ -9,6 +9,7 @@ const main = read('../src/main.js');
 const core = read('../src/core.js');
 const settings = read('../src/prisma-settings.js');
 const experience = read('../src/prisma-experience.js');
+const account = read('../src/prisma-account.js');
 
 test('profile menu stays compact and does not dim the workspace', () => {
   assert.match(html, /id="profile-menu"/);
@@ -81,6 +82,27 @@ test('help links align consistently and preserve real destinations', () => {
 test('starting screen preference is stored and restored at startup', () => {
   assert.match(settings, /localStorage\.setItem\('prisma-start-view'/);
   assert.match(main, /localStorage\.getItem\('prisma-start-view'\)==='explore'/);
+});
+
+
+test('guests see visible entry points once session resolution identifies them as guests', () => {
+  assert.match(html, /id="profile-guest-actions"[^>]*hidden/);
+  assert.match(html, /id="profile-guest-login">Iniciar sesión</);
+  assert.match(html, /id="profile-guest-signup">Crear cuenta gratis</);
+  assert.match(account, /#profile-guest-actions'\)\?\.classList\.toggle\('hidden',Boolean\(user\?\.id\)\)/);
+  assert.match(styles, /\.profile-menu \.profile-guest-actions\.hidden\{display:none!important\}/);
+  assert.match(styles, /\.profile-menu \.profile-guest-login\{/);
+});
+
+test('guest buttons open the requested authentication screen without an extra intro step', () => {
+  assert.match(experience, /#profile-guest-login'\)\?\.addEventListener/);
+  assert.match(experience, /openPrismaAuth\('login'\)/);
+  assert.match(experience, /#profile-guest-signup'\)\?\.addEventListener/);
+  assert.match(experience, /openPrismaAuth\('signup'\)/);
+  assert.match(account, /const directMode=mode==='login'\|\|mode==='signup'/);
+  assert.match(account, /showScreen\(directMode\?'email':'intro'\)/);
+  assert.match(account, /updateTabs\(\)/);
+  assert.match(account, /export function openPrismaAuth\(mode='intro'\)\{openAccount\(mode\);\}/);
 });
 
 console.log('Prisma account/settings regressions: compact menu, non-dimming surface, preferences, help and send shortcut verified.');
