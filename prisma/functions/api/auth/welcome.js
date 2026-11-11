@@ -9,7 +9,7 @@ const json=(body,status=200)=>Response.json(body,{
  }
 });
 
-export async function onRequestPost({request,env}){
+export async function handleWelcomeRequest({request,env},fetcher=fetch){
  const authorization=request.headers.get('Authorization')||'';
  const token=authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
  if(!token)return json({ok:false,error:'unauthorized'},401);
@@ -21,7 +21,7 @@ export async function onRequestPost({request,env}){
  }
  let user;
  try{
-  const authResponse=await fetch(supabaseUrl+'/auth/v1/user',{
+  const authResponse=await fetcher(supabaseUrl+'/auth/v1/user',{
    headers:{apikey:publishableKey,Authorization:'Bearer '+token}
   });
   if(!authResponse.ok)return json({ok:false,error:'unauthorized'},401);
@@ -59,7 +59,7 @@ export async function onRequestPost({request,env}){
  const {html,text}=renderWelcomeEmail(user);
  let delivery;
  try{
-  delivery=await fetch('https://api.resend.com/emails',{
+  delivery=await fetcher('https://api.resend.com/emails',{
    method:'POST',
    headers:{
     Authorization:'Bearer '+env.RESEND_API_KEY,
@@ -96,4 +96,8 @@ export async function onRequestPost({request,env}){
   return json({ok:false,error:'delivery_status_unconfirmed'},503);
  }
  return json({ok:true,id:result?.id||null});
+}
+
+export function onRequestPost(context){
+ return handleWelcomeRequest(context,fetch);
 }
