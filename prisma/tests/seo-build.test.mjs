@@ -95,14 +95,14 @@ test('SEO category, solution and guide hubs are useful, canonical and internally
   const html=await readFile(new URL(path,dist),'utf8');
   assert.match(html,/^<!doctype html>/);
   assert.equal((html.match(/<h1>/g)||[]).length,1,path);
-  const title=html.match(/<title>(.*?)<\\/title>/)?.[1];
+  const title=html.split('<title>')[1]?.split('</title>')[0];
   const description=html.match(/<meta name="description" content="(.*?)">/)?.[1];
   assert.ok(title&&description,path+' metadata missing');
   assert.ok(!allTitles.has(title),'duplicate title: '+title);allTitles.add(title);
   assert.ok(!allDescriptions.has(description),'duplicate description: '+description);allDescriptions.add(description);
   const canonicalUrl=decode(html.match(/rel="canonical" href="([^"]+)"/)?.[1]||'');
   assert.equal(canonicalUrl,canonical,path+' canonical mismatch');
-  const schema=JSON.parse(html.match(/<script type="application\\/ld\\+json">(.*?)<\\/script>/s)?.[1]||'{}');
+  const schema=JSON.parse(html.split('<script type="application/ld+json">')[1]?.split('</script>')[0]||'{}');
   assert.equal(schema['@type'],type,path+' schema mismatch');
   assert.ok((await stat(new URL(path,dist))).size>1800,path+' too small');
   return html;
