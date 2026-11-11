@@ -112,6 +112,53 @@ export function planCapabilityRequest(raw,files=[],task=null){
  // Resolve page numbers with the *actual* PDF page count at execution time.
  // Questions are filtered above, and negative clauses cannot trigger edits.
  if(kind==='pdf'){
+  // Explicitly excluded pages must never be reintroduced by an all-pages
+  // fallback. Resolve the complement after opening the actual PDF.
+  const splitAction=/\b(?:divide|dividir|separa|separar|parte|partir)\b/.test(q);
+  const excluded=q.match(/\b(?:excluye|excluir|excluyendo|excepto|sin incluir)\s+(?:la\s+)?(?:pagina|hoja)\s+(\d+)\b/);
+  if(splitAction&&excluded){
+   if(!files.length)return need('Adjunta el PDF para dividirlo excluyendo las páginas indicadas.');
+   return {type:'ready',confidence:1,message:'Separaré las páginas excepto la '+excluded[1]+', sin incluirla en ningún archivo.',
+    steps:[{tool_id:'pdf-split',params:{mode:'exclude',pages:excluded[1]},reason:'Excluir la página solicitada'}]};
+  }
+  // When both actions are explicit, never drop the first transformation.
+  if(/\b(?:une|unir|junta|combina|fusiona|unifica)\b/.test(q)&&
+     /\b(?:extrae|extraer|saca|separa)\b/.test(q)&&
+     /\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)){
+   if(files.length<2)return need('Adjunta los PDF que hay que unir antes de extraer la última página.');
+   return {type:'ready',confidence:1,message:'Primero uniré los PDF y después extraeré la última página del documento combinado.',
+    steps:[{tool_id:'pdf-merge',params:{},reason:'Unir todos los PDF en orden'},
+      {tool_id:'pdf-extract',params:{pages:'last'},reason:'Extraer la última página del documento unido'}]};
+  }
+  if(/\b(?:gira|rot[ae])\b/.test(q)&&/\b(?:a|en)\s+(?:word|docx)\b/.test(q)){
+   const deg=q.match(/\b(90|180|270)\b/);
+   const chosen=q.match(/(?:paginas?|hojas?)\s+(\d+(?:\s*(?:-|al|a|,|y)\s*\d+)*)/);
+   if(!deg)return need('Indica cuántos grados deseas girar el PDF antes de convertirlo a Word.');
+   if(!files.length)return need('Adjunta el PDF que deseas girar y convertir a Word.');
+   const params={degrees:Number(deg[1])};
+   if(chosen)params.pages=chosen[1].replace(/\s+(?:al|a)\s+/g,'-').replace(/\s+y\s+/g,',');
+   return {type:'ready',confidence:1,message:'Giraré las páginas seleccionadas y después convertiré el resultado a Word.',
+    steps:[{tool_id:'pdf-rotate',params,reason:'Modificar la orientación del PDF'},
+      {tool_id:'pdf-to-word',params:{},reason:'Convertir el PDF ya girado a DOCX'}]};
+  }
+  const individually=q.match(/\b(?:paginas?|hojas?)\s+(\d+(?:\s*,\s*\d+)*\s+y\s+\d+)\s+por\s+separado\b/);
+  if(individually&&/\b(?:crea|separa|divide|quiero)\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer las páginas elegidas en archivos individuales.');
+   const selection=individually[1].replace(/\s+y\s+/g,',').replace(/\s/g,'');
+   return {type:'ready',confidence:1,message:'Separaré solo las páginas indicadas, una por archivo.',
+    steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:selection},reason:'Selección explícita, no todas las páginas'}]};
+  }
+  const exclusive=q.match(/\b(?:solo|unicamente|solamente)\s+(?:la\s+)?(?:pagina|hoja)\s+(\d+)\b/);
+  if(exclusive){
+   if(!files.length)return need('Adjunta el PDF para extraer únicamente la página solicitada.');
+   return {type:'ready',confidence:1,message:'Extraeré exclusivamente la página '+exclusive[1]+'.',
+    steps:[{tool_id:'pdf-extract',params:{pages:exclusive[1]},reason:'Seleccionar solo la página indicada'}]};
+  }
+  if(/\b(?:hoja|pagina)\s+final\b/.test(q)){
+   if(!files.length)return need('Adjunta el PDF para extraer su última página.');
+   return {type:'ready',confidence:1,message:'Extraeré solo la última página del PDF.',
+    steps:[{tool_id:'pdf-extract',params:{pages:'last'},reason:'Resolver la página final al abrir el PDF'}]};
+  }
   const single=id=>({type:'ready',confidence:1,message:'Procesaré únicamente las páginas indicadas.',steps:[{tool_id:id,params:{pages:'last'},reason:'Referencia relativa a la última página'}]});
   if(/\b(?:elimina|quita|borra)\b.*\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)){
    if(!files.length)return need('Adjunta el PDF para eliminar su última página.');
