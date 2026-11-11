@@ -106,3 +106,25 @@ Desde la raíz: `node prisma/build.mjs` y `node --test prisma/tests/*.test.mjs`.
 El build de Pages ejecuta las validaciones SEO y de capacidades, además de las comprobaciones existentes. La comparación de formatos de URL detecta si cambia la lista admitida por main.js. `baseline.json` no se amplía al añadir páginas: protege las 40 originales, no impone el tamaño futuro del catálogo.
 
 Las comprobaciones no consumen cuotas de IA ni certifican disponibilidad permanente de proveedores externos. Las funciones conectadas se publican con sus condiciones y límites; no se promete funcionamiento ilimitado ni garantía de indexación.
+
+
+## Expansión de intención de búsqueda — 11 de noviembre de 2026
+
+- [x] Crear 10 páginas de categoría con listados derivados del catálogo SEO aprobado.
+- [x] Crear 11 recorridos de solución basados en herramientas existentes.
+- [x] Crear 14 guías prácticas con pasos, advertencias, FAQ y CTA hacia operaciones reales.
+- [x] Crear índices `/categorias/`, `/soluciones/` y `/guias/`.
+- [x] Añadir enlaces contextuales desde las 140 landings de herramientas y desde el directorio.
+- [x] Añadir enlaces de descubrimiento en el pie de página de la aplicación principal.
+- [x] Mantener excluidas funciones `soon` y herramientas no aprobadas en `audit.json`.
+- [x] Generar sitemap con 181 URLs únicas sobre `https://prismaspace.space/`.
+- [x] Documentar hipótesis de consultas e intención en `keyword-map.md`, sin inventar volúmenes.
+- [x] Añadir pruebas para canónicas, metadatos, JSON-LD, enlaces internos y cobertura del sitemap.
+- [x] Build y pruebas SEO aprobadas en Cloudflare Pages Preview (`seo-organic-growth-expansion`).
+- [ ] Fusionar a `main` y verificar producción.
+- [ ] Volver a enviar `https://prismaspace.space/sitemap.xml` en Search Console después del despliegue.
+- [ ] Revisar consultas, impresiones, CTR e indexación tras 28–45 días de datos.
+
+### Criterio de medición
+
+Las consultas del mapa son hipótesis cualitativas, no estimaciones de volumen. Search Console será la fuente para decidir qué páginas ampliar, reescribir o consolidar. No se crearán páginas por ciudad, sinónimos o formatos si no existe una intención diferenciada y una herramienta real que la resuelva.

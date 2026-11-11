@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tools, categories } from '../src/registry.js';
+import { generateContentHubs } from './content-hubs.mjs';
 
 import { SEO_BASE as BASE, FORMAT_PRESETS } from './config.mjs';
 const GROUPS = Object.fromEntries(categories.filter(c => c.id !== 'all').map((c,i) => [c.id, {name:c.name, order:i}]));
@@ -44,13 +45,13 @@ function header() {
   return [
     '<header class="seo-header"><div class="seo-header-inner">',
     '<a class="seo-brand" href="/" aria-label="Volver a Prisma Space"><img src="/assets/prisma-mark.svg" alt="" width="36" height="36"><span><strong>Prisma Space</strong><small>ECOSISTEMA DIGITAL</small></span></a>',
-    '<nav class="seo-nav" aria-label="Navegación principal"><a href="/herramientas/">Herramientas gratis</a><a href="/">Prisma Core</a><button id="seo-theme" type="button" aria-label="Cambiar tema">◐ <span>Tema</span></button></nav>',
+    '<nav class="seo-nav" aria-label="Navegación principal"><a href="/categorias/">Categorías</a><a href="/guias/">Guías</a><a href="/soluciones/">Soluciones</a><a href="/herramientas/">Herramientas</a><a href="/">Prisma Core</a><button id="seo-theme" type="button" aria-label="Cambiar tema">◐ <span>Tema</span></button></nav>',
     '</div></header>'
   ].join('\n');
 }
 function footer() {
   return [
-    '<footer class="seo-footer"><div><a href="/">Prisma Space</a><span>Herramientas con intención.</span></div><nav aria-label="Enlaces del pie de página"><a href="/herramientas/">Todas las herramientas</a><a href="/privacy.html#privacidad">Privacidad y uso</a></nav></footer>',
+    '<footer class="seo-footer"><div><a href="/">Prisma Space</a><span>Herramientas con intención.</span></div><nav aria-label="Enlaces del pie de página"><a href="/herramientas/">Herramientas</a><a href="/categorias/">Categorías</a><a href="/soluciones/">Soluciones</a><a href="/guias/">Guías</a><a href="/privacy.html#privacidad">Privacidad y uso</a></nav></footer>',
     '<script>(function(){ const button = document.getElementById("seo-theme"); if(!button) return; button.addEventListener("click", function(){ const next = document.documentElement.dataset.theme === "light" ? "dark" : "light"; document.documentElement.dataset.theme = next; try {localStorage.setItem("prisma-theme", next);}catch{} const meta=document.querySelector("meta[name=theme-color]");if(meta)meta.content=next==="light"?"#f3f7fc":"#0e121d"; }); })();</script>'
   ].join('\n');
 }
@@ -156,9 +157,10 @@ export async function generateSeoPages(output) {
   const listing=new URL('herramientas/',output);
   await mkdir(listing,{recursive:true});
   await writeFile(new URL('index.html',listing),directory(pages,toolMap),'utf8');
-  const urls=[BASE+'/', BASE+'/herramientas/', ...pages.map(page=>urlFor(page.slug)), BASE+'/privacy.html'];
+  const contentUrls=await generateContentHubs(output,{base:BASE,pages});
+  const urls=[BASE+'/', BASE+'/herramientas/', ...pages.map(page=>urlFor(page.slug)), BASE+'/privacy.html', ...contentUrls];
   const sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(url=>'  <url><loc>'+esc(url)+'</loc></url>').join('\n')+'\n</urlset>\n';
   await writeFile(new URL('sitemap.xml',output),sitemap,'utf8');
   await writeFile(new URL('robots.txt',output),'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /functions/\nSitemap: '+BASE+'/sitemap.xml\n','utf8');
-  console.log('PRISMA SEO: '+pages.length+' páginas, índice, sitemap.xml y robots.txt generados.');
+  console.log('PRISMA SEO: '+pages.length+' herramientas, '+contentUrls.length+' páginas de categorías, soluciones y guías; sitemap.xml y robots.txt generados.');
 }

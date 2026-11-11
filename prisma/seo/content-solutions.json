@@ -1,0 +1,638 @@
+{
+  "solutions": [
+    {
+      "slug": "organizar-documentos-pdf",
+      "title": "Cómo organizar documentos PDF online | Prisma Space",
+      "h1": "Organiza tus documentos PDF antes de entregarlos",
+      "description": "Combina, divide, extrae y numera páginas PDF para preparar expedientes, informes y documentos de entrega con Prisma Space.",
+      "primaryQuery": "organizar documentos PDF",
+      "intro": "Cuando un trámite o una entrega exige reunir varios documentos, el problema no suele ser solo el formato: también importa el orden, la paginación y que el archivo final se pueda revisar. Este recorrido reúne operaciones para preparar una copia ordenada sin modificar innecesariamente los originales.",
+      "toolIds": [
+        "pdf-merge",
+        "pdf-split",
+        "pdf-extract",
+        "pdf-remove-pages",
+        "pdf-page-numbers",
+        "pdf-rotate",
+        "pdf-watermark"
+      ],
+      "categorySlugs": [
+        "pdf-documentos",
+        "privacidad-archivos"
+      ],
+      "guideSlugs": [
+        "unir-varios-pdf",
+        "dividir-pdf-por-paginas",
+        "reducir-peso-pdf"
+      ],
+      "steps": [
+        {
+          "title": "Reúne los archivos de origen",
+          "body": "Comprueba que cada PDF abra correctamente y conserva una copia intacta. Si el expediente tiene datos sensibles, revisa las reglas de privacidad antes de procesarlos.",
+          "toolId": "pdf-merge"
+        },
+        {
+          "title": "Ordena y selecciona las páginas",
+          "body": "Combina los documentos en el orden requerido o extrae únicamente las páginas que deben formar parte de la entrega. No incluyas anexos por inercia.",
+          "toolId": "pdf-extract"
+        },
+        {
+          "title": "Ajusta la lectura del documento",
+          "body": "Corrige páginas giradas y añade numeración cuando ayude a revisar el expediente. Comprueba que la paginación coincida con las instrucciones de recepción.",
+          "toolId": "pdf-page-numbers"
+        },
+        {
+          "title": "Revisa el archivo final",
+          "body": "Abre el PDF completo, comprueba el orden, las páginas y la legibilidad. No des por válida una entrega solo porque el archivo se haya descargado.",
+          "toolId": "pdf-merge"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Puedo unir documentos de distinto tamaño?",
+          "La unión conserva las páginas de origen; por eso el documento final puede contener tamaños de página diferentes."
+        ],
+        [
+          "¿Es mejor borrar páginas del original?",
+          "Trabaja sobre una copia y conserva el original. Así puedes recuperar información si detectas una omisión."
+        ]
+      ],
+      "note": "Las herramientas resuelven operaciones concretas y no verifican requisitos legales o administrativos de un trámite. Confirma el orden y los documentos exigidos por la entidad receptora."
+    },
+    {
+      "slug": "convertir-documentos-entre-formatos",
+      "title": "Convertir documentos entre PDF, Word y texto | Prisma Space",
+      "h1": "Convierte documentos entre PDF, Word y formatos de texto",
+      "description": "Elige cómo pasar de PDF a Word, de Word a PDF o entre formatos de texto según el resultado editable que necesitas.",
+      "primaryQuery": "convertir documentos PDF Word online",
+      "intro": "No todas las conversiones persiguen lo mismo. A veces necesitas recuperar texto para editarlo; otras, preparar una copia que se vea de forma consistente al compartirla. Escoge el flujo según el documento de origen y revisa qué elementos pueden cambiar.",
+      "toolIds": [
+        "pdf-to-word",
+        "docx-pdf",
+        "docx-html",
+        "text-file-convert",
+        "table-file-convert"
+      ],
+      "categorySlugs": [
+        "pdf-documentos",
+        "datos-hojas-calculo"
+      ],
+      "guideSlugs": [
+        "convertir-imagenes-a-pdf"
+      ],
+      "steps": [
+        {
+          "title": "Identifica el tipo de archivo",
+          "body": "Comprueba si el PDF contiene texto seleccionable o si es una imagen escaneada. Un archivo escaneado requiere OCR antes de poder editar su texto.",
+          "toolId": "pdf-to-word"
+        },
+        {
+          "title": "Escoge el formato de destino",
+          "body": "Usa Word cuando necesites continuar editando el texto; elige PDF cuando quieras compartir una versión de lectura o impresión.",
+          "toolId": "docx-pdf"
+        },
+        {
+          "title": "Convierte y revisa la estructura",
+          "body": "Abre el resultado y compara títulos, saltos, tablas, columnas y caracteres especiales con el original.",
+          "toolId": "docx-html"
+        },
+        {
+          "title": "Conserva el original",
+          "body": "Guarda la versión de origen hasta confirmar que el archivo convertido contiene toda la información necesaria.",
+          "toolId": "text-file-convert"
+        }
+      ],
+      "faqs": [
+        [
+          "¿PDF a Word mantiene el diseño original?",
+          "No necesariamente. La extracción prioriza texto editable; las tablas, columnas y fuentes complejas pueden requerir correcciones."
+        ],
+        [
+          "¿Puedo convertir un PDF escaneado directamente?",
+          "Primero necesitas reconocer el texto con OCR. La conversión de PDF digital y la lectura de imágenes escaneadas son procesos distintos."
+        ]
+      ],
+      "note": "Comprueba siempre el archivo convertido antes de firmarlo, presentarlo o distribuirlo. Una conversión no certifica fidelidad documental."
+    },
+    {
+      "slug": "optimizar-imagenes-para-web",
+      "title": "Optimizar imágenes para una página web | Prisma Space",
+      "h1": "Prepara imágenes más ligeras para tu página web",
+      "description": "Reduce dimensiones y peso, elige un formato compatible y revisa los metadatos para preparar imágenes para una web.",
+      "primaryQuery": "optimizar imágenes para web",
+      "intro": "Las imágenes grandes pueden aumentar el tiempo de descarga y consumir datos, pero reducirlas sin criterio también puede degradar detalles. Un flujo útil empieza por definir el tamaño de visualización, elegir el formato y comparar el resultado con el original.",
+      "toolIds": [
+        "image-resize",
+        "image-compress",
+        "image-convert",
+        "image-strip-metadata",
+        "image-favicon"
+      ],
+      "categorySlugs": [
+        "imagenes",
+        "privacidad-archivos"
+      ],
+      "guideSlugs": [
+        "comprimir-imagen-para-enviar",
+        "convertir-imagenes-a-webp",
+        "eliminar-metadatos-de-una-foto"
+      ],
+      "steps": [
+        {
+          "title": "Define las dimensiones necesarias",
+          "body": "Mide el espacio real donde aparecerá la imagen. No subas una fotografía de varios miles de píxeles si el diseño solo necesita una miniatura.",
+          "toolId": "image-resize"
+        },
+        {
+          "title": "Elige un formato apropiado",
+          "body": "JPG suele ser práctico para fotografías; PNG cuando necesitas transparencia o gráficos nítidos; WebP puede reducir el peso en navegadores modernos.",
+          "toolId": "image-convert"
+        },
+        {
+          "title": "Ajusta la compresión",
+          "body": "Reduce la calidad de forma gradual y compara bordes, texto y zonas con detalle. El archivo final debe ser más ligero sin perder legibilidad.",
+          "toolId": "image-compress"
+        },
+        {
+          "title": "Comprueba el archivo final",
+          "body": "Abre la imagen exportada, revisa sus dimensiones y elimina metadatos que no necesites publicar.",
+          "toolId": "image-strip-metadata"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Qué formato debo usar en una web?",
+          "Depende del contenido y de la compatibilidad que necesites. Compara JPG, PNG y WebP en el contexto real de tu página."
+        ],
+        [
+          "¿Reducir píxeles siempre reduce el peso?",
+          "Suele ayudar, pero el resultado también depende del formato, la compresión, el detalle y los metadatos."
+        ]
+      ],
+      "note": "La optimización de imágenes no sustituye una estrategia de formatos responsivos, dimensiones adecuadas y carga diferida en el sitio web."
+    },
+    {
+      "slug": "preparar-imagenes-para-redes",
+      "title": "Preparar imágenes para redes sociales | Prisma Space",
+      "h1": "Prepara imágenes para publicar en redes sociales",
+      "description": "Ajusta proporciones, recorta, añade marcas de agua y crea composiciones para publicaciones y miniaturas.",
+      "primaryQuery": "redimensionar imágenes para redes sociales",
+      "intro": "Cada plataforma y ubicación de publicación puede usar proporciones diferentes. Antes de exportar, define si la imagen será cuadrada, vertical u horizontal, protege los elementos importantes dentro del encuadre y revisa cómo se verá en una pantalla pequeña.",
+      "toolIds": [
+        "image-resize",
+        "image-crop",
+        "image-watermark",
+        "image-collage",
+        "video-thumbnail"
+      ],
+      "categorySlugs": [
+        "imagenes",
+        "inteligencia-artificial"
+      ],
+      "guideSlugs": [
+        "comprimir-imagen-para-enviar"
+      ],
+      "steps": [
+        {
+          "title": "Elige la ubicación de publicación",
+          "body": "Determina si prepararás una publicación del feed, una historia, una portada o una miniatura. No uses una única medida para todos los espacios.",
+          "toolId": "image-resize"
+        },
+        {
+          "title": "Ajusta el encuadre",
+          "body": "Recorta la imagen sin cortar rostros, texto o elementos que expliquen el contenido. Revisa los márgenes de seguridad.",
+          "toolId": "image-crop"
+        },
+        {
+          "title": "Añade identidad si corresponde",
+          "body": "Usa una marca de agua discreta cuando necesites atribución o protección visual; evita cubrir información importante.",
+          "toolId": "image-watermark"
+        },
+        {
+          "title": "Exporta y comprueba en móvil",
+          "body": "Abre el archivo final a tamaño reducido y confirma que el texto y el elemento principal siguen siendo legibles.",
+          "toolId": "image-resize"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Prisma publica directamente en Instagram o YouTube?",
+          "No. Estas herramientas preparan archivos; la publicación se realiza desde la plataforma correspondiente."
+        ],
+        [
+          "¿Una imagen sirve para todas las redes?",
+          "No siempre. Comprueba las dimensiones y zonas seguras recomendadas por cada plataforma antes de exportar."
+        ]
+      ],
+      "note": "Las dimensiones recomendadas por las redes pueden cambiar. Verifica los requisitos actuales de la plataforma donde vas a publicar."
+    },
+    {
+      "slug": "analizar-y-convertir-datos",
+      "title": "Analizar y convertir archivos CSV, JSON y Excel | Prisma Space",
+      "h1": "Revisa y convierte datos CSV, JSON y Excel",
+      "description": "Inspecciona tablas, revisa estadísticas y transforma archivos CSV, JSON y Excel antes de importarlos en otra aplicación.",
+      "primaryQuery": "convertir CSV a JSON y Excel online",
+      "intro": "Un archivo tabular puede parecer correcto y aun así contener encabezados repetidos, filas vacías, delimitadores inesperados o valores con formatos inconsistentes. Antes de convertirlo, conviene inspeccionar la estructura y confirmar que la salida conserva los campos que necesitas.",
+      "toolIds": [
+        "csv-profile-local",
+        "csv-stats",
+        "csv-json",
+        "json-csv",
+        "excel-json",
+        "json-xlsx",
+        "json-schema-validate"
+      ],
+      "categorySlugs": [
+        "datos-hojas-calculo",
+        "texto",
+        "desarrollo-web"
+      ],
+      "guideSlugs": [
+        "convertir-csv-a-json",
+        "revisar-archivo-csv"
+      ],
+      "steps": [
+        {
+          "title": "Inspecciona el archivo original",
+          "body": "Revisa encabezados, delimitador, filas vacías y valores que mezclan números, fechas y texto. No elimines columnas sin confirmar su uso.",
+          "toolId": "csv-profile-local"
+        },
+        {
+          "title": "Consulta las estadísticas",
+          "body": "Comprueba el número de filas, columnas y valores que informa la herramienta para detectar anomalías evidentes.",
+          "toolId": "csv-stats"
+        },
+        {
+          "title": "Convierte al formato necesario",
+          "body": "Elige CSV a JSON o JSON a CSV según la aplicación de destino. Si trabajas con Excel, utiliza el conversor específico y revisa el libro resultante.",
+          "toolId": "csv-json"
+        },
+        {
+          "title": "Valida la salida",
+          "body": "Compara una muestra de registros con el archivo original y verifica que no se hayan perdido ceros iniciales, acentos o separadores.",
+          "toolId": "json-csv"
+        }
+      ],
+      "faqs": [
+        [
+          "¿CSV y Excel son el mismo formato?",
+          "No. CSV almacena texto tabular delimitado; un libro de Excel puede incluir varias hojas, fórmulas, estilos y otros elementos."
+        ],
+        [
+          "¿La conversión valida la calidad de los datos?",
+          "No por completo. La conversión cambia la representación; debes revisar campos, tipos, duplicados y valores requeridos."
+        ]
+      ],
+      "note": "No utilices datos personales o confidenciales en servicios externos sin autorización. Mantén una copia del archivo original y valida la salida antes de importarla."
+    },
+    {
+      "slug": "proteger-privacidad-de-archivos",
+      "title": "Privacidad de archivos antes de compartir | Prisma Space",
+      "h1": "Revisa la privacidad de tus archivos antes de compartirlos",
+      "description": "Inspecciona archivos, revisa metadatos EXIF y PDF y limpia datos compatibles antes de compartir documentos, fotografías o texto sensible.",
+      "primaryQuery": "quitar metadatos de fotos y documentos",
+      "intro": "Una fotografía puede incluir fecha, modelo de cámara o coordenadas; un documento puede conservar propiedades internas. Revisar estos datos antes de compartir ayuda a reducir exposiciones accidentales, aunque la limpieza de metadatos no elimina la información visible dentro del archivo.",
+      "toolIds": [
+        "file-inspector",
+        "image-metadata",
+        "image-strip-metadata",
+        "pdf-metadata",
+        "pdf-metadata-clean",
+        "text-redact-sensitive"
+      ],
+      "categorySlugs": [
+        "privacidad-archivos",
+        "imagenes",
+        "pdf-documentos"
+      ],
+      "guideSlugs": [
+        "eliminar-metadatos-de-una-foto"
+      ],
+      "steps": [
+        {
+          "title": "Identifica el archivo",
+          "body": "Comprueba el tipo y las propiedades básicas para saber qué formato estás revisando.",
+          "toolId": "file-inspector"
+        },
+        {
+          "title": "Consulta los metadatos",
+          "body": "Inspecciona los datos EXIF de una imagen o las propiedades disponibles de un PDF.",
+          "toolId": "image-metadata"
+        },
+        {
+          "title": "Limpia los datos compatibles",
+          "body": "Elimina metadatos de la copia que vas a compartir y conserva el original si necesitas mantener sus propiedades.",
+          "toolId": "image-strip-metadata"
+        },
+        {
+          "title": "Revisa el contenido visible",
+          "body": "Comprueba que no queden nombres, direcciones, números u otros datos dentro de la imagen o del texto visible.",
+          "toolId": "text-redact-sensitive"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Quitar EXIF borra una ubicación escrita en la imagen?",
+          "No. Los metadatos y el contenido visible son distintos. Si una dirección aparece en la fotografía, debes editar o censurar esa parte."
+        ],
+        [
+          "¿La limpieza garantiza que el archivo sea anónimo?",
+          "No. Revisa también el nombre, el contenido, el contexto y cualquier dato que pueda identificar a una persona."
+        ]
+      ],
+      "note": "La privacidad depende del archivo completo y del contexto de publicación. Para documentos regulados o confidenciales, sigue las políticas de tu organización."
+    },
+    {
+      "slug": "estudiar-y-citar-fuentes",
+      "title": "Organizar estudio y referencias bibliográficas | Prisma Space",
+      "h1": "Organiza tus fuentes y materiales de estudio",
+      "description": "Prepara referencias bibliográficas, localiza identificadores académicos y organiza materiales para estudiar con Prisma Space.",
+      "primaryQuery": "herramientas para estudiar y hacer bibliografías",
+      "intro": "Una buena rutina de estudio necesita fuentes localizables y referencias consistentes. Puedes usar las herramientas de Prisma para preparar citas, extraer identificadores y estructurar un primer borrador de guía de estudio, manteniendo siempre la revisión de la fuente original.",
+      "toolIds": [
+        "citation-generator",
+        "citation-ids-local",
+        "ai-study-notes",
+        "pdf-text",
+        "word-count"
+      ],
+      "categorySlugs": [
+        "estudio-investigacion",
+        "pdf-documentos",
+        "inteligencia-artificial"
+      ],
+      "guideSlugs": [
+        "crear-referencias-apa-vancouver"
+      ],
+      "steps": [
+        {
+          "title": "Reúne los datos bibliográficos",
+          "body": "Anota autores, título, año, revista o editorial y DOI cuando exista. No completes campos que no hayas podido comprobar.",
+          "toolId": "citation-ids-local"
+        },
+        {
+          "title": "Prepara una referencia",
+          "body": "Selecciona el estilo disponible y genera un borrador con los datos verificados.",
+          "toolId": "citation-generator"
+        },
+        {
+          "title": "Organiza el material",
+          "body": "Extrae texto de documentos compatibles o utiliza una función de apoyo al estudio cuando esté disponible.",
+          "toolId": "pdf-text"
+        },
+        {
+          "title": "Revisa y contrasta",
+          "body": "Compara cada referencia con la publicación original y confirma las normas exigidas por tu facultad o revista.",
+          "toolId": "citation-generator"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Las referencias generadas están listas para entregar?",
+          "Úsalas como borrador. Verifica cada dato bibliográfico en la publicación original y adapta el formato a las instrucciones de tu institución."
+        ],
+        [
+          "¿Puedo usar la IA para resumir bibliografía?",
+          "Puedes explorar el apoyo disponible, pero contrasta cada afirmación con la fuente y declara el uso de IA si tu institución lo exige."
+        ]
+      ],
+      "note": "Prisma no sustituye bases bibliográficas ni verifica por sí solo la existencia de una fuente. La responsabilidad de comprobar la referencia sigue siendo del autor."
+    },
+    {
+      "slug": "crear-contenido-para-youtube",
+      "title": "Preparar contenido para YouTube y redes sociales | Prisma Space",
+      "h1": "Prepara recursos para tus vídeos y publicaciones",
+      "description": "Organiza ideas, prepara miniaturas, extrae fotogramas y adapta recursos visuales y de audio para tus contenidos.",
+      "primaryQuery": "herramientas para crear contenido de YouTube",
+      "intro": "Un vídeo publicado suele necesitar algo más que la grabación: título, miniatura, recursos visuales y fragmentos que se puedan reutilizar. Este flujo combina herramientas de preparación con funciones creativas en beta, sin prometer publicación automática ni resultados de posicionamiento.",
+      "toolIds": [
+        "ai-youtube-kit",
+        "video-thumbnail",
+        "image-resize",
+        "video-gif",
+        "video-audio",
+        "ai-voice"
+      ],
+      "categorySlugs": [
+        "inteligencia-artificial",
+        "audio-video",
+        "imagenes"
+      ],
+      "guideSlugs": [
+        "extraer-audio-de-video"
+      ],
+      "steps": [
+        {
+          "title": "Define el tema y la audiencia",
+          "body": "Escribe la idea central, el beneficio para quien mira y el formato del vídeo. Usa el kit de contenido como apoyo para estructurar un borrador.",
+          "toolId": "ai-youtube-kit"
+        },
+        {
+          "title": "Selecciona un fotograma",
+          "body": "Extrae una imagen del vídeo y comprueba que el rostro, producto o acción se distingan en tamaño pequeño.",
+          "toolId": "video-thumbnail"
+        },
+        {
+          "title": "Adapta los recursos",
+          "body": "Redimensiona imágenes para cada ubicación y conserva el archivo original para crear otras variantes.",
+          "toolId": "image-resize"
+        },
+        {
+          "title": "Revisa el paquete completo",
+          "body": "Comprueba título, miniatura, audio, subtítulos y derechos de uso antes de subir el contenido a la plataforma.",
+          "toolId": "video-thumbnail"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Prisma publica vídeos en YouTube?",
+          "No. Las herramientas ayudan a preparar recursos y borradores; debes subir y publicar el vídeo desde tu cuenta de YouTube."
+        ],
+        [
+          "¿El kit de IA garantiza más visualizaciones?",
+          "No. Puede ayudar a organizar ideas, pero el rendimiento depende del contenido, la audiencia, la presentación y muchos otros factores."
+        ]
+      ],
+      "note": "Las funciones creativas conectadas pueden estar en beta y depender de cuotas. Comprueba derechos de música, imágenes, voces y material de terceros."
+    },
+    {
+      "slug": "editar-audio-y-video",
+      "title": "Editar audio y vídeo con herramientas online | Prisma Space",
+      "h1": "Resuelve tareas habituales de audio y vídeo",
+      "description": "Recorta fragmentos, ajusta audio, cambia formatos y prepara vídeos con herramientas multimedia de Prisma Space.",
+      "primaryQuery": "editar audio y vídeo online",
+      "intro": "Para una tarea puntual quizá no necesites un editor completo. Puedes recortar un fragmento, extraer audio, normalizar volumen o cambiar dimensiones. Algunas operaciones multimedia están en beta y pueden consumir bastante memoria; prueba primero con una copia o un fragmento breve.",
+      "toolIds": [
+        "video-trim",
+        "video-compress",
+        "video-resize",
+        "video-rotate",
+        "video-speed",
+        "video-mute",
+        "video-audio",
+        "audio-trim",
+        "audio-convert",
+        "audio-normalize"
+      ],
+      "categorySlugs": [
+        "audio-video",
+        "inteligencia-artificial"
+      ],
+      "guideSlugs": [
+        "extraer-audio-de-video"
+      ],
+      "steps": [
+        {
+          "title": "Prepara una copia del archivo",
+          "body": "Comprueba formato, duración y tamaño. Conserva el original por si necesitas repetir el proceso con otros ajustes.",
+          "toolId": "video-trim"
+        },
+        {
+          "title": "Recorta el segmento necesario",
+          "body": "Define inicio y duración con precisión y revisa el resultado para evitar cortar una palabra o una acción.",
+          "toolId": "video-trim"
+        },
+        {
+          "title": "Ajusta el audio o el vídeo",
+          "body": "Extrae audio, normaliza volumen o cambia resolución según el objetivo. No apliques varias transformaciones sin revisar cada salida.",
+          "toolId": "video-audio"
+        },
+        {
+          "title": "Comprueba compatibilidad",
+          "body": "Reproduce el archivo exportado en el dispositivo y aplicación donde lo vas a utilizar.",
+          "toolId": "audio-convert"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Puedo editar varias pistas a la vez?",
+          "Estas herramientas se centran en operaciones puntuales; no son un editor multipista completo."
+        ],
+        [
+          "¿Por qué un vídeo puede tardar o fallar?",
+          "El tamaño, el códec, la memoria disponible y el navegador influyen. Reduce el fragmento o prueba con un archivo compatible."
+        ]
+      ],
+      "note": "Varias herramientas multimedia están en beta. Comprueba el resultado y no uses una única exportación como copia de seguridad del original."
+    },
+    {
+      "slug": "trabajar-con-codigo-y-apis",
+      "title": "Utilidades para programar, validar y explorar APIs | Prisma Space",
+      "h1": "Trabaja con código, datos y APIs desde el navegador",
+      "description": "Usa utilidades para formatear código, validar estructuras, probar expresiones regulares, decodificar JWT y explorar APIs públicas.",
+      "primaryQuery": "herramientas para programar online",
+      "intro": "Cuando estás depurando una integración, una pequeña utilidad puede acelerar la revisión de una respuesta o una estructura. Este conjunto ayuda con formato, validación e inspección, pero no sustituye pruebas automatizadas ni revisiones de seguridad en el proyecto.",
+      "toolIds": [
+        "html-format",
+        "css-format",
+        "js-format",
+        "sql-format",
+        "xml-format",
+        "json-schema-validate",
+        "regex-test",
+        "jwt-decode",
+        "hash-file",
+        "api-explorer",
+        "github-discover",
+        "json-yaml"
+      ],
+      "categorySlugs": [
+        "desarrollo-web",
+        "datos-hojas-calculo"
+      ],
+      "guideSlugs": [
+        "validar-estructuras-y-datos"
+      ],
+      "steps": [
+        {
+          "title": "Aísla el fragmento que vas a revisar",
+          "body": "Elimina secretos, tokens activos y datos personales antes de pegar código o respuestas en una herramienta.",
+          "toolId": "html-format"
+        },
+        {
+          "title": "Ordena y valida la estructura",
+          "body": "Usa el formateador o validador compatible con el lenguaje y revisa los errores señalados.",
+          "toolId": "json-schema-validate"
+        },
+        {
+          "title": "Prueba expresiones y valores",
+          "body": "Comprueba patrones regex o inspecciona la parte legible de un JWT. Recuerda que decodificar no verifica la firma.",
+          "toolId": "regex-test"
+        },
+        {
+          "title": "Consulta la API y contrasta",
+          "body": "Explora documentación o una API pública y valida la respuesta en tu entorno real antes de integrarla.",
+          "toolId": "api-explorer"
+        }
+      ],
+      "faqs": [
+        [
+          "¿Es seguro pegar un JWT real?",
+          "No. Utiliza tokens de prueba o datos ficticios; un JWT puede contener información sensible o credenciales vigentes."
+        ],
+        [
+          "¿El explorador prueba cualquier API?",
+          "No. Depende de que el endpoint sea accesible desde el navegador y de sus políticas CORS, autenticación y límites."
+        ]
+      ],
+      "note": "No introduzcas secretos, claves privadas ni credenciales en herramientas públicas. Verifica las salidas dentro de tu propio entorno de desarrollo."
+    },
+    {
+      "slug": "crear-contenido-con-ia",
+      "title": "Crear contenido con inteligencia artificial | Prisma Space",
+      "h1": "Crea borradores y recursos con herramientas de IA",
+      "description": "Explora asistentes de escritura, generación de imágenes, mejora de prompts y voz con IA, revisando los requisitos de cada motor.",
+      "primaryQuery": "crear contenido con inteligencia artificial",
+      "intro": "La IA puede ayudar a pasar de una idea a un primer borrador, proponer alternativas o preparar recursos creativos. Para obtener resultados útiles, define el público, el objetivo y las restricciones; después revisa datos, derechos y tono antes de publicar. Las funciones de Prisma están en beta o dependen de proveedores y claves disponibles.",
+      "toolIds": [
+        "ai-assistant",
+        "ai-prompt-lab",
+        "image-gen",
+        "ai-voice",
+        "music-lyrics",
+        "ai-text-review",
+        "ai-action-plan",
+        "ai-compare-options"
+      ],
+      "categorySlugs": [
+        "inteligencia-artificial"
+      ],
+      "guideSlugs": [
+        "transcribir-audio-con-ia"
+      ],
+      "steps": [
+        {
+          "title": "Define la tarea y el contexto",
+          "body": "Explica el objetivo, el público, el formato y las restricciones. Evita incluir información privada o secretos.",
+          "toolId": "ai-prompt-lab"
+        },
+        {
+          "title": "Prepara un primer borrador",
+          "body": "Usa el asistente de texto para estructurar ideas o redactar una primera versión que puedas revisar.",
+          "toolId": "ai-assistant"
+        },
+        {
+          "title": "Crea o adapta un recurso",
+          "body": "Cuando la función esté disponible, utiliza el generador de imágenes o voz para preparar un recurso complementario.",
+          "toolId": "image-gen"
+        },
+        {
+          "title": "Revisa antes de utilizarlo",
+          "body": "Comprueba hechos, derechos de uso, sesgos, tono y datos sensibles. No publiques una salida de IA sin revisión humana.",
+          "toolId": "ai-text-review"
+        }
+      ],
+      "faqs": [
+        [
+          "¿El contenido generado por IA está listo para publicar?",
+          "No necesariamente. Revisa exactitud, tono, originalidad, derechos y políticas de la plataforma antes de utilizarlo."
+        ],
+        [
+          "¿Todas las funciones de IA tienen uso gratuito?",
+          "No. Algunas están en beta, requieren proveedor conectado o clave propia y pueden consumir créditos externos."
+        ]
+      ],
+      "note": "Las funciones de IA pueden cambiar según proveedor, disponibilidad y cuotas. No introduzcas datos confidenciales ni presentes contenido generado como información verificada sin comprobarlo."
+    }
+  ]
+}

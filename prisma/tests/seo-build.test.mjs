@@ -8,6 +8,9 @@ const root=new URL('../',import.meta.url),dist=new URL('../dist/',import.meta.ur
 const read=p=>readFile(new URL(p,root),'utf8');
 const {pages}=JSON.parse(await read('seo/pages.json'));
 const baseline=JSON.parse(await read('seo/baseline.json'));
+const {categories}=JSON.parse(await read('seo/content-categories.json'));
+const {solutions}=JSON.parse(await read('seo/content-solutions.json'));
+const {guides}=JSON.parse(await read('seo/content-guides.json'));
 const main=await read('src/main.js');
 const decode=s=>s.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
 
@@ -70,12 +73,65 @@ test('directory categories and sitemap expose exactly the current URLs',async()=
  const sitemap=await readFile(new URL('sitemap.xml',dist),'utf8');
  const robots=await readFile(new URL('robots.txt',dist),'utf8');
  const urls=[...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>decode(m[1]));
- assert.equal(urls.length,pages.length+3);assert.equal(new Set(urls).size,urls.length);
+ assert.equal(urls.length,pages.length+3+categories.length+solutions.length+guides.length+3);assert.equal(new Set(urls).size,urls.length);
  for(const p of pages){
   assert.ok(listing.includes('href="/herramientas/'+p.slug+'/"'));assert.ok(urls.includes(SEO_BASE+'/herramientas/'+p.slug+'/'));
   const category=tools.find(t=>t.id===p.tool).category;
   assert.ok(listing.includes('id="'+category+'"'));assert.ok(listing.includes('href="#'+category+'"'));
  }
  assert.ok(listing.includes('Explora '+pages.length+' herramientas'));
+ assert.ok(listing.includes('href="/categorias/"'));
+ assert.ok(listing.includes('href="/soluciones/"'));
+ assert.ok(listing.includes('href="/guias/"'));
  assert.ok(robots.includes('Sitemap: '+SEO_BASE+'/sitemap.xml'));
+ for(const item of categories)assert.ok(urls.includes(SEO_BASE+'/categorias/'+item.slug+'/'));
+ for(const item of solutions)assert.ok(urls.includes(SEO_BASE+'/soluciones/'+item.slug+'/'));
+ for(const item of guides)assert.ok(urls.includes(SEO_BASE+'/guias/'+item.slug+'/'));
+});
+
+test('SEO category, solution and guide hubs are useful, canonical and internally connected',async()=>{
+ const allTitles=new Set(),allDescriptions=new Set();
+ const checkPage=async(path,canonical,type)=>{
+  const html=await readFile(new URL(path,dist),'utf8');
+  assert.match(html,/^<!doctype html>/);
+  assert.equal((html.match(/<h1>/g)||[]).length,1,path);
+  const title=html.split('<title>')[1]?.split('</title>')[0];
+  const description=html.match(/<meta name="description" content="(.*?)">/)?.[1];
+  assert.ok(title&&description,path+' metadata missing');
+  assert.ok(title.length<=70,path+' title too long: '+title.length);
+  assert.ok(description.length<=160,path+' description too long: '+description.length);
+  assert.ok(!allTitles.has(title),'duplicate title: '+title);allTitles.add(title);
+  assert.ok(!allDescriptions.has(description),'duplicate description: '+description);allDescriptions.add(description);
+  const canonicalUrl=decode(html.match(/rel="canonical" href="([^"]+)"/)?.[1]||'');
+  assert.equal(canonicalUrl,canonical,path+' canonical mismatch');
+  const schema=JSON.parse(html.split('<script type="application/ld+json">')[1]?.split('</script>')[0]||'{}');
+  assert.equal(schema['@type'],type,path+' schema mismatch');
+  assert.ok((await stat(new URL(path,dist))).size>1800,path+' too small');
+  return html;
+ };
+ const categoryIndex=await checkPage('categorias/index.html',SEO_BASE+'/categorias/','CollectionPage');
+ const solutionIndex=await checkPage('soluciones/index.html',SEO_BASE+'/soluciones/','CollectionPage');
+ const guideIndex=await checkPage('guias/index.html',SEO_BASE+'/guias/','CollectionPage');
+ for(const item of categories){
+  const html=await checkPage('categorias/'+item.slug+'/index.html',SEO_BASE+'/categorias/'+item.slug+'/','CollectionPage');
+  assert.ok(html.includes('seo-tool-card'),'category has no tool cards: '+item.slug);
+  assert.ok(html.includes('/soluciones/'),'category has no solution links: '+item.slug);
+ }
+ for(const item of solutions){
+  const html=await checkPage('soluciones/'+item.slug+'/index.html',SEO_BASE+'/soluciones/'+item.slug+'/','WebPage');
+  assert.ok(html.includes('seo-workflow-steps'),'solution has no workflow: '+item.slug);
+  assert.ok(html.includes('seo-tool-card'),'solution has no tool links: '+item.slug);
+ }
+ for(const item of guides){
+  const html=await checkPage('guias/'+item.slug+'/index.html',SEO_BASE+'/guias/'+item.slug+'/','HowTo');
+  assert.ok(html.includes('seo-article-sections'),'guide has no explanatory content: '+item.slug);
+  assert.ok(html.includes('seo-workflow-steps'),'guide has no steps: '+item.slug);
+ }
+ assert.ok(categoryIndex.includes('/categorias/pdf-documentos/'));
+ assert.ok(solutionIndex.includes('/soluciones/organizar-documentos-pdf/'));
+ assert.ok(guideIndex.includes('/guias/unir-varios-pdf/'));
+ const firstTool=await readFile(new URL('herramientas/unir-pdf/index.html',dist),'utf8');
+ assert.ok(firstTool.includes('class="seo-discovery"'));
+ assert.ok(firstTool.includes('/categorias/pdf-documentos/'));
+ assert.ok(firstTool.includes('/soluciones/organizar-documentos-pdf/'));
 });
