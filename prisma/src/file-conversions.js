@@ -91,12 +91,30 @@ function convert(source,target,files,query){
 }
 export function planFileConversion(text,files=[],previousTexts=[]){
  const latest=String(text||''),q=norm(latest),attached=files.length>0;
- const prior=previousTexts.slice(-8).reverse().find(item=>hasConversionIntent(item));
+ const history=previousTexts.slice(-8).map(item=>String(item||''));
+ const priorIndex=history.findLastIndex(item=>hasConversionIntent(item));
+ const prior=priorIndex>=0?history[priorIndex]:null;
  // A new instruction always wins. An old conversion is continued only when
  // this turn merely confirms that the requested source file was uploaded.
- const attachmentOnly=/^(?:aqui|ahi|aqui esta|aqui tienes|aqui esta el archivo|aqui tienes el archivo|aqui esta el pdf|aqui tienes el pdf|adjunto|adjunto el pdf|adjunto el archivo|archivo adjunto|el archivo adjunto|este archivo|este es el archivo|este es el pdf|te envio|te envio el archivo|te envio el pdf|ya lo subi|ya lo cargue|ya lo adjunte|esta adjunto|listo|hazlo|por favor|procesa este archivo|aqui esta el documento)[.!?\s]*$/;
- const followup=attached&&prior&&attachmentOnly.test(q);
- const joined=followup?prior+'\n'+latest:latest;
+ const attachmentOnly=/^(?:aqui|ahi|aqui esta|aqui tienes|aqui esta el archivo|aqui tienes el archivo|aqui esta el pdf|aqui tienes el pdf|adjunto|adjunto el pdf|adjunto el archivo|archivo adjunto|el archivo adjunto|este archivo|este es el archivo|este es el pdf|te envio|te envio el archivo|te envio el pdf|ya lo subi|ya lo cargue|ya lo adjunte|esta adjunto|listo|hazlo|por favor|procesa este archivo|procesa (?:los |estos |mis )?archivos?(?: adjuntos?)?|procesa (?:el |este )?(?:pdf|archivo)(?: adjunto)?|aqui esta el archivo pdf para editar|aqui esta el documento)[.!?\s]*$/;
+ const formatOnly=new RegExp('^(?:a|en|como)\\s+'+formatPattern+'[.!?\\s]*
+ const isIntent=hasConversionIntent(joined)||/^(?:a|en|como)\s+(?:pdf|word|docx|png|jpg|jpeg|webp|csv|json|excel|xlsx|mp3|wav|ogg|txt|html)$/.test(q);
+ if(!isIntent)return null;
+ const destination=getTarget(latest)||getTarget(joined);
+ if(!destination)return warning('¿A qué formato quieres convertir el archivo? Puedes pedir, por ejemplo, PDF, Word, PNG, MP3, CSV o Excel. Las opciones reales dependen del tipo de archivo que adjuntes.');
+ if(!attached)return warning('Puedo preparar la conversión a '+destination.toUpperCase()+'. Adjunta el archivo de origen; Prisma seleccionará la herramienta compatible y entregará el resultado, sin simular la conversión.');
+ const kind=sourceKind(files[0]);
+ if(!kind)return warning('No reconozco el tipo de «'+files[0].name+'». Por ahora necesito un PDF, Word, una imagen, vídeo, audio, CSV, JSON, Excel o archivo de texto.');
+ if(files.length>1&&!(kind==='image'&&destination==='pdf'))return warning('Para esta conversión selecciona solo un archivo. Puedes enviarme varias imágenes si deseas unirlas en un PDF.');
+ return convert(kind,destination,files,joined);
+}
+,'i');
+ const afterPrior=priorIndex>=0?history.slice(priorIndex+1):[];
+ // An unrelated newer task cancels continuation of the older conversion.
+ const superseded=afterPrior.some(message=>!formatOnly.test(norm(message).trim())&&!attachmentOnly.test(norm(message).trim()));
+ const latestFormat=afterPrior.filter(message=>formatOnly.test(norm(message).trim())).at(-1)||'';
+ const followup=prior&&!superseded&&((attached&&attachmentOnly.test(q))||formatOnly.test(q));
+ const joined=followup?[prior,latestFormat,latest].filter(Boolean).join('\n'):latest;
  const isIntent=hasConversionIntent(joined)||/^(?:a|en|como)\s+(?:pdf|word|docx|png|jpg|jpeg|webp|csv|json|excel|xlsx|mp3|wav|ogg|txt|html)$/.test(q);
  if(!isIntent)return null;
  const destination=getTarget(latest)||getTarget(joined);
