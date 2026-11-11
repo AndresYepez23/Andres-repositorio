@@ -368,7 +368,7 @@ function initProfileHelp() {
   help.addEventListener('click', event => event.stopPropagation());
   trigger.addEventListener('click', event => {
     event.stopPropagation();
-    if (window.matchMedia('(max-width: 850px)').matches) {
+    if (isMobileSettings()) {
       openSettings('help');
       return;
     }
@@ -436,7 +436,7 @@ export function initPrismaSettings() {
     if ((event.ctrlKey || event.metaKey) && event.key === ',') {
       event.preventDefault();
       if (isOpen) closeSettings();
-      else openSettings('general');
+      else openSettings('home');
       return;
     }
     if (event.key === 'Escape') {
