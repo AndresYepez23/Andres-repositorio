@@ -1,0 +1,479 @@
+{
+  "categories": [
+    {
+      "slug": "pdf-documentos",
+      "name": "PDF y documentos",
+      "title": "Herramientas PDF y documentos online | Prisma Space",
+      "h1": "Herramientas PDF y documentos para trabajar con tus archivos",
+      "description": "Une, divide, convierte, ordena y prepara documentos PDF y Word con herramientas online de Prisma Space. Consulta qué hace cada función y sus límites.",
+      "primaryQuery": "herramientas PDF online",
+      "toolCategories": [
+        "pdf"
+      ],
+      "intro": "Cuando un documento debe entregarse, compartirse o seguir editándose, el formato y el orden importan. Esta categoría reúne operaciones para organizar páginas, convertir documentos y preparar archivos antes de enviarlos. Puedes abrir cada herramienta desde su ficha y revisar qué conserva y qué puede cambiar durante el proceso.",
+      "highlights": [
+        {
+          "title": "Organizar páginas",
+          "body": "Combina archivos, separa rangos, extrae páginas, elimina hojas y corrige la orientación sin reconstruir el documento desde cero."
+        },
+        {
+          "title": "Convertir documentos",
+          "body": "Pasa entre PDF, Word, HTML y formatos de texto cuando el contenido y el tipo de archivo sean compatibles con el conversor."
+        },
+        {
+          "title": "Revisar antes de compartir",
+          "body": "Consulta metadatos, numera páginas o añade una marca de agua cuando el documento necesite contexto adicional."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Puedo unir varios PDF en un solo documento?",
+          "Sí. La herramienta Unir PDF combina varios archivos y conserva el orden que establezcas antes de descargar el resultado."
+        ],
+        [
+          "¿PDF a Word conserva exactamente el diseño?",
+          "No siempre. La conversión prioriza recuperar texto editable; columnas, tablas complejas y fuentes especiales pueden necesitar ajustes."
+        ],
+        [
+          "¿Todas las operaciones PDF funcionan igual?",
+          "No. Algunas se procesan localmente y otras están en beta o usan un flujo de navegador. La ficha de cada herramienta explica su alcance."
+        ]
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf",
+        "convertir-documentos-entre-formatos"
+      ],
+      "guideSlugs": [
+        "unir-varios-pdf",
+        "dividir-pdf-por-paginas",
+        "reducir-peso-pdf",
+        "convertir-imagenes-a-pdf"
+      ]
+    },
+    {
+      "slug": "imagenes",
+      "name": "Imágenes",
+      "title": "Herramientas de imágenes online: comprimir, convertir y editar | Prisma Space",
+      "h1": "Herramientas online para comprimir, convertir y preparar imágenes",
+      "description": "Comprime, redimensiona, recorta y convierte imágenes entre JPG, PNG y WebP. Explora las herramientas de imagen de Prisma Space y sus opciones.",
+      "primaryQuery": "herramientas para imágenes online",
+      "toolCategories": [
+        "image"
+      ],
+      "intro": "Una imagen puede necesitar menos peso para una web, otras dimensiones para una publicación o un formato distinto para mantener transparencia o compatibilidad. Aquí puedes elegir una operación según el resultado que buscas, revisar sus opciones y descargar una copia sin confundir compresión, recorte y conversión.",
+      "highlights": [
+        {
+          "title": "Reducir el peso",
+          "body": "Ajusta la compresión para facilitar el envío o la carga de imágenes, comparando el resultado con el original."
+        },
+        {
+          "title": "Cambiar tamaño y formato",
+          "body": "Redimensiona por dimensiones, recorta el encuadre o convierte entre formatos compatibles como JPG, PNG y WebP."
+        },
+        {
+          "title": "Preparar y revisar",
+          "body": "Añade marcas de agua, crea mosaicos, consulta metadatos o elimina información EXIF antes de compartir una fotografía."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Comprimir y redimensionar una imagen es lo mismo?",
+          "No. Comprimir busca reducir el tamaño del archivo; redimensionar cambia el número de píxeles. Puedes necesitar una o ambas operaciones."
+        ],
+        [
+          "¿WebP siempre es mejor que JPG?",
+          "WebP puede reducir el peso en muchos casos, pero la mejor opción depende de compatibilidad, transparencia y calidad requerida."
+        ],
+        [
+          "¿Puedo eliminar la ubicación de una foto?",
+          "La herramienta de metadatos permite limpiar información EXIF de la imagen. Revisa el archivo final antes de compartirlo."
+        ]
+      ],
+      "solutionSlugs": [
+        "optimizar-imagenes-para-web",
+        "preparar-imagenes-para-redes"
+      ],
+      "guideSlugs": [
+        "comprimir-imagen-para-enviar",
+        "convertir-imagenes-a-webp",
+        "eliminar-metadatos-de-una-foto"
+      ]
+    },
+    {
+      "slug": "inteligencia-artificial",
+      "name": "IA y creación",
+      "title": "Herramientas de inteligencia artificial y creación | Prisma Space",
+      "h1": "Herramientas de inteligencia artificial para crear y trabajar",
+      "description": "Explora asistentes de texto, generación de imágenes, mejora de prompts, voz y apoyo creativo en Prisma Space. Consulta requisitos y disponibilidad.",
+      "primaryQuery": "herramientas de inteligencia artificial online",
+      "toolCategories": [
+        "ai",
+        "creator"
+      ],
+      "intro": "Las funciones de IA de Prisma cubren tareas distintas: redactar, revisar, planificar, mejorar instrucciones, crear imágenes o trabajar con voz. No todas utilizan el mismo proveedor ni tienen las mismas condiciones. Algunas están en beta, requieren una conexión externa o una clave propia; revisa esos requisitos antes de iniciar una tarea.",
+      "highlights": [
+        {
+          "title": "Escritura y revisión",
+          "body": "Organiza ideas, prepara borradores y solicita una revisión crítica. Comprueba siempre los datos, citas y afirmaciones antes de publicar."
+        },
+        {
+          "title": "Imagen y creatividad",
+          "body": "Explora generación visual y composición de ideas mediante los motores disponibles y sus límites de uso."
+        },
+        {
+          "title": "Voz y contenido",
+          "body": "Prueba texto a voz, transcripción y apoyo para contenidos. La disponibilidad depende del proveedor conectado y de sus cuotas."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Todas las herramientas de IA son gratuitas e ilimitadas?",
+          "No. Algunas funciones están en beta, pueden requerir una clave propia o depender de créditos y límites del proveedor."
+        ],
+        [
+          "¿Prisma garantiza que una respuesta de IA sea correcta?",
+          "No. La IA puede equivocarse o inventar datos. Verifica información importante y no uses una salida sin revisión como asesoramiento profesional."
+        ],
+        [
+          "¿Puedo generar imágenes y audio desde Prisma?",
+          "Hay funciones creativas para imagen y voz, pero cada una tiene requisitos y disponibilidad propios que se muestran en su herramienta."
+        ]
+      ],
+      "solutionSlugs": [
+        "crear-contenido-con-ia",
+        "crear-contenido-para-youtube"
+      ],
+      "guideSlugs": [
+        "transcribir-audio-con-ia"
+      ]
+    },
+    {
+      "slug": "audio-video",
+      "name": "Audio y vídeo",
+      "title": "Herramientas de audio y vídeo online | Prisma Space",
+      "h1": "Herramientas para editar y convertir audio y vídeo",
+      "description": "Recorta, convierte, normaliza y prepara archivos de audio y vídeo desde Prisma Space. Revisa compatibilidad, estado beta y límites de cada operación.",
+      "primaryQuery": "herramientas para editar audio y video online",
+      "toolCategories": [
+        "media"
+      ],
+      "intro": "Los archivos multimedia suelen ser pesados y sus formatos no siempre son compatibles con todos los editores. Esta colección reúne operaciones puntuales para recortar fragmentos, cambiar resolución, extraer audio, convertir formatos y revisar una forma de onda. Varias funciones están en beta y dependen de la memoria del dispositivo y del navegador.",
+      "highlights": [
+        {
+          "title": "Editar fragmentos",
+          "body": "Recorta audio o vídeo indicando el tramo que necesitas, sin tener que abrir un editor multipista para una tarea sencilla."
+        },
+        {
+          "title": "Convertir y ajustar",
+          "body": "Cambia formatos de audio, normaliza volumen o modifica resolución y velocidad de vídeo cuando el motor admita el archivo."
+        },
+        {
+          "title": "Extraer y preparar",
+          "body": "Captura un fotograma, genera un GIF o separa el audio de un vídeo para reutilizarlo en otro flujo."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Puedo procesar cualquier tamaño de vídeo?",
+          "No hay compatibilidad universal. Los archivos grandes pueden requerir más memoria y tiempo; prueba primero con un fragmento pequeño."
+        ],
+        [
+          "¿Las funciones multimedia están en producción estable?",
+          "Varias operaciones figuran como beta. La ficha de cada herramienta indica su estado y debes comprobar el resultado antes de usarlo."
+        ],
+        [
+          "¿Prisma reemplaza un editor profesional?",
+          "No. Estas herramientas resuelven operaciones concretas; no ofrecen edición multipista o un flujo profesional completo."
+        ]
+      ],
+      "solutionSlugs": [
+        "editar-audio-y-video",
+        "crear-contenido-para-youtube"
+      ],
+      "guideSlugs": [
+        "extraer-audio-de-video"
+      ]
+    },
+    {
+      "slug": "texto",
+      "name": "Texto y escritura",
+      "title": "Herramientas de texto online para limpiar, convertir y analizar | Prisma Space",
+      "h1": "Herramientas de texto para limpiar, transformar y organizar contenido",
+      "description": "Cuenta palabras, limpia texto, cambia mayúsculas, extrae datos y convierte formatos de texto con las utilidades de Prisma Space.",
+      "primaryQuery": "herramientas de texto online",
+      "toolCategories": [
+        "text"
+      ],
+      "intro": "Las tareas pequeñas de texto se acumulan: limpiar espacios, normalizar caracteres, ordenar líneas, extraer correos o enlaces, convertir texto y preparar datos para otra aplicación. Estas herramientas están pensadas para resolver una operación concreta y permitirte revisar el resultado antes de copiarlo o descargarlo.",
+      "highlights": [
+        {
+          "title": "Limpiar y normalizar",
+          "body": "Quita líneas vacías, espacios repetidos, tildes o duplicados y aplica cambios de mayúsculas según el uso que necesites."
+        },
+        {
+          "title": "Extraer información",
+          "body": "Identifica correos, enlaces, teléfonos o hashtags dentro de un bloque de texto y conserva el resultado en una lista."
+        },
+        {
+          "title": "Convertir estructuras",
+          "body": "Codifica Base64 o URL, trabaja con HTML y Markdown y transforma CSV y JSON en los sentidos admitidos."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Se envía el texto a un servidor?",
+          "Las utilidades locales se ejecutan en el navegador. En cualquier operación conectada, consulta la descripción y las condiciones de esa herramienta."
+        ],
+        [
+          "¿Puedo procesar textos largos?",
+          "Depende de la memoria del navegador y de la operación. Para documentos extensos, divide el contenido y comprueba el resultado."
+        ],
+        [
+          "¿Las herramientas cambian el texto original?",
+          "Trabajan sobre una entrada y generan una salida; conserva una copia del original si necesitas comparar o revertir cambios."
+        ]
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos",
+        "estudiar-y-citar-fuentes"
+      ],
+      "guideSlugs": [
+        "convertir-csv-a-json"
+      ]
+    },
+    {
+      "slug": "utilidades",
+      "name": "Utilidades",
+      "title": "Utilidades online gratuitas: QR, calculadoras y conversores | Prisma Space",
+      "h1": "Utilidades online para cálculos, conversiones y códigos QR",
+      "description": "Usa calculadoras, conversores de unidades y fechas, generadores QR, códigos de barras y otras utilidades rápidas de Prisma Space.",
+      "primaryQuery": "utilidades online gratuitas",
+      "toolCategories": [
+        "utility"
+      ],
+      "intro": "No todas las tareas necesitan un editor complejo. A veces solo necesitas convertir una unidad, calcular un porcentaje, comparar fechas, crear un código QR o comprobar una combinación de colores. Esta categoría agrupa utilidades directas para resolver esas operaciones desde el navegador.",
+      "highlights": [
+        {
+          "title": "Calcular y convertir",
+          "body": "Resuelve porcentajes, expresiones, diferencias entre fechas, zonas horarias, monedas y unidades con entradas explícitas."
+        },
+        {
+          "title": "Crear códigos",
+          "body": "Genera códigos QR y códigos de barras a partir de los datos que quieras representar y comprueba el resultado antes de imprimirlo."
+        },
+        {
+          "title": "Comprobar detalles",
+          "body": "Revisa contraste de colores, paletas y otros valores prácticos para diseño y trabajo diario."
+        }
+      ],
+      "faqs": [
+        [
+          "¿El conversor de monedas usa una tasa en tiempo real?",
+          "Consulta la fecha y la fuente que muestra la herramienta. Los tipos de cambio de referencia pueden tener retraso y no equivalen a una cotización bancaria."
+        ],
+        [
+          "¿Los códigos QR se pueden usar comercialmente?",
+          "Puedes descargar el resultado, pero verifica que el contenido codificado sea correcto y que el destino siga disponible."
+        ],
+        [
+          "¿Las calculadoras sustituyen una revisión profesional?",
+          "No. Para decisiones financieras, fiscales, médicas o legales, verifica los resultados con fuentes y profesionales adecuados."
+        ]
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos",
+        "preparar-imagenes-para-redes"
+      ],
+      "guideSlugs": [
+        "crear-codigo-qr"
+      ]
+    },
+    {
+      "slug": "desarrollo-web",
+      "name": "Desarrollo web y programación",
+      "title": "Herramientas para desarrolladores web y programación | Prisma Space",
+      "h1": "Herramientas para desarrollo web, código y APIs",
+      "description": "Formatea código, valida estructuras, prueba expresiones regulares, decodifica JWT y explora APIs con utilidades para desarrolladores.",
+      "primaryQuery": "herramientas para desarrolladores online",
+      "toolCategories": [
+        "dev",
+        "web"
+      ],
+      "intro": "Durante el desarrollo es habitual tener que inspeccionar una respuesta, limpiar una estructura, probar una expresión regular o revisar un token. Prisma reúne utilidades puntuales para esas tareas, sin pretender reemplazar un IDE, un depurador o una auditoría de seguridad.",
+      "highlights": [
+        {
+          "title": "Formatear y validar",
+          "body": "Trabaja con HTML, CSS, JavaScript, SQL, XML, JSON y esquemas cuando la herramienta correspondiente admita la estructura."
+        },
+        {
+          "title": "Inspeccionar y probar",
+          "body": "Decodifica la parte legible de un JWT, prueba patrones regex y genera hashes para comparar archivos."
+        },
+        {
+          "title": "Explorar recursos",
+          "body": "Consulta APIs públicas y descubre proyectos open source. Revisa permisos, límites y documentación antes de integrar un servicio."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Decodificar un JWT verifica su firma?",
+          "No necesariamente. Decodificar permite inspeccionar el contenido legible; no demuestra que el token sea auténtico ni válido."
+        ],
+        [
+          "¿Puedo enviar claves privadas a las herramientas?",
+          "No. No pegues contraseñas, tokens activos, claves privadas ni secretos en herramientas públicas."
+        ],
+        [
+          "¿Las utilidades reemplazan las pruebas del proyecto?",
+          "No. Son apoyos puntuales. Valida el código en tu entorno, con tus dependencias y pruebas automatizadas."
+        ]
+      ],
+      "solutionSlugs": [
+        "trabajar-con-codigo-y-apis"
+      ],
+      "guideSlugs": [
+        "validar-estructuras-y-datos"
+      ]
+    },
+    {
+      "slug": "datos-hojas-calculo",
+      "name": "Datos y hojas de cálculo",
+      "title": "Herramientas para CSV, JSON y Excel | Prisma Space",
+      "h1": "Herramientas para revisar y convertir datos CSV, JSON y Excel",
+      "description": "Inspecciona archivos CSV, consulta estadísticas y convierte datos entre CSV, JSON y Excel con las herramientas de Prisma Space.",
+      "primaryQuery": "convertir CSV JSON Excel online",
+      "toolCategories": [
+        "data",
+        "office"
+      ],
+      "intro": "Antes de importar datos en una aplicación o compartir una hoja de cálculo, conviene revisar encabezados, filas vacías, tipos de valores y estructura. Esta categoría reúne operaciones para perfilar CSV, consultar estadísticas y convertir formatos compatibles, con indicaciones sobre funciones beta.",
+      "highlights": [
+        {
+          "title": "Inspeccionar CSV",
+          "body": "Revisa estructura, encabezados y métricas básicas para detectar problemas antes de continuar con un análisis."
+        },
+        {
+          "title": "Convertir formatos",
+          "body": "Transforma CSV a JSON, JSON a CSV y utiliza los conversores de Excel disponibles para intercambiar datos entre herramientas."
+        },
+        {
+          "title": "Validar estructuras",
+          "body": "Comprueba esquemas y compara objetos JSON cuando necesites detectar diferencias entre versiones."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Se conservan todos los tipos y formatos de Excel?",
+          "No siempre. Las conversiones dependen del formato y de la herramienta; comprueba hojas, fórmulas y tipos de datos después de exportar."
+        ],
+        [
+          "¿Qué debo revisar antes de convertir CSV?",
+          "Confirma el delimitador, los encabezados, la codificación y si los campos contienen comas o saltos de línea."
+        ],
+        [
+          "¿Puedo usar la salida como base de datos definitiva?",
+          "No sin validación. Revisa duplicados, campos obligatorios, formatos y valores antes de importar datos en producción."
+        ]
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos"
+      ],
+      "guideSlugs": [
+        "convertir-csv-a-json",
+        "revisar-archivo-csv"
+      ]
+    },
+    {
+      "slug": "privacidad-archivos",
+      "name": "Privacidad y archivos",
+      "title": "Herramientas de privacidad para revisar archivos y metadatos | Prisma Space",
+      "h1": "Herramientas para revisar la privacidad de tus archivos",
+      "description": "Inspecciona archivos, consulta metadatos y elimina información EXIF o datos sensibles antes de compartir documentos e imágenes.",
+      "primaryQuery": "eliminar metadatos de archivos online",
+      "toolCategories": [
+        "privacy"
+      ],
+      "intro": "Un archivo puede contener más información que la que aparece a simple vista: datos EXIF, propiedades del documento, nombres internos o fragmentos de texto sensible. Estas herramientas ayudan a inspeccionar y limpiar algunos metadatos compatibles, pero no sustituyen una revisión completa del contenido antes de compartirlo.",
+      "highlights": [
+        {
+          "title": "Inspeccionar archivos",
+          "body": "Consulta el tipo y las propiedades visibles de un archivo para entender qué estás a punto de compartir."
+        },
+        {
+          "title": "Revisar metadatos",
+          "body": "Comprueba datos EXIF de imágenes y propiedades de documentos PDF antes de distribuirlos."
+        },
+        {
+          "title": "Limpiar información",
+          "body": "Elimina metadatos compatibles de imágenes o PDF y oculta datos sensibles en bloques de texto, revisando siempre la salida."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Eliminar metadatos borra el contenido visible?",
+          "No. La limpieza de metadatos no censura automáticamente texto, caras, matrículas ni información que aparezca dentro de la imagen."
+        ],
+        [
+          "¿La limpieza garantiza anonimato?",
+          "No. Puede quedar información identificable en el contenido, nombre del archivo, historial o contexto. Revisa todo antes de publicarlo."
+        ],
+        [
+          "¿Qué debo hacer con documentos confidenciales?",
+          "Evita subirlos a servicios externos sin autorización. Utiliza el procesamiento local cuando esté disponible y sigue las políticas de tu organización."
+        ]
+      ],
+      "solutionSlugs": [
+        "proteger-privacidad-de-archivos"
+      ],
+      "guideSlugs": [
+        "eliminar-metadatos-de-una-foto"
+      ]
+    },
+    {
+      "slug": "estudio-investigacion",
+      "name": "Estudio e investigación",
+      "title": "Herramientas para estudiar, citar e investigar | Prisma Space",
+      "h1": "Herramientas para estudiar, organizar referencias e investigar",
+      "description": "Genera referencias bibliográficas, extrae identificadores académicos y prepara material de estudio con herramientas de Prisma Space.",
+      "primaryQuery": "herramientas para estudiantes e investigación",
+      "toolCategories": [
+        "study"
+      ],
+      "intro": "Estudiar e investigar implica más que resumir un texto: también hay que ordenar fuentes, identificar publicaciones y mantener consistencia en las referencias. Prisma ofrece utilidades para generar citas, extraer identificadores y explorar apoyo de IA en beta, manteniendo siempre la revisión de la fuente original.",
+      "highlights": [
+        {
+          "title": "Citar fuentes",
+          "body": "Prepara referencias en estilos bibliográficos disponibles y revisa manualmente autores, títulos, fechas, DOI y datos editoriales."
+        },
+        {
+          "title": "Identificar publicaciones",
+          "body": "Extrae DOI, PMID y arXiv de textos para localizar artículos y completar una revisión bibliográfica."
+        },
+        {
+          "title": "Organizar el estudio",
+          "body": "Explora funciones de apoyo para guías de estudio, comprobando su estado beta y revisando siempre el contenido generado."
+        }
+      ],
+      "faqs": [
+        [
+          "¿Las referencias generadas están listas para entregar?",
+          "Úsalas como borrador. Verifica cada dato bibliográfico en la publicación original y adapta el formato a las instrucciones de tu institución."
+        ],
+        [
+          "¿Prisma garantiza que un artículo exista?",
+          "No. La extracción de identificadores ayuda a localizar referencias, pero debes comprobar que el DOI, PMID o arXiv corresponda a la fuente."
+        ],
+        [
+          "¿La IA puede hacer el trabajo académico por mí?",
+          "Puede apoyar la organización y explicación, pero debes comprender, contrastar y redactar tu propio trabajo siguiendo las reglas académicas."
+        ]
+      ],
+      "solutionSlugs": [
+        "estudiar-y-citar-fuentes"
+      ],
+      "guideSlugs": [
+        "crear-referencias-apa-vancouver"
+      ]
+    }
+  ]
+}
