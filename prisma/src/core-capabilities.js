@@ -74,6 +74,12 @@ export function planCapabilityRequest(raw,files=[],task=null){
  const kinds=new Set(files.map(fileKind));
  let kind=kinds.size===1?[...kinds][0]:/\b(?:foto|imagen|fotograf|png|webp)\w*\b/.test(q)?'image':/\bpdf\b/.test(q)?'pdf':'text';
  if(kinds.size>1)return need('Hay tipos de archivo distintos. Selecciona un grupo compatible para procesarlo sin omitir archivos.');
+ // A relative page means one exact output, not a split of every page.
+ // Resolve "last" only after the PDF engine knows its actual page count.
+ if(kind==='pdf'&&/\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)&&!/\b(?:elimina|quita|borra)\b/.test(q)){
+  if(!files.length)return need('Adjunta el PDF para extraer únicamente su última página.');
+  return {type:'ready',confidence:1,message:'Extraeré solo la última página del PDF en un archivo independiente.',steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:'last'},reason:'Seleccionar exclusivamente la última página'}]};
+ }
  if(kind==='image'&&/a pdf|en pdf|como pdf/.test(q))return null;
  if(kind==='pdf'&&/divid|separ|partir|fragment|troce/.test(q)&&!/(?:paginas|hojas)\s*\d/.test(q))return buildSmartLocalFlow(raw,files,[]);
  if(kind==='image'&&/reduce (?:su |el )?tamano/.test(q)&&!/(?:archivo|peso|dimensiones|\d+\s*[x×])/.test(q))return need('¿Quieres reducir el peso del archivo o sus dimensiones en píxeles?');

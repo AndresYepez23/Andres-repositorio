@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import {planCapabilityRequest,extractPayload,CAPABILITY_WORKFLOWS} from '../src/core-capabilities.js';
 import {runToolBatch,resultFiles,OBSERVERS,executionCards,runIndependentJobs} from '../src/core-execution.js';
 import {createTaskMemory} from '../src/core-task-memory.js';
+import {planPdfSplit} from '../src/pdf-split-options.js';
+import {planFileConversion} from '../src/file-conversions.js';
 import {metricEvent} from '../src/core-telemetry.js';
 import {onRequestPost} from '../functions/api/core/metrics.js';
 import {runTool} from '../src/engines.js';
@@ -108,6 +110,32 @@ test('task memory: followups, new objective precedence, isolation, expiration an
  assert.equal(memory.resolve('pending','Cuenta las palabras: hola').request,undefined);
  now=101;assert.equal(memory.get('a'),null);
  assert.equal(memory.save('large',{files:[new File(['x'.repeat(1001)],'big')]}),false);
+});
+test('real conversation regression: last PDF page followed by pending Word conversion',()=>{
+ const memory=createTaskMemory();
+ const document=[new File(['synthetic PDF'],'acuerdo.pdf',{type:'application/pdf'})];
+ memory.wait('chat','Dividir PDF');
+ const selection=memory.resolve('chat','La última página',document);
+ const onlyLast=planCapabilityRequest(selection.request||'La última página',selection.files,selection.task);
+ assert.deepEqual(ids(onlyLast),['pdf-split']);
+ assert.equal(onlyLast.steps[0].params.mode,'selected');
+ assert.deepEqual(planPdfSplit(onlyLast.steps[0].params,3).groups.map(x=>x.indices),[[2]]);
+ memory.save('chat',{files:[new File(['output'],'pagina-003.pdf',{type:'application/pdf'})],originals:document,steps:onlyLast.steps});
+ assert.equal(planFileConversion('Pasar de pdf a work',[])?.type,'needs-input');
+ memory.wait('chat','Pasar de pdf a work');
+ const format=memory.resolve('chat','A Word',[]);
+ assert.match(format.request,/a word$/i);
+ assert.equal(planCapabilityRequest(format.request,format.files,format.task)?.type,'needs-input');
+ memory.wait('chat',format.request,[]);
+ const upload=memory.resolve('chat','Procesa los archivos adjuntos.',document);
+ const ready=planCapabilityRequest(upload.request,upload.files,upload.task);
+ assert.deepEqual(ids(ready),['pdf-to-word']);
+ assert.ok(!ids(ready).includes('pdf-split'));
+ // A new, explicit operation must override any previous pending request.
+ memory.wait('chat','Dividir PDF');
+ const replacement=memory.resolve('chat','Convierte este PDF a Word',document);
+ assert.equal(replacement.request,undefined);
+ assert.deepEqual(ids(planCapabilityRequest('Convierte este PDF a Word',document)),['pdf-to-word']);
 });
 test('telemetry rejects personal data fields and never exposes a read endpoint',async()=>{
  assert.deepEqual(metricEvent('word-count','succeeded',{text:'SECRET',filename:'personal.pdf',duration:20,files:2}),{id:'word-count',event:'succeeded',duration:20,files:2});

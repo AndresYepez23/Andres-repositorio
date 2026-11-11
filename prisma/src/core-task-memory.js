@@ -8,7 +8,13 @@ export function createTaskMemory({maxBytes=120*1024*1024,maxChats=8,ttl=30*60*10
  save(id,{files=[],originals=[],steps=[],text=''}={}){tasks.delete(id);pending.delete(id);const bytes=[...files,...originals].reduce((n,f)=>n+(f.size||0),0)+text.length*2;if(bytes>maxBytes)return false;tasks.set(id,{files,originals,text,steps:steps.map(s=>({tool_id:s.tool_id,params:{...s.params}})),updated:now(),bytes});while(tasks.size>maxChats||[...tasks.values()].reduce((n,t)=>n+t.bytes,0)>maxBytes)tasks.delete(tasks.keys().next().value);return true;},
  resolve(id,query,newFiles=[]){const task=get(id),q=normalizeIntent(query).trim();
   const waiting=pending.get(id);
-  if(waiting&&now()-waiting.updated<ttl&&/^(?:aqui|adjunto|listo|hazlo|este archivo|\d|png$|webp$|jpg$)/.test(q))return {task:null,files:newFiles.length?newFiles:waiting.files,request:waiting.request+' '+query};
+  // Attachment-only turns and format clarifications must retain the latest unfinished
+  // objective, not resurrect a prior successful split or conversion.
+  const uploadReply=/^(?:aqui|ahi|adjunto|te envio|ya (?:lo )?(?:subi|cargue|adjunte)|listo|hazlo|este archivo|el archivo|el pdf|procesa (?:los |estos |mis )?archivos?(?: adjuntos?)?|procesa (?:este |el )?(?:archivo|pdf)|continua (?:con )?(?:el |los )?archivos?|\d|png$|webp$|jpg$)/.test(q);
+  const formatReply=/^(?:a|en|como)\s+(?:word|docx|pdf|png|jpe?g|webp|csv|json|excel|xlsx|mp3|wav|txt|html)[.!?\s]*$/.test(q);
+  if(waiting&&now()-waiting.updated<ttl&&(uploadReply||formatReply)){
+   return {task:null,files:newFiles.length?newFiles:waiting.files,request:waiting.request+' '+query};
+  }
   if(waiting)pending.delete(id);
   if(!task)return {task:null,files:newFiles};
   const follow=/^(?:tambien|ahora|mejor|con menos|conserva|utiliza el mismo|hazlo|continua|todas|la segunda|el segundo|repite|dejala|dejalas|quita(?:le|les)? los metadatos)/.test(q);

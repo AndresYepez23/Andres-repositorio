@@ -1658,6 +1658,9 @@ async function requestPlan(userText){
   const fileConversion=planFileConversion(userText,attachments,previousTexts);
   if(fileConversion){
     if(fileConversion.type!=='ready'){
+      // Preserve the conversion objective while asking for format or source file.
+      // A later "A Word" or "Procesa los archivos adjuntos" must not repeat a PDF split.
+      if(fileConversion.type==='needs-input')taskMemory.wait(activeConversationId,resolvedTask.request||userText,attachments);
       addMessage('assistant',fileConversion.message);
       status('Convertidor preparado.','info');
       return;
