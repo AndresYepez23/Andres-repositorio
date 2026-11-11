@@ -3,6 +3,8 @@
 export function parsePdfPageSelection(value,total){
  const chosen=new Set(),spec=String(value??'').trim();
  if(!spec)throw Error('Indica las páginas que deseas separar, por ejemplo 2, 4-6.');
+ const normalized=spec.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+ if(/^(?:la\\s+)?(?:ultima|ultimo|last)(?:\\s+(?:pagina|hoja))?$/.test(normalized))return [total-1];
  for(const part of spec.split(',')){
   const found=part.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);
   if(!found)throw Error('Formato de páginas inválido. Usa números y rangos: 2, 4-6.');
