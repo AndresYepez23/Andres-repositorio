@@ -91,12 +91,19 @@ function convert(source,target,files,query){
 }
 export function planFileConversion(text,files=[],previousTexts=[]){
  const latest=String(text||''),q=norm(latest),attached=files.length>0;
- const prior=previousTexts.slice(-8).reverse().find(item=>hasConversionIntent(item));
+ const history=previousTexts.slice(-8).map(item=>String(item||''));
+ const priorIndex=history.findLastIndex(item=>hasConversionIntent(item));
+ const prior=priorIndex>=0?history[priorIndex]:null;
  // A new instruction always wins. An old conversion is continued only when
  // this turn merely confirms that the requested source file was uploaded.
- const attachmentOnly=/^(?:aqui|ahi|aqui esta|aqui tienes|aqui esta el archivo|aqui tienes el archivo|aqui esta el pdf|aqui tienes el pdf|adjunto|adjunto el pdf|adjunto el archivo|archivo adjunto|el archivo adjunto|este archivo|este es el archivo|este es el pdf|te envio|te envio el archivo|te envio el pdf|ya lo subi|ya lo cargue|ya lo adjunte|esta adjunto|listo|hazlo|por favor|procesa este archivo|aqui esta el documento)[.!?\s]*$/;
- const followup=attached&&prior&&attachmentOnly.test(q);
- const joined=followup?prior+'\n'+latest:latest;
+ const attachmentOnly=/^(?:aqui|ahi|aqui esta|aqui tienes|aqui esta el archivo|aqui tienes el archivo|aqui esta el pdf|aqui tienes el pdf|adjunto|adjunto el pdf|adjunto el archivo|archivo adjunto|el archivo adjunto|este archivo|este es el archivo|este es el pdf|te envio|te envio el archivo|te envio el pdf|ya lo subi|ya lo cargue|ya lo adjunte|esta adjunto|listo|hazlo|por favor|procesa este archivo|procesa (?:los |estos |mis )?archivos?(?: adjuntos?)?|procesa (?:el |este )?(?:pdf|archivo)(?: adjunto)?|aqui esta el archivo pdf para editar|aqui esta el documento)[.!?\s]*$/;
+ const formatOnly=/^(?:a|en|como)\s+(?:word|docx|doc|pdf|png|jpe?g|webp|csv|json|excel|xlsx|xls|mp3|wav|ogg|txt|html|markdown|md)[.!?\s]*$/i;
+ const afterPrior=priorIndex>=0?history.slice(priorIndex+1):[];
+ // A newer unrelated command takes precedence over the earlier conversion.
+ const superseded=afterPrior.some(message=>!formatOnly.test(norm(message).trim())&&!attachmentOnly.test(norm(message).trim()));
+ const latestFormat=afterPrior.filter(message=>formatOnly.test(norm(message).trim())).at(-1)||'';
+ const followup=prior&&!superseded&&((attached&&attachmentOnly.test(q))||formatOnly.test(q));
+ const joined=followup?[prior,latestFormat,latest].filter(Boolean).join('\n'):latest;
  const isIntent=hasConversionIntent(joined)||/^(?:a|en|como)\s+(?:pdf|word|docx|png|jpg|jpeg|webp|csv|json|excel|xlsx|mp3|wav|ogg|txt|html)$/.test(q);
  if(!isIntent)return null;
  const destination=getTarget(latest)||getTarget(joined);
