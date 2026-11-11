@@ -161,6 +161,44 @@ async function uploadArtifact(jobId, artifact) {
   };
 }
 
+// Files supplied in ChatGPT stay scoped to this one job. Nothing is injected into
+// the user's Core conversation, so an unrelated next turn cannot reuse an old file.
+async function jobAttachments(job) {
+  const requested = job?.payload?.inputFiles;
+  if (!Array.isArray(requested) || !requested.length) return getPrismaCoreAttachments();
+  if (requested.length > 12) throw Error('El conjunto de archivos excede el máximo permitido.');
+  const supplied = [];
+  for (const item of requested) {
+    if (!/^in_[a-f0-9]{36}$/.test(String(item?.id || '')))
+      throw Error('Referencia de archivo de ChatGPT inválida.');
+    const path = '/bridge/input?job_id=' + encodeURIComponent(job.id) +
+      '&input_id=' + encodeURIComponent(item.id);
+    let response = null;
+    // Cloudflare KV is eventually consistent across regions. Retry a short
+    // time if the file was staged moments before the browser claimed its job.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      response = await bridgeRequest(path,{method:'GET'}).catch(() => null);
+      if (response?.ok || (response && response.status !== 404)) break;
+      await new Promise(resolve=>setTimeout(resolve,600+attempt*400));
+    }
+    if (!response?.ok) {
+      const detail = await response?.json().catch(()=>null);
+      throw Error('No pude recuperar ' + String(item.name || 'el archivo') +
+        ' desde ChatGPT: ' + String(detail?.message || detail?.error || 'reintenta adjuntándolo').slice(0,140));
+    }
+    const blob = await response.blob();
+    if (!blob.size || blob.size > 20 * 1024 * 1024)
+      throw Error('El archivo descargado está vacío o excede el límite de 20 MB.');
+    if (item.size && blob.size !== item.size)
+      throw Error('La descarga de ChatGPT no coincide con el tamaño original del archivo.');
+    const name = String(item.name || 'archivo').slice(0,180);
+    supplied.push(new File([blob], name, {
+      type: String(item.type || blob.type || 'application/octet-stream').slice(0,120)
+    }));
+  }
+  return supplied;
+}
+
 async function collectResult(jobId, result, executionSteps = []) {
   const sourceArtifacts = [];
   if (result?.blob instanceof Blob) sourceArtifacts.push({
@@ -191,10 +229,9 @@ async function collectResult(jobId, result, executionSteps = []) {
   };
 }
 
-async function executeSingleTool(job, context) {
+async function executeSingleTool(job, context, available) {
   const tool = tools.find((item) => item.id === job.tool_id && ["ready", "beta"].includes(item.status));
   if (!tool) throw new Error("La herramienta no existe o no está habilitada en el registro actual de Prisma.");
-  const available = getPrismaCoreAttachments();
   const files = tool.file ? compatibleFiles(tool, available) : [];
   if (tool.file && !files.length) {
     throw new Error("Adjunta un archivo compatible en el panel de archivos de Prisma Core y vuelve a ejecutar la tarea.");
@@ -208,10 +245,9 @@ async function executeSingleTool(job, context) {
   });
 }
 
-async function executeWorkflow(job, context) {
+async function executeWorkflow(job, context, available) {
   const workflow = workflows.find((item) => item.id === job.workflow_id);
   if (!workflow) throw new Error("El flujo inteligente solicitado no existe en Prisma.");
-  const available = getPrismaCoreAttachments();
   const files = workflow.file ? compatibleFiles(workflow, available) : [];
   if (workflow.file && !files.length) {
     throw new Error("Adjunta un archivo compatible en Prisma Core y vuelve a ejecutar el flujo.");
@@ -225,11 +261,11 @@ async function executeWorkflow(job, context) {
   });
 }
 
-async function executePlan(job, context) {
+async function executePlan(job, context, available) {
   const steps = Array.isArray(job.payload?.steps) ? job.payload.steps : [];
   if (!steps.length) throw new Error("Prisma Core no generó pasos ejecutables para esta solicitud.");
   if (steps.length > 10) throw new Error("El plan supera el límite de diez operaciones.");
-  let currentFiles = getPrismaCoreAttachments();
+  let currentFiles = available;
   let previousText = "";
   const results = [];
   const stepsDone = [];
@@ -281,10 +317,11 @@ async function executeJob(job) {
   dispatchStatus("executing", { jobId: job.id, kind: job.kind });
   try {
     const context = await getPrismaCoreExecutionContext();
+    const available = await jobAttachments(job);
     let result;
-    if (job.kind === "tool") result = await executeSingleTool(job, context);
-    else if (job.kind === "workflow") result = await executeWorkflow(job, context);
-    else if (job.kind === "plan") result = await executePlan(job, context);
+    if (job.kind === "tool") result = await executeSingleTool(job, context, available);
+    else if (job.kind === "workflow") result = await executeWorkflow(job, context, available);
+    else if (job.kind === "plan") result = await executePlan(job, context, available);
     else throw new Error("Tipo de tarea no reconocido por el puente de Prisma.");
 
     const collected = await collectResult(job.id, result);
