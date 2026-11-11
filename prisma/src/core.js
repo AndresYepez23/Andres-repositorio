@@ -2329,7 +2329,15 @@ export function initPrismaCore(){
     }
   });
   $('#core-cancel').addEventListener('click',()=>{if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
-  $('#core-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}});
+  $('#core-input').addEventListener('keydown',event=>{
+    if(event.key!=='Enter'||event.shiftKey)return;
+    let shortcut='enter';
+    try{shortcut=localStorage.getItem('prisma-send-shortcut')==='ctrl-enter'?'ctrl-enter':'enter';}catch{}
+    const send=shortcut==='ctrl-enter'
+      ?(event.ctrlKey||event.metaKey)
+      :(!event.ctrlKey&&!event.metaKey);
+    if(send){event.preventDefault();sendMessage();}
+  });
   $('#core-input').addEventListener('input',event=>{
     const input=event.target;
     input.style.height='44px';
