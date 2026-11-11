@@ -1,28 +1,29 @@
-# Correos de Prisma Space · Aurora
+# Correos de Prisma Space · Aurora adaptable
 
-Los correos de cuenta usan la identidad Prisma Space Aurora: azul noche `#0e121d`, superficies `#161d2b`, turquesa `#91dbd5`, azul `#84bce9` y violeta `#b9a3f1`. El diseño usa tablas e CSS en línea para clientes de correo, sin fuentes externas ni scripts.
+Las plantillas de Prisma Space usan fondo claro predeterminado y una variante oscura declarada mediante CSS. **No declarar `color-scheme: dark` como único tema**: Gmail para iOS invierte los colores de los mensajes originales oscuros y los muestra claros cuando el teléfono está en modo oscuro.
 
-## Plantillas de Supabase Auth
+- **Claro:** superficie `#f3f6fb`, tarjeta `#ffffff`, títulos `#1a2d46`, acento `#287f9c`.
+- **Oscuro:** superficie `#0e121d`, tarjeta `#161d2b`, títulos `#f4f7fc`, acento `#91dbd5`.
+- En Apple Mail y otros clientes compatibles se usa `@media (prefers-color-scheme: dark)`.
+- En Gmail para iOS, el cliente controla la conversión y puede invertir el diseño base claro; hay que comprobarlo con un envío real. **No utilizar `color-scheme: light only`** aquí, porque desactivaría la adaptación oscura de Gmail para las cuentas Google.
+- Botones, textos y fondos tienen contraste propio en el tema claro, sin necesitar CSS externo.
 
-El proyecto alojado debe recibir estas plantillas desde **Supabase → Authentication → Email Templates**. El conector de Supabase disponible permite consultar el proyecto y la base de datos, pero no expone el endpoint de configuración de Auth; por eso estos dos HTML se conservan aquí como fuente de verdad para pegarlos en el panel.
+## Plantillas Supabase Auth
 
-### Confirm signup
-- Subject: `Confirma tu correo para activar Prisma Space`
-- HTML: copiar el contenido completo de `confirmation.html`.
+Supabase Auth crea el enlace seguro; Resend SMTP entrega el correo. El conector Supabase conectado no permite escribir las plantillas alojadas, así que hay que actualizar el HTML desde **Supabase → Authentication → Email Templates**.
 
-### Reset password
-- Subject: `Restablece tu contraseña de Prisma Space`
-- HTML: copiar el contenido completo de `recovery.html`.
+| Tipo | Asunto | Archivo |
+|---|---|---|
+| Confirm signup | Confirma tu correo para activar Prisma Space | `confirmation.html` |
+| Reset password | Restablece tu contraseña de Prisma Space | `recovery.html` |
+| Invite user | Has recibido una invitación para unirte a Prisma Space | `invite-user.html` |
 
-No reemplazar `{{ .ConfirmationURL }}`: Supabase la genera para cada solicitud. No activar el tracking de enlaces/clics en el proveedor porque puede modificar enlaces de un solo uso.
+El enlace de cuenta **debe conservar** `{{ .ConfirmationURL }}` en los tres HTML. No permitir que el proveedor modifique enlaces con click tracking.
 
-## Welcome email independiente
+## Bienvenida automática
 
-El correo de bienvenida se envía automáticamente cuando una cuenta nueva queda verificada (o al crearla si la confirmación está deshabilitada). El endpoint valida el token de Supabase, toma el correo del usuario autenticado —nunca del cuerpo de la petición— y usa una clave de idempotencia más D1 para evitar duplicados.
+La bienvenida se genera por `functions/_lib/welcome-email.js`, se envía después de confirmar una cuenta y se evita duplicar a través de D1. La nueva presentación adaptable sustituye solo el HTML; las validaciones y la lógica de envío permanecen intactas. Resend usa `no-reply@prismaspace.space`.
 
-- From: `Prisma Space <no-reply@prismaspace.space>`
-- Subject: `Tu espacio en Prisma Space ya está listo`
-- Servicio: Resend, dominio `prismaspace.space` verificado.
-- Credencial: secreto `RESEND_API_KEY` en Cloudflare Pages, limitado al envío desde el dominio verificado; nunca se guarda en Git.
-- Se envía una sola vez por usuario.
-- La sincronización se describe como opcional; no se afirma que esté activada automáticamente.
+## Invitaciones directas
+
+`invite-user.html` es la plantilla de **Supabase Auth** con enlace único. No enviar por Resend de forma aislada sin generar antes un enlace real de Supabase. Las invitaciones simples por Resend apuntan al registro normal en Prisma Space.
