@@ -6,6 +6,7 @@ import {runToolBatch,resultFiles,OBSERVERS,executionCards,runIndependentJobs} fr
 import {createTaskMemory} from '../src/core-task-memory.js';
 import {planPdfSplit} from '../src/pdf-split-options.js';
 import {planFileConversion} from '../src/file-conversions.js';
+import {planWithPrismaCore} from '../src/developer-api.js';
 import {metricEvent} from '../src/core-telemetry.js';
 import {onRequestPost} from '../functions/api/core/metrics.js';
 import {runTool} from '../src/engines.js';
@@ -136,6 +137,21 @@ test('real conversation regression: last PDF page followed by pending Word conve
  const replacement=memory.resolve('chat','Convierte este PDF a Word',document);
  assert.equal(replacement.request,undefined);
  assert.deepEqual(ids(planCapabilityRequest('Convierte este PDF a Word',document)),['pdf-to-word']);
+});
+test('Prisma Developer uses current PDF intent and latest format after upload',()=>{
+ const files=[{name:'calendario.pdf',type:'application/pdf',size:1024}];
+ const history=['Dividir PDF','La última página','Pasar de pdf a work','A Word'];
+ const plan=planWithPrismaCore({text:'Procesa los archivos adjuntos.',files,history});
+ assert.equal(plan.planner.type,'ready');
+ assert.deepEqual(plan.planner.steps.map(s=>s.tool_id),['pdf-to-word']);
+ const lastPage=planWithPrismaCore({text:'La última página',files,history:['Dividir PDF']});
+ assert.equal(lastPage.planner.steps[0].tool_id,'pdf-split');
+ assert.equal(lastPage.planner.steps[0].params.pages,'last');
+ const format=planWithPrismaCore({text:'Pásame esta foto JPG a PNG sin cambiar dimensiones',files:[{name:'foto.jpg',type:'image/jpeg',size:1024}]});
+ assert.equal(format.planner.type,'ready');
+ assert.deepEqual(format.planner.steps.map(s=>s.tool_id),['image-convert']);
+ const fresh=planWithPrismaCore({text:'Dividir PDF',files,history:['Pasar de PDF a Word','A Word']});
+ assert.deepEqual(fresh.planner.steps.map(s=>s.tool_id),['pdf-split']);
 });
 test('telemetry rejects personal data fields and never exposes a read endpoint',async()=>{
  assert.deepEqual(metricEvent('word-count','succeeded',{text:'SECRET',filename:'personal.pdf',duration:20,files:2}),{id:'word-count',event:'succeeded',duration:20,files:2});
