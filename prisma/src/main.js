@@ -79,6 +79,21 @@ const iconPaths = {
   download:'<path d="M12 4v12m-5-5 5 5 5-5"/><path d="M4 20h16"/>',
   copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
   'message-circle':'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/>'
+
+   settings:'<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="m19.4 15 .1.1 1.1.8-1.2 2.1-1.3-.5a7.9 7.9 0 0 1-1.4.8l-.2 1.4h-2.4l-.3-1.4a7.9 7.9 0 0 1-1.5-.8l-1.3.5-1.2-2.1 1.1-.9a7 7 0 0 1 0-1.7l-1.1-.9 1.2-2.1 1.3.5a7.9 7.9 0 0 1 1.5-.8l.3-1.4h2.4l.2 1.4a7.9 7.9 0 0 1 1.4.8l1.3-.5 1.2 2.1-1.1.9a7 7 0 0 1 0 1.7Z"/>',
+   'user-round':'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+   'circle-help':'<circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.3 1.7c-1.1 1-1.9 1.4-1.9 3"/><path d="M12 17h.01"/>',
+   'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+   keyboard:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M9 9h.01M12 9h.01M15 9h.01M18 9h.01M7 12h.01M10 12h.01M13 12h.01M16 12h.01M8 15h8"/>',
+   'life-buoy':'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="m5.6 5.6 4.3 4.3m4.2 4.2 4.3 4.3m0-12.8-4.3 4.3m-4.2 4.2-4.3 4.3"/>',
+   'book-open':'<path d="M12 7v14m0-14C9.5 4.8 6.3 4.5 3 5v14c3.3-.5 6.5-.2 9 2m0-14c2.5-2.2 5.7-2.5 9-2v14c-3.3-.5-6.5-.2-9 2"/>',
+   bug:'<path d="M8 8 6 6m10 2 2-2M9 4h6M4 13h16M5 18l3-2m11 2-3-2"/><rect x="7" y="7" width="10" height="14" rx="5"/><path d="M12 7V4"/>',
+   lock:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/>',
+   cloud:'<path d="M20 16.2A4.8 4.8 0 0 0 18 7h-1.2A7 7 0 1 0 4 16.3"/>',
+   'log-out':'<path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>',
+   'arrow-left':'<path d="M19 12H5m7 7-7-7 7-7"/>',
+   'external-link':'<path d="M14 3h7v7m0-7-9 9"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+   'trash-2':'<path d="M3 6h18m-2 0-.9 14H5.9L5 6m4 0V4h6v2m-5 4v6m4-6v6"/>',
 };
 function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(iconPaths[name]||iconPaths.grid)+'</svg>';}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -276,18 +291,30 @@ function recordRecentTool(id){
 }
 function closeProfileMenu(){
   const menu=$('#profile-menu'),toggle=$('#profile-toggle');if(!menu||!toggle)return;
-  menu.classList.add('hidden');toggle.setAttribute('aria-expanded','false');document.body.classList.remove('profile-open');
+  menu.classList.add('hidden');$('#profile-help-menu')?.classList.add('hidden');
+  $('#profile-open-help')?.setAttribute('aria-expanded','false');
+  toggle.setAttribute('aria-expanded','false');document.body.classList.remove('profile-open');
 }
 function setupProfileMenu(){
-  const toggle=$('#profile-toggle'),menu=$('#profile-menu');
+  const toggle=$('#profile-toggle'),menu=$('#profile-menu'),help=$('#profile-help-menu');
   // Safari: backdrop-filter en .topbar crea un containing block para elementos fixed.
-  // Montar el panel en body permite situarlo en el viewport real.
+  // Montar los paneles en body permite situarlos en el viewport real.
   if(menu&&menu.parentElement!==document.body)document.body.append(menu);
-  toggle.addEventListener('click',event=>{event.stopPropagation();const open=menu.classList.toggle('hidden')===false;toggle.setAttribute('aria-expanded',String(open));document.body.classList.toggle('profile-open',open);});
-  menu.addEventListener('click',event=>event.stopPropagation());document.addEventListener('click',closeProfileMenu);
+  if(help&&help.parentElement!==document.body)document.body.append(help);
+  toggle.addEventListener('click',event=>{
+    event.stopPropagation();
+    const open=menu.classList.toggle('hidden')===false;
+    if(open)help?.classList.add('hidden');
+    toggle.setAttribute('aria-expanded',String(open));
+    document.body.classList.toggle('profile-open',open);
+  });
+  menu.addEventListener('click',event=>event.stopPropagation());
+  help?.addEventListener('click',event=>event.stopPropagation());
+  document.addEventListener('click',closeProfileMenu);
+  document.addEventListener('prisma:close-profile',closeProfileMenu);
   $('#clear-local-data').addEventListener('click',()=>{
     if(!window.confirm('Esto borrará tus conversaciones, favoritos y preferencias locales de este dispositivo. No se puede deshacer. ¿Continuar?'))return;
-    ['prisma-favorites','prisma-recent','prisma-theme','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
+    ['prisma-favorites','prisma-recent','prisma-theme','prisma-compact-ui','prisma-reduce-motion','prisma-send-shortcut','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
     ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
     document.dispatchEvent(new Event('prisma:clear-local-history'));
     Promise.resolve(window.__prismaClearHistoryPromise).finally(()=>{closeProfileMenu();location.reload();});
@@ -1601,12 +1628,14 @@ function syncThemeChrome(theme=document.documentElement.dataset.theme){
  const themeMeta=$('meta[name="theme-color"]');if(themeMeta)themeMeta.content=color;
  const statusMeta=$('meta[name="apple-mobile-web-app-status-bar-style"]');if(statusMeta)statusMeta.content=theme==='light'?'default':'black-translucent';
 }
-$('#theme-toggle').addEventListener('click',()=>{
+$('#theme-toggle')?.addEventListener('click',()=>{
  const root=document.documentElement,next=root.dataset.theme==='dark'?'light':'dark';
  root.dataset.theme=next;
  try{localStorage.setItem('prisma-theme',next);}catch{}
  syncThemeChrome(next);updateThemeLabel();
+ document.dispatchEvent(new CustomEvent('prisma:theme-changed',{detail:{preference:next,theme:next}}));
 });
+document.addEventListener('prisma:theme-changed',updateThemeLabel);
 syncThemeChrome();updateThemeLabel();
 $('#explore-tools').addEventListener('click',()=>$('#tools-section').scrollIntoView({behavior:'smooth'}));
 $('#clear-search').addEventListener('click',()=>{$('#global-search').value='';searchTerm='';activeView='explore';activeCategory='all';render();scrollToCurrentView();});
