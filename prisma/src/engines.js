@@ -1,3 +1,4 @@
+import { validateImageParameters, verifyImageResult } from './image-contracts.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { recordCoreMetric } from './core-telemetry.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
@@ -28,6 +29,7 @@ function parsePages(value,total){
 async function pdfTool(id,files,p,cb){
  const {PDFDocument, StandardFonts, rgb, degrees}=await load(PDF_LIB);
  if(id==='pdf-merge'){
+  if(p.sourceOrder){if(!Array.isArray(p.sourceOrder)||p.sourceOrder.length!==files.length||new Set(p.sourceOrder).size!==files.length||p.sourceOrder.some(i=>!Number.isInteger(i)||i<0||i>=files.length))throw Error('Orden de archivos inválido.');files=p.sourceOrder.map(i=>files[i]);}
   const out=await PDFDocument.create();
   for(let i=0;i<files.length;i++){progress(cb,(i/files.length)*.8,'Uniendo documentos...');const src=await PDFDocument.load(await bytes(files[i]));const pages=await out.copyPages(src,src.getPageIndices());pages.forEach(pg=>out.addPage(pg));}
   return download(makeBlob(await out.save(),'application/pdf'),'prisma-documento-unido.pdf');
@@ -174,7 +176,7 @@ async function imageTool(id,files,p,cb){
  const actualType=String(blob.type||type).toLowerCase();
  const ext=(actualType.split('/')[1]||'png').replace('jpeg','jpg');
  const fallback=actualType!==type;
- const summary=img.width+' × '+img.height+' px'+(fallback?'. El navegador devolvió '+actualType+' en lugar de '+type+'.':'')+
+ const summary=canvas.width+' × '+canvas.height+' px'+(fallback?'. El navegador devolvió '+actualType+' en lugar de '+type+'.':'')+
    (id==='image-compress'&&blob.size>=f.size?' No se redujo el peso del archivo; prueba otra calidad o formato.':'');
  return {...download(blob,fileName(f)+'-prisma.'+ext),previewUrl:URL.createObjectURL(blob),summary};
  }finally{URL.revokeObjectURL(url);}
@@ -1598,6 +1600,6 @@ async function dispatchTool(id,files=[],p={},cb){
 
 export async function runTool(id,files=[],p={},cb){
  const start=Date.now();recordCoreMetric(id,'requested',{files:files.length});
- try{const result=await dispatchTool(id,files,p,cb);validateAgentStepResult(id,result);recordCoreMetric(id,'succeeded',{duration:Date.now()-start,files:files.length});return result;}
+ try{validateImageParameters(id,p);const result=await verifyImageResult(id,await dispatchTool(id,files,p,cb),p,files);validateAgentStepResult(id,result);recordCoreMetric(id,'succeeded',{duration:Date.now()-start,files:files.length});return result;}
  catch(error){recordCoreMetric(id,'failed',{duration:Date.now()-start,files:files.length});throw error;}
 }

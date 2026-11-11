@@ -73,7 +73,7 @@ function positiveClauses(original) {
 }
 const need=message=>({type:'needs-input',message,steps:[],confidence:0});
 const mime=q=>/\bwebp\b/.test(q)?'image/webp':/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'';
-export function planCapabilityRequest(raw,files=[],task=null){
+function resolveCapabilityRequest(raw,files=[],task=null){
  let {instruction,text}=extractPayload(raw);let q=normalizeIntent(instruction).trim();
  // In file-edit instructions, a colon may introduce page ranges rather than
  // content payload: "Divide el PDF en dos: páginas 1-3 y 4-6".
@@ -260,4 +260,26 @@ export function planCapabilityRequest(raw,files=[],task=null){
  const order=id=>id==='image-bg'?0:id==='image-strip-metadata'?1:id==='image-resize'?2:id==='image-compress'?3:id==='image-convert'?4:id==='image-palette'?5:id==='image-favicon'?6:2;
  if(kind==='image')steps.sort((a,b)=>order(a.tool_id)-order(b.tool_id));
  return {type:'ready',confidence:1,message:'Voy a ejecutar '+steps.length+' operación(es), procesando todos los archivos compatibles y comprobando cada resultado.',steps};
+}
+
+// Do not allow specialized early returns to drop later requested transformations.
+export function planCapabilityRequest(raw,files=[],task=null){
+ const q=normalizeIntent(extractPayload(raw).instruction);
+ if(files.length&&/\b(?:si|cuando|a menos que|excepto si)\b/.test(q))return need('Aclara la condición antes de ejecutar; no aplicaré operaciones condicionales sin comprobarla.');
+ if(/\b(?:cancela|cancelar|detente|no hagas nada)\b/.test(q))return need('Tarea cancelada. No ejecutaré ninguna operación.');
+ let plan=resolveCapabilityRequest(raw,files,task);
+ if(plan?.type!=='ready')return plan;
+ const ids=new Set(plan.steps.map(s=>s.tool_id));
+ const pdf=files.length&&files.every(f=>fileKind(f)==='pdf');
+ if(pdf&&/\b(?:a|en) (?:word|docx)\b/.test(q)&&!ids.has('pdf-to-word')){
+  plan={...plan,steps:[...plan.steps,{tool_id:'pdf-to-word',params:{},reason:'Convertir el resultado seleccionado a Word'}]};
+ }
+ const merge=plan.steps.find(s=>s.tool_id==='pdf-merge');
+ if(merge&&/segundo.*(?:primero|primer)/.test(q)){
+  if(files.length!==2)return need('El orden indicado identifica dos PDF; selecciona exactamente esos dos archivos.');
+  merge.params={...merge.params,sourceOrder:[1,0]};
+ }
+ const actions=[['pdf-merge',/\b(?:une|junta|fusiona)\b/],['pdf-rotate',/\b(?:gira|rota)\b/],['pdf-to-word',/\b(?:a|en) (?:word|docx)\b/]];
+ if(pdf&&actions.some(([id,re])=>re.test(q)&&!plan.steps.some(s=>s.tool_id===id)))return need('No puedo conservar todas las operaciones en este plan. Aclara el orden antes de ejecutar.');
+ return {...plan,objective:String(raw),state:'planned',inputs:files.map((f,index)=>({index,name:f.name,type:f.type})),steps:plan.steps.map((s,i)=>({...s,id:'step-'+(i+1),dependsOn:i?['step-'+i]:[],input:i?'previous-output':'attachments',successCriteria:['nonempty-output','compatible-format']}))};
 }

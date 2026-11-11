@@ -17,6 +17,7 @@ document.querySelector('#run').onclick=async()=>{
    for(const f of files){const b=await createImageBitmap(f);assert(b.width===128&&b.height===96,'Dimensiones alteradas');assert(f.type===(params.format||'image/webp'),'MIME incorrecto');b.close();checks++;}
    log('OK '+id+': diez archivos decodificables, MIME y dimensiones verificados');
   }
+  for(const [id,params] of [['image-resize',{width:32,height:24,keep:false}],['image-crop',{widthPct:50,heightPct:50}]]){const r=await runTool(id,[files[0]],params);assert(r.verification?.status==='validated','Sin verificación de imagen');checks++;log('OK '+id+': dimensiones decodificadas y verificadas');}
   const palette=await runTool('image-palette',[files[0]],{});assert(palette.colors.length>0,'Paleta vacía');checks++;
   const zip=await runTool('image-favicon',[files[0]],{});const JSZip=(await import('https://esm.sh/jszip@3.10.1')).default;const icons=await JSZip.loadAsync(zip.blob);assert(Object.keys(icons.files).length===6,'Faltan iconos');checks++;
   const {PDFDocument}=await import('https://esm.sh/pdf-lib@1.17.1');const pdf=await PDFDocument.create();for(let i=0;i<6;i++)pdf.addPage();const source=new File([await pdf.save()],'test.pdf',{type:'application/pdf'});
