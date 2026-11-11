@@ -20,5 +20,7 @@ export function validateAgentStepResult(id,result){
     !String(result.blob.type||'').startsWith(expected))
     throw Error('La herramienta '+id+' no produjo el archivo esperado.');
  }
+ const fileExpected=/^(?:pdf-(?:merge|extract|remove-pages|split|compress|rotate|page-numbers|watermark|metadata-clean|form-flatten|add-blank)|image-(?:compress|convert|resize|bg|strip-metadata|grayscale|flip|crop|favicon|social-kit)|video-(?:compress|trim|rotate|resize|mute|gif|audio)|audio-(?:convert|trim|normalize|waveform))$/.test(id);
+ if(fileExpected&&!result.blob&&!result.artifacts?.some(a=>a.blob))throw Error('La herramienta '+id+' no produjo un archivo verificable.');
  return result;
 }

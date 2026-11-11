@@ -1,3 +1,4 @@
+import { OBSERVERS } from '../src/core-execution.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PRISMA_AVATARS, prismaAvatar, prismaFirstName } from '../src/profile-avatars.js';
@@ -179,7 +180,7 @@ assert.match(generatedFileStorageSource,/indexedDB\.open\(DB_NAME, 1\)/,'Generat
 assert.match(generatedFileStorageSource,/files\.createIndex\('chatId'/,'Results must be associated with their conversation for cleanup');
 assert.match(generatedFileStorageSource,/blob\s*\n\s*\}\)/,'Generated file storage must preserve binary Blob bytes');
 assert.match(coreSource,/fileKey:String\(entry\.result\?\.fileKey\|\|''\)/,'Saved chats must retain a generated file lookup key');
-assert.match(coreSource,/await persistGeneratedResults\(visibleResults\)/,'Generated files must be stored before success is reported');
+assert.match(coreSource,/await persistGeneratedResults\(executed\)/,'Generated files must be stored before success is reported');
 assert.match(coreSource,/loadGeneratedFile\(result\.fileKey\)/,'History must restore downloadable binaries after a reload or remote sync');
 assert.match(coreSource,/document\.body\.appendChild\(a\);a\.click\(\);a\.remove\(\)/,'Downloads must use a DOM-connected anchor for mobile browsers');
 assert.match(coreSource,/navigator\.share\(\{files:\[nativeFile\]\}\)/,'Mobile users should have a native save/share fallback');
@@ -274,13 +275,13 @@ const start=coreSource.indexOf('function compatibleFiles(tool,files){');
 const finish=coreSource.indexOf('function showPlan(plan,steps){',start);
 assert.ok(start>=0&&finish>start,'Core validation module not found');
 const planSource=coreSource.slice(start,finish);
-const validate = files => new Function('tools','attachments','MAX_STEPS','toolPolicy',
- planSource+';return validatePlan;')(registered,files,10,()=>({external:false}));
+const validate = files => new Function('tools','attachments','MAX_STEPS','toolPolicy','OBSERVERS',
+ planSource+';return validatePlan;')(registered,files,10,()=>({external:false}),OBSERVERS);
 const mk = ids => ({steps:ids.map(id=>({tool_id:id,params:{}}))});
 assert.doesNotThrow(()=>validate(pdf)(mk(['pdf-text','clean-text'])));
 assert.throws(()=>validate(pdf)(mk(['pdf-split','pdf-page-numbers'])),/no es compatible/);
 assert.doesNotThrow(()=>validate(video)(mk(['video-audio','ai-transcribe','text-summary-local'])));
-assert.throws(()=>validate(picture)(mk(['image-favicon','image-convert'])),/no es compatible/);
+assert.doesNotThrow(()=>validate(picture)(mk(['image-favicon','image-convert'])), 'Icon ZIP branches must preserve the original working image');
 
 // Regression: edits to an existing image never authorize paid image generation.
 const webEditingRequest='Prisma, quiero preparar esta imagen para mi página web, quitarle los metadatos y sacar sus colores principales';

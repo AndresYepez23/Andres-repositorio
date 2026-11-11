@@ -1,3 +1,4 @@
+import { planCapabilityRequest } from './core-capabilities.js';
 import { tools, categories } from "./registry.js";
 import {
   coreToolCatalog,
@@ -38,7 +39,8 @@ function publicTool(tool) {
 
 function safeFiles(value) {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 8).map((file) => ({
+  if(value.length>20)throw new Error('Máximo 20 archivos; no se truncará el lote.');
+  return value.map((file) => ({
     name: String(file?.name || "archivo").slice(0, 180),
     type: String(file?.type || "application/octet-stream").slice(0, 120),
     size: Math.max(0, Math.min(50 * 1024 * 1024, Number(file?.size) || 0))
@@ -103,6 +105,7 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
     return { ok: false, error: "La solicitud debe tener entre 2 y 4000 caracteres." };
   }
 
+  if(Array.isArray(files)&&files.length>20)return {ok:false,error:'Máximo 20 archivos; no se omitirá ninguno.'};
   const safeAttachments = safeFiles(files);
   const recent = Array.isArray(history)
     ? history.slice(-6).map((item) => String(item || "").slice(0, 1500))
@@ -133,14 +136,14 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
     ready(smartFlow) ? { source: "prisma-smart-flows", ...smartFlow } : null,
     ready(offlinePlan) ? { source: "prisma-core-offline-intelligence", ...offlinePlan } : null
   ].filter(Boolean);
-  const selected = readyCandidates.length
+  const selected = planCapabilityRequest(request,safeAttachments) || (readyCandidates.length
     ? readyCandidates.sort((a, b) => b.steps.length - a.steps.length ||
       (a.source === "prisma-smart-flows" ? -1 : 1))[0]
     : needsInput(smartFlow)
       ? { source: "prisma-smart-flows", ...smartFlow }
       : needsInput(offlinePlan)
         ? { source: "prisma-core-offline-intelligence", ...offlinePlan }
-        : null;
+        : null);
 
   const toolIndex = new Map(tools.map((tool) => [tool.id, tool]));
   const steps = (selected?.steps || []).map((step, index) => {

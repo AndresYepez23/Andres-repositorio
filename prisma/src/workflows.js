@@ -1,3 +1,4 @@
+import { runToolBatch } from './core-execution.js';
 import { runTool } from './engines.js';
 import { workflowCatalog } from './workflow-catalog.js';
 
@@ -325,7 +326,7 @@ async function privacyStudio(files,params,callback){
  callback?.(1,'Archivo listo para compartir.');
  return {artifacts:[{name:'Archivo para compartir',filename:final.filename||'prisma-compartir',blob:final.blob,type:final.blob.type,previewUrl:final.previewUrl}],summary:'Copia del archivo preparada localmente. Revisa su contenido antes de compartirlo; esta limpieza no garantiza la eliminación de todo dato sensible incrustado.',steps};
 }
-export async function runWorkflow(id,files=[],params={},callback){
+async function dispatchWorkflow(id,files=[],params={},callback){
   callback?.(.02,'Preparando flujo inteligente...');
   if(id==='media-studio')return mediaStudio(files,params,callback);
   if(id==='data-studio')return dataStudio(files,params,callback);
@@ -338,4 +339,9 @@ export async function runWorkflow(id,files=[],params={},callback){
   if(id==='creator-studio')return creatorStudio(params,callback);
   if(id==='study-studio')return studyStudio(params,callback);
   throw new Error('No reconocemos ese flujo de trabajo.');
+}
+
+export async function runWorkflow(id,files=[],params={},callback){
+ const workflow=workflowCatalog.find(w=>w.id===id);if(!workflow)throw Error('Flujo no disponible.');
+ return runToolBatch(workflow,files,params,dispatchWorkflow,callback);
 }

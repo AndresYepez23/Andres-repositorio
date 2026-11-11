@@ -3,6 +3,7 @@ import { generateSeoPages } from "./seo/generate.mjs";
 // Abort publication if Core can no longer discover or safely chain its tools.
 import "./tests/core-agent-routing.test.mjs";
 import "./tests/conversation-history.test.mjs";
+import "./tests/core-intelligence-benchmark.test.mjs";
 import "./tests/developer-api.test.mjs";
 import "./tests/cloudflare-whisper.test.mjs";
 

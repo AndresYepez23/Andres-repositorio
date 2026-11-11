@@ -1,0 +1,31 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Prisma Core · benchmark de navegador</title><style>body{font:16px system-ui;background:#10141e;color:#eef4ff;max-width:900px;margin:40px auto;padding:20px}button{padding:12px}pre{white-space:pre-wrap}</style><h1>Prisma Core: pruebas reales de archivos</h1><p>Usa únicamente archivos sintéticos. No invoca proveedores de IA. La prueba completa también carga las bibliotecas de PDF y ZIP existentes.</p><button id="run">Ejecutar benchmark local</button><pre id="results">Listo.</pre><script type="module">
+import {runTool} from './engines.js';
+import {runToolBatch,resultFiles,executionCards} from './core-execution.js';
+import {tools} from './registry.js';
+import {planCapabilityRequest} from './core-capabilities.js';
+const out=document.querySelector('#results');const log=x=>out.textContent+='\n'+x;
+const assert=(ok,m)=>{if(!ok)throw Error(m);};
+document.querySelector('#run').onclick=async()=>{
+ document.querySelector('#run').disabled=true;out.textContent='Ejecutando…';let checks=0;
+ try{
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=96;const ctx=canvas.getContext('2d');const pixels=ctx.createImageData(128,96);
+  for(let i=0;i<pixels.data.length;i+=4){pixels.data[i]=(i*31)%256;pixels.data[i+1]=(i*13)%256;pixels.data[i+2]=i%256;pixels.data[i+3]=255;}ctx.putImageData(pixels,0,0);
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+  let files=Array.from({length:10},(_,i)=>new File([blob],'fixture-'+i+'.png',{type:'image/png'}));
+  for(const [id,params] of [['image-convert',{format:'image/webp'}],['image-strip-metadata',{}],['image-convert',{format:'image/png'}]]){
+   const r=await runToolBatch(tools.find(t=>t.id===id),files,params,runTool);files=resultFiles(r);assert(files.length===10,'Se omitieron archivos');assert(executionCards(id,'',r,0).length===10,'Faltan descargas');
+   for(const f of files){const b=await createImageBitmap(f);assert(b.width===128&&b.height===96,'Dimensiones alteradas');assert(f.type===(params.format||'image/webp'),'MIME incorrecto');b.close();checks++;}
+   log('OK '+id+': diez archivos decodificables, MIME y dimensiones verificados');
+  }
+  const palette=await runTool('image-palette',[files[0]],{});assert(palette.colors.length>0,'Paleta vacía');checks++;
+  const zip=await runTool('image-favicon',[files[0]],{});const JSZip=(await import('https://esm.sh/jszip@3.10.1')).default;const icons=await JSZip.loadAsync(zip.blob);assert(Object.keys(icons.files).length===6,'Faltan iconos');checks++;
+  const {PDFDocument}=await import('https://esm.sh/pdf-lib@1.17.1');const pdf=await PDFDocument.create();for(let i=0;i<6;i++)pdf.addPage();const source=new File([await pdf.save()],'test.pdf',{type:'application/pdf'});
+  const splitPlan=planCapabilityRequest('Divide el PDF en tres partes',[source]);const split=await runTool('pdf-split',[source],splitPlan.steps[0].params);const archive=await JSZip.loadAsync(split.blob);assert(Object.keys(archive.files).length===3,'Partes PDF incorrectas');
+  for(const entry of Object.values(archive.files)){assert((await PDFDocument.load(await entry.async('uint8array'))).getPageCount()===2,'Páginas incorrectas');checks++;}
+  const extracted=await runTool('pdf-extract',[source],{pages:'2-4'});assert((await PDFDocument.load(await extracted.blob.arrayBuffer())).getPageCount()===3,'Extracción incorrecta');checks++;
+  const rotated=await runTool('pdf-rotate',[source],{degrees:90});assert((await PDFDocument.load(await rotated.blob.arrayBuffer())).getPage(0).getRotation().angle===90,'Rotación incorrecta');checks++;
+  log('OK PDF: tres partes de dos páginas, extracción 2-4 y giro 90°');
+  out.dataset.status='passed';log('RESULTADO: '+checks+' comprobaciones reales aprobadas.');
+ }catch(e){out.dataset.status='failed';log('FALLO: '+e.message);}finally{document.querySelector('#run').disabled=false;}
+};
+</script></html>

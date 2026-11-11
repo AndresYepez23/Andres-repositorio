@@ -1,3 +1,8 @@
+import { recordCoreMetric } from './core-telemetry.js';
+import { planCapabilityRequest } from './core-capabilities.js';
+import { runToolBatch, OBSERVERS, executionCards } from './core-execution.js';
+import { createTaskMemory } from './core-task-memory.js';
+const taskMemory=createTaskMemory();
 import { tools } from './registry.js';
 import { runTool } from './engines.js';
 import { getCentralProviderStatus } from './provider-connections.js';
@@ -284,6 +289,7 @@ function renderConversationList(){
    remove.addEventListener('click',()=>{
     if(!window.confirm('¿Eliminar esta conversación de este dispositivo y sus archivos generados locales?'))return;
     if(busy)return;
+    taskMemory.clear(chat.id);
     deleteGeneratedFilesForChat(chat.id).catch(error=>console.warn('Prisma no pudo limpiar los archivos del chat:',error?.message||error));
     conversations=conversations.filter(item=>item.id!==chat.id);
    document.dispatchEvent(new CustomEvent('prisma:chat-deleted',{detail:{id:chat.id}}));
@@ -785,7 +791,7 @@ function buildPlannerPrompt(userText,optionalCatalog=null){
     'Puedes generar un plan con 0 pasos si la solicitud es solo una pregunta o no puede ejecutarse con las herramientas mostradas. Explícalo en message sin inventar capacidades.',
     'HISTORIAL RECIENTE:\n'+messages.slice(-5).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,600)).join('\n').slice(-2400),
     'HERRAMIENTAS RELEVANTES (seleccionadas y relacionadas desde un índice de '+coreToolCatalog().length+' herramientas disponibles; otras herramientas pueden estar en el registro completo):\n'+JSON.stringify(catalog),
-    'ARCHIVOS:\n'+JSON.stringify(attachments.slice(0,5).map(f=>({name:f.name,type:f.type,size:f.size}))),
+    'ARCHIVOS:\n'+JSON.stringify(attachments.map(f=>({name:f.name,type:f.type,size:f.size}))),
     'PETICION:\n'+String(userText).slice(0,10500)
   ].join('\n\n');
 }
@@ -846,6 +852,7 @@ function validatePlan(plan){
       changed=format==='image/jpeg'?['imagen.jpg','image/jpeg']:
         format==='image/webp'?['imagen.webp','image/webp']:['imagen.png','image/png'];
     }
+    if(OBSERVERS.has(tool.id))return {tool,policy:toolPolicy(tool),reason:String(item.reason||'Paso '+(index+1)),params};
     if(changed)inputs=[{name:changed[0],type:changed[1]}];
     else if(tool.id.startsWith('pdf-')&&!['pdf-text','pdf-metadata','pdf-form-fields'].includes(tool.id))inputs=[{name:'documento.pdf',type:'application/pdf'}];
     else if(tool.id.startsWith('image-')&&!['image-ocr','image-palette','image-identify-local','image-metadata'].includes(tool.id))inputs=[{name:'imagen.png',type:'image/png'}];
@@ -1465,7 +1472,7 @@ async function transcribeAttachedImageBatch(userText){
  if(successCount)recordCompletedCoreTask({fileTask:true});
 }
 async function interpretAttachedImageText(userText){
- const images=attachments.filter(file=>String(file.type||'').startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp|heic|heif)$/i.test(String(file.name||''))).slice(0,3);
+ const images=attachments.filter(file=>String(file.type||'').startsWith('image/')||/\.(?:png|jpe?g|webp|gif|bmp|heic|heif)$/i.test(String(file.name||'')));
  const extracted=[];
  const unreadable=[];
  for(const file of images){
@@ -1523,6 +1530,23 @@ async function interpretAttachedImageText(userText){
  }
 }
 async function requestPlan(userText){
+  const resolvedTask=taskMemory.resolve(activeConversationId,userText,attachments);
+  const capabilityPlan=planCapabilityRequest(resolvedTask.request||userText,resolvedTask.files,resolvedTask.task);
+  if(capabilityPlan){
+    if(capabilityPlan.type!=='ready'){
+      recordCoreMetric('core','clarification');
+      taskMemory.wait(activeConversationId,resolvedTask.request||userText,resolvedTask.files);
+      addMessage('assistant',capabilityPlan.message);status('Falta una precisión para ejecutar la tarea.','info');return;
+    }
+    recordCoreMetric('core','local-plan',{files:resolvedTask.files.length});
+    attachments=resolvedTask.files;renderAttachments();
+    const plan={...capabilityPlan,userRequest:userText,combineFinalFiles:false};
+    const steps=validatePlan(plan);pendingPlan={plan,steps};
+    if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(plan,steps);
+    else {addMessage('assistant',plan.message);await executePlan();}
+    return;
+  }
+
   // Simple greetings must work instantly, even when every external inference
   // provider is unavailable; do not spend AI quota on a basic salutation.
   const greeting=String(userText||'').trim().toLocaleLowerCase('es').normalize('NFD')
@@ -1697,6 +1721,7 @@ async function requestPlan(userText){
     await executePlan();
     return;
   }
+  recordCoreMetric('core','unresolved');
   const centralStatus=await getCentralProviderStatus();
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
   centralFeatures=centralStatus.features||centralFeatures;
@@ -1718,7 +1743,7 @@ async function requestPlan(userText){
     let attachmentContext='';
     if(attachments.length){
       const extracted=[];
-      for(const file of attachments.slice(0,4)){
+      for(const file of attachments){
         const name=file.name.toLowerCase();
         try{
           let content='';
@@ -1751,7 +1776,7 @@ async function requestPlan(userText){
   if(attachments.length&&wantsAnalysis){
     status('Preparando el contenido de tus archivos para entender la tarea…');
     const extracted=[];
-    for(const file of attachments.slice(0,4)){
+    for(const file of attachments){
       if(file.size>25*1024*1024)continue;
       const name=file.name.toLowerCase();
       try{
@@ -1874,26 +1899,31 @@ async function executePlan(){
         if(!currentFiles.length)throw new Error('El paso '+tool.name+' necesita un archivo y el paso anterior no produjo uno.');
         inputFiles=compatibleFiles(tool,currentFiles);
         if(!inputFiles.length)throw new Error('El archivo del paso anterior no es compatible con '+tool.name+'.');
-        if(!tool.multiple)inputFiles=[inputFiles[0]];
+        if(inputFiles.length!==currentFiles.length)throw Error('Hay archivos incompatibles con '+tool.name+'. No se omitirá ninguno.');
       }
-      const result=await runTool(tool.id,inputFiles,params,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);});
+      const textBatch=!tool.file&&index>0&&!plannedParams.text&&textHandoff.includes(tool.id)&&currentFiles.length>1&&currentFiles.every(f=>/^(?:text\/|application\/(?:json|xml))/.test(f.type));
+      const batchTool=textBatch?{...tool,file:true,multiple:false,accept:'*/*'}:tool;
+      const runner=textBatch?async(id,files,p,cb)=>runTool(id,[],{...p,text:await files[0].text()},cb):runTool;
+      const result=await runToolBatch(batchTool,textBatch?currentFiles:inputFiles,params,runner,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);},()=>cancelRequested);
       validateAgentStepResult(tool.id,result);
-      executed.push({name:tool.name,reason,result});setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
-      if(result?.text)lastText=String(result.text).slice(0,30000);
-      else if(result?.html)lastText=String(result.html).slice(0,30000);
+      executed.push(...executionCards(tool.name,reason,result,index));setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
+      if(result?.text)lastText=String(result.text);
+      else if(result?.html)lastText=String(result.html);
       else if(result?.blob&&result.blob.size<=120000&&
         /^(?:text\/|application\/(?:json|xml))/.test(String(result.blob.type||''))){
-        lastText=(await result.blob.text()).slice(0,30000);
+        lastText=await result.blob.text();
       }
-      if(result?.blob){
+      if(!OBSERVERS.has(tool.id)&&result?.blob){
         const file=new File([result.blob],result.filename||('prisma-paso-'+(index+1)),{type:result.blob.type||'application/octet-stream'});
         currentFiles=[file];
-      }else if(result?.artifacts?.length){
+      }else if(!OBSERVERS.has(tool.id)&&result?.artifacts?.length){
         const files=result.artifacts.filter(item=>item.blob).map(item=>new File([item.blob],item.filename||'prisma-resultado',{type:item.type||item.blob.type||'application/octet-stream'}));
         if(files.length)currentFiles=files;
-        const textArtifact=result.artifacts.find(item=>item.text);if(textArtifact)lastText=textArtifact.text;
+        const textArtifacts=result.artifacts.filter(item=>typeof item.text==='string');if(textArtifacts.length)lastText=textArtifacts.map(item=>item.text).join('\n\n');
       }
     }
+    const byteLimit=steps.map(s=>Number(s.params?.maxBytes)||0).find(n=>n>0);
+    if(!cancelRequested&&byteLimit&&currentFiles.some(f=>f.size>byteLimit))throw Error('Una operación posterior superó el límite de peso. Los resultados son parciales; ajusta el formato o la calidad.');
     if(cancelRequested){
       const filesSaved=await persistGeneratedResults(executed);
       addMessage('assistant','Detuve la secuencia por tu solicitud. Se conservan los resultados de los pasos que ya terminaron.'+
@@ -1904,13 +1934,14 @@ async function executePlan(){
       if(single&&['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id)&&single.result?.text&&!single.result?.blob){
         addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
       }else{
-        const visibleResults=plan.combineFinalFiles&&executed.length?executed.slice(-1):executed;
-        const filesSaved=await persistGeneratedResults(visibleResults);
+        const visibleResults=plan.combineFinalFiles&&executed.length?executed.filter(entry=>entry.stepIndex===steps.length-1):executed;
+        const filesSaved=await persistGeneratedResults(executed);
         allResultFilesSaved=filesSaved;
         const label=plan.conversion?'Conversión preparada. Descarga el archivo resultante o sigue las instrucciones de impresión si aparecen.':plan.combineFinalFiles?'Proceso completado. Aquí tienes el archivo final con las modificaciones solicitadas.':executed.length===1&&steps[0].tool.id==='image-gen'?'Aquí tienes la imagen que pediste. Puedes descargarla desde esta misma conversación.':'Completé '+executed.length+' operación(es). Aquí están tus resultados.';
         addMessage('assistant',label+(!filesSaved?' Atención: el archivo está listo para descargar ahora, pero este dispositivo no permitió guardar una copia. Descárgalo antes de salir.':''),{results:visibleResults,partial:false});
       }
       successful=true;
+      taskMemory.save(activeConversationId,{files:currentFiles,originals:attachments,text:lastText,steps:steps.map(s=>({tool_id:s.tool.id,params:s.params}))});
       if(!allResultFilesSaved)
         status('Archivo listo para descargar ahora, pero sin respaldo local. Descárgalo antes de cerrar Prisma.','warning');
       else if(executed.some(entry=>entry?.result?.blob&&entry.result?.fileKey))
@@ -1920,6 +1951,7 @@ async function executePlan(){
     }
   }catch(error){
     console.error(error);
+    for(const result of error.partialResults||[])executed.push(...executionCards('Resultado parcial','',result,-1));
     const videoError=steps.some(({tool})=>tool.id.startsWith('video-'));
     const detail=videoError?localizedVideoError(error):String(error?.message||'error inesperado');
     const extra=videoError?' El vídeo original sigue disponible para reintentar; no se ha generado un archivo comprimido falso.':
@@ -2316,7 +2348,8 @@ export function initPrismaCore(){
     }
     const incoming=[...event.target.files];const total=attachments.reduce((sum,file)=>sum+file.size,0)+incoming.reduce((sum,file)=>sum+file.size,0);
     if(total>100*1024*1024){status('El total de archivos no puede superar 100 MB.','warning');event.target.value='';return;}
-    attachments=[...attachments,...incoming].slice(0,8);renderAttachments();event.target.value='';
+    if(attachments.length+incoming.length>20){status('Adjunta como máximo 20 archivos por tarea. No se añadió este lote.','warning');event.target.value='';return;}
+    attachments=[...attachments,...incoming];renderAttachments();event.target.value='';
   });
   $('#core-clear').addEventListener('click',startNewConversation);
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();

@@ -59,8 +59,8 @@ test('local advertised operations produce expected outputs through the real disp
  ];
  for(const [id,params,expected] of cases)assert.equal((await runTool(id,[],params)).text,expected,id);
 });
-test('excluded multiline and formatter issues are reproducible without modifying engines',async()=>{
- assert.equal((await runTool('json-format',[],{text:'{"a":1}',indent:'2'})).text,'{"a":1}');
+test('previously excluded multiline and formatter issues remain repaired',async()=>{
+ assert.equal((await runTool('json-format',[],{text:'{"a":1}',indent:'2'})).text,'{\n  "a": 1\n}');
  const cards=await runTool('flashcards-export',[],{text:'A | Uno\nB | Dos'});
- assert.match(cards.summary,/1 tarjetas/);
+ assert.match(cards.summary,/2 tarjetas/);
 });

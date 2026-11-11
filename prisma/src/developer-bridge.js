@@ -1,3 +1,4 @@
+import { runToolBatch, OBSERVERS, resultFiles } from './core-execution.js';
 import { getPrismaSessionAccessToken, isPrismaAuthenticated } from "./prisma-account.js";
 import { getPrismaCoreAttachments, getPrismaCoreExecutionContext } from "./core.js";
 import { runTool } from "./engines.js";
@@ -199,10 +200,10 @@ async function executeSingleTool(job, context) {
     throw new Error("Adjunta un archivo compatible en el panel de archivos de Prisma Core y vuelve a ejecutar la tarea.");
   }
   const params = job.payload?.params && typeof job.payload.params === "object" ? job.payload.params : {};
-  return runTool(tool.id, tool.file ? (tool.multiple ? files.slice(0, tool.maxFiles || 8) : files.slice(0, 1)) : [], {
+  return runToolBatch(tool, tool.file ? available : [], {
     ...context,
     ...params
-  }, (progress, message) => {
+  }, runTool, (progress, message) => {
     postProgress(job.id, Math.min(0.99, Math.max(0, progress)), message || tool.name).catch(() => {});
   });
 }
@@ -216,10 +217,10 @@ async function executeWorkflow(job, context) {
     throw new Error("Adjunta un archivo compatible en Prisma Core y vuelve a ejecutar el flujo.");
   }
   const params = job.payload?.params && typeof job.payload.params === "object" ? job.payload.params : {};
-  return runWorkflow(workflow.id, workflow.file ? (workflow.multiple ? files.slice(0, workflow.maxFiles || 8) : files.slice(0, 1)) : [], {
+  return runToolBatch(workflow, workflow.file ? available : [], {
     ...context,
     ...params
-  }, (progress, message) => {
+  }, runWorkflow, (progress, message) => {
     postProgress(job.id, Math.min(0.99, Math.max(0, progress)), message || workflow.name).catch(() => {});
   });
 }
@@ -246,16 +247,16 @@ async function executePlan(job, context) {
       const overall = (index + Math.max(0, Math.min(1, Number(value) || 0))) / steps.length;
       postProgress(job.id, Math.min(0.99, overall), "Paso " + (index + 1) + "/" + steps.length + ": " + (message || tool.name)).catch(() => {});
     };
-    const result = await runTool(tool.id, tool.file ? (tool.multiple ? files.slice(0, tool.maxFiles || 8) : files.slice(0, 1)) : [], {
+    const result = await runToolBatch(tool, tool.file ? currentFiles : [], {
       ...context,
       ...params,
       ...(previousText && !params.text && !params.prompt ? { text: previousText } : {})
-    }, progress);
+    }, runTool, progress);
     results.push(result);
     stepsDone.push(tool.name);
     if (result?.text) previousText = String(result.text).slice(0, 18000);
     const outputFile = fileFromResult(result, "prisma-paso-" + (index + 1));
-    if (outputFile) currentFiles = [outputFile];
+    if (!OBSERVERS.has(tool.id)) {const generated=resultFiles(result);if(generated.length)currentFiles=generated;}
   }
 
   const last = results[results.length - 1] || {};

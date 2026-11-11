@@ -1,0 +1,758 @@
+{
+  "baseline": "75036f9",
+  "scope": "Corpus de ingeniería provisional, no ranking de popularidad. Dos planificadores existentes.",
+  "total": 150,
+  "recognized": 28,
+  "rows": [
+    {
+      "tool": "image-compress",
+      "query": "Comprime esta imagen",
+      "recognized": true
+    },
+    {
+      "tool": "image-compress",
+      "query": "Haz que pese menos",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Bájale el peso",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Necesito que ocupe menos espacio",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Optimízala para mi página web",
+      "recognized": true
+    },
+    {
+      "tool": "image-compress",
+      "query": "Déjala más ligera",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Reduce el tamaño del archivo sin perder demasiada calidad",
+      "recognized": true
+    },
+    {
+      "tool": "image-compress",
+      "query": "Quiero que cargue más rápido",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Pásala por un optimizador",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Comprímeme todas estas fotografías",
+      "recognized": true
+    },
+    {
+      "tool": "image-compress",
+      "query": "Necesito que quede por debajo de 500 KB",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "comprime la foto sin cambiar dimensiones",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "comrpime esta imagen",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "bajale el peso a la foto",
+      "recognized": false
+    },
+    {
+      "tool": "image-compress",
+      "query": "Reduce el peso de estas fotos",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "Quita el fondo",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "Elimina el fondo",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "Déjala transparente",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Quiero solamente el objeto",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Necesito un PNG sin fondo",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Recorta el sujeto y elimina lo que tiene detrás",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Haz que el fondo desaparezca",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Conserva el objeto y deja transparencia",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Borra el fondo de esta imagen",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "Retira el fondo",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "quitar fondo",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "quitale el fondo",
+      "recognized": true
+    },
+    {
+      "tool": "image-bg",
+      "query": "elimina el fndo",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Necesito aislar el sujeto",
+      "recognized": false
+    },
+    {
+      "tool": "image-bg",
+      "query": "Deja solo la persona",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Convierte a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Pásala a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "La necesito en PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Guarda la foto como PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Exporta en PNG",
+      "recognized": true
+    },
+    {
+      "tool": "image-convert",
+      "query": "Cambia el formato a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "De JPG a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Transforma a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Quiero esta foto en PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Dame una versión PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "pasala a png",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "convierte esta imagen a png",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "conviertela a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "Cambiar a PNG",
+      "recognized": false
+    },
+    {
+      "tool": "image-convert",
+      "query": "convertir a PNG",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Une estos PDF",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Junta los documentos",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Combina los PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Fusiona estos archivos",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Haz un solo PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Mete todo en un documento",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Quiero un único PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Pega estos PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Reúne los documentos",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Unifica los PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "unir pdf",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "juntame los documentos",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "une todos los archivos",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "combinar documentos",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-merge",
+      "query": "Agrupa los PDF en uno",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Extrae las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Conserva las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Quédate con las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Saca las hojas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Solo quiero las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Guarda las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Selecciona las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Aísla las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Extraer páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Dame las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Sácame las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Deja las páginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "separa las paginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "extrae paginas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-extract",
+      "query": "Necesito las hojas 2-4",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Extrae el texto del PDF",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Saca el texto",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Pasa este PDF a texto",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Dame el contenido escrito",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Quiero el texto seleccionable",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Lee el texto del documento",
+      "recognized": true
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Obtén el texto",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Extraer texto",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Copia el texto del PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Necesito el texto del archivo",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Convierte el PDF a texto",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Sácame el contenido textual",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "Extrae las palabras del PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "texto del documento PDF",
+      "recognized": false
+    },
+    {
+      "tool": "pdf-text",
+      "query": "pdf a texto",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Organiza este JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Formatea este JSON\n```json\n{\"a\":1}\n```",
+      "recognized": true
+    },
+    {
+      "tool": "json-format",
+      "query": "Embellece el JSON\n```json\n{\"a\":1}\n```",
+      "recognized": true
+    },
+    {
+      "tool": "json-format",
+      "query": "Ordena el JSON\n```json\n{\"a\":1}\n```",
+      "recognized": true
+    },
+    {
+      "tool": "json-format",
+      "query": "Indenta el JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Dale sangría al JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Haz legible el JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Valida este JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Dime si este JSON está mal formado\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Revisa la sintaxis del JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "Comprueba este JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "json bonito\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "formatear json\n```json\n{\"a\":1}\n```",
+      "recognized": true
+    },
+    {
+      "tool": "json-format",
+      "query": "Formatea con 4 espacios este JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "json-format",
+      "query": "organisa este JSON\n```json\n{\"a\":1}\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Convierte CSV a JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Pasa esta tabla a JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Transforma el CSV en JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "De CSV a JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Exporta CSV como JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Necesito el CSV en JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Dame esta tabla en JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Quiero JSON desde este CSV\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Cambia CSV por JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Convertir CSV a JSON\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "pasalo de csv a json\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "convierte esta tabla en json\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "tabla a json\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "Genera JSON del CSV\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "csv-json",
+      "query": "csv a json\n```csv\nnombre,edad\nAna,23\n```",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Crea un QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Genera un código QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Hazme un QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Necesito un QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Dame un QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Codifica en QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Quiero un código QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Convierte el texto en QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Pasa esto a QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Crear código QR: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "generar qr: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Un QR con este texto: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "haz un qr: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Genera QR para este mensaje: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "qr",
+      "query": "Crea un codigo qr: Hola, mundo",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Cuenta las palabras\ntexto: Hola desde Prisma",
+      "recognized": true
+    },
+    {
+      "tool": "word-count",
+      "query": "Cuántas palabras tiene\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Contar palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Dime el número de palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Calcula cuántas palabras hay\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Recuenta las palabras\ntexto: Hola desde Prisma",
+      "recognized": true
+    },
+    {
+      "tool": "word-count",
+      "query": "Quiero saber cuántas palabras son\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Número de palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Conteo de palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Cuenta palabras de este texto\ntexto: Hola desde Prisma",
+      "recognized": true
+    },
+    {
+      "tool": "word-count",
+      "query": "cuantas palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "cuentame las palabras\ntexto: Hola desde Prisma",
+      "recognized": true
+    },
+    {
+      "tool": "word-count",
+      "query": "Contador de palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "Total de palabras\ntexto: Hola desde Prisma",
+      "recognized": false
+    },
+    {
+      "tool": "word-count",
+      "query": "cuenta las palbras\ntexto: Hola desde Prisma",
+      "recognized": false
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { validateAgentStepResult } from './core-agent-guard.js';
+import { recordCoreMetric } from './core-telemetry.js';
 import { rankProviders, selectTaskModel, ROUTE_ORDER } from './provider-routing.js';
 import { planPdfSplit } from './pdf-split-options.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
@@ -168,7 +170,12 @@ async function imageTool(id,files,p,cb){
  else{let w=img.width,h=img.height;if(id==='image-resize'){w=Number(p.width)||w;h=Number(p.height)||h;if(p.keep){const r=Math.min(w/img.width,h/img.height);w=Math.round(img.width*r);h=Math.round(img.height*r);}}canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);}
  let type=p.format||'image/png',quality=Math.max(.1,Math.min(1,Number(p.quality||82)/100));
  if(id==='image-compress')type=p.format||'image/webp';
- const blob=await new Promise(r=>canvas.toBlob(r,type,quality));if(!blob)throw Error('No se pudo convertir la imagen.');
+ let blob=await new Promise(r=>canvas.toBlob(r,type,quality));if(!blob)throw Error('No se pudo convertir la imagen.');
+ if(p.maxBytes){
+  const target=Number(p.maxBytes);if(!Number.isFinite(target)||target<1024)throw Error('El límite de peso debe ser al menos 1 KB.');
+  for(let attempt=0;blob.size>target&&attempt<8&&type!=='image/png';attempt++){quality=Math.max(.1,quality-.1);blob=await new Promise(r=>canvas.toBlob(r,type,quality));if(!blob)throw Error('No se pudo codificar la imagen.');if(quality===.1)break;}
+  if(blob.size>target)throw Error('No se alcanzó el peso solicitado conservando las dimensiones. Prueba WebP/JPG o autoriza reducir las dimensiones.');
+ }
  const ext=type.split('/')[1].replace('jpeg','jpg');return {...download(blob,fileName(f)+'-prisma.'+ext),previewUrl:URL.createObjectURL(blob),summary:img.width+' × '+img.height+' px'};
  }finally{URL.revokeObjectURL(url);}
 }
@@ -292,13 +299,13 @@ function decodeJwt(token){
  return {text:'ENCABEZADO\n'+JSON.stringify(header,null,2)+'\n\nPAYLOAD\n'+JSON.stringify(payload,null,2),summary:'Contenido decodificado. La firma no se ha verificado y no debe confiarse en este resultado para autenticar usuarios.'};
 }
 function textDiff(a,b){
- const A=String(a||'').split(/\\r?\n/),B=String(b||'').split(/\\r?\n/);
+ const A=String(a||'').split(/\r\n|\r|\n/),B=String(b||'').split(/\r\n|\r|\n/);
  if(A.length>450||B.length>450)throw Error('Para mantener la respuesta rápida, compara hasta 450 líneas por texto.');
  const dp=Array.from({length:A.length+1},()=>new Uint16Array(B.length+1));
  for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
  const out=[];let i=0,j=0,added=0,removed=0;
  while(i<A.length||j<B.length){if(i<A.length&&j<B.length&&A[i]===B[j]){out.push('  '+A[i]);i++;j++;}else if(j<B.length&&(i===A.length||dp[i][j+1]>=dp[i+1][j])){out.push('+ '+B[j++]);added++;}else{out.push('- '+A[i++]);removed++;}}
-  return {text:out.join(String.fromCharCode(10)),summary:body.length+' filas analizadas · '+headers.length+' columnas.'};
+  return {text:out.join('\n'),summary:added+' líneas añadidas · '+removed+' líneas eliminadas.'};
 }
 
 async function formatSourceCode(p,kind){
@@ -374,6 +381,11 @@ async function socialImageKit(file,p,cb){
  image.close?.();const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
  return {...download(blob,'prisma-kit-redes-sociales.zip'),summary:'Incluye 4 formatos JPG listos para redes. Se utiliza recorte centrado para llenar cada proporción.'};
 }
+function trimUrlPunctuation(value){
+ let text=value.replace(/[.,;!?]+$/,'');
+ for(const [open,close] of [['(',')'],['[',']'],['{','}']])while(text.endsWith(close)&&text.split(close).length>text.split(open).length)text=text.slice(0,-1);
+ return text.replace(/[.,;!?]+$/,'');
+}
 async function runText(id,p){
  const text=String(p.text||'');
  switch(id){
@@ -382,9 +394,9 @@ async function runText(id,p){
  case 'regex-test':{const pattern=String(p.pattern||'');if(pattern.length>200||text.length>5000)throw Error('Limita el patrón a 200 caracteres y el texto a 5.000.');let re;try{re=new RegExp(pattern,String(p.flags||'').replace(/[^gimsu]/g,''));}catch(e){throw Error('Expresión regular inválida: '+e.message)}const matches=[...text.matchAll(re.global?re:new RegExp(re.source,re.flags+'g'))].slice(0,100);return {text:matches.length?matches.map((m,i)=>(i+1)+'. '+m[0]+' · posición '+m.index).join('\n'):'Sin coincidencias.',summary:matches.length+' coincidencia(s).'};}
  case 'json-yaml':{const yaml=await import('https://esm.sh/js-yaml@4.1.0');if(p.mode==='yaml-to-json'){const obj=yaml.load(text);return {text:JSON.stringify(obj,null,2)};}let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:yaml.dump(obj,{noRefs:true,lineWidth:100})};}
  case 'css-gradient':{const a=p.color1||'#9adbd2',b=p.color2||'#a9a0ee',angle=Math.max(0,Math.min(360,Number(p.angle)||135));const css=p.type==='radial'?'background: radial-gradient(circle, '+a+', '+b+');':'background: linear-gradient('+angle+'deg, '+a+', '+b+');';return {text:css,summary:'Copia esta declaración y pégala dentro de una regla CSS.'};}
- case 'json-format':{let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:JSON.stringify(obj,p.indent==='tab'?'\t':Number(p.indent||2))};}
+ case 'json-format':{let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:JSON.stringify(obj,null,p.indent==='tab'?'\t':Math.max(1,Math.min(8,Number(p.indent)||2)))};}
  case 'base64':try{return {text:p.mode==='decode'?decodeURIComponent(escape(atob(text.trim()))):btoa(unescape(encodeURIComponent(text)))}}catch{throw Error('No se pudo convertir. Comprueba el contenido.');}
- case 'word-count':{const words=text.trim()?text.trim().split(/\s+/u).length:0;return {text:'Palabras: '+words+'\nCaracteres: '+text.length+'\nSin espacios: '+text.replace(/\s/g,'').length+'\nLíneas: '+(text?text.split(/\r\n|\r|\n/).length:0)+'\nLectura estimada: '+Math.ceil(words/200)+' min'};}
+ case 'word-count':{const words=typeof Intl.Segmenter==='function'?[...new Intl.Segmenter('es',{granularity:'word'}).segment(text)].filter(s=>s.isWordLike).length:(text.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)||[]).length;return {text:'Palabras: '+words+'\nCaracteres: '+text.length+'\nSin espacios: '+text.replace(/\s/g,'').length+'\nLíneas: '+(text?text.split(/\r\n|\r|\n/).length:0)+'\nLectura estimada: '+(words?Math.max(1,Math.ceil(words/200*60)):0)+' s (200 palabras/min; estimación)' };}
  case 'url-code':try{return {text:p.mode==='decode'?decodeURIComponent(text):encodeURIComponent(text)}}catch{throw Error('La secuencia URL no es válida.');}
  case 'text-case':{let v=text;if(p.mode==='upper')v=text.toLocaleUpperCase('es');if(p.mode==='lower')v=text.toLocaleLowerCase('es');if(p.mode==='title')v=text.toLocaleLowerCase('es').replace(/\b\p{L}/gu,c=>c.toLocaleUpperCase('es'));if(p.mode==='sentence')v=text.toLocaleLowerCase('es').replace(/(^\s*\p{L}|[.!?]\s*\p{L})/gu,c=>c.toLocaleUpperCase('es'));return {text:v};}
  case 'text-remove-empty-lines':{const lines=text.replace(/\r/g,'').split('\n'),kept=lines.filter(line=>line.trim().length);return {text:kept.join('\n'),summary:(lines.length-kept.length)+' línea(s) vacía(s) eliminadas.'};}
@@ -396,7 +408,7 @@ async function runText(id,p){
  case 'text-remove-accents':return {text:text.normalize('NFD').replace(/[\u0300-\u036f]/g,'') ,summary:'Tildes y marcas diacríticas eliminadas localmente.'};
  case 'text-reverse':return {text:p.mode==='lines'?text.replace(/\r/g,'').split('\n').reverse().join('\n'):[...text].reverse().join(''),summary:p.mode==='lines'?'Orden de líneas invertido.':'Texto invertido respetando caracteres Unicode.'};
  case 'text-extract-emails':{const matches=text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)||[];const unique=[...new Set(matches.map(x=>x.toLowerCase()))];return {text:unique.join('\n'),summary:unique.length+' correo(s) único(s) encontrados.'};}
- case 'text-extract-urls':{const matches=text.match(/(?:https?:\/\/|www\.)[^\s<>"']+/gi)||[];const unique=[...new Set(matches.map(x=>x.replace(/[),.;!?]+$/,'')).filter(Boolean))];return {text:unique.join('\n'),summary:unique.length+' enlace(s) único(s) encontrados.'};}
+ case 'text-extract-urls':{const matches=text.match(/(?:https?:\/\/|www\.)[^\s<>"']+/gi)||[];const unique=[...new Set(matches.map(x=>trimUrlPunctuation(x)).filter(Boolean))];return {text:unique.join('\n'),summary:unique.length+' enlace(s) único(s) encontrados.'};}
  case 'json-minify':{let obj;try{obj=JSON.parse(text)}catch(e){throw Error('JSON inválido: '+e.message)}return {text:JSON.stringify(obj),summary:'JSON validado y minificado localmente.'};}
  case 'html-to-text':{const doc=new DOMParser().parseFromString(text,'text/html');doc.querySelectorAll('script,style,noscript,template').forEach(node=>node.remove());const output=(doc.body?.textContent||'').replace(/[\t\f\v ]+/g,' ').replace(/\s*\n\s*/g,'\n').replace(/\n{3,}/g,'\n\n').trim();return {text:output,summary:'Texto visible extraído localmente. No se ejecutó HTML ni JavaScript.'};}
  case 'markdown':{const html=text.replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');return {html,summary:'Vista previa HTML básica. No se ejecuta código.'};}
@@ -452,7 +464,7 @@ async function runText(id,p){
   return {text:selected+'\n\nAPA 7\n'+apa+'\n\nVancouver\n'+vancouver+'\n\nMLA 9\n'+mla,summary:'Referencia generada con los datos proporcionados. Verifica los detalles contra la fuente original.'};
  }
  case 'flashcards-export':{
-  const lines=text.split(/\\r?\n/).map(x=>x.trim()).filter(Boolean),cards=[];
+  const lines=text.split(/\r\n|\r|\n/).map(x=>x.trim()).filter(Boolean),cards=[];
   for(const line of lines){const parts=line.split(/\s*(?:\||\t|::)\s*/);if(parts.length<2)continue;const front=parts.shift().trim(),back=parts.join(' — ').trim();if(front&&back)cards.push([front,back]);}
   if(!cards.length)throw Error('Escribe una tarjeta por línea y separa concepto y definición con |, tabulación o ::.');
   const csv=['Front,Back',...cards.map(row=>row.map(csvCell).join(','))].join('\n');
@@ -890,7 +902,7 @@ async function generateText(p,cb){
    const fairSlice=Math.max(5500,Math.floor((remaining-reserve)/primarySlots));
    requestDeadline=Math.min(individualDeadline,remaining-reserve,fairSlice);
   }
-  attempted.push(provider);
+  attempted.push(provider);recordCoreMetric('ai-assistant','provider-attempt');
   if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
   else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
   const attemptStart=Date.now();
@@ -930,7 +942,7 @@ async function generateText(p,cb){
    }
    progress(cb,1,'Respuesta lista.');
    reportModelAttempt(provider,task,true,Date.now()-attemptStart);
-   recordInferenceUsage(provider,usage);
+   recordInferenceUsage(provider,usage);recordCoreMetric('ai-assistant','provider-success');
    const firstAttempt=attempted[0];
    const firstPreferred=preferred==='auto'?baseOrder[0]:preferred;
    const fallbackFrom=firstAttempt&&firstAttempt!==provider?firstAttempt:(preferred!=='auto'&&preferred!==provider?preferred:null);
@@ -939,7 +951,7 @@ async function generateText(p,cb){
     fallbackReason:fallbackFrom?errors[0]||'El motor preferido no estuvo disponible.':'',
     usage:normalizeInferenceUsage(usage),summary};
   }catch(error){
-   reportModelAttempt(provider,task,false,Date.now()-attemptStart,error);
+   reportModelAttempt(provider,task,false,Date.now()-attemptStart,error);recordCoreMetric('ai-assistant','provider-failed');
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
@@ -1515,7 +1527,7 @@ async function generateWebsite(p,cb){
   summary:'Página web HTML preparada y validada. Descarga el archivo para abrirlo en tu navegador. Todavía no está publicada en Internet.'};
 }
 
-export async function runTool(id,files=[],p={},cb){
+async function dispatchTool(id,files=[],p={},cb){
  progress(cb,.05,'Iniciando...');
  if(LOCAL_CREATOR_TOOL_IDS.includes(id))return runLocalCreatorTool(id,p);
  if(['json-compare-local','citation-ids-local'].includes(id))return runAdvancedTextTool(id,p);
@@ -1534,6 +1546,7 @@ export async function runTool(id,files=[],p={},cb){
   return download(makeBlob(await doc.save(),'application/pdf'),'imagenes-a-pdf.pdf');
  }
  if(id==='image-gen'||['image-collage','image-palette','image-flip','image-watermark','image-favicon'].includes(id))return imageAdvanced(id,files,p,cb);
+ if(id==='image-social-kit')return socialImageKit(files[0],p,cb);
  if(id.startsWith('image-'))return imageTool(id,files,p,cb);
  if(id==='docx-html'||id==='docx-pdf')return runDocx(id,files,cb);
  if(id==='video-thumbnail'||id==='video-gif'||id==='video-mute'||id==='audio-trim')return mediaAdvanced(id,files,p,cb);
@@ -1581,4 +1594,10 @@ export async function runTool(id,files=[],p={},cb){
  if(id==='qr')return runQr(p,cb);
  if(id==='currency')return runCurrency(p,cb);
  return runText(id,p);
+}
+
+export async function runTool(id,files=[],p={},cb){
+ const start=Date.now();recordCoreMetric(id,'requested',{files:files.length});
+ try{const result=await dispatchTool(id,files,p,cb);validateAgentStepResult(id,result);recordCoreMetric(id,'succeeded',{duration:Date.now()-start,files:files.length});return result;}
+ catch(error){recordCoreMetric(id,'failed',{duration:Date.now()-start,files:files.length});throw error;}
 }

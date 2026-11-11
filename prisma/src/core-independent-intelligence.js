@@ -1,3 +1,4 @@
+import { evaluateCoreExpression } from './core-math.js';
 // Independent deterministic abilities for Prisma Core. No AI API or Prisma Mini.
 const fold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 const DATA=[
@@ -33,6 +34,13 @@ const DATA=[
 ['supabase','Servicios sobre PostgreSQL que incluyen autenticación, almacenamiento y funciones.','Protege datos con RLS.'],
 ['rls','Control de acceso a filas en una base de datos.','Prueba restricciones entre diferentes usuarios.'],
 ['ocr','Reconocimiento de texto visual en imágenes.','Valida errores de lectura.'],
+['peso de imagen','El peso mide los bytes del archivo; las dimensiones miden ancho y alto en píxeles. Reducir calidad puede bajar bytes sin cambiar dimensiones.','Prisma distingue compresión y redimensionado; un límite de KB se verifica contra el archivo generado.'],
+['png','Formato de imagen con compresión sin pérdida y soporte de transparencia.','Reducir un parámetro de calidad en canvas no garantiza reducir un PNG; usa WebP/JPG si aceptas otro formato.'],
+['webp','Formato de imagen que admite compresión y transparencia.','En Prisma puedes seleccionar WebP al convertir o comprimir; conserva el original para comparar.'],
+['jpg','Formato de fotografía habitualmente comprimido con pérdida, sin canal de transparencia.','Para mantener un fondo transparente elige PNG o WebP.'],
+['metadatos','Información adicional asociada a un archivo, como autor, fecha o ubicación EXIF.','Quitar metadatos no borra información que siga visible en los píxeles o en el texto del documento.'],
+['csv','Tabla de texto organizada por filas y columnas delimitadas.','Los delimitadores dentro de valores deben entrecomillarse; conserva encabezados y revisa campos vacíos.'],
+['json valido','Un documento JSON válido respeta la sintaxis del formato; eso no garantiza que tenga los campos que necesita tu aplicación.','Un esquema permite comprobar estructura y tipos después de validar sintaxis.'],
 ['pdf','Formato de documento con diseño visual conservado.','Distingue texto seleccionable de escaneos.'],
 ['token','Unidad de texto procesada por modelos de lenguaje, no siempre una palabra.','Ten en cuenta los límites de contexto y salida.'],
 ['contexto','Información pertinente para interpretar una petición.','Usa historial relevante sin mezclar conversaciones.'],
@@ -79,6 +87,8 @@ export function getOfflineExtractiveSummary(text){
 export function resolveIndependentCoreRequest(text,{allowKnowledge=true}={}){
  const arithmetic=solveOfflineArithmetic(text);
  if(arithmetic)return {kind:'calculation',text:arithmetic};
+ const expression=String(text).replace(/^(?:cuanto es|cuánto es|calcula|resuelve)\s+/i,'').replace(/[¿?]/g,'').trim();
+ if(/[()+*/^]/.test(expression)){try{const n=evaluateCoreExpression(expression);if(n!==null)return {kind:'calculation',text:'**'+expression+' = '+format(n)+'**. Cálculo local; decimales aproximados con aritmética de punto flotante.'};}catch(error){return {kind:'calculation',text:error.message};}}
  const extraction=getOfflineExtractiveSummary(text);
  if(extraction)return {kind:'extraction',text:extraction};
  if(!allowKnowledge)return null;
