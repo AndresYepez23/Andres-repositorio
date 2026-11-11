@@ -98,6 +98,8 @@ test('SEO category, solution and guide hubs are useful, canonical and internally
   const title=html.split('<title>')[1]?.split('</title>')[0];
   const description=html.match(/<meta name="description" content="(.*?)">/)?.[1];
   assert.ok(title&&description,path+' metadata missing');
+  assert.ok(title.length<=70,path+' title too long: '+title.length);
+  assert.ok(description.length<=160,path+' description too long: '+description.length);
   assert.ok(!allTitles.has(title),'duplicate title: '+title);allTitles.add(title);
   assert.ok(!allDescriptions.has(description),'duplicate description: '+description);allDescriptions.add(description);
   const canonicalUrl=decode(html.match(/rel="canonical" href="([^"]+)"/)?.[1]||'');
