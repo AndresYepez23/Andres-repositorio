@@ -1,4 +1,5 @@
 import { planCapabilityRequest } from './core-capabilities.js';
+import { planFileConversion } from './file-conversions.js';
 import { tools, categories } from "./registry.js";
 import {
   coreToolCatalog,
@@ -136,14 +137,24 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
     ready(smartFlow) ? { source: "prisma-smart-flows", ...smartFlow } : null,
     ready(offlinePlan) ? { source: "prisma-core-offline-intelligence", ...offlinePlan } : null
   ].filter(Boolean);
-  const selected = planCapabilityRequest(request,safeAttachments) || (readyCandidates.length
-    ? readyCandidates.sort((a, b) => b.steps.length - a.steps.length ||
-      (a.source === "prisma-smart-flows" ? -1 : 1))[0]
-    : needsInput(smartFlow)
-      ? { source: "prisma-smart-flows", ...smartFlow }
-      : needsInput(offlinePlan)
-        ? { source: "prisma-core-offline-intelligence", ...offlinePlan }
-        : null);
+  // Use the same capability and conversion resolvers as the user-facing Core.
+  // A newer format follow-up must never revive an older PDF split.
+  const capabilityPlan = planCapabilityRequest(request,safeAttachments);
+  const conversionPlan = planFileConversion(request,safeAttachments,recent);
+  const bestReady = ready(conversionPlan)?{source:"prisma-conversion-routing",...conversionPlan}
+    : ready(capabilityPlan)?{source:"prisma-core-capabilities",...capabilityPlan}:null;
+  const selected = bestReady || (capabilityPlan
+    ? {source:"prisma-core-capabilities",...capabilityPlan}
+    : conversionPlan
+      ? {source:"prisma-conversion-routing",...conversionPlan}
+      : readyCandidates.length
+        ? readyCandidates.sort((a, b) => b.steps.length - a.steps.length ||
+          (a.source === "prisma-smart-flows" ? -1 : 1))[0]
+        : needsInput(smartFlow)
+          ? { source: "prisma-smart-flows", ...smartFlow }
+          : needsInput(offlinePlan)
+            ? { source: "prisma-core-offline-intelligence", ...offlinePlan }
+            : null);
 
   const toolIndex = new Map(tools.map((tool) => [tool.id, tool]));
   const steps = (selected?.steps || []).map((step, index) => {
