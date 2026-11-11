@@ -858,6 +858,73 @@
           "Depende del proveedor, el tamaño del archivo y los límites de tu configuración. Consulta las condiciones antes de procesar grabaciones largas."
         ]
       ]
+    },
+    {
+      "slug": "validar-estructuras-y-datos",
+      "title": "Cómo validar estructuras JSON y probar datos | Prisma Space",
+      "h1": "Cómo validar estructuras JSON y probar datos",
+      "description": "Revisa la estructura de un JSON, valida sus campos con un esquema y prueba patrones o formatos antes de integrar datos.",
+      "primaryQuery": "validar JSON online",
+      "intro": "Cuando una API devuelve JSON o un archivo alimenta una aplicación, un pequeño error de estructura puede romper el flujo. Validar permite comprobar que los campos y tipos coincidan con lo esperado; formatear, comparar y probar patrones son tareas distintas que conviene separar.",
+      "sections": [
+        {
+          "heading": "Definir qué debe contener el JSON",
+          "paragraphs": [
+            "Antes de validar, identifica los campos obligatorios, sus tipos, los valores permitidos y si una propiedad puede faltar o ser nula. Un esquema debe representar las reglas reales del proyecto, no solo la forma de un ejemplo.",
+            "Utiliza datos de prueba y elimina tokens, claves o información personal antes de pegar contenido en una herramienta externa."
+          ]
+        },
+        {
+          "heading": "Interpretar los resultados",
+          "paragraphs": [
+            "Un validador puede detectar campos ausentes o tipos incompatibles, pero no determina si los valores son verdaderos ni si el negocio funciona correctamente.",
+            "Después de corregir la estructura, prueba casos límite y valida la respuesta dentro del entorno de la aplicación."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Prepara un ejemplo sin datos sensibles",
+          "body": "Crea una muestra pequeña que represente el objeto que quieres comprobar.",
+          "toolId": "json-schema-validate"
+        },
+        {
+          "title": "Define o selecciona el esquema",
+          "body": "Indica los campos, tipos y restricciones que debe cumplir el JSON.",
+          "toolId": "json-schema-validate"
+        },
+        {
+          "title": "Ejecuta la validación",
+          "body": "Revisa los errores y distingue entre problemas de sintaxis y reglas de estructura.",
+          "toolId": "json-schema-validate"
+        },
+        {
+          "title": "Prueba los casos límite",
+          "body": "Comprueba valores vacíos, campos opcionales, arreglos y tipos inesperados antes de integrar la respuesta.",
+          "toolId": "regex-test"
+        }
+      ],
+      "primaryPageSlug": "validar-json-schema",
+      "toolIds": [
+        "json-schema-validate",
+        "regex-test",
+        "jwt-decode",
+        "hash-file"
+      ],
+      "solutionSlugs": [
+        "trabajar-con-codigo-y-apis"
+      ],
+      "note": "La validación de esquema no verifica la autenticidad de una respuesta ni sustituye las pruebas del backend. No pegues credenciales, JWT activos o secretos en una herramienta pública.",
+      "faqs": [
+        [
+          "¿Validar JSON es lo mismo que formatearlo?",
+          "No. Formatear cambia la presentación; validar comprueba si los datos cumplen reglas definidas."
+        ],
+        [
+          "¿Decodificar un JWT comprueba que sea válido?",
+          "No. La decodificación permite leer su contenido, pero la firma debe verificarse con el procedimiento y las claves adecuados."
+        ]
+      ]
     }
   ]
 }
