@@ -23,5 +23,6 @@ El correo de bienvenida se envía automáticamente cuando una cuenta nueva queda
 - From: `Prisma Space <no-reply@prismaspace.space>`
 - Subject: `Tu espacio en Prisma Space ya está listo`
 - Servicio: Resend, dominio `prismaspace.space` verificado.
+- Credencial: secreto `RESEND_API_KEY` en Cloudflare Pages, limitado al envío desde el dominio verificado; nunca se guarda en Git.
 - Se envía una sola vez por usuario.
 - La sincronización se describe como opcional; no se afirma que esté activada automáticamente.
