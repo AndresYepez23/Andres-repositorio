@@ -24,7 +24,7 @@ import { routeWebsiteRequest, resolveGeneralCapabilityQuestion } from './core-in
 import { isVideoCompressionIntent, isVideoFile, localizedVideoError } from './video-compression.js';
 import { findConversations } from './conversation-search.js';
 import { mergeConversationLists, serializeConversation, hasConversationMessages, retainActiveConversationDraft } from './conversation-sync.js';
-import { readConversationSnapshot, saveConversationSnapshot, clearConversationSnapshot } from './conversation-storage.js';
+import { readConversationSnapshot, queueConversationSnapshot, clearConversationSnapshot } from './conversation-storage.js';
 import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
@@ -159,7 +159,7 @@ function persistChatHistory(activeSerialized=null){
   console.warn('Prisma: el historial supera la capacidad de localStorage; se conservará en IndexedDB.',error?.message||error);
   document.dispatchEvent(new Event('prisma:history-storage-warning'));
  }
- window.__prismaHistoryWrite=saveConversationSnapshot(records).catch(error=>{
+ window.__prismaHistoryWrite=queueConversationSnapshot(records).catch(error=>{
   console.error('Prisma: no se pudo guardar la copia local completa en IndexedDB.',error?.message||error);
   document.dispatchEvent(new Event('prisma:history-storage-error'));
  });
@@ -195,18 +195,20 @@ function loadChatHistory(){
 }
 async function restoreIndexedHistory(){
  try{
+  // Finish scheduled IndexedDB writes before reading a potentially stale snapshot.
+  await (window.__prismaHistoryWrite||Promise.resolve()).catch(()=>{});
   const indexedRaw=await readConversationSnapshot();
   if(!Array.isArray(indexedRaw)||!indexedRaw.length)return;
   const indexed=indexedRaw.map(serializeConversation).filter(Boolean).filter(hasConversationMessages);
   // Older builds could snapshot an empty draft. Remove those records from IndexedDB.
   if(!indexed.length){
    const current=conversations.filter(hasConversationMessages);
-   await saveConversationSnapshot(current);
+   await queueConversationSnapshot(current);
    return;
   }
   const current=conversations.filter(hasConversationMessages);
   const merged=mergeConversationLists(current,indexed).filter(hasConversationMessages);
-  if(!merged.length){await saveConversationSnapshot([]);return;}
+  if(!merged.length){await queueConversationSnapshot([]);return;}
   // The open, unsent draft survives asynchronous IndexedDB restoration.
   conversations=retainActiveConversationDraft(conversations,merged,activeConversationId);
   const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
@@ -214,7 +216,7 @@ async function restoreIndexedHistory(){
   messages=active.messages.slice();
   // Never persist the draft: write only the valid saved conversations.
   try{localStorage.setItem(CHATS_KEY,JSON.stringify(merged));}catch{}
-  saveConversationSnapshot(merged).catch(error=>console.warn('Prisma IndexedDB snapshot:',error?.message||error));
+  queueConversationSnapshot(merged).catch(error=>console.warn('Prisma IndexedDB snapshot:',error?.message||error));
   renderConversationList();
   renderMessages({forceBottom:true});
   updateChatScreen();
@@ -1933,6 +1935,7 @@ async function executePlan(){
        (!filesSaved?' Los archivos solo están disponibles para descargar en esta sesión.':''),{results:executed,partial:true});
       status('Ejecución detenida por ti.','warning');
     }else{
+      if(!executed.length)throw Error('No se ejecutó ninguna herramienta; no hay un resultado que entregar.');
       const single=executed.length===1?executed[0]:null;
       if(single&&['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper'].includes(steps[0].tool.id)&&single.result?.text&&!single.result?.blob){
         addMessage('assistant',String(single.result.text),{engine:single.result.provider,model:single.result.model,fallbackFrom:single.result.fallbackFrom,fallbackReason:single.result.fallbackReason});
@@ -1960,6 +1963,8 @@ async function executePlan(){
     const extra=videoError?' El vídeo original sigue disponible para reintentar; no se ha generado un archivo comprimido falso.':
       executed.length?' Conservé los resultados anteriores.':' Puedes ajustar la solicitud o volver a intentar.';
     const filesSaved=await persistGeneratedResults(executed);
+    if(attachments.length&&steps.some(({tool})=>tool.file))
+      taskMemory.wait(activeConversationId,plan.userRequest||'',attachments);
     addMessage('assistant','No pude completar la tarea: '+detail+'.'+extra+
       (!filesSaved?' Algunos archivos solo pueden descargarse antes de cerrar la sesión.':''),{results:executed,partial:true});
     status('Ejecución detenida.','error');
@@ -2162,6 +2167,7 @@ async function sendMessage(){
     const detail=String(error?.message||'');
     const globalLimit=error?.code==='GLOBAL_LIMIT'||/Prisma alcanzó su límite temporal gratuito global|Se alcanzó el límite de solicitudes de Prisma/i.test(detail);
     const providerLimit=error?.code==='PROVIDER_LIMIT'||error?.code==='PROVIDER_MINUTE_LIMIT';
+    if(filesNow.length)taskMemory.wait(activeConversationId,requestText,filesNow);
     if(globalLimit||providerLimit){
       addMessage('assistant',localQuotaExplanation(globalLimit?'GLOBAL_LIMIT':error?.code||'PROVIDER_LIMIT'));
       status('Se alcanzó una cuota temporal.','warning');
@@ -2172,10 +2178,9 @@ async function sendMessage(){
   }
   finally{
     setBusy(false);
-    // The submitted files belong to this one request, not the next message.
-    // The requestPlan pipeline has already completed or failed at this point.
-    // This also prevents the same image being sent repeatedly by accident.
-    attachments=[];renderAttachments();
+    // File tools remove attachments after verified success. Keep originals after
+    // failure or clarification so the user can retry without uploading again.
+    renderAttachments();
     $('#core-attachments')?.classList.remove('hidden');
     const fileInput=$('#core-file-input');
     if(fileInput)fileInput.value='';
@@ -2232,18 +2237,22 @@ export function initPrismaCore(){
   document.addEventListener('prisma:core-rename-request',renameActiveChat);
   document.addEventListener('prisma:core-delete-request',deleteActiveChat);
   document.addEventListener('prisma:remote-chats-ready',event=>{
-    if(busy||executionActive)return;
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
+    // Always merge cloud updates, including while a tool is executing.
+    // Only defer the visual re-render until the active response finishes.
+    if(!remote&&(busy||executionActive))return;
     if(remote){
-      const synced=mergeConversationLists(remote).filter(hasConversationMessages);
+      // Cloud sync may lag behind a just-completed reply; never discard local messages.
+      const synced=mergeConversationLists(remote,conversations).filter(hasConversationMessages);
       conversations=retainActiveConversationDraft(conversations,synced,activeConversationId);
       if(!conversations.length)conversations=[newChatRecord()];
       const active=conversations.find(chat=>chat.id===activeConversationId)||conversations[0];
       activeConversationId=active.id;messages=active.messages.slice();
       const persisted=conversations.filter(hasConversationMessages);
       try{localStorage.setItem(CHATS_KEY,JSON.stringify(persisted));}catch{}
-      saveConversationSnapshot(persisted).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
+      queueConversationSnapshot(persisted).catch(error=>console.warn('Prisma snapshot remoto:',error?.message||error));
     }else loadChatHistory();
+    if(busy||executionActive)return;
     renderConversationList();userPinnedToBottom=true;renderMessages({forceBottom:true});updateChatScreen();
   });
   document.addEventListener('prisma:clear-local-history',()=>{

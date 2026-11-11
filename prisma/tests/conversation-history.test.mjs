@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { hasConversationMessages, normalizeConversation, retainActiveConversationDraft } from '../src/conversation-sync.js';
+import { hasConversationMessages, normalizeConversation, retainActiveConversationDraft, mergeConversationLists } from '../src/conversation-sync.js';
+import { createTaskMemory } from '../src/core-task-memory.js';
+import { planCapabilityRequest } from '../src/core-capabilities.js';
 
 const empty=normalizeConversation({id:'draft-chat',title:'Nueva conversación',messages:[]});
 const valid=normalizeConversation({id:'real-chat',title:'Hola',messages:[{role:'user',content:'Hola',time:1}]});
@@ -77,3 +79,32 @@ const newStart=core.indexOf('function startNewConversation(){');
 const newEnd=core.indexOf('function updateChatScreen(){',newStart);
 assert.doesNotMatch(core.slice(newStart,newEnd),/persistChatHistory\(/,
   'Creating an empty draft must not write history or trigger cloud sync');
+
+// Regression: confirmations must continue a failed/pending PDF job with the original file.
+const taskMemory=createTaskMemory();
+const pdf={name:'calendario.pdf',type:'application/pdf',size:4321};
+taskMemory.wait('pdf-chat','Dividir pdf',[pdf]);
+const resumed=taskMemory.resolve('pdf-chat','Sí');
+assert.equal(resumed.request,'Dividir pdf','A bare confirmation is not a new chat request');
+assert.deepEqual(resumed.files,[pdf],'The already-uploaded PDF is retained');
+const resumedPlan=planCapabilityRequest(resumed.request,resumed.files);
+assert.equal(resumedPlan?.type,'ready');
+assert.deepEqual(resumedPlan.steps.map(step=>step.tool_id),['pdf-split']);
+const afterResolution=taskMemory.resolve('pdf-chat','Hola');
+assert.equal(afterResolution.request,undefined,'An unrelated greeting must not replay a pending operation');
+
+// Regression: a delayed cloud snapshot cannot delete local assistant replies.
+const oldRemote={...oldChat,updated:50,messages:[{id:'user-1',role:'user',content:'Dividir pdf',time:30}]};
+const localWithReply={...oldChat,updated:60,messages:[
+ {id:'user-1',role:'user',content:'Dividir pdf',time:30},
+ {id:'answer-1',role:'assistant',content:'ZIP generado',time:45}
+]};
+const mergedCloud=mergeConversationLists([oldRemote],[localWithReply]);
+assert.deepEqual(mergedCloud[0].messages.map(m=>m.content),['Dividir pdf','ZIP generado']);
+assert.match(core,/mergeConversationLists\(remote,conversations\)/,'Cloud sync must merge, not replace, local replies');
+assert.match(core,/queueConversationSnapshot\(records\)/,'History writes must be serialized');
+assert.match(core,/taskMemory\.wait\(activeConversationId,plan\.userRequest/,'A failed tool must keep its retry task');
+const sendSource=core.slice(core.indexOf('async function sendMessage(){'),core.indexOf('function renameActiveChat(){'));
+assert.doesNotMatch(sendSource,/finally\{[\s\S]*attachments=\[\];renderAttachments\(\)/,
+ 'Submitting a file must not clear it unconditionally when an operation fails');
+console.log('Prisma Core PDF retry and history synchronization regressions passed.');
