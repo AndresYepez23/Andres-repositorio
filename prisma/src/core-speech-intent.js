@@ -31,6 +31,7 @@ export function inlineSpeechText(command) {
 
   const separator = source.match(/(?:texto|frase|mensaje|contenido|que diga|lo siguiente)\s*[:：]\s*([\s\S]{2,})$/i);
   if (separator) return separator[1].trim();
+  if (trailing && source.length >= 2) return source;
 
   // "Convierte a audio: texto" and "Convierte a audio texto".
   const natural = source.match(/^(?:convierte|convertir|pasa|pasame|pásame|hazme|genera|graba|narra|léeme|leeme)\s+(?:(?:este|el|mi|un)\s+)?(?:(?:texto|mensaje|frase)\s+)?(?:a|en)\s+(?:audio|voz|mp3)\s*[,;:\-]?\s+([\s\S]{2,})$/i);
