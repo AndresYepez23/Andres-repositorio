@@ -1,4 +1,5 @@
 import { initPrismaAccount, openPrismaAuth } from './prisma-account.js';
+import { initPrismaSettings } from './prisma-settings.js';
 import { initPrismaDeveloperBridge } from './developer-bridge.js';
 const $=s=>document.querySelector(s);
 const HIDE_UNTIL='prisma-pwa-banner-hide-until';
@@ -58,6 +59,7 @@ function initPwa(){
  window.addEventListener('appinstalled',()=>{installPrompt=null;hideBanner(0);});
  $('#pwa-install')?.addEventListener('click',askInstall);
  $('#profile-install')?.addEventListener('click',()=>{document.dispatchEvent(new Event('prisma:close-profile'));askInstall();});
+ document.addEventListener('prisma:request-install',askInstall);
  $('#core-more-install')?.addEventListener('click',askInstall);
  $('#pwa-dismiss')?.addEventListener('click',()=>hideBanner(14));
  $('#pwa-instructions-close')?.addEventListener('click',()=>$('#pwa-instructions')?.classList.add('hidden'));
@@ -91,6 +93,7 @@ export function initPrismaExperience(){
  const profile=$('#profile-menu');if(profile&&profile.parentElement!==document.body)document.body.append(profile);
  initPwa();
  initCoreMenu();
+ initPrismaSettings();
  initPrismaDeveloperBridge();
  initPrismaAccount().catch(error=>console.warn('Cuenta Prisma no conectada:',error?.message||error));
  $('#open-account-auth')?.addEventListener('click',()=>{document.dispatchEvent(new Event('prisma:close-profile'));openPrismaAuth();});
