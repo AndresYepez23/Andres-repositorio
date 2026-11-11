@@ -76,7 +76,7 @@ export function planCapabilityRequest(raw,files=[],task=null){
  if(kinds.size>1)return need('Hay tipos de archivo distintos. Selecciona un grupo compatible para procesarlo sin omitir archivos.');
  // A relative page means one exact output, not a split of every page.
  // Resolve "last" only after the PDF engine knows its actual page count.
- if(kind==='pdf'&&/\\b(?:ultima|ultimo)\\s+(?:pagina|hoja)\\b/.test(q)&&!/\\b(?:elimina|quita|borra)\\b/.test(q)){
+ if(kind==='pdf'&&/\b(?:ultima|ultimo)\s+(?:pagina|hoja)\b/.test(q)&&!/\b(?:elimina|quita|borra)\b/.test(q)){
   if(!files.length)return need('Adjunta el PDF para extraer únicamente su última página.');
   return {type:'ready',confidence:1,message:'Extraeré solo la última página del PDF en un archivo independiente.',steps:[{tool_id:'pdf-split',params:{mode:'selected',pages:'last'},reason:'Seleccionar exclusivamente la última página'}]};
  }
