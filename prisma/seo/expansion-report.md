@@ -172,3 +172,12 @@ Referencias metodológicas consultadas: [contenido útil](https://developers.goo
 - La revisión completa combina análisis de código, formularios y pruebas locales. No supone haber ejecutado cada conversión de archivos ni cada proveedor remoto en todos los navegadores o dispositivos físicos.
 
 Se incorporó main `3192732` antes de publicar, preservando Prisma Developer y su suite. La diferencia frente a main se limita a SEO, su build y pruebas.
+
+
+## Expansión editorial y de enlaces internos — 11 de noviembre de 2026
+
+Se añadieron 38 URLs nuevas: 10 categorías, 11 soluciones, 14 guías y tres índices. El sitemap esperado pasa de 143 a 181 URLs únicas. Las categorías muestran exclusivamente fichas de herramientas ya cubiertas por `audit.json`; las soluciones y guías enlazan a herramientas existentes y declaran límites de beta, BYOK y servicios conectados. Las 140 landings existentes reciben enlaces contextuales hacia categoría, solución y guía cuando existe relación real; el directorio y el pie de página de la aplicación enlazan a los nuevos índices.
+
+La nueva prueba de build comprueba canónicas, metadatos únicos, JSON-LD (`CollectionPage`, `WebPage`, `HowTo`), rutas, herramientas aprobadas, pasos y sitemap. El preview de Cloudflare Pages para `seo/organic-growth-expansion` finalizó con estado `success` y sirvió un sitemap con 181 entradas. La publicación de producción queda pendiente de fusionar a `main`.
+
+No se atribuyen volúmenes de búsqueda ni promesas de posicionamiento. `seo/keyword-map.md` registra consultas objetivo cualitativas y el plan para priorizar con Search Console cuando acumule datos.
