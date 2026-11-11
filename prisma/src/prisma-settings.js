@@ -84,7 +84,7 @@ function closeSettings() {
   panel.classList.add('hidden');
   panel.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('prisma-settings-open');
-  $('#profile-open-settings')?.focus();
+  $('#profile-toggle')?.focus();
 }
 function generalContent() {
   const shortcut = (() => {
@@ -210,6 +210,7 @@ function paintIcons(root) {
     const paths = {
       'user-round': '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
       'arrow-right': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+      'arrow-right': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
       'cloud': '<path d="M20 16.2A4.8 4.8 0 0 0 18 7h-1.2A7 7 0 1 0 4 16.3"/>',
       'log-out': '<path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>',
       'external-link': '<path d="M14 3h7v7m0-7-9 9"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
@@ -238,6 +239,7 @@ function setSettingsSection(section) {
   }
   paintIcons($('#settings-content'));
   $('#settings-content').scrollTop = 0;
+  updateThemeChoices();
   $('#settings-content').querySelectorAll('[data-theme-choice]').forEach(button => {
     button.addEventListener('click', () => {
       applyThemePreference(button.dataset.themeChoice);
@@ -325,8 +327,8 @@ export function initPrismaSettings() {
   const handleSystemTheme = () => {
     if (currentThemePreference() === 'system') applyThemePreference('system');
   };
-  media?.addEventListener?.('change', handleSystemTheme);
-  media?.addListener?.(handleSystemTheme);
+  if (media?.addEventListener) media.addEventListener('change', handleSystemTheme);
+  else media?.addListener?.(handleSystemTheme);
   document.addEventListener('keydown', event => {
     const settings = $('#prisma-settings');
     const isOpen = settings && !settings.classList.contains('hidden');
