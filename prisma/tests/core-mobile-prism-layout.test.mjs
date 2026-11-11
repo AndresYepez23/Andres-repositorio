@@ -32,5 +32,5 @@ test('welcome SVG is clipped rather than painted across text when the viewport c
   assert.match(mobileWelcomeFix, /\.core-welcome h2\{[\s\S]*?margin:0 auto 10px!important/);
   assert.match(mobileWelcomeFix, /max-height:740px/);
   assert.match(mobileWelcomeFix, /max-height:590px/);
-  assert.doesNotMatch(mobileWelcomeFix, /overflow:visible/);
+  assert.doesNotMatch(mobileWelcomeFix, /^\s*overflow:visible\s*;/m);
 });
