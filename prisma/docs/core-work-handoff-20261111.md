@@ -27,3 +27,8 @@ Esta intervención está aislada del trabajo semántico local de Work (rama `cor
 
 ## Límites pendientes
 Las firmas detectan errores de formato y anuncios falsos de éxito, pero no confirman páginas específicas, estructura DOCX/ZIP, recorte exacto de imágenes o duración multimedia. Son tareas para la verificación profunda posterior.
+
+## Mejora adicional de Prisma Mini, sin tocar Work
+La ronda posterior optimiza `src/local-brain.js`: mantiene en memoria los embeddings de descripciones del catálogo y solo calcula el vector del mensaje nuevo, evitando recomputar la misma lista de herramientas en cada turno. Los prompts y adjuntos del usuario no se almacenan en esa caché. Incluye `tests/local-brain-cache.test.mjs`. Es independiente de la rama local `core/semantic-contract` y no cambia los proveedores ni el planificador semántico central.
+
+Esto **no** garantiza comprensión general: Work debe continuar integrando y probando su contrato semántico con modelos reales. No duplicar el optimizador de Prisma Mini.

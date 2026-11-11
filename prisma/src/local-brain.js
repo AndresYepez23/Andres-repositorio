@@ -4,6 +4,9 @@
 const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
 const TRANSFORMERS_CDN = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2";
 let modelPromise = null;
+const cachedVectorsByModel = new WeakMap();
+const MAX_CACHED_TOOL_VECTORS = 256; // ~1MB at 384 dimensions; memory only.
+
 
 export async function loadLocalBrain(onProgress = () => {}) {
   if (!modelPromise) {
@@ -39,24 +42,40 @@ function lexicalScore(query, label) {
   return Math.min(1,hits/tokens.size);
 }
 
-export async function rankLocalTools(query, catalog, limit=28) {
+// Each conversation previously embedded all 32 tool descriptions again.
+// Cache *only catalog descriptions*, never user prompts or file content.
+// The query still gets a fresh semantic embedding every time.
+export async function rankLocalTools(query,catalog,limit=28,{model:providedModel}={}) {
   if(!Array.isArray(catalog)||!catalog.length)return [];
-  const model=await loadLocalBrain();
+  const model=providedModel||await loadLocalBrain();
+  if(typeof model!=='function')throw Error('Prisma Mini no dispone de un motor semántico utilizable.');
   const shortlist=catalog.slice(0,Math.min(32,catalog.length));
-  const texts=[
-    String(query||"").slice(0,500),
-    ...shortlist.map(item=>
-      ((item.name||"")+" · "+(item.description||"")+" · "+(item.hint||"")).slice(0,235)
-    )
-  ];
-  const output=await model(texts,{pooling:"mean",normalize:true});
+  let cache=cachedVectorsByModel.get(model);
+  if(!cache){cache=new Map();cachedVectorsByModel.set(model,cache);}
+  const labels=shortlist.map(item=>
+    ((item.name||"")+" · "+(item.description||"")+" · "+(item.hint||"")).slice(0,235)
+  );
+  const unseen=[...new Set(labels.filter(label=>!cache.has(label)))];
+  const output=await model([String(query||"").slice(0,500),...unseen],{
+    pooling:"mean",normalize:true
+  });
   const vectors=await output.tolist();
+  if(!Array.isArray(vectors)||vectors.length!==1+unseen.length)
+    throw Error('Prisma Mini devolvió vectores semánticos incompletos.');
   const queryVector=vectors[0];
+  if(!Array.isArray(queryVector)||!queryVector.length)
+    throw Error('Prisma Mini no pudo representar la solicitud.');
+  unseen.forEach((label,i)=>{
+    if(cache.size>=MAX_CACHED_TOOL_VECTORS)cache.delete(cache.keys().next().value);
+    cache.set(label,vectors[i+1]);
+  });
   return shortlist.map((item,i)=>{
-    const target=vectors[i+1]||[];
+    const target=cache.get(labels[i])||[];
     let semantic=0;
-    for(let j=0;j<Math.min(queryVector.length,target.length);j++)semantic+=queryVector[j]*target[j];
-    const lexical=lexicalScore(query,texts[i+1]);
+    for(let j=0;j<Math.min(queryVector.length,target.length);j++)
+      semantic+=queryVector[j]*target[j];
+    const lexical=lexicalScore(query,labels[i]);
     return {...item,miniScore:Math.max(-1,Math.min(1,semantic))*.7+lexical*.3,miniOriginalIndex:i};
-  }).sort((a,b)=>b.miniScore-a.miniScore || a.miniOriginalIndex-b.miniOriginalIndex).slice(0,limit);
+  }).sort((a,b)=>b.miniScore-a.miniScore||a.miniOriginalIndex-b.miniOriginalIndex)
+    .slice(0,limit);
 }
