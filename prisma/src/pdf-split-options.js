@@ -42,6 +42,12 @@ export function planPdfSplit(params={},pageCount=0){
  let indices;
  if(mode==='all')indices=all.map(i=>[i]);
  else if(mode==='selected')indices=parsePdfPageSelection(params.pages,total).map(i=>[i]);
+ else if(mode==='exclude'){
+  const excluded=new Set(parsePdfPageSelection(params.pages,total));
+  const selected=all.filter(i=>!excluded.has(i));
+  if(!selected.length)throw Error('No quedan páginas tras aplicar la exclusión.');
+  indices=selected.map(i=>[i]);
+ }
  else if(mode==='ranges'){
   const specs=String(params.ranges||'').split(';').map(x=>x.trim()).filter(Boolean);
   if(!specs.length)throw Error('Indica rangos separados por punto y coma.');
@@ -62,7 +68,7 @@ export function planPdfSplit(params={},pageCount=0){
  }else throw Error('Elige un modo de división válido.');
  const groups=indices.map((pages,i)=>{
   const number=String(i+1).padStart(3,'0'),first=pages[0]+1,last=pages[pages.length-1]+1;
-  const filename=mode==='all'||mode==='selected'?'pagina-'+String(first).padStart(3,'0')+'.pdf'
+  const filename=mode==='all'||mode==='selected'||mode==='exclude'?'pagina-'+String(first).padStart(3,'0')+'.pdf'
    :(mode==='ranges'?'rango-':'parte-')+number+'-paginas-'+first+(last===first?'':'-'+last)+'.pdf';
   return {indices:pages,filename};
  });

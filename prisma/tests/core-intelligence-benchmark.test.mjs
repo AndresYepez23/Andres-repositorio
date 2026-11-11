@@ -232,6 +232,36 @@ test('multi-step intent does not silently lose conversion or compression',()=>{
  assert.deepEqual(ids(p),['image-bg','image-compress','image-palette']);
  assert.equal(planCapabilityRequest('Explícame cómo funciona JSON',[]),null,'Information without files remains a regular conversation');
 });
+test('protect explicit PDF exclusions and individual page selections',()=>{
+ const samples=[
+  ['Separa este PDF pero excluye la página 4',['pdf-split'],{mode:'exclude',pages:'4'}],
+  ['Crea tres PDFs con las páginas 1, 2 y 3 por separado',['pdf-split'],{mode:'selected',pages:'1,2,3'}],
+  ['Quiero solo la página 2, no las demás',['pdf-extract'],{pages:'2'}],
+  ['Sácame únicamente la hoja final',['pdf-extract'],{pages:'last'}]
+ ];
+ for(const [text,want,p] of samples){
+  const core=planCapabilityRequest(text,pdf),dev=planWithPrismaCore({text,files:pdf});
+  assert.deepEqual(ids(core),want,text);
+  assert.deepEqual(ids(dev.planner),want,text);
+  for(const [key,value] of Object.entries(p))assert.equal(core.steps[0].params[key],value,text+' '+key);
+ }
+ assert.deepEqual(planPdfSplit({mode:'exclude',pages:'4'},6).groups.map(g=>g.indices),[[0],[1],[2],[4],[5]]);
+ assert.throws(()=>planPdfSplit({mode:'exclude',pages:'1-6'},6),/No quedan páginas/);
+});
+test('two-phase PDF requests preserve all operations and their order',()=>{
+ const requests=[
+  ['Une los dos PDF y después extrae la última página',['pdf-merge','pdf-extract'],{pages:'last'}],
+  ['Gira solamente la página 2 90 grados y luego conviértelo a Word',['pdf-rotate','pdf-to-word'],{pages:'2',degrees:90}]
+ ];
+ for(const [text,expected,params] of requests){
+  const documents=[...pdf,{name:'otro.pdf',type:'application/pdf',size:800}];
+  const core=planCapabilityRequest(text,documents),dev=planWithPrismaCore({text,files:documents});
+  assert.deepEqual(ids(core),expected,text);
+  assert.deepEqual(ids(dev.planner),expected,text);
+  const step=expected[0]==='pdf-merge'?1:0;
+  for(const [k,v] of Object.entries(params))assert.equal(core.steps[step].params[k],v,text+' '+k);
+ }
+});
 test('telemetry rejects personal data fields and never exposes a read endpoint',async()=>{
  assert.deepEqual(metricEvent('word-count','succeeded',{text:'SECRET',filename:'personal.pdf',duration:20,files:2}),{id:'word-count',event:'succeeded',duration:20,files:2});
  assert.equal(metricEvent('arbitrary-secret','succeeded'),null);
