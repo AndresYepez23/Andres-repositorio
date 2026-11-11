@@ -6,7 +6,7 @@ import { runWorkflow, workflows } from "./workflows.js";
 import { tools } from "./registry.js";
 
 const BRIDGE_URL = "https://prisma-developer-mcp.andressimonyepezarrieta23.workers.dev";
-const SESSION_KEY = "prisma-developer-bridge-session-v1";
+const SESSION_KEY = "prisma-developer-bridge-session-v2";
 const HEADERS = { "Content-Type": "application/json" };
 let initialized = false;
 let running = false;
