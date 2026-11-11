@@ -508,9 +508,22 @@ function signupRedirectUrl(){
  target.searchParams.set('prisma_welcome','1');
  return target.toString();
 }
+// Only verified, recently created/confirmed accounts qualify. This also
+// covers a confirmation opened on another device or a later first sign-in.
+function isRecentWelcomeAccount(account,now=Date.now()){
+ if(!account?.id||!account.email||account.is_anonymous)return false;
+ const confirmed=account.email_confirmed_at||account.confirmed_at;
+ if(!confirmed)return false;
+ const limit=14*24*60*60*1000;
+ return [account.created_at,confirmed].some(value=>{
+  const time=Date.parse(value||'');
+  return Number.isFinite(time)&&time<=now+60000&&now-time<=limit;
+ });
+}
+const welcomeRequestsInFlight=new Set();
 async function sendWelcomeEmailIfEligible(newUser){
- const target=new URL(location.href);
- if(target.searchParams.get('prisma_welcome')!=='1'||!api||!newUser?.id)return;
+ if(!api||!isRecentWelcomeAccount(newUser)||welcomeRequestsInFlight.has(newUser.id))return;
+ welcomeRequestsInFlight.add(newUser.id);
  try{
   const {data,error}=await api.auth.getSession();
   const session=data?.session;
@@ -520,12 +533,19 @@ async function sendWelcomeEmailIfEligible(newUser){
    headers:{Authorization:'Bearer '+session.access_token,Accept:'application/json'}
   });
   const result=await response.json().catch(()=>({}));
-  if(!response.ok||result.pending)throw Error('HTTP '+response.status+' '+(result.pending?'welcome email is pending':''));
-  target.searchParams.delete('prisma_welcome');
-  history.replaceState(history.state,'',target.pathname+target.search+target.hash);
+  if(!response.ok)throw Error('HTTP '+response.status);
+  if(result.pending)return; // Retry on a later authenticated visit.
+  const target=new URL(location.href);
+  if(target.searchParams.has('prisma_welcome')){
+   target.searchParams.delete('prisma_welcome');
+   history.replaceState(history.state,'',target.pathname+target.search+target.hash);
+  }
   sessionStorage.removeItem(SIGNUP_PENDING);
  }catch(error){
+  // This email is optional and must never block access or registration.
   console.warn('Prisma welcome email:',error?.message||error);
+ }finally{
+  welcomeRequestsInFlight.delete(newUser.id);
  }
 }
 async function onSignedIn(newUser,{fromInteraction=false,isNewSignup=false}={}){
@@ -534,6 +554,9 @@ async function onSignedIn(newUser,{fromInteraction=false,isNewSignup=false}={}){
  user=newUser;
  if(changed)profile=null;
  refreshIdentity();
+ // Deliver on the first confirmed session, whether opened from the signup
+ // email, Google OAuth, another device, or a later login.
+ if(!recovering)void sendWelcomeEmailIfEligible(newUser);
  await ensureProfile();
  startSyncWatchers();
  if(selectedSync()){
@@ -548,15 +571,9 @@ async function onSignedIn(newUser,{fromInteraction=false,isNewSignup=false}={}){
  if(pendingSignupValid)sessionStorage.removeItem(SIGNUP_PENDING);
  pendingAuth=false;
  if(recovering)return;
- const currentUrl=new URL(location.href);
- const welcomeFromVerification=currentUrl.searchParams.get('prisma_welcome')==='1';
- const createdAt=Date.parse(newUser.created_at||'');
- const freshOAuthSignup=Boolean(oauth)&&Number.isFinite(createdAt)&&Date.now()-createdAt<10*60*1000;
- if(isNewSignup||welcomeFromVerification||freshOAuthSignup){
-  currentUrl.searchParams.set('prisma_welcome','1');
-  history.replaceState(history.state,'',currentUrl.pathname+currentUrl.search+currentUrl.hash);
-  void sendWelcomeEmailIfEligible(newUser);
- }
+ // Email delivery is not gated on a redirect query flag: a verified account
+ // can arrive via another device or sign in after its confirmation link.
+ // The server checks freshness and D1 makes the welcome exactly-once.
  if(welcome&&!handledWelcome){
   handledWelcome=true;
   const title=$('#auth-welcome-title');

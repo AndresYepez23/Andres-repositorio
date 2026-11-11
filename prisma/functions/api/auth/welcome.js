@@ -31,7 +31,15 @@ export async function handleWelcomeRequest({request,env},fetcher=fetch){
  }
  const email=String(user?.email||'').trim().toLowerCase();
  const confirmed=Boolean(user?.email_confirmed_at||user?.confirmed_at);
- if(!user?.id||!email||!confirmed)return json({ok:false,error:'verified_email_required'},403);
+ if(!user?.id||!email||!confirmed||user.is_anonymous)return json({ok:false,error:'verified_email_required'},403);
+ // Prevent sending old registered users a retrospective welcome on login.
+ // A recently confirmed account may have been created days earlier.
+ const now=Date.now(),freshnessWindow=14*24*60*60*1000;
+ const recent=[user.created_at,user.email_confirmed_at||user.confirmed_at].some(value=>{
+  const timestamp=Date.parse(value||'');
+  return Number.isFinite(timestamp)&&timestamp<=now+60000&&now-timestamp<=freshnessWindow;
+ });
+ if(!recent)return json({ok:true,skipped:'existing_account'});
 
  const db=env.PRISMA_RATE_DB;
  let claim;
