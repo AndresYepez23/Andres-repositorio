@@ -272,6 +272,8 @@ export function planCapabilityRequest(raw,files=[],task=null){
  const ids=new Set(plan.steps.map(s=>s.tool_id));
  const pdf=files.length&&files.every(f=>fileKind(f)==='pdf');
  if(pdf&&/\b(?:a|en) (?:word|docx)\b/.test(q)&&!ids.has('pdf-to-word')){
+  const split=plan.steps.find(s=>s.tool_id==='pdf-split');
+  if(split){if(split.params?.mode!=='selected')return need('La división genera un ZIP. Indica qué páginas deben convertirse a Word.');split.tool_id='pdf-extract';split.params={pages:split.params.pages};}
   plan={...plan,steps:[...plan.steps,{tool_id:'pdf-to-word',params:{},reason:'Convertir el resultado seleccionado a Word'}]};
  }
  const merge=plan.steps.find(s=>s.tool_id==='pdf-merge');

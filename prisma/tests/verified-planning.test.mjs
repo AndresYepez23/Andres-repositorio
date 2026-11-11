@@ -5,7 +5,7 @@ import {createTaskMemory} from '../src/core-task-memory.js';
 const pdf={name:'documento.pdf',type:'application/pdf',size:100};
 test('multi-operation PDF plans retain downstream Word and explicit file order',()=>{
  for(const query of ['Extrae la última página y conviértela a Word','Quiero solo la página 2 y después a Word','Extrae páginas 2-4 y conviértelas a Word']){
-  const p=planCapabilityRequest(query,[pdf]);assert.equal(p.type,'ready',query);assert.equal(p.steps.at(-1).tool_id,'pdf-to-word');assert.equal(p.steps.length,2);assert.deepEqual(p.steps[1].dependsOn,['step-1']);
+  const p=planCapabilityRequest(query,[pdf]);assert.equal(p.type,'ready',query);assert.equal(p.steps.at(-1).tool_id,'pdf-to-word');assert.equal(p.steps.length,2);assert.equal(p.steps[0].tool_id,'pdf-extract');assert.deepEqual(p.steps[1].dependsOn,['step-1']);
  }
  const p=planCapabilityRequest('Une primero el segundo PDF y después el primero',[pdf,pdf]);assert.deepEqual(p.steps[0].params.sourceOrder,[1,0]);
 });
