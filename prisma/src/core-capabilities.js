@@ -71,7 +71,7 @@ const need=message=>({type:'needs-input',message,steps:[],confidence:0});
 const mime=q=>/\bwebp\b/.test(q)?'image/webp':/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'';
 export function planCapabilityRequest(raw,files=[],task=null){
  let {instruction,text}=extractPayload(raw);let q=normalizeIntent(instruction).trim();
- if(isInformationalIntent(raw))return need('Esta es una consulta informativa: no modificaré el archivo. Puedo explicarte la herramienta y sus límites; solicita explícitamente una operación cuando quieras ejecutarla.');
+ if(isInformationalIntent(raw))return files.length?need('Esta es una consulta informativa: no modificaré el archivo. Puedo explicarte la herramienta y sus límites; solicita explícitamente una operación cuando quieras ejecutarla.'):null;
  const positive=positiveClauses(q);
  if(positive.negated&&!positive.value)return need('Entendido: no ejecutaré la operación que has descartado. Indica qué quieres hacer en su lugar.');
  if(positive.negated)q=positive.value;
@@ -151,7 +151,7 @@ export function planCapabilityRequest(raw,files=[],task=null){
  if(found.some(c=>c.id==='image-bg')&&!/(?:a|en) (?:webp|jpe?g)/.test(q))found=found.filter(c=>c.id!=='image-convert');
  if(found.some(c=>c.id==='pdf-extract'))found=found.filter(c=>c.id!=='pdf-split');
  if(found.some(c=>c.id==='image-compress')&&found.some(c=>c.id==='image-convert')&&
-    !/\b(?:y|luego|despues|tambien|primero)\b.*\b(?:convierte|convertir|pasa|exporta|guarda)\b/.test(q))
+    !/\b(?:y|luego|despues|tambien|primero)\b.*\b(?:conviert\w*|pas\w*|export\w*|guard\w*)\b/.test(q))
    found=found.filter(c=>c.id!=='image-convert');
  const clauses=q.split(/[,;]|\s+(?:y|luego|despues|tambien)\s+/);
  const unknown=clauses.find(clause=>/\b(?:cambia|borra|quita|elimina|crea|genera|convierte|traduce|resume|envia|publica|recorta|comprime|extrae|ordena|organiza|redimensiona|rota|gira)\b/.test(clause)&&!found.some(c=>c.pattern.test(clause))&&!/conserva|sin cambiar|dimensiones|calidad/.test(clause)&&!(found.some(c=>c.id==='image-bg')&&/sujeto|detras|objeto/.test(clause)));
