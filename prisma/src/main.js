@@ -312,7 +312,8 @@ function setupProfileMenu(){
   help?.addEventListener('click',event=>event.stopPropagation());
   document.addEventListener('click',closeProfileMenu);
   document.addEventListener('prisma:close-profile',closeProfileMenu);
-  $('#clear-local-data').addEventListener('click',()=>{
+  document.addEventListener('click',event=>{
+    if(!event.target.closest?.('#clear-local-data'))return;
     if(!window.confirm('Esto borrará tus conversaciones, favoritos y preferencias locales de este dispositivo. No se puede deshacer. ¿Continuar?'))return;
     ['prisma-favorites','prisma-recent','prisma-theme','prisma-compact-ui','prisma-reduce-motion','prisma-send-shortcut','prisma-polli-client-id','prisma-core-chats-v2','prisma-core-workspace-v1'].forEach(key=>localStorage.removeItem(key));
     ['prisma-polli-token','prisma-polli-expiry','prisma-polli-verifier','prisma-polli-state'].forEach(key=>sessionStorage.removeItem(key));
