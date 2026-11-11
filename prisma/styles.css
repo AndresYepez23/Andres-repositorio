@@ -3715,3 +3715,12 @@ html[data-reduce-motion="true"] *,html[data-reduce-motion="true"] *::before,html
     min-height:calc(60px + max(60px,env(safe-area-inset-top,0px)));
   }
 }
+
+/* Native-sized controls: prevent Safari's input focus zoom and improve legibility. */
+@media(max-width:900px){
+  #prisma-settings .settings-select{font-size:16px}
+  #prisma-settings .settings-home-row-label strong{font-size:15px}
+  #prisma-settings .settings-home-group h2{font-size:14px}
+  #prisma-settings .settings-help-link{font-size:15px}
+  #prisma-settings .settings-row strong{font-size:15px}
+}
