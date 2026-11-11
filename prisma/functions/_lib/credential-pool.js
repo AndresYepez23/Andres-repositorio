@@ -228,7 +228,9 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       return response;
     }
     if(!retryable.has(response.status))return response;
-    if(response.status===401)await setProviderHold(env,healthKey,"auth_error","El proveedor devolvió HTTP 401; reintentaremos esta clave en dos minutos.",retryHoldSeconds(401,response.headers));
+    if (response.status === 401) {
+      await setProviderHold(env,healthKey,"auth_error","El proveedor devolvió HTTP 401; reintentaremos esta clave en dos minutos.",retryHoldSeconds(401,response.headers));
+    }
   }
   if(lastResponse)return lastResponse;
   const error=new Error(earliestPausedUntil?"Todas las credenciales disponibles de "+provider+" están temporalmente en pausa.":"Todas las credenciales configuradas de "+provider+" están temporalmente en pausa.");
