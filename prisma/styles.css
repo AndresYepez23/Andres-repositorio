@@ -3863,3 +3863,86 @@ html[data-reduce-motion="true"] *,html[data-reduce-motion="true"] *::before,html
   .profile-menu .profile-guest-login,
   .profile-menu .profile-guest-signup{min-height:45px;font-size:14px}
 }
+
+
+/* Prisma Core · halftone identity (Baidu-inspired, Prisma colors).
+   Paint-only treatment: keep scene dimensions, welcome flow, input and chat untouched. */
+body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dotted-edges path{
+  animation:core-prism-dot-current 17s linear infinite;
+  filter:drop-shadow(0 0 2px rgba(136,222,226,.23));
+}
+body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dotted-edges path:nth-child(2){animation-duration:19s;animation-direction:reverse}
+body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dotted-edges path:nth-child(3){animation-duration:14s}
+body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dot-facet{
+  animation:core-prism-dot-breathe 8s ease-in-out infinite;
+}
+body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dot-nodes{
+  animation:core-prism-node-glow 7s ease-in-out infinite;
+}
+@keyframes core-prism-dot-current{to{stroke-dashoffset:-70}}
+@keyframes core-prism-dot-breathe{0%,100%{opacity:.19}50%{opacity:.32}}
+@keyframes core-prism-node-glow{0%,100%{opacity:.68}50%{opacity:1}}
+
+/* The sentence remains a regular-sized headline. Only "Prisma." uses the dotted matrix. */
+body.is-core-view #core-messages.is-empty .core-welcome-gradient{
+  background:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  -webkit-text-fill-color:currentColor!important;
+  color:var(--text)!important;
+}
+body.is-core-view #core-messages.is-empty .core-welcome-gradient-solid{
+  background:linear-gradient(105deg,#92ded5 0%,#88c3ed 53%,#bca5f2 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent!important;color:transparent;
+}
+body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+  color:#9ddde2;
+  -webkit-text-fill-color:#9ddde2;
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+    display:inline;
+    background-image:radial-gradient(circle,#9edee5 1.32px,transparent 1.65px);
+    background-size:4.7px 4.7px;
+    background-position:0 0;
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent!important;-webkit-text-fill-color:transparent!important;
+    animation:core-prism-word-dots 14s linear infinite;
+  }
+}
+@keyframes core-prism-word-dots{to{background-position:9.4px 4.7px}}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-gradient-solid{
+  background:linear-gradient(105deg,#188380 0%,#397faf 53%,#7661b3);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent!important;color:transparent;
+}
+:root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+  color:#3379a5;-webkit-text-fill-color:#3379a5;
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  :root[data-theme="light"] body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+    background-image:radial-gradient(circle,#387c9d 1.38px,transparent 1.69px);
+    color:transparent!important;-webkit-text-fill-color:transparent!important;
+  }
+}
+@media(max-width:620px){
+  body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+    /* Smaller phones need more dot density to keep text legible at the same font size. */
+    background-size:4.1px 4.1px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dotted-edges path,
+  body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dot-facet,
+  body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dot-nodes,
+  body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+    animation:none!important;
+  }
+}
+html[data-reduce-motion="true"] body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dotted-edges path,
+html[data-reduce-motion="true"] body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dot-facet,
+html[data-reduce-motion="true"] body.is-core-view #core-messages.is-empty .core-prism-halftone-svg .core-prism-dot-nodes,
+html[data-reduce-motion="true"] body.is-core-view #core-messages.is-empty .core-welcome-dotted-word{
+  animation:none!important;
+}
