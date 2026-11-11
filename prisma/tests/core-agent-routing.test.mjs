@@ -312,8 +312,8 @@ const remoteEnd=coreSource.indexOf("document.addEventListener('prisma:clear-loca
 const remoteHandler=coreSource.slice(remoteStart,remoteEnd);
 assert.match(remoteHandler,/renderMessages\(\{preserveScroll:true\}\)/,
  'Remote history sync must preserve the current reading position.');
-assert.doesNotMatch(remoteHandler,/renderMessages\(\{forceBottom:true\}\)/,
- 'Remote history sync must not force-scroll to the latest message.');
+assert.match(remoteHandler,/if\(activeConversationChanged\)renderMessages\(\{forceBottom:true\}\);\s*else renderMessages\(\{preserveScroll:true\}\)/,
+ 'Only a real active-conversation switch may reset the scroll position.');
 assert.match(coreSource,/renderMessages\(\{preserveScroll:true\}\)/,
  'Asynchronous IndexedDB restoration must preserve the reading position.');
 
