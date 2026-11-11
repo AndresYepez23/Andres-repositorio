@@ -53,6 +53,10 @@ export function extractPayload(raw){
 export function isInformationalIntent(raw){
  const {instruction}=extractPayload(raw);
  const q=normalizeIntent(instruction).trim().replace(/^[¿¡\s]+/,'');
+ // "¿Cuántas palabras tiene este texto: ...?" is an executable count request,
+ // even though it begins with a question word.
+ if(/^cuant[ao]s?\s+(?:palabras|letras|caracteres)\b/.test(q)&&
+    /(?:texto|contenido|datos|lista)\s*:/i.test(String(raw||'')))return false;
  return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
   /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
 }
