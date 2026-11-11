@@ -264,7 +264,7 @@ function resolveCapabilityRequest(raw,files=[],task=null){
 
 // Do not allow specialized early returns to drop later requested transformations.
 export function planCapabilityRequest(raw,files=[],task=null){
- const q=normalizeIntent(extractPayload(raw).instruction);
+ const q=positiveClauses(normalizeIntent(extractPayload(raw).instruction)).value;
  if(files.length&&/\b(?:si|cuando|a menos que|excepto si)\b/.test(q))return need('Aclara la condición antes de ejecutar; no aplicaré operaciones condicionales sin comprobarla.');
  if(/\b(?:cancela|cancelar|detente|no hagas nada)\b/.test(q))return need('Tarea cancelada. No ejecutaré ninguna operación.');
  let plan=resolveCapabilityRequest(raw,files,task);

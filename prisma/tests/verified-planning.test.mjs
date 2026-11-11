@@ -21,3 +21,7 @@ test('cancellation and format changes cannot revive pending split across convers
 test('conditional and cancelled file operations do not execute',()=>{
  for(const q of ['Si tiene seis páginas divide este PDF','Cancela y convierte a Word','No hagas nada'])assert.equal(planCapabilityRequest(q,[pdf]).steps.length,0);
 });
+test('downstream operations cannot revive a forbidden conversion',()=>{
+ const p=planCapabilityRequest('Extrae la última página pero no conviertas a Word',[pdf]);
+ assert.ok(!p.steps.some(s=>s.tool_id==='pdf-to-word'));
+});
