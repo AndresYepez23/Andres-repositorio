@@ -237,7 +237,7 @@ async function executeSingleTool(job, context, available) {
     throw new Error("Adjunta un archivo compatible en el panel de archivos de Prisma Core y vuelve a ejecutar la tarea.");
   }
   const params = job.payload?.params && typeof job.payload.params === "object" ? job.payload.params : {};
-  return runToolBatch(tool, tool.file ? available : [], {
+  return runToolBatch(tool, tool.file ? files : [], {
     ...context,
     ...params
   }, runTool, (progress, message) => {
@@ -253,7 +253,7 @@ async function executeWorkflow(job, context, available) {
     throw new Error("Adjunta un archivo compatible en Prisma Core y vuelve a ejecutar el flujo.");
   }
   const params = job.payload?.params && typeof job.payload.params === "object" ? job.payload.params : {};
-  return runToolBatch(workflow, workflow.file ? available : [], {
+  return runToolBatch(workflow, workflow.file ? files : [], {
     ...context,
     ...params
   }, runWorkflow, (progress, message) => {
@@ -283,7 +283,7 @@ async function executePlan(job, context, available) {
       const overall = (index + Math.max(0, Math.min(1, Number(value) || 0))) / steps.length;
       postProgress(job.id, Math.min(0.99, overall), "Paso " + (index + 1) + "/" + steps.length + ": " + (message || tool.name)).catch(() => {});
     };
-    const result = await runToolBatch(tool, tool.file ? currentFiles : [], {
+    const result = await runToolBatch(tool, tool.file ? files : [], {
       ...context,
       ...params,
       ...(previousText && !params.text && !params.prompt ? { text: previousText } : {})
