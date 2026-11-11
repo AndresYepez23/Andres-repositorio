@@ -345,7 +345,7 @@ export function initPrismaSettings() {
     }
     if (isOpen && event.key === 'Tab') {
       const focusable = [...settings.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled])')]
-        .filter(node => node.offsetParent !== null);
+        .filter(node => node.getClientRects().length > 0);
       if (!focusable.length) return;
       const first = focusable[0], last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
