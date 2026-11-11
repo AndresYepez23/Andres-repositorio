@@ -125,14 +125,39 @@ async function credentialHealthKey(provider, slot) {
   const tag=Array.from(new Uint8Array(digest).slice(0,8),b=>b.toString(16).padStart(2,'0')).join('');
   return "credential-slot:v2:" + provider + ":" + slot.number + ":" + tag;
 }
+export async function getCredentialHealthSnapshot(env, providers=Object.keys(CREDENTIAL_ROOTS)) {
+  const names=[...new Set((Array.isArray(providers)?providers:[]).filter(name=>CREDENTIAL_ROOTS[name]))];
+  const slotsByProvider=Object.fromEntries(names.map(name=>[name,getCredentialSlots(env,name)]));
+  const snapshot=Object.fromEntries(names.map(name=>[name,{configuredSlots:slotsByProvider[name].length,healthySlots:slotsByProvider[name].length,pausedSlots:0,retryAt:null}]));
+  const db=env?.PRISMA_RATE_DB;
+  if(!db?.prepare)return snapshot;
+  let rows=[];
+  try {
+    const result=await db.prepare("SELECT provider, state, reason, valid_until FROM ai_provider_health WHERE provider LIKE ? AND valid_until>?")
+      .bind("credential-slot:v2:%",Math.floor(Date.now()/1000)).all();
+    rows=Array.isArray(result?.results)?result.results:[];
+  } catch(error) {
+    console.error("Prisma credential health snapshot",String(error?.message||error).slice(0,100));
+    return snapshot;
+  }
+  const holds=new Map(rows.map(row=>[String(row.provider||""),row]));
+  for(const name of names){
+    let pausedSlots=0,retryAt=null;
+    for(const slot of slotsByProvider[name]){
+      const key=await credentialHealthKey(name,slot),hold=holds.get(key);
+      if(!hold)continue;
+      pausedSlots++;
+      const until=Number(hold.valid_until)||0;
+      if(until>0&&(!retryAt||until<retryAt))retryAt=until;
+    }
+    snapshot[name]={configuredSlots:slotsByProvider[name].length,healthySlots:Math.max(0,slotsByProvider[name].length-pausedSlots),pausedSlots,retryAt};
+  }
+  return snapshot;
+}
+
 export async function getHealthyCredentialCount(env,provider) {
-  const slots=getCredentialSlots(env,provider);
-  if (!env?.PRISMA_RATE_DB?.prepare) return slots.length;
-  const status=await Promise.all(slots.map(async slot=>{
-    const key=await credentialHealthKey(provider,slot);
-    return !(await getProviderHold(env,key));
-  }));
-  return status.filter(Boolean).length;
+  const snapshot=await getCredentialHealthSnapshot(env,[provider]);
+  return snapshot[provider]?.healthySlots||0;
 }
 
 function retryHoldSeconds(status, headers) {
@@ -152,74 +177,64 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   const slots = getCredentialSlots(env, provider);
   if (!slots.length) {
     const error = new Error("No existe una credencial configurada para este proveedor.");
-    error.code = "MISSING_CREDENTIAL";
-    throw error;
+    error.code = "MISSING_CREDENTIAL"; error.status = 503; throw error;
   }
-
   const providerHold = await getProviderHold(env, provider);
   if (providerHold) {
     const error = new Error(providerHold.reason || "El proveedor está temporalmente en pausa.");
     error.code = "PROVIDER_COOLDOWN";
-    error.status = providerHold.state === "quota_exhausted" ? 402 : 429;
+    error.status = providerHold.state === "quota_exhausted" ? 402 : providerHold.state === "rate_limited" ? 429 : 503;
     error.retryAfter = Math.max(1, Number(providerHold.valid_until || 0) - Math.floor(Date.now() / 1000));
     throw error;
   }
-
-  // An invalid/unauthorized key is not a quota; when explicitly enabled,
-  // check each configured slot before giving up. Continue to respect 402/429
-  // as provider-wide budget limits, and keep network/5xx retries at two.
+  // Keys are alternatives only for key-specific authentication failures.
+  // Provider-wide limits/outages must not duplicate paid or quota-consuming calls.
   const sweepAuthSlots = options.sweepAuthSlots === true;
-  const maxAttempts = Math.min(slots.length,
-    sweepAuthSlots ? maxCredentialSlots(provider) : Math.min(2, Math.max(1, Number(options.maxAttempts) || 2)));
-  const startIndex = Number.isInteger(options.startIndex)
-    ? ((options.startIndex % slots.length) + slots.length) % slots.length
-    : Math.floor(Math.random() * slots.length);
-  const retryable = new Set(options.retryStatuses || [401, 500, 502, 503, 504]);
-  let lastResponse, lastError, attempted = 0;
-
+  const maxAttempts = Math.min(slots.length,sweepAuthSlots ? maxCredentialSlots(provider) : Math.min(2,Math.max(1,Number(options.maxAttempts)||2)));
+  const startIndex = Number.isInteger(options.startIndex) ? ((options.startIndex % slots.length) + slots.length) % slots.length : Math.floor(Math.random() * slots.length);
+  const retryable = new Set(options.retryStatuses || [401]);
+  let lastResponse, attempted = 0, earliestPausedUntil = 0;
   for (let offset = 0; offset < slots.length && attempted < maxAttempts; offset++) {
     const slot = slots[(startIndex + offset) % slots.length];
     const healthKey = await credentialHealthKey(provider, slot);
     const hold = await getProviderHold(env, healthKey);
-    if (hold) continue;
-
+    if (hold) {
+      const until=Number(hold.valid_until)||0;
+      if(until>0&&(!earliestPausedUntil||until<earliestPausedUntil))earliestPausedUntil=until;
+      continue;
+    }
     attempted++;
-    try {
-      const response = await send(slot.value, slot.number);
-      lastResponse = response;
-
-      if (response.ok) return response;
-
-      if (response.status === 402) {
-        await setProviderHold(env, provider, "quota_exhausted",
-          "El proveedor agotó el saldo o crédito disponible; Prisma pausó el conjunto de credenciales sin probar otras cuentas.", 21600);
-        return response;
-      }
-      if (response.status === 429) {
-        await setProviderHold(env, provider, "rate_limited",
-          "El proveedor alcanzó un límite de solicitudes; Prisma pausó el proveedor y utilizará otro motor.", retryHoldSeconds(429, response.headers));
-        return response;
-      }
-
-      if (!retryable.has(response.status)) return response;
-      // Do not retry backend outages across six keys; only authentication
-      // errors warrant checking every slot in this optional mode.
-      if (sweepAuthSlots && response.status !== 401 && attempted >= 2) return response;
-      // A 403 may mean model permissions or regional policy; a 5xx is upstream.
-      // Neither proves that this individual API key is invalid.
-      if (response.status === 401) {
-        await setProviderHold(env, healthKey, "auth_error",
-          "El proveedor devolvió HTTP 401; reintentaremos esta clave en dos minutos.", retryHoldSeconds(401, response.headers));
-      }
-    } catch (error) {
-      lastError = error;
-      // Network failures do not prove a key is invalid; bound retries only.
-      if (sweepAuthSlots && attempted >= 2) break;
+    let response;
+    try { response = await send(slot.value, slot.number); }
+    catch(error) {
+      const seconds=error?.name==="AbortError"?45:30;
+      await setProviderHold(env, provider, "network_error","El endpoint de "+provider+" no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.", seconds);
+      error.code=error.code||"PROVIDER_UNAVAILABLE"; error.status=Number(error.status)||502; error.retryAfter=Number(error.retryAfter)||seconds;
+      throw error;
+    }
+    lastResponse=response;
+    if(response.ok)return response;
+    if(response.status===402){
+      await setProviderHold(env,provider,"quota_exhausted","El proveedor agotó el saldo o crédito disponible; Prisma pausó el conjunto de credenciales sin probar otras cuentas.",21600);
+      return response;
+    }
+    if(response.status===429){
+      await setProviderHold(env,provider,"rate_limited","El proveedor alcanzó un límite de solicitudes; Prisma pausó el proveedor y utilizará otro motor.",retryHoldSeconds(429,response.headers));
+      return response;
+    }
+    if([408,500,502,503,504].includes(response.status)){
+      const seconds=response.status===408?30:45;
+      await setProviderHold(env,provider,"provider_unavailable","El endpoint de "+provider+" está temporalmente indisponible; Prisma cambiará de motor y volverá a comprobarlo después.",seconds);
+      return response;
+    }
+    if(!retryable.has(response.status))return response;
+    if (response.status === 401) {
+      await setProviderHold(env,healthKey,"auth_error","El proveedor devolvió HTTP 401; reintentaremos esta clave en dos minutos.",retryHoldSeconds(401,response.headers));
     }
   }
-
-  if (lastResponse) return lastResponse;
-  const error = lastError || new Error("Todas las credenciales configuradas están temporalmente en pausa.");
-  if (!lastError) error.code = "CREDENTIALS_PAUSED";
+  if(lastResponse)return lastResponse;
+  const error=new Error(earliestPausedUntil?"Todas las credenciales disponibles de "+provider+" están temporalmente en pausa.":"Todas las credenciales configuradas de "+provider+" están temporalmente en pausa.");
+  error.code="CREDENTIALS_PAUSED";error.status=503;
+  error.retryAfter=earliestPausedUntil?Math.max(1,earliestPausedUntil-Math.floor(Date.now()/1000)):60;
   throw error;
 }

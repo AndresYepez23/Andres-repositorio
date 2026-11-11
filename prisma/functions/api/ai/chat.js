@@ -19,6 +19,13 @@ function clamp(value, min, max, fallback) {
   return Number.isFinite(number) ? Math.max(min, Math.min(max, Math.round(number))) : fallback;
 }
 
+function providerFailure(error, provider, fallbackMessage) {
+  const status=Number(error?.status)||502,retryAfter=Number(error?.retryAfter)||null;
+  const code=String(error?.code||(status===401||status===403?"PROVIDER_AUTH":status===402||status===429?"PROVIDER_LIMIT":status===503?"PROVIDER_COOLDOWN":[408,500,502,504].includes(status)?"PROVIDER_UNAVAILABLE":"PROVIDER_ERROR"));
+  const httpStatus=[400,401,402,403,413,415,422,429,503].includes(status)?status:502;
+  return json({error:error?.message||fallbackMessage,provider,status,code,retryAfter},httpStatus);
+}
+
 function normalizeMessages(input) {
   if (!Array.isArray(input) || input.length === 0 || input.length > 24) {
     throw new Error("La conversación debe incluir entre 1 y 24 mensajes.");
@@ -75,8 +82,7 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
         stream:false}),
     }),{sweepAuthSlots:provider==="sensenova"});
   } catch (error) {
-    const status=Number(error?.status)||502;
-    return json({error:error?.message||"No fue posible conectar con "+provider+".",provider,status,retryAfter:error?.retryAfter||null},status===429?429:status===402?402:502);
+    return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
   }
   const data=await response.json().catch(()=>({}));
   if (!response.ok) {
@@ -86,7 +92,8 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       :status===402?provider+" no tiene crédito gratuito disponible."
       :status===401||status===403?provider+" devolvió HTTP "+status+" (autenticación o permisos). Comprueba la clave, su cuenta, el modelo permitido y la región del endpoint."
       :provider+" respondió con un error ("+status+")."+(detail?" "+detail:"");
-    return json({error:message,provider,status,code:status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":status===401||status===403?"PROVIDER_AUTH":"PROVIDER_ERROR"},[400,401,402,403,429].includes(status)?status:502);
+    const code=status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":status===401||status===403?"PROVIDER_AUTH":[408,500,502,503,504].includes(status)?"PROVIDER_UNAVAILABLE":"PROVIDER_ERROR";
+    return json({error:message,provider,status,code,retryAfter:[408,500,502,503,504].includes(status)?45:null},[400,401,402,403,429].includes(status)?status:status===503?503:502);
   }
   const content=data.choices?.[0]?.message?.content;
   const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
@@ -184,9 +191,8 @@ async function executeChatRequest({ request, env }, markReserved) {
           usage: { include: true },
         }),
       }));
-    } catch {
-      if(getCredentialSlots(env,"openrouter").length<=1)await setProviderHold(env, "openrouter", "network_error", "OpenRouter no respondió; Prisma lo pausó brevemente.", 60);
-      return json({ error: "No fue posible conectar con OpenRouter.", provider: "openrouter", status: 502, retryAfter: 60 }, 502);
+    } catch(error) {
+      return providerFailure(error,"openrouter","No fue posible conectar con OpenRouter.");
     }
 
     const data = await response.json().catch(() => ({}));
@@ -230,8 +236,8 @@ async function executeChatRequest({ request, env }, markReserved) {
         headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential},
         body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.7,max_tokens:clamp(payload.maxOutputTokens,128,2200,800),stream:false})
       }));
-    } catch {
-      return json({error:"No fue posible conectar con Pollinations. Prisma probará otro motor.",provider:"pollinations"},502);
+    } catch(error) {
+      return providerFailure(error,"pollinations","No fue posible conectar con Pollinations. Prisma probará otro motor.");
     }
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
@@ -269,8 +275,8 @@ async function executeChatRequest({ request, env }, markReserved) {
         },
         body: JSON.stringify(body),
       }));
-    } catch {
-      return json({ error: "No fue posible conectar con Hugging Face. Inténtalo nuevamente." }, 502);
+    } catch(error) {
+      return providerFailure(error,"huggingface","No fue posible conectar con Hugging Face. Inténtalo nuevamente.");
     }
 
     const data = await response.json().catch(() => ({}));
@@ -312,9 +318,8 @@ async function executeChatRequest({ request, env }, markReserved) {
     });
     try{
       response=await requestWithCredentialPool(env,"groq",askGroq);
-    }catch{
-      if(getCredentialSlots(env,"groq").length<=1)await setProviderHold(env,"groq","network_error","Groq no respondió; Prisma lo pausó brevemente para evitar reintentos inútiles.",60);
-      return json({error:"No fue posible conectar con Groq. Prisma lo pausará brevemente y probará otro motor.",provider:"groq",status:502,retryAfter:60},502);
+    }catch(error){
+      return providerFailure(error,"groq","No fue posible conectar con Groq. Prisma probará otro motor.");
     }
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
@@ -348,8 +353,15 @@ async function executeChatRequest({ request, env }, markReserved) {
       if(!text)return json({error:"Workers AI no devolvió texto. Prueba otro modelo."},502);
       return json({ok:true,provider:"cloudflare",model,text,usage:data.usage||null});
     }catch(error){
-      console.error("Workers AI error",String(error?.message||error).slice(0,140));
-      return json({error:"Cloudflare Workers AI no pudo completar la inferencia. Intenta otro motor."},502);
+      const message=String(error?.message||error||""),upstreamStatus=Number(error?.status||error?.statusCode)||0;
+      let holdSeconds=0,state="",reason="";
+      if(upstreamStatus===402||/quota exhausted|insufficient quota|credit.*exhaust/i.test(message)){holdSeconds=21600;state="quota_exhausted";reason="Cloudflare Workers AI agotó temporalmente su cuota; Prisma utilizará otro motor.";}
+      else if(upstreamStatus===429||/rate.?limit|too many requests/i.test(message)){holdSeconds=60;state="rate_limited";reason="Cloudflare Workers AI alcanzó un límite temporal; Prisma utilizará otro motor.";}
+      else if([408,500,502,503,504].includes(upstreamStatus)||/timeout|temporar|network|overload/i.test(message)){holdSeconds=45;state="provider_unavailable";reason="Cloudflare Workers AI no respondió correctamente; Prisma lo comprobará de nuevo después de una pausa.";}
+      if(holdSeconds)await setProviderHold(env,"cloudflare",state,reason,holdSeconds);
+      console.error("Workers AI error",message.slice(0,140));
+      const status=upstreamStatus||502,httpStatus=status===402||status===429?status:502;
+      return json({error:"Cloudflare Workers AI no pudo completar la inferencia. Prisma intentará otro motor.",provider:"cloudflare",status,code:state==="quota_exhausted"||state==="rate_limited"?"PROVIDER_LIMIT":"PROVIDER_UNAVAILABLE",retryAfter:holdSeconds||null},httpStatus);
     }
   }
 
@@ -370,8 +382,7 @@ async function executeChatRequest({ request, env }, markReserved) {
         ? await requestWithCredentialPool(env,"kilo",key=>send(key))
         : await send("");
     }catch(error){
-      const status=Number(error?.status)||502;
-      return json({error:error?.message||"No fue posible conectar con Kilo Gateway.",provider:"kilo",status,retryAfter:error?.retryAfter||null},status===429?429:status===402?402:502);
+      return providerFailure(error,"kilo","No fue posible conectar con Kilo Gateway.");
     }
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
@@ -445,8 +456,8 @@ async function executeChatRequest({ request, env }, markReserved) {
       response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
       data = await response.json().catch(() => ({}));
     }
-  } catch {
-    return json({ error: "No fue posible conectar con Google Gemini. Inténtalo nuevamente." }, 502);
+  } catch(error) {
+    return providerFailure(error,"gemini","No fue posible conectar con Google Gemini. Inténtalo nuevamente.");
   }
   if (!response.ok) {
     const providerMessage = String(data.error?.message || "").slice(0, 300);

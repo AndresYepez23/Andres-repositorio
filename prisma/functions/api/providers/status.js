@@ -1,6 +1,6 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
-import { getCredentialSlots, getCredentialStatus, getHealthyCredentialCount, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
+import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
@@ -18,7 +18,8 @@ export async function onRequestGet({ env }) {
   const poolProviders = Object.keys(CREDENTIAL_ROOTS);
   const holds = {};
   if (limited) {
-    const entries = await Promise.all(poolProviders.map(async provider =>
+    const healthProviders=[...poolProviders,"cloudflare"];
+    const entries = await Promise.all(healthProviders.map(async provider =>
       [provider, await getProviderHold(env, provider)]
     ));
     for (const [provider, hold] of entries) holds[provider] = hold;
@@ -27,6 +28,7 @@ export async function onRequestGet({ env }) {
   const configured = Object.fromEntries(poolProviders.map(provider =>
     [provider, getCredentialSlots(env, provider).length]
   ));
+  const credentialHealth=await getCredentialHealthSnapshot(env,poolProviders);
   const usageEntries = await Promise.all(poolProviders
     .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
     .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider), getProviderMinuteLimit(provider))]));
@@ -53,17 +55,15 @@ export async function onRequestGet({ env }) {
   const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
   const kiloModels = await getKiloFreeModels(env);
   const aihubmixModels = configured.aihubmix > 0 ? await getAihubmixFreeModels(env) : [];
-  // SenseNova's six variables can all exist even when every credential
-  // receives HTTP 401/403. Do not advertise it as healthy in that case.
-  const senseNovaHealthySlots=await getHealthyCredentialCount(env,"sensenova");
-  const available = Object.fromEntries(poolProviders.map(provider =>
-    [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
-      (provider === "openrouter" || sharedReady) &&
-      (provider !== "sensenova" || senseNovaHealthySlots > 0) &&
-      dailyAvailable(provider) && !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
+  const available = Object.fromEntries(poolProviders.map(provider => {
+    const anonymousKilo=provider==="kilo"&&configured[provider]===0;
+    const healthyCredentials=anonymousKilo||Number(credentialHealth[provider]?.healthySlots||0)>0;
+    return [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
+      (provider === "openrouter" || sharedReady) && healthyCredentials && dailyAvailable(provider) &&
+      !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
       !(provider === "kilo" && kiloModels.length === 0) &&
-      !(provider === "aihubmix" && aihubmixModels.length === 0)]
-  ));
+      !(provider === "aihubmix" && aihubmixModels.length === 0)];
+  }));
   const blockedSpeech = limited ? await getProviderHold(env, "pollinations-audio") : null;
   const blockedGroqAudio = limited ? await getProviderHold(env, "groq-audio") : null;
   const blockedCloudflareAudio = limited ? await getProviderHold(env, "cloudflare-audio") : null;
@@ -76,21 +76,13 @@ export async function onRequestGet({ env }) {
   const speechReady = pollinationsReady && !blockedSpeech;
   const groqAudioReady = groqReady && !blockedGroqAudio;
   const cloudflareAudioReady = limited && Boolean(env.AI?.run) && !blockedCloudflareAudio && cloudflareAudioUsage?.daily?.remaining>0;
-  const cloudflareReady = limited && sharedReady && Boolean(env.AI?.run) && dailyAvailable("cloudflare");
+  const cloudflareReady = limited && sharedReady && Boolean(env.AI?.run) && !holds.cloudflare && dailyAvailable("cloudflare");
 
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
-    const hold = holds[provider];
-    const info = getCredentialStatus(env, provider);
-    return [provider, {
-      ...info,
-      ...(provider==="sensenova"?{healthySlots:senseNovaHealthySlots}:{}),
-      dailyUsage: usage[provider]?.daily || null,
-      minuteUsage: usage[provider]?.minute || null,
-      providerPaused: Boolean(hold),
-      pauseState: hold?.state || null,
-      pauseReason: hold?.reason || null,
-      retryAt: hold?.valid_until || null,
-    }];
+    const hold=holds[provider],info=getCredentialStatus(env,provider),health=credentialHealth[provider]||{};
+    return [provider,{...info,healthySlots:health.healthySlots??0,pausedSlots:health.pausedSlots??0,
+      credentialRetryAt:health.retryAt??null,dailyUsage: usage[provider]?.daily || null, minuteUsage: usage[provider]?.minute || null,
+      providerPaused:Boolean(hold),pauseState:hold?.state||null,pauseReason:hold?.reason||null,retryAt:hold?.valid_until||health.retryAt||null}];
   }));
 
   const warnings = {};
@@ -101,15 +93,18 @@ export async function onRequestGet({ env }) {
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
-    else if (provider==="sensenova" && configured[provider] > 0 && senseNovaHealthySlots===0)
-      warnings[provider] = "Las claves de SenseNova están temporalmente inhabilitadas por respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; el chat seguirá usando otros motores.";
+    else if (configured[provider] > 0 && credentialHealth[provider]?.healthySlots===0)
+      warnings[provider] = "Todas las claves de "+provider+" están temporalmente pausadas tras respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
+    else if (configured[provider] > 0 && credentialHealth[provider]?.pausedSlots>0)
+      warnings[provider] = credentialHealth[provider].pausedSlots+" de "+configured[provider]+" claves de "+provider+" están temporalmente pausadas; las demás siguen disponibles.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (!sharedReady && provider !== "openrouter") warnings[provider] = "Se agotó el presupuesto global de modelos principales; OpenRouter puede seguir disponible como respaldo.";
     else if (usage[provider]?.daily?.remaining === 0) warnings[provider] = "Prisma alcanzó su presupuesto interno diario para este motor. Se renovará en el siguiente día UTC.";
     else if (usage[provider]?.minute?.remaining === 0) warnings[provider] = "Prisma alcanzó el límite interno por minuto para este motor. Se renovará en el siguiente minuto.";
   }
-  if (env.AI?.run && usage.cloudflare?.daily?.remaining === 0) warnings.cloudflare = "Prisma alcanzó su presupuesto interno diario para Cloudflare Workers AI. Se renovará en el siguiente día UTC.";
+  if (holds.cloudflare) warnings.cloudflare=holds.cloudflare.reason;
+  else if (env.AI?.run && usage.cloudflare?.daily?.remaining === 0) warnings.cloudflare = "Prisma alcanzó su presupuesto interno diario para Cloudflare Workers AI. Se renovará en el siguiente día UTC.";
   if (blockedSpeech) warnings.pollinationsAudio = blockedSpeech.reason;
   if (blockedGroqAudio) warnings.groqAudio = blockedGroqAudio.reason;
   if (blockedCloudflareAudio) warnings.cloudflareAudio = blockedCloudflareAudio.reason;
@@ -119,6 +114,20 @@ export async function onRequestGet({ env }) {
   modelCatalog.chat.kilo = kiloModels;
   modelCatalog.chat.aihubmix = aihubmixModels;
 
+  const providerHealth=Object.fromEntries(poolProviders.map(provider => {
+    const h=credentialHealth[provider]||{};
+    const state=holds[provider]?.state||(configured[provider]>0&&h.healthySlots===0?"credentials_paused":usage[provider]?.daily?.remaining===0?"daily_limit":usage[provider]?.minute?.remaining===0?"minute_limit":provider==="kilo"&&available.kilo&&!configured[provider]?"anonymous":configured[provider]?"configured":"missing");
+    const reason=holds[provider]?.reason||(configured[provider]>0&&h.healthySlots===0?warnings[provider]:usage[provider]?.daily?.remaining===0||usage[provider]?.minute?.remaining===0?warnings[provider]:null);
+    return [provider,{configured:configured[provider],max:credentialSlots[provider].max,healthySlots:h.healthySlots??0,pausedSlots:h.pausedSlots??0,
+      available:available[provider],paused:Boolean(holds[provider]),state,reason,retryAt:holds[provider]?.valid_until||h.retryAt||null,
+      dailyUsage:usage[provider]?.daily||null,minuteUsage:usage[provider]?.minute||null,
+      lifetimeUsage:provider==="aihubmix"&&env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1"?aihubmixLifetime:null}];
+  }));
+  providerHealth.cloudflare={configured:env.AI?.run?1:0,max:1,healthySlots:cloudflareReady?1:0,paused:Boolean(holds.cloudflare),available:cloudflareReady,
+    state:holds.cloudflare?.state||(usage.cloudflare?.daily?.remaining===0?"daily_limit":cloudflareReady?"configured":"missing"),
+    reason:holds.cloudflare?.reason||(usage.cloudflare?.daily?.remaining===0?warnings.cloudflare:null),retryAt:holds.cloudflare?.valid_until||null,
+    dailyUsage:usage.cloudflare?.daily||null,minuteUsage:usage.cloudflare?.minute||null};
+
   return new Response(JSON.stringify({
     ok: true,
     mode: "central",
@@ -126,18 +135,7 @@ export async function onRequestGet({ env }) {
     // Only variable names, slot positions and aggregate health are public.
     // Secret values are never returned to the browser.
     credentialSlots,
-    providerHealth: Object.fromEntries(poolProviders.map(provider => [provider, {
-      configured: configured[provider],
-      max: credentialSlots[provider].max,
-      available: available[provider],
-      paused: Boolean(holds[provider]),
-      state: holds[provider]?.state || (usage[provider]?.daily?.remaining === 0 ? "daily_limit" : usage[provider]?.minute?.remaining === 0 ? "minute_limit" : provider === "kilo" && available.kilo && !configured[provider] ? "anonymous" : configured[provider] ? "configured" : "missing"),
-      reason: holds[provider]?.reason || (usage[provider]?.daily?.remaining === 0 || usage[provider]?.minute?.remaining === 0 ? warnings[provider] : null),
-      retryAt: holds[provider]?.valid_until || null,
-      dailyUsage: usage[provider]?.daily || null,
-      minuteUsage: usage[provider]?.minute || null,
-      lifetimeUsage: provider === "aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? aihubmixLifetime : null,
-    }])),
+    providerHealth,
     providers: {
       pollinations: pollinationsReady,
       gemini: geminiReady,
