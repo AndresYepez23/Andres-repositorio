@@ -89,7 +89,7 @@ test('ten single-file inputs produce ten real hash outputs and ten downloadable 
 });
 test('batch order, cancellation, incompatible input, false success and partial recovery',async()=>{
  let calls=0;const files=picture.concat(new File(['b'],'b.jpg',{type:'image/jpeg'}));
- const run=async(id,[f])=>{calls++;if(f.name==='b.jpg')throw Error('codec error');return {blob:new Blob(['png'],{type:'image/png'}),filename:'ok.png'};};
+ const run=async(id,[f])=>{calls++;if(f.name==='b.jpg')throw Error('codec error');return {blob:new Blob([Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+pF0wAAAAASUVORK5CYII=','base64'))],{type:'image/png'}),filename:'ok.png'};};
  await assert.rejects(runToolBatch(tool('image-convert'),files,{},run),e=>e.partialResults.length===1);
  assert.equal(calls,2);calls=0;
  await assert.rejects(runToolBatch(tool('image-convert'),[...picture,...pdf],{},run),/compatibles/);assert.equal(calls,0);

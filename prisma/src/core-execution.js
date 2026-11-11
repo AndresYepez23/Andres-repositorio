@@ -1,4 +1,5 @@
 import { validateAgentStepResult } from './core-agent-guard.js';
+import { verifyToolOutputArtifacts } from './core-artifact-contracts.js';
 // Observations and branch outputs must not replace the working document/image.
 export const OBSERVERS=new Set(['image-palette','image-metadata','image-favicon','image-social-kit','file-inspector','hash-file','pdf-metadata','pdf-form-fields','audio-waveform']);
 export function compatibleInputs(tool,files){
@@ -26,8 +27,11 @@ export async function runToolBatch(tool,files,params,run,progress=()=>{},cancel=
  for(let i=0;i<batches.length;i++){
   if(cancel())throw Object.assign(Error('Ejecución cancelada; se conservan los resultados terminados.'),{partialResults:results});
   try{
-   const r=await run(tool.id,batches[i],params,(p,m)=>progress((i+Number(p||0))/batches.length,m));
-   validateAgentStepResult(tool.id,r);
+   const raw=await run(tool.id,batches[i],params,(p,m)=>progress((i+Number(p||0))/batches.length,m));
+   validateAgentStepResult(tool.id,raw);
+   // A model or a converter can announce success while returning wrong bytes
+   // (e.g. ZIP labeled PDF, PNG named WEBP). Guard before saving/handing off.
+   const r=await verifyToolOutputArtifacts(tool.id,raw);
    if(r.blob&&r.blob.size===0)throw Error('La herramienta devolvió un archivo vacío.');
    if(!r.blob&&!r.artifacts?.length&&typeof r.text!=='string'&&!r.html&&!r.printHtml)throw Error('La herramienta no devolvió contenido verificable.');
    if(r.artifacts?.some(a=>a.blob?a.blob.size===0:typeof a.text!=='string'))throw Error('Uno de los archivos generados está vacío.');
