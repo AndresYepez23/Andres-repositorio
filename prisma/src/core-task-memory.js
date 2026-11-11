@@ -10,8 +10,8 @@ export function createTaskMemory({maxBytes=120*1024*1024,maxChats=8,ttl=30*60*10
   const waiting=pending.get(id);
   // Attachment-only turns and format clarifications must retain the latest unfinished
   // objective, not resurrect a prior successful split or conversion.
-  const uploadReply=/^(?:aqui|ahi|adjunto|te envio|ya (?:lo )?(?:subi|cargue|adjunte)|listo|hazlo|este archivo|el archivo|el pdf|procesa (?:los |estos |mis )?archivos?(?: adjuntos?)?|procesa (?:este |el )?(?:archivo|pdf)|continua (?:con )?(?:el |los )?archivos?|\\d|png$|webp$|jpg$)/.test(q);
-  const formatReply=/^(?:a|en|como)\\s+(?:word|docx|pdf|png|jpe?g|webp|csv|json|excel|xlsx|mp3|wav|txt|html)[.!?\\s]*$/.test(q);
+  const uploadReply=/^(?:aqui|ahi|adjunto|te envio|ya (?:lo )?(?:subi|cargue|adjunte)|listo|hazlo|este archivo|el archivo|el pdf|procesa (?:los |estos |mis )?archivos?(?: adjuntos?)?|procesa (?:este |el )?(?:archivo|pdf)|continua (?:con )?(?:el |los )?archivos?|\d|png$|webp$|jpg$)/.test(q);
+  const formatReply=/^(?:a|en|como)\s+(?:word|docx|pdf|png|jpe?g|webp|csv|json|excel|xlsx|mp3|wav|txt|html)[.!?\s]*$/.test(q);
   if(waiting&&now()-waiting.updated<ttl&&(uploadReply||formatReply)){
    return {task:null,files:newFiles.length?newFiles:waiting.files,request:waiting.request+' '+query};
   }
