@@ -5,18 +5,18 @@ function escapeHtml(value){
 }
 function safeDisplayName(user){
  return String(user?.user_metadata?.full_name||user?.user_metadata?.name||'')
-  .replace(/[\\u0000-\\u001f\\u007f]/g,' ')
-  .replace(/\\s+/g,' ').trim().slice(0,60);
+  .replace(/[\u0000-\u001f\u007f]/g,' ')
+  .replace(/\s+/g,' ').trim().slice(0,60);
 }
 export function renderWelcomeEmail(user){
  const name=safeDisplayName(user);
  const greeting=name?'Hola '+escapeHtml(name)+',':'Hola,';
- const plainGreeting=name?'Hola '+name+',\\n\\n':'';
+ const plainGreeting=name?'Hola '+name+',\n\n':'';
  const text=plainGreeting+
-  'Tu cuenta de Prisma Space ya está activa.\\n\\n'+
-  'Puedes entrar a tu espacio, guardar tus preferencias y elegir si quieres sincronizar tus conversaciones entre dispositivos.\\n\\n'+
-  'La sincronización es opcional: tus conversaciones no se comparten hasta que tú la actives.\\n\\n'+
-  'Entrar a Prisma Space: https://prismaspace.space/\\n\\n'+
+  'Tu cuenta de Prisma Space ya está activa.\n\n'+
+  'Puedes entrar a tu espacio, guardar tus preferencias y elegir si quieres sincronizar tus conversaciones entre dispositivos.\n\n'+
+  'La sincronización es opcional: tus conversaciones no se comparten hasta que tú la actives.\n\n'+
+  'Entrar a Prisma Space: https://prismaspace.space/\n\n'+
   'Prisma Space · Cuenta y seguridad';
  const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"></head>'+
  '<body style="margin:0;padding:0;background:#0e121d;font-family:Arial,Helvetica,sans-serif;color:#f0f4fb;">'+

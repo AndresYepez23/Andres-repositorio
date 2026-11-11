@@ -11,11 +11,11 @@ const json=(body,status=200)=>Response.json(body,{
 
 export async function onRequestPost({request,env}){
  const authorization=request.headers.get('Authorization')||'';
- const token=authorization.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim();
+ const token=authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
  if(!token)return json({ok:false,error:'unauthorized'},401);
- const supabaseUrl=String(env.PRISMA_SUPABASE_URL||'').replace(/\\/+$/,'');
+ const supabaseUrl=String(env.PRISMA_SUPABASE_URL||'').replace(/\/+$/,'');
  const publishableKey=String(env.PRISMA_SUPABASE_PUBLISHABLE_KEY||'').trim();
- if(!/^https:\\/\\/[a-z0-9-]+\\.supabase\\.co$/i.test(supabaseUrl)||
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl)||
     !publishableKey||!env.RESEND_API_KEY||!env.PRISMA_RATE_DB?.prepare){
   return json({ok:false,error:'service_unavailable'},503);
  }
