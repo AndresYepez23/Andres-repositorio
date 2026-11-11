@@ -287,9 +287,9 @@
     },
     {
       "slug": "proteger-privacidad-de-archivos",
-      "title": "Revisar la privacidad de archivos antes de compartirlos | Prisma Space",
+      "title": "Privacidad de archivos antes de compartir | Prisma Space",
       "h1": "Revisa la privacidad de tus archivos antes de compartirlos",
-      "description": "Comprueba metadatos, inspecciona archivos y limpia información compatible antes de enviar documentos o fotografías.",
+      "description": "Inspecciona archivos, revisa metadatos EXIF y PDF y limpia datos compatibles antes de compartir documentos, fotografías o texto sensible.",
       "primaryQuery": "quitar metadatos de fotos y documentos",
       "intro": "Una fotografía puede incluir fecha, modelo de cámara o coordenadas; un documento puede conservar propiedades internas. Revisar estos datos antes de compartir ayuda a reducir exposiciones accidentales, aunque la limpieza de metadatos no elimina la información visible dentro del archivo.",
       "toolIds": [
