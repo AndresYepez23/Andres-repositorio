@@ -260,7 +260,7 @@ assert.equal(isAcknowledgementMessage('Gracias'),true);
 assert.equal(isAcknowledgementMessage('Muy buena canción, crea otra'),false);
 assert.match(buildAcknowledgementReply('Muy buena canción','Aquí está la letra completa de la canción.'),/esta misma/);
 assert.match(buildAcknowledgementReply('Gracias',''),/Con gusto/);
-const directTaskStart=coreSource.indexOf('function directCoreTask(text){');
+const directTaskStart=coreSource.indexOf('function directCoreTask(text,history=[]){');
 const directTaskEnd=coreSource.indexOf('async function answerConversation',directTaskStart);
 assert.ok(directTaskStart>=0&&directTaskEnd>directTaskStart,'Core conversation task router not found');
 const directTask=new Function('attachments',coreSource.slice(directTaskStart,directTaskEnd)+';return directCoreTask;')([]);
