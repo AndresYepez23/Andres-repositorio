@@ -22,7 +22,7 @@ El enlace de cuenta **debe conservar** `{{ .ConfirmationURL }}` en los tres HTML
 
 ## Bienvenida automática
 
-La bienvenida se genera por `functions/_lib/welcome-email.js`, se envía después de confirmar una cuenta y se evita duplicar a través de D1. La nueva presentación adaptable sustituye solo el HTML; las validaciones y la lógica de envío permanecen intactas. Resend usa `no-reply@prismaspace.space`.
+La bienvenida se genera por `functions/_lib/welcome-email.js`: en la primera sesión autenticada de una cuenta recién creada o confirmada (correo o Google), el frontend invoca `/api/auth/welcome` sin depender del parámetro de redirección. El servidor comprueba que la cuenta esté verificada y sea reciente (14 días desde creación o confirmación); D1 y Resend evitan duplicados incluso si se inicia sesión varias veces. La bienvenida no requiere pulsar ningún botón ni vuelve a enviarse a cuentas antiguas. La entrega requiere que el usuario acceda al sitio tras confirmar su correo; no se envía únicamente por la acción de pulsar el enlace si el usuario no llega a iniciar sesión. La nueva presentación adaptable sustituye solo el HTML; las validaciones y la lógica de envío permanecen intactas. Resend usa `no-reply@prismaspace.space`.
 
 ## Invitaciones directas
 

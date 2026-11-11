@@ -43,11 +43,12 @@ function mockD1(){
  };
 }
 
+const nowISO=new Date().toISOString();
 let currentUser={
  id:'user-aurora-1',
  email:'new-user@example.com',
- email_confirmed_at:'2026-11-11T15:00:00Z',
- created_at:'2026-11-11T15:00:00Z',
+ email_confirmed_at:nowISO,
+ created_at:nowISO,
  user_metadata:{full_name:'Andrés <Simón>'}
 };
 const db=mockD1();
@@ -99,7 +100,7 @@ const unverified=await call();
 assert.equal(unverified.status,403);
 assert.equal(calls.length,1);
 
-currentUser={...currentUser,id:'user-retry',email:'retry@example.com',email_confirmed_at:'2026-11-11T15:00:00Z'};
+currentUser={...currentUser,id:'user-retry',email:'retry@example.com',email_confirmed_at:nowISO};
 failResend=true;
 const failed=await call();
 assert.equal(failed.status,502);
@@ -109,6 +110,28 @@ const retried=await call();
 assert.equal(retried.status,200);
 assert.equal(db.rows.get(currentUser.id).status,'sent');
 assert.equal(calls.length,3);
+
+// Existing accounts must not receive a retrospective message.
+currentUser={...currentUser,id:'old-user',email:'old@example.com',
+  created_at:'2024-01-01T00:00:00Z',
+  email_confirmed_at:'2024-01-02T00:00:00Z'};
+const oldUser=await call();
+assert.equal(oldUser.status,200);
+assert.equal((await oldUser.json()).skipped,'existing_account');
+assert.equal(calls.length,3);
+
+// A user who verifies an older pending signup only now still gets a welcome.
+currentUser={...currentUser,id:'recently-confirmed',email:'verified@example.com',
+  created_at:'2024-01-01T00:00:00Z',email_confirmed_at:nowISO};
+const afterVerification=await call();
+assert.equal(afterVerification.status,200);
+assert.equal(calls.length,4);
+
+// Anonymous or unverified identities must never be mailed.
+currentUser={...currentUser,id:'anon',is_anonymous:true};
+const anon=await call();
+assert.equal(anon.status,403);
+assert.equal(calls.length,4);
 
 const missingConfig=await call({RESEND_API_KEY:''});
 assert.equal(missingConfig.status,503);
