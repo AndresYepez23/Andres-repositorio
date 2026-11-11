@@ -86,7 +86,7 @@ test('starting screen preference is stored and restored at startup', () => {
 
 
 test('guests see visible entry points once session resolution identifies them as guests', () => {
-  assert.match(html, /id="profile-guest-actions"[^>]*hidden/);
+  assert.match(html, /class="profile-guest-actions hidden" id="profile-guest-actions"/);
   assert.match(html, /id="profile-guest-login">Iniciar sesión</);
   assert.match(html, /id="profile-guest-signup">Crear cuenta gratis</);
   assert.match(account, /#profile-guest-actions'\)\?\.classList\.toggle\('hidden',Boolean\(user\?\.id\)\)/);
