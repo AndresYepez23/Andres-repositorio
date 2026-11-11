@@ -3437,3 +3437,290 @@ html[data-reduce-motion="true"] *,html[data-reduce-motion="true"] *::before,html
   .settings-help-actions{grid-template-columns:1fr}
   .settings-shortcut-row small{width:100%;margin:3px 0 0}
 }
+
+
+/* Settings v2: native-feeling mobile navigation and cleaner desktop hierarchy.
+   Keep this scoped to the settings surface so Prisma Core remains unchanged. */
+#prisma-settings{
+  --settings-screen:var(--bg);
+  --settings-card:var(--panel);
+  --settings-muted:var(--muted);
+  --settings-divider:var(--line);
+  background:var(--settings-screen);
+}
+#prisma-settings .settings-mobile-toolbar{display:none}
+#prisma-settings .settings-row>.settings-field-icon{
+  flex:0 0 21px;width:21px;height:21px;display:grid;place-items:center;color:var(--settings-muted);
+}
+#prisma-settings .settings-field-icon svg{
+  width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+#prisma-settings .settings-row>div{flex:1;min-width:0}
+#prisma-settings .settings-card{background:var(--settings-card)}
+#prisma-settings .settings-help-links{padding:0 16px;overflow:hidden}
+#prisma-settings .settings-help-link{
+  display:flex;align-items:center;gap:14px;width:100%;min-height:56px;
+  border:0;border-bottom:1px solid var(--settings-divider);background:transparent;
+  color:var(--text);padding:12px 0;text-align:left;text-decoration:none;font-size:13px;
+  font-weight:500;line-height:1.4;
+}
+#prisma-settings .settings-help-link:last-child{border-bottom:0}
+#prisma-settings .settings-help-link:hover{color:var(--text)}
+#prisma-settings .settings-help-link-icon{
+  flex:0 0 22px;width:22px;height:22px;display:grid;place-items:center;color:var(--settings-muted);
+}
+#prisma-settings .settings-help-link>span:nth-child(2){flex:1;min-width:0}
+#prisma-settings .settings-help-link-chevron{flex:0 0 17px;color:var(--subtle);display:grid;place-items:center}
+#prisma-settings .settings-help-link svg{
+  width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+#prisma-settings .settings-help-link-chevron svg{width:16px;height:16px}
+#prisma-settings .settings-detail-section-label{
+  padding:10px 2px 11px;color:var(--settings-muted);
+  font-size:12px;font-weight:600;letter-spacing:.01em;
+}
+#prisma-settings .settings-help-card details{position:relative}
+#prisma-settings .settings-help-card summary{padding-right:24px;line-height:1.5}
+#prisma-settings .settings-help-card summary::after{
+  position:absolute;top:11px;right:0;float:none;font-size:19px;font-weight:400;
+}
+#prisma-settings .settings-help-card details[open] summary::after{content:"−"}
+#prisma-settings .settings-help-card p{overflow-wrap:anywhere}
+@media(min-width:901px){
+  #prisma-settings{grid-template-columns:260px minmax(0,1fr)}
+  #prisma-settings .prisma-settings-sidebar{padding:26px 16px 17px}
+  #prisma-settings .settings-brand{padding-bottom:34px}
+  #prisma-settings .settings-back{font-size:12px}
+  #prisma-settings .settings-nav-item{min-height:43px;font-size:12px}
+  #prisma-settings .settings-page-header{padding:47px clamp(28px,5.3vw,78px) 25px}
+  #prisma-settings .settings-page-header h1{font-size:29px}
+  #prisma-settings .settings-page-header p{font-size:12px}
+  #prisma-settings .settings-content{
+    width:min(930px,100%);padding:30px clamp(28px,5.3vw,78px) 65px;
+  }
+  #prisma-settings .settings-card{border-radius:13px}
+  #prisma-settings .settings-row strong{font-size:14px}
+  #prisma-settings .settings-row small{font-size:11px}
+  #prisma-settings .settings-row{min-height:80px}
+  #prisma-settings .settings-select,#prisma-settings .settings-static-value{font-size:12px}
+  #prisma-settings .settings-help-card summary{font-size:13px}
+  #prisma-settings .settings-help-card p{font-size:11px}
+  #prisma-settings .settings-help-link{font-size:13px}
+  #prisma-settings .settings-footnote{font-size:11px}
+  #prisma-settings .settings-account-identity strong{font-size:14px}
+  #prisma-settings .settings-account-identity small{font-size:12px}
+  #prisma-settings .settings-action-button{font-size:12px}
+}
+
+/* Below desktop width, settings use full-width drilldown screens:
+   Settings home -> one section -> back, without a scrollable tab strip. */
+@media(max-width:900px){
+  #prisma-settings{
+    position:fixed!important;inset:0!important;z-index:1300!important;
+    display:block!important;width:100%!important;height:100dvh!important;
+    min-height:0!important;overflow:hidden!important;
+    border:0!important;border-radius:0!important;
+    -webkit-text-size-adjust:100%;overscroll-behavior:contain;
+  }
+  #prisma-settings.hidden{display:none!important}
+  #prisma-settings .prisma-settings-sidebar{display:none!important}
+  #prisma-settings .prisma-settings-main{
+    display:flex!important;flex-direction:column!important;width:100%;
+    height:100%;min-height:0;overflow:hidden;background:var(--settings-screen);
+  }
+  #prisma-settings .settings-mobile-toolbar{
+    position:relative;z-index:4;flex:0 0 auto;display:flex!important;
+    align-items:flex-end;justify-content:space-between;
+    min-height:62px;padding:max(10px,env(safe-area-inset-top,0px)) 16px 9px;
+    background:var(--settings-screen);
+  }
+  #prisma-settings .settings-mobile-toolbar strong{
+    position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+    max-width:calc(100% - 135px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    text-align:center;color:var(--text);font:700 17px/1.2 "DM Sans",sans-serif;
+  }
+  #prisma-settings .settings-mobile-icon{
+    display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;
+    background:transparent;border:0;border-radius:50%;color:var(--text);
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  }
+  #prisma-settings .settings-mobile-icon:hover{background:var(--panel-2)}
+  #prisma-settings .settings-mobile-icon:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  #prisma-settings .settings-mobile-icon svg{
+    width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  #prisma-settings .settings-mobile-icon#settings-mobile-close{
+    color:var(--muted);background:var(--panel-2);width:36px;height:36px;
+    flex-basis:36px;align-self:flex-end;margin:4px 4px 4px 0;
+  }
+  #prisma-settings .settings-mobile-icon#settings-mobile-close svg{width:19px;height:19px}
+  #prisma-settings .settings-page-header{display:none!important}
+  #prisma-settings .settings-content{
+    flex:1 1 auto;min-height:0;width:100%;max-width:none;
+    padding:20px 17px calc(31px + env(safe-area-inset-bottom,0px));
+    overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;touch-action:pan-y;
+  }
+  #prisma-settings .settings-card{
+    border-radius:15px;border:1px solid var(--settings-divider);
+    background:var(--settings-card);box-shadow:none;margin-bottom:14px;
+  }
+  #prisma-settings .settings-row{
+    gap:12px;min-height:72px;padding:13px 1px;align-items:center;
+  }
+  #prisma-settings .settings-row strong{font-size:14px;font-weight:600;line-height:1.4}
+  #prisma-settings .settings-row small{font-size:11px;line-height:1.5}
+  #prisma-settings .settings-row>div{gap:4px}
+  #prisma-settings .settings-row>.settings-field-icon{flex-basis:22px;width:22px}
+  #prisma-settings .settings-field-icon svg{width:20px;height:20px}
+  #prisma-settings .settings-select{
+    flex:0 1 auto;width:auto;min-width:94px;max-width:42%;padding:10px 4px 10px 9px;
+    border:0;border-radius:8px;background:transparent;color:var(--settings-muted);
+    font-size:13px;text-align:right;line-height:1.3;
+  }
+  #prisma-settings .settings-static-value{
+    padding:0;border:0;border-radius:0;background:transparent;color:var(--settings-muted);
+    font-size:13px;
+  }
+  #prisma-settings .settings-footnote{margin:12px 6px 0;font-size:11px;line-height:1.65}
+  #prisma-settings .settings-mobile-home{display:grid;gap:0}
+  #prisma-settings .settings-home-profile{
+    display:flex;align-items:center;width:100%;min-height:84px;gap:13px;
+    padding:13px 16px;border:1px solid var(--settings-divider);border-radius:16px;
+    background:var(--settings-card);color:var(--text);text-align:left;
+  }
+  #prisma-settings .settings-home-avatar{
+    flex:0 0 49px;width:49px;height:49px;border-radius:50%;
+    display:grid;place-items:center;color:#102724;background:#7cdbd1;
+    font:700 19px/1 Manrope,system-ui,sans-serif;letter-spacing:-.04em;
+  }
+  #prisma-settings .settings-home-profile-label{
+    display:grid;gap:5px;min-width:0;flex:1;
+  }
+  #prisma-settings .settings-home-profile-label strong{
+    font:700 16px/1.2 Manrope,system-ui,sans-serif;
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  }
+  #prisma-settings .settings-home-profile-label small{
+    font-size:11px;line-height:1.4;color:var(--settings-muted);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  #prisma-settings .settings-home-profile-chevron{color:var(--subtle);width:17px;flex:0 0 17px}
+  #prisma-settings .settings-home-profile-chevron svg,
+  #prisma-settings .settings-home-row-chevron svg{
+    width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  #prisma-settings .settings-home-group{margin-top:27px}
+  #prisma-settings .settings-home-group h2{
+    margin:0 4px 11px;color:var(--settings-muted);
+    font:600 13px/1.3 "DM Sans",system-ui,sans-serif;
+  }
+  #prisma-settings .settings-home-list{
+    overflow:hidden;border:1px solid var(--settings-divider);border-radius:16px;
+    background:var(--settings-card);
+  }
+  #prisma-settings .settings-home-row{
+    display:flex;align-items:center;gap:14px;width:100%;min-height:59px;
+    padding:13px 16px;border:0;border-bottom:1px solid var(--settings-divider);
+    background:transparent;color:var(--text);text-align:left;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  }
+  #prisma-settings .settings-home-row:last-child{border-bottom:0}
+  #prisma-settings .settings-home-row:active,
+  #prisma-settings .settings-home-profile:active{background:var(--panel-2)}
+  #prisma-settings .settings-home-row-icon{
+    flex:0 0 22px;width:22px;height:22px;display:grid;place-items:center;
+    color:var(--settings-muted);
+  }
+  #prisma-settings .settings-home-row-icon svg{
+    width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  #prisma-settings .settings-home-row-label{display:grid;gap:3px;flex:1;min-width:0}
+  #prisma-settings .settings-home-row-label strong{
+    font:500 14px/1.4 "DM Sans",system-ui,sans-serif;
+  }
+  #prisma-settings .settings-home-row-label small{
+    color:var(--settings-muted);font-size:11px;line-height:1.5;
+  }
+  #prisma-settings .settings-home-row-chevron{flex:0 0 17px;display:grid;place-items:center;color:var(--subtle)}
+  #prisma-settings .settings-home-signout{
+    display:flex;align-items:center;gap:13px;min-height:55px;padding:0 17px;margin-top:28px;
+    border:1px solid var(--settings-divider);border-radius:15px;
+    background:var(--settings-card);color:#ea6f70;font-size:14px;font-weight:600;
+  }
+  #prisma-settings .settings-home-signout svg{
+    width:20px;height:20px;stroke:currentColor;stroke-width:1.9;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  #prisma-settings .settings-home-footer{
+    margin:27px 0 5px;text-align:center;letter-spacing:.12em;
+    font-size:9px;color:var(--subtle);
+  }
+  #prisma-settings .settings-detail-section-label{
+    margin:4px 4px 8px;padding:0;color:var(--settings-muted);
+    font-size:13px;font-weight:600;letter-spacing:0;
+  }
+  #prisma-settings .settings-help-links{padding:0 16px;margin-bottom:26px}
+  #prisma-settings .settings-help-link{
+    min-height:58px;gap:13px;padding:14px 0;font-size:14px;font-weight:500;
+  }
+  #prisma-settings .settings-help-link-icon{flex-basis:22px}
+  #prisma-settings .settings-help-card{padding:0 16px}
+  #prisma-settings .settings-help-card details{padding:17px 0}
+  #prisma-settings .settings-help-card summary{
+    min-height:23px;padding-right:30px;font-size:14px;font-weight:500;line-height:1.5;
+  }
+  #prisma-settings .settings-help-card summary::after{top:12px;right:0}
+  #prisma-settings .settings-help-card p{font-size:12px;line-height:1.7}
+  #prisma-settings .settings-help-card a{font-size:12px}
+  #prisma-settings .settings-theme-options{gap:8px}
+  #prisma-settings .settings-theme-option{padding:9px}
+  #prisma-settings .settings-theme-option strong{font-size:12px}
+  #prisma-settings .settings-theme-option small{font-size:10px}
+  #prisma-settings .settings-theme-preview{height:65px}
+  #prisma-settings .settings-card-heading strong{font-size:14px}
+  #prisma-settings .settings-card-heading small{font-size:11px}
+  #prisma-settings .settings-switch-row{min-height:76px}
+  #prisma-settings .settings-switch-row strong{font-size:14px}
+  #prisma-settings .settings-switch-row small{font-size:11px}
+  #prisma-settings .settings-account-identity strong{font-size:15px}
+  #prisma-settings .settings-account-identity small{font-size:12px}
+  #prisma-settings .settings-action-button{font-size:13px;min-height:51px}
+  #prisma-settings .settings-danger-card{padding:16px;align-items:flex-start;flex-direction:column}
+  #prisma-settings .settings-danger-button{align-self:flex-start;font-size:12px}
+  #prisma-settings .settings-shortcut-row{min-height:64px}
+  #prisma-settings .settings-shortcut-row kbd{font-size:12px}
+  #prisma-settings .settings-shortcut-row small{font-size:12px}
+  #prisma-settings .settings-release-card h2{font-size:20px}
+  #prisma-settings .settings-release-card p,#prisma-settings .settings-release-card li{font-size:12px}
+}
+/* iOS installed PWA extends behind the status bar; reserve its full height,
+   even on iOS versions where the safe-area environment variable reports zero. */
+@media(max-width:900px) and (display-mode:standalone){
+  #prisma-settings .settings-mobile-toolbar{
+    padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 8px));
+    min-height:calc(60px + max(60px,env(safe-area-inset-top,0px)));
+  }
+}
+@media(max-width:900px){
+  body.is-prisma-ios.is-prisma-standalone #prisma-settings .settings-mobile-toolbar{
+    padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 8px));
+    min-height:calc(60px + max(60px,env(safe-area-inset-top,0px)));
+  }
+}
+
+/* Native-sized controls: prevent Safari's input focus zoom and improve legibility. */
+@media(max-width:900px){
+  #prisma-settings .settings-select{font-size:16px}
+  #prisma-settings .settings-home-row-label strong{font-size:15px}
+  #prisma-settings .settings-home-group h2{font-size:14px}
+  #prisma-settings .settings-help-link{font-size:15px}
+  #prisma-settings .settings-row strong{font-size:15px}
+}

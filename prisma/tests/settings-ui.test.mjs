@@ -46,4 +46,41 @@ test('message send shortcut is configurable without changing Shift+Enter behavio
   assert.match(main, /if\(!event\.target\.closest\?\.\('#clear-local-data'\)\)return/);
 });
 
+
+test('mobile settings have a safe-area toolbar and a true grouped home', () => {
+  assert.match(html, /id="settings-mobile-back"/);
+  assert.match(html, /id="settings-mobile-close"/);
+  assert.match(html, /id="settings-mobile-title"/);
+  assert.match(settings, /function mobileHomeContent\(\)/);
+  assert.match(settings, /settings-home-group/);
+  assert.match(settings, /setSettingsSection\('home'\)/);
+  assert.match(settings, /isMobileSettings\(\)/);
+  assert.match(styles, /#prisma-settings \.prisma-settings-sidebar\{display:none!important\}/);
+  assert.match(styles, /#prisma-settings \.settings-mobile-toolbar\{/);
+  assert.match(styles, /body\.is-prisma-ios\.is-prisma-standalone #prisma-settings \.settings-mobile-toolbar/);
+  assert.match(styles, /env\(safe-area-inset-top,0px\)/);
+  assert.match(styles, /#prisma-settings \.settings-content\{/);
+});
+
+test('mobile back moves to settings home and close exits the dialog', () => {
+  assert.match(settings, /#settings-mobile-back'\)\?\.addEventListener\('click'/);
+  assert.match(settings, /#settings-mobile-close'\)\?\.addEventListener\('click', closeSettings\)/);
+  assert.match(settings, /else setSettingsSection\('home'\)/);
+  assert.match(settings, /closeSettings\(\)/);
+});
+
+test('help links align consistently and preserve real destinations', () => {
+  assert.match(settings, /settings-help-links/);
+  assert.match(settings, /settings-help-link-icon/);
+  assert.match(settings, /settings-help-link-chevron/);
+  assert.match(settings, /https:\/\/github\.com\/AndresYepez23\/PRISMA\/issues\/new/);
+  assert.match(settings, /id="settings-help-install"/);
+  assert.match(styles, /#prisma-settings \.settings-help-link\{/);
+});
+
+test('starting screen preference is stored and restored at startup', () => {
+  assert.match(settings, /localStorage\.setItem\('prisma-start-view'/);
+  assert.match(main, /localStorage\.getItem\('prisma-start-view'\)==='explore'/);
+});
+
 console.log('Prisma account/settings regressions: compact menu, non-dimming surface, preferences, help and send shortcut verified.');

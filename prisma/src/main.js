@@ -104,6 +104,9 @@ function readStoredArray(key){
 const favorites=new Set(readStoredArray('prisma-favorites').filter(value=>typeof value==='string'));
 let recentTools=readStoredArray('prisma-recent').map(item=>typeof item==='string'?{id:item,at:0}:item).filter(item=>item&&typeof item.id==='string'&&tools.some(tool=>tool.id===item.id)).slice(0,12);
 let activeCategory='all',activeView='core',searchTerm='',layout='grid',currentTool=null,currentWorkflow=null,selectedFiles=[],running=false,outputUrl=null,lastFocusedElement=null,lastOpenedToolId=null,activeOperation=0;
+try{
+  if(localStorage.getItem('prisma-start-view')==='explore')activeView='explore';
+}catch{/* Private browsing can block local preferences. */}
 const popularToolIds=['pdf-extract','image-bg','image-gen','ai-transcribe','pdf-merge','image-social-kit'];
 const toolFamilies=[
  {id:'docs',name:'Documentos',icon:'file-text',categories:['pdf','office']},
