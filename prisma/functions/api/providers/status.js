@@ -81,7 +81,7 @@ export async function onRequestGet({ env }) {
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
     const hold=holds[provider],info=getCredentialStatus(env,provider),health=credentialHealth[provider]||{};
     return [provider,{...info,healthySlots:health.healthySlots??0,pausedSlots:health.pausedSlots??0,
-      credentialRetryAt:health.retryAt??null,dailyUsage:usage[provider]?.daily||null,minuteUsage:usage[provider]?.minute||null,
+      credentialRetryAt:health.retryAt??null,dailyUsage: usage[provider]?.daily || null, minuteUsage: usage[provider]?.minute || null,
       providerPaused:Boolean(hold),pauseState:hold?.state||null,pauseReason:hold?.reason||null,retryAt:hold?.valid_until||health.retryAt||null}];
   }));
 
