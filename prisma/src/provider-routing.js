@@ -126,7 +126,7 @@ export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_O
     const reliability=failures*6-Math.min(2,successes*0.5);
     const daily=usage[name]?.daily||usage[name]||{};
     const used=Math.max(0,Number(daily.used)||0),limit=Math.max(0,Number(daily.limit)||0);
-    // Weighted fair queueing: route order expresses task fit and cost priority;
+    // Weighted fair queueing: route order expresses task fit and provider priority;
     // shared daily use plus this session's recent successes prevent one healthy
     // provider from monopolizing every request while others stay idle.
     const utilization=limit>0?Math.max(0,Math.min(1,used/limit)):0;
