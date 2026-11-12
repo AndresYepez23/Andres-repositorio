@@ -6,7 +6,38 @@ import {
   normalizeResearchResults,
   mergeResearchResults
 } from '../functions/_lib/research-search.js';
+import { checkResearchLimits } from '../functions/_lib/limits.js';
 import { onRequestPost } from '../functions/api/research/search.js';
+
+function mockResearchDb(){
+  const counters=new Map();
+  return {
+    counters,
+    prepare(sql){
+      let values=[];
+      const statement={
+        bind(...args){values=args;return statement;},
+        async first(){
+          if(sql.includes('SELECT request_count FROM ai_rate_limits WHERE scope=? AND window_start=?')){
+            const [scope,start]=values;
+            return {request_count:counters.get(scope+':'+start)||0};
+          }
+          if(sql.includes('INSERT INTO ai_rate_limits(scope,window_start,request_count)')){
+            const [scope,start,max]=values;
+            const key=scope+':'+start,current=counters.get(key)||0;
+            if(current>=max)return null;
+            counters.set(key,current+1);
+            return {request_count:current+1};
+          }
+          return null;
+        },
+        async all(){return {results:[]};},
+        async run(){return {success:true};}
+      };
+      return statement;
+    }
+  };
+}
 
 test('latest AI updates are routed as news with a recent time window',()=>{
   const query=cleanResearchQuery('Investiga en Internet las últimas novedades de inteligencia artificial.');
@@ -43,6 +74,23 @@ test('research results merge and deduplicate the same canonical URL',()=>{
   assert.equal(merged[0].published_date,'2026-11-12');
 });
 
+test('research rate limits are per visitor and separate from inference counters',async()=>{
+  const db=mockResearchDb();
+  const env={PRISMA_RATE_DB:db,PRISMA_VISITOR_DAILY_LIMIT:'40'};
+  const firstIp=new Request('https://prismaspace.pages.dev/api/research/search',{
+    method:'POST',headers:{'CF-Connecting-IP':'203.0.113.10'}
+  });
+  for(let i=0;i<20;i++)assert.equal(await checkResearchLimits(env,firstIp),null);
+  const blocked=await checkResearchLimits(env,firstIp);
+  assert.equal(blocked.status,429);
+  assert.equal(blocked.scope,'research-ip-minute');
+  const secondIp=new Request('https://prismaspace.pages.dev/api/research/search',{
+    method:'POST',headers:{'CF-Connecting-IP':'203.0.113.11'}
+  });
+  assert.equal(await checkResearchLimits(env,secondIp),null);
+  assert.equal([...db.counters.keys()].some(key=>key.startsWith('total-day:')),false);
+});
+
 test('Tavily results are enriched with Jina when the primary result set is thin',async()=>{
   const originalFetch=globalThis.fetch;
   let tavilyCalls=0,jinaCalls=0;
@@ -75,10 +123,10 @@ test('Tavily results are enriched with Jina when the primary result set is thin'
   try{
     const request=new Request('https://prismaspace.pages.dev/api/research/search',{
       method:'POST',
-      headers:{Origin:'https://prismaspace.pages.dev','Content-Type':'application/json'},
+      headers:{Origin:'https://prismaspace.pages.dev','Content-Type':'application/json','CF-Connecting-IP':'203.0.113.12'},
       body:JSON.stringify({query:'Investiga en Internet las últimas novedades de inteligencia artificial.'})
     });
-    const response=await onRequestPost({request,env:{TAVILY_API_KEY:'tavily-secret',JINA_API_KEY:'jina-secret'}});
+    const response=await onRequestPost({request,env:{TAVILY_API_KEY:'tavily-secret',JINA_API_KEY:'jina-secret',PRISMA_RATE_DB:mockResearchDb()}});
     const data=await response.json();
     assert.equal(response.status,200);
     assert.equal(data.ok,true);
@@ -107,10 +155,10 @@ test('a sufficient Tavily result set avoids an unnecessary Jina request',async()
   };
   try{
     const request=new Request('https://prismaspace.pages.dev/api/research/search',{
-      method:'POST',headers:{Origin:'https://prismaspace.pages.dev','Content-Type':'application/json'},
+      method:'POST',headers:{Origin:'https://prismaspace.pages.dev','Content-Type':'application/json','CF-Connecting-IP':'203.0.113.13'},
       body:JSON.stringify({query:'Investiga sobre la evolución de la inteligencia artificial'})
     });
-    const response=await onRequestPost({request,env:{TAVILY_API_KEY:'tavily-secret',JINA_API_KEY:'jina-secret'}});
+    const response=await onRequestPost({request,env:{TAVILY_API_KEY:'tavily-secret',JINA_API_KEY:'jina-secret',PRISMA_RATE_DB:mockResearchDb()}});
     const data=await response.json();
     assert.equal(response.status,200);
     assert.deepEqual(data.providers,['tavily']);
