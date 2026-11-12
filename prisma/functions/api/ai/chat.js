@@ -80,7 +80,7 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       body:JSON.stringify({model,messages,temperature:0.65,
         max_tokens:clamp(payload.maxOutputTokens,provider==="sensenova"?2048:128,4096,provider==="sensenova"?2400:1200),
         stream:false}),
-    }),{sweepAuthSlots:provider==="sensenova"});
+    }),{sweepAuthSlots:true});
   } catch (error) {
     return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
   }
@@ -399,7 +399,7 @@ async function executeChatRequest({ request, env }, markReserved) {
   }
 
   const compatibleProviders={
-    sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
+    sensenova:{url:"https://token.sensetime.com/api/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
     zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
@@ -420,7 +420,7 @@ async function executeChatRequest({ request, env }, markReserved) {
   }
 
   const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.8-flash");
-  const allowedModels = new Set(["gemini-3.8-flash", "gemini-3.5-flash-lite"]);
+  const allowedModels = new Set(["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"]);
   if (!allowedModels.has(model)) {
     return json({ error: "El modelo solicitado no está habilitado para el uso compartido de Prisma." }, 400);
   }
@@ -447,15 +447,25 @@ async function executeChatRequest({ request, env }, markReserved) {
   });
 
   let response, data, activeModel = model;
-  try {
-    response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
-    data = await response.json().catch(() => ({}));
-    if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
-      // The higher-capability model can be temporarily overloaded; use a lower-cost model.
-      activeModel = "gemini-3.5-flash-lite";
-      response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
-      data = await response.json().catch(() => ({}));
+  const fallbackModels = model === "gemini-3.8-flash"
+    ? ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
+    : model === "gemini-3.6-flash" ? ["gemini-3.5-flash-lite"] : [];
+  const askGeminiWithFallback = async key => {
+    response = await askGemini(model, key);
+    activeModel = model;
+    // Retry a different Gemini model with the same key only for upstream
+    // availability failures. Never use model fallback to bypass 401/402/429.
+    if (![408, 500, 502, 503, 504].includes(response.status)) return response;
+    for (const fallbackModel of fallbackModels) {
+      activeModel = fallbackModel;
+      response = await askGemini(fallbackModel, key);
+      if (response.ok || ![408, 500, 502, 503, 504].includes(response.status)) return response;
     }
+    return response;
+  };
+  try {
+    response = await requestWithCredentialPool(env,"gemini",askGeminiWithFallback,{sweepAuthSlots:true});
+    data = await response.json().catch(() => ({}));
   } catch(error) {
     return providerFailure(error,"gemini","No fue posible conectar con Google Gemini. Inténtalo nuevamente.");
   }
