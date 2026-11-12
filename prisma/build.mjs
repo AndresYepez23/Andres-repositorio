@@ -43,6 +43,7 @@ await generateSeoPages(output);
 await generateInternationalPages(output);
 // Validate the generated static HTML as part of the Cloudflare deployment gate.
 await import("./tests/seo-build.test.mjs");
+await import("./tests/seo-international.test.mjs");
 await import("./tests/seo-capabilities.test.mjs");
 await import("./tests/performance-layout.test.mjs");
 console.log("PRISMA build complete: dist/ contains the public application, generated SEO landings and PWA shell.");
