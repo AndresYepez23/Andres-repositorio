@@ -707,8 +707,8 @@ assert.match(swSource, /cache:"no-store"/);
 
 
 
-// The app-wide daily ceiling grows with active provider families, not raw key
-// count. Extra keys never multiply a project's actual provider quota.
+// The shared budget is bounded for the application; individually authorized
+// account pools receive separate per-credential accounting and upstream limits.
 const capacityEnv = {
  GEMINI_API_KEY:'g1',
  GROQ_API_KEY:'q1',
@@ -721,17 +721,17 @@ const capacityWithMoreKeys = {
  GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GROQ_API_KEY_2:'q2', GROQ_API_KEY_3:'q3', GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5',
 };
-assert.equal(getProviderDailyLimit(capacityEnv,'groq'),80);
+assert.equal(getProviderDailyLimit(capacityEnv,'groq'),5000);
 assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
-assert.equal(getSharedDailyBudget(capacityEnv),200);
+assert.equal(getSharedDailyBudget(capacityEnv),5000);
 assert.equal(getVisitorDailyLimit(capacityEnv),90);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
-assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),15);
+assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),100);
 assert.equal(getProviderMinuteLimit('aihubmix'),10);
-assert.equal(getProviderMinuteLimit('requesty'),10);
-assert.equal(getProviderMinuteLimit('sensenova'),5);
-assert.equal(getProviderMinuteLimit('zai'),3);
-assert.equal(getProviderMinuteLimit('kilo'),3);
+assert.equal(getProviderMinuteLimit('requesty'),null);
+assert.equal(getProviderMinuteLimit('sensenova'),null);
+assert.equal(getProviderMinuteLimit('zai'),null);
+assert.equal(getProviderMinuteLimit('kilo'),null);
 assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}),60);
 assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
 const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
