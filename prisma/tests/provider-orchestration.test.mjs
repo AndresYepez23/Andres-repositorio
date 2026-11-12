@@ -187,4 +187,29 @@ assert.equal(allLimitedAttempts,6,'A rate limit is isolated and recorded for eac
 assert.equal(await getProviderHold(env8,'zai'),null,'Exhausted independent accounts must not create a global provider hold');
 
 
+
+const db9=mockD1();
+const env9={PRISMA_RATE_DB:db9,...Object.fromEntries(Array.from({length:6},(_,i)=>['HF_TOKEN'+(i===0?'':'_'+(i+1)),'independent-hf-account-'+(i+1)]))};
+let hfAttempts=0;
+const hfRecovered=await requestWithCredentialPool(env9,'huggingface',async(key)=>{
+  hfAttempts++;
+  return key==='independent-hf-account-6'
+    ? new Response('ok',{status:200})
+    : new Response(JSON.stringify({error:{message:'monthly credits exhausted'}}),{status:402});
+},{sweepQuotaSlots:true,startIndex:0});
+assert.equal(hfRecovered.status,200,'Hugging Face must try another independent account after one account exhausts credits');
+assert.equal(hfAttempts,6,'All six configured Hugging Face accounts are checked until one succeeds');
+assert.equal(await getProviderHold(env9,'huggingface'),null,'One Hugging Face account quota must not pause all independent accounts');
+
+const db10=mockD1();
+const env10={PRISMA_RATE_DB:db10,...Object.fromEntries(Array.from({length:6},(_,i)=>['HF_TOKEN'+(i===0?'':'_'+(i+1)),'exhausted-hf-account-'+(i+1)]))};
+let hfLimitedAttempts=0;
+const hfAllLimited=await requestWithCredentialPool(env10,'huggingface',async()=>{
+  hfLimitedAttempts++;
+  return new Response(JSON.stringify({error:{message:'monthly credits exhausted'}}),{status:402});
+},{sweepQuotaSlots:true,startIndex:0});
+assert.equal(hfAllLimited.status,402,'Return HTTP 402 when every independent Hugging Face account is out of credits');
+assert.equal(hfLimitedAttempts,6,'All six exhausted Hugging Face accounts are checked independently');
+assert.equal(await getProviderHold(env10,'huggingface'),null,'Exhausted Hugging Face accounts must not create a global provider hold');
+
 console.log('Provider orchestration regressions passed.');

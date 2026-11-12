@@ -283,7 +283,11 @@ async function executeChatRequest({ request, env }, markReserved) {
           "Authorization": "Bearer " + credential,
         },
         body: JSON.stringify(body),
-      }));
+      }), {
+        // Hugging Face credentials belong to separate accounts. A 402/429
+        // applies to that account's own quota, not to every HF account.
+        sweepQuotaSlots: true,
+      });
     } catch(error) {
       return providerFailure(error,"huggingface","No fue posible conectar con Hugging Face. Inténtalo nuevamente.");
     }
