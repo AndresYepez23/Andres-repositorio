@@ -253,8 +253,8 @@ export async function recordCredentialMetrics(env, provider, slot, response, sup
 
   // OpenRouter exposes per-key spend limits through GET /api/v1/key.
   const keyData = payload?.data || payload;
-  const balanceRemaining = Number(keyData?.limit_remaining);
-  const balanceLimit = Number(keyData?.limit);
+  const balanceRemaining = keyData?.limit_remaining == null ? NaN : Number(keyData.limit_remaining);
+  const balanceLimit = keyData?.limit == null ? NaN : Number(keyData.limit);
   if (provider === "openrouter" && Number.isFinite(balanceRemaining) && balanceRemaining >= 0) {
     writes.push(writeCredentialMetric(env, provider, slot, "balance-microusd", 0, Math.floor(balanceRemaining * 1_000_000)));
     if (Number.isFinite(balanceLimit) && balanceLimit >= 0) {
