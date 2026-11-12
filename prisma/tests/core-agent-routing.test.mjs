@@ -805,7 +805,7 @@ assert.equal(chooseCoreReasoning('coding','Depura este código'),'smart');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast');
 assert.equal(isCoreFollowUp('¿Y las demás?'),true,'Short follow-up must reference the conversation');
 assert.equal(isCoreFollowUp('¿Qué es un PDF?'),false,'Independent factual question must not be forced to use a previous artifact');
-assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:13,maxChars:14500,newTask:false},'Short follow-ups need ample relevant context');
+assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:15,maxChars:16000,newTask:false},'Short follow-ups need the task anchor and enough relevant context');
 assert.equal(chooseCoreReasoning('conversation','Analiza por qué falla esta autenticación y evalúa las causas'),'smart','Complex requests deserve deeper model routing');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast','Quick greetings remain efficient');
 assert.equal(chooseCoreResponseLength('conversation','Explica cómo funciona y cuándo conviene usar un sistema de registro de pacientes'),'long','Meaningful explanations must not be artificially short');
@@ -916,7 +916,7 @@ assert.deepEqual(readInferenceUsage(usageStorage),{
 });
 assert.ok(!usageValues.get(INFERENCE_USAGE_KEY).includes('secret'),'No secret values recorded in usage');
 assert.deepEqual(chooseCoreContextOptions('conversation','Hola'),{maxMessages:3,maxChars:3500,newTask:false});
-assert.deepEqual(chooseCoreContextOptions('songwriting','Cambia el coro de esa canción'),{maxMessages:13,maxChars:14500,newTask:false});
+assert.deepEqual(chooseCoreContextOptions('songwriting','Cambia el coro de esa canción'),{maxMessages:15,maxChars:16000,newTask:false});
 assert.deepEqual(chooseCoreContextOptions('coding','Implementa una función segura'),{maxMessages:11,maxChars:11500,newTask:false});
 const entireSong='TÍTULO\\n'+('Verso de la canción '.repeat(220))+'FIN DEL CORO';
 const revisionContext=buildConversationContext([
