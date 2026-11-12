@@ -341,6 +341,15 @@ assert.deepEqual(webEditing?.steps?.map(step=>step.tool_id),
 assert.equal(webEditing.steps[1].params.format,'image/webp');
 assert.equal(webEditing.steps[1].params.quality,82);
 assert.equal(router.planCoreOfflineAction(webEditingRequest,[],[])?.type,'needs-input');
+// English language may translate whole words, never corrupt Spanish "imagen".
+// An English request about an existing image also requires a supplied file.
+const englishWebEditing='Prepare this image for my website, remove metadata and get dominant colors';
+assert.equal(router.planCoreOfflineAction(englishWebEditing,[],[])?.type,'needs-input');
+assert.deepEqual(router.planCoreOfflineAction(englishWebEditing,picture,[])?.steps?.map(step=>step.tool_id),
+ ['image-strip-metadata','image-compress','image-palette']);
+assert.deepEqual(router.planCoreOfflineAction(webEditingRequest,picture,[])?.steps?.map(step=>step.tool_id),
+ ['image-strip-metadata','image-compress','image-palette']);
+
 assert.equal(router.planCoreOfflineAction('Quiero preparar una imagen nueva para mi página web',[],[]),null);
 assert.deepEqual(router.planCoreOfflineAction('Saca los colores principales de esta imagen',picture,[])?.steps?.map(x=>x.tool_id),['image-palette']);
 // Route existing-image work before any remote image generator.
