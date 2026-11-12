@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { rankProviders, adaptiveProviderDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
-import { getCredentialHealthSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
+import { getCredentialSlots, getCredentialHealthSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
 
 function mockD1() {
@@ -106,6 +106,36 @@ const authSnapshot=await getCredentialHealthSnapshot(env2,['groq']);
 assert.equal(authSnapshot.groq.healthySlots,1);
 assert.equal(authSnapshot.groq.pausedSlots,1);
 
+// Every configured credential is checked after a key-specific 401, not only
+// the first two. Provider-wide 429/5xx responses still stop after one attempt.
+const authPoolEnv={PRISMA_RATE_DB:mockD1()};
+for(let i=1;i<=6;i++)authPoolEnv[i===1?'GEMINI_API_KEY':'GEMINI_API_KEY_'+i]='gemini-key-'+i;
+let geminiAuthAttempts=0;
+const geminiRecovered=await requestWithCredentialPool(authPoolEnv,'gemini',async key=>{
+  geminiAuthAttempts++;
+  return key==='gemini-key-6'?new Response('ok',{status:200}):new Response('invalid key',{status:401});
+},{startIndex:0});
+assert.equal(geminiRecovered.status,200);
+assert.equal(geminiAuthAttempts,6,'All six Gemini credentials are tried on HTTP 401');
+const geminiHealth=await getCredentialHealthSnapshot(authPoolEnv,['gemini']);
+assert.equal(geminiHealth.gemini.healthySlots,1);
+assert.equal(geminiHealth.gemini.pausedSlots,5);
+
+const researchPools={
+  TAVILY_API_KEYS_JSON:JSON.stringify(Array.from({length:7},(_,i)=>'tavily-'+i)),
+  JINA_API_KEYS_JSON:JSON.stringify(['jina-key'])
+};
+assert.equal(getCredentialSlots(researchPools,'tavily').length,7,'Tavily accepts all seven configured keys from its JSON pool');
+assert.equal(getCredentialSlots(researchPools,'jina').length,1,'Jina accepts its configured key from a JSON pool');
+const research429Env={PRISMA_RATE_DB:mockD1(),TAVILY_API_KEYS_JSON:researchPools.TAVILY_API_KEYS_JSON};
+let research429Attempts=0;
+const researchLimited=await requestWithCredentialPool(research429Env,'tavily',async()=>{
+  research429Attempts++;
+  return new Response('rate limited',{status:429});
+},{startIndex:0});
+assert.equal(researchLimited.status,429);
+assert.equal(research429Attempts,1,'Research keys are never rotated to evade a provider-wide 429');
+
 const db3=mockD1();
 const env3={PRISMA_RATE_DB:db3,GROQ_API_KEY:'groq-key-only'};
 let rateAttempts=0;
@@ -134,9 +164,18 @@ const fs=await import('node:fs');
 const statusSource=fs.readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
 assert.match(statusSource,/getCredentialHealthSnapshot/,'Provider status checks every credential pool');
 assert.match(statusSource,/providerHealth\.cloudflare/,'Cloudflare Workers AI has a visible shared health state');
+assert.match(statusSource,/RESEARCH_PROVIDERS/,'Tavily and Jina are reported separately from inference quotas');
+assert.match(statusSource,/webResearch/,'Web research availability is exposed safely');
 const chatSource=fs.readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(chatSource,/function providerFailure/,'Backend preserves provider error metadata');
+assert.match(chatSource,/token\.sensetime\.com\/api\/v1\/chat\/completions/,'SenseNova uses the official TokenPlan API base URL');
+assert.match(chatSource,/gemini-3\.6-flash/,'Gemini has a stable intermediate fallback model');
+assert.match(chatSource,/sweepAuthSlots:true/,'OpenAI-compatible providers can validate every configured key after HTTP 401');
 assert.match(chatSource,/setProviderHold\(env,"cloudflare"/,'Cloudflare failures open a shared circuit breaker');
+const researchSource=fs.readFileSync(new URL('../functions/api/research/search.js',import.meta.url),'utf8');
+assert.match(researchSource,/s\.jina\.ai/,'Jina is wired as the independent web-search fallback');
+assert.match(researchSource,/requestWithCredentialPool/,'Research providers use the protected credential-pool logic');
+assert.doesNotMatch(researchSource,/refundFailedProviderUsage/,'Research stays outside inference quota refunds and avoids the former missing-import failure');
 const engineSource=fs.readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(engineSource,/status:Number\(data\.status\)\|\|response\.status/,'The router retains the original upstream status');
 console.log('Provider orchestration regressions passed.');
