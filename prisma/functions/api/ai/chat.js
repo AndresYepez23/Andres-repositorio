@@ -85,9 +85,9 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       // Z.AI keys were supplied from separate general API accounts: isolate
       // quota/rate-limit holds per credential and try the next account.
       sweepQuotaSlots:provider==="zai",
-      // Requesty keys belong to separate accounts; a 403 can reject one
-      // account's key/model permissions without invalidating the other accounts.
-      retryStatuses:provider==="requesty"?[401,403]:[401]
+      // Z.AI and Requesty keys belong to separate accounts; a 403 can reject
+      // one account's key/model permissions without invalidating the others.
+      retryStatuses:provider==="requesty"||provider==="zai"?[401,403]:[401]
     });
   } catch (error) {
     return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
