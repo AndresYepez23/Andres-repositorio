@@ -132,3 +132,40 @@ test('explicit new tasks start with a clean context instead of importing an old 
   assert.doesNotMatch(combined,/fachada azul/);
   assert.ok(context.length<=4);
 });
+
+
+import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference } from '../src/core-model-experience.js';
+
+test('specialized audio, music, visual and moderation models are not chat options',()=>{
+  for (const entry of [
+    {id:'lyria-3.5',kind:'music'},
+    {id:'google/lyria-3-clip-preview',kind:'music'},
+    {id:'nvidia/nemotron-3.5-content-safety',kind:'safety'},
+    {id:'openai/whisper-large-v3',kind:'transcription'},
+    {id:'wan3.0-video-free',kind:'video'},
+    {id:'flux.1-schnell',kind:'image'}
+  ]) {
+    assert.equal(describeCoreModel(entry).kind,entry.kind);
+    assert.equal(isCoreChatModel(entry),false);
+  }
+  assert.equal(describeCoreModel({id:'openai/gpt-oss-20b'}).kind,'chat');
+  assert.equal(describeCoreModel({id:'Qwen/Qwen3-Coder-32B'}).kind,'code');
+  assert.equal(describeCoreModel({id:'DeepSeek-R1'}).kind,'reasoning');
+});
+
+test('suggested model is selected only from compatible provider options',()=>{
+  const groq=[{id:'openai/gpt-oss-120b'},{id:'openai/gpt-oss-20b'}];
+  assert.equal(suggestedCoreModel('groq',groq).id,'openai/gpt-oss-20b');
+  assert.equal(suggestedCoreModel('kilo',[{id:'lyria-3.5'},{id:'qwen-chat'}]).id,'qwen-chat');
+  assert.equal(suggestedCoreModel('kilo',[{id:'lyria-3.5'}]),null);
+});
+
+test('a real fallback never replaces the manually selected model in the picker',()=>{
+  let state=selectManualConversationModel({},'zai','glm-4.7-flash',1000);
+  state=pinConversationModel(state,{provider:'groq',model:'openai/gpt-oss-20b',fallbackFrom:'zai'},1500);
+  const displayed=displayedConversationPreference(state);
+  assert.equal(displayed.provider,'zai');
+  assert.equal(displayed.model,'glm-4.7-flash');
+  assert.equal(displayed.fallbackActive,true);
+  assert.equal(conversationModelRequest(state).provider,'groq');
+});

@@ -151,7 +151,7 @@ assert.match(coreSource,/const message=\{id:'m-'/,'Complete assistant messages a
 assert.match(coreSource,/revealNewAssistantAnswer\(message\)/,'Fresh assistant replies must progressively appear');
 assert.match(coreSource,/prefers-reduced-motion: reduce/,'Answer animation must respect accessibility settings');
 assert.match(coreSource,/cancelAnimationFrame\(answerRevealFrame\)/,'Re-rendering the chat must cancel stale reveal animations');
-assert.match(coreSource,/fileTask:isGuestFileTask\(\{text,attachments\}\)/,'Only requests involving files are blocked after trial');
+assert.match(coreSource,/fileTask:activeChatRecord\(\)\?\.creativeMode==='image'\|\|isGuestFileTask\(\{text,attachments\}\)/,'File requests and explicit image generation must both respect the guest task limit');
 assert.match(coreSource,/openPrismaAuthForGuestLimit\(\)/,'Core must open its real Supabase login/sign-up modal when the trial ends');
 assert.match(coreSource,/prisma:guest-gate-closed/,'Returning from registration should show in-chat invitation');
 assert.match(coreSource,/guestNoticeDismissed=true/,'In-chat invitation must be dismissible');
@@ -782,7 +782,8 @@ assert.doesNotMatch(chatSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded e
 assert.doesNotMatch(statusSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded endpoints must be absent from provider status');
 const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
 for (const provider of ['kilo','requesty','sensenova','zai','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
-assert.equal(CHAT_MODELS.requesty.length,13);
+assert.equal(CHAT_MODELS.requesty.length,12,'Requesty chat catalog excludes the moderation-only Content Safety model');
+ assert.ok(!CHAT_MODELS.requesty.some(model=>/content.safety/i.test(model.id)),'Safety classifiers must not appear as conversational models');
 assert.equal(CHAT_MODELS.aihubmix.length,0,'AIHubMix catalogue is loaded from its live API, not a stale hard-coded list');
 assert.equal(CHAT_MODELS.amd,undefined,'AMD is removed from the model catalog');
 assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/ling-3.1-flash'));

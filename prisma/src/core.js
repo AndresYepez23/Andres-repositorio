@@ -32,6 +32,7 @@ import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGen
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest } from './core-model-session.js';
+import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference } from './core-model-experience.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -102,6 +103,7 @@ let centralConfigured = {};
 let centralImageUsage = {};
 let centralStatusUpdatedAt = 0;
 let activeModelTab = 'chat';
+let expandedModelProvider = '';
 let userPinnedToBottom = true;
 let userScrollRevision = 0;
 let localBrainEnabled = false;
@@ -180,7 +182,7 @@ function newChatRecord(content=[]){
  return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
    titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false,
    modelSelection:{mode:'auto',provider:'',model:'',source:'auto',lastUserAt:0},
-   imageSelection:{provider:'auto',model:''}};
+   imageSelection:{provider:'auto',model:''},creativeMode:'chat'};
 }
 function persistChatHistory(activeSerialized=null){
  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).map(chat=>serializeConversation({
@@ -344,7 +346,7 @@ function openConversation(id){
  if(busy||executionActive)return;
  const chat=conversations.find(item=>item.id===id);if(!chat)return;
  speechSynthesisStop();
- activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();renderModelPicker();
+ activeConversationId=chat.id;messages=chat.messages.slice();activeModelTab=chat.creativeMode==='image'?'image':'chat';attachments=[];renderAttachments();renderModelPicker();renderComposerMode();
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
  pendingPlan=null;$('#core-plan')?.classList.add('hidden');
  userPinnedToBottom=true;renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();
@@ -357,7 +359,7 @@ function startNewConversation(){
  if(active&&!active.messages.length){closeConversationDrawer();$('#core-input')?.focus();return;}
  // Keep exactly one unsent draft in memory, without adding it to the history.
  const record=newChatRecord();conversations=conversations.filter(hasConversationMessages);
- conversations.unshift(record);activeConversationId=record.id;
+ conversations.unshift(record);activeConversationId=record.id;activeModelTab='chat';
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
  messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');renderModelPicker();
  // Creating a blank draft must not trigger storage writes or cloud sync.
@@ -365,7 +367,7 @@ function startNewConversation(){
  status('Nueva conversación. El historial anterior sigue disponible.','success');
  $('#core-input')?.focus();
 }
-function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';renderModelPicker();}
+function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';renderModelPicker();renderComposerMode();}
 
 const MODEL_PROVIDER_LABELS={
  groq:'Groq',zai:'Z.AI',gemini:'Google Gemini',openrouter:'OpenRouter',
@@ -409,60 +411,82 @@ function chooseConversationModel(provider,modelId){
  const availability=providerAvailability(provider,'chat');
  if(!availability.available)return;
  chat.modelSelection=selectManualConversationModel(chat.modelSelection,provider,modelId,Date.now());
- persistChatHistory();
- renderModelPicker();
+ chat.creativeMode='chat';chat.updated=Date.now();activeModelTab='chat';
+ persistChatHistory();renderModelPicker();renderComposerMode();
+ const picker=$('.core-model-settings');if(picker)picker.open=false;
  status('Modelo fijado para este chat. Prisma Core conservará el contexto y activará un respaldo si el motor falla.','success');
 }
 function chooseAutomaticConversationModel(){
  const chat=activeChatRecord();if(!chat)return;
  chat.modelSelection=selectAutomaticConversationModel(chat.modelSelection,Date.now());
- persistChatHistory();
- renderModelPicker();
+ chat.creativeMode='chat';chat.updated=Date.now();activeModelTab='chat';
+ persistChatHistory();renderModelPicker();renderComposerMode();
+ const picker=$('.core-model-settings');if(picker)picker.open=false;
  status('Selección automática activada. Prisma elegirá y mantendrá un modelo para este chat.','success');
 }
 function renderChatModelOptions(){
  const list=$('#core-model-options');if(!list)return;
- list.replaceChildren();
+ const panel=$('#core-model-panel'),scrollTop=panel?.scrollTop||0;
  const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
- let count=0;
+ const chosen=displayedConversationPreference(selection);
  const catalog=centralModelCatalog?.chat||{};
- const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(provider=>!MODEL_PROVIDER_ORDER.includes(provider)).sort()];
+ const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(p=>!MODEL_PROVIDER_ORDER.includes(p)).sort()];
+ list.replaceChildren();let visible=0;
  for(const provider of providers){
-  const models=catalog[provider];
-  if(!Array.isArray(models)||!models.length)continue;
-  count+=models.length;
-  const availability=providerAvailability(provider,'chat');
-  const group=document.createElement('section');group.className='core-model-group';
-  const heading=document.createElement('div');heading.className='core-model-group-heading';
-  const name=document.createElement('strong');name.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
-  const statusLabel=document.createElement('span');statusLabel.className='core-model-group-status '+(availability.available?'is-ready':'is-blocked');
-  statusLabel.textContent=availability.available?'Disponible':availability.reason;
-  heading.append(name,statusLabel);group.append(heading);
-  for(const model of models){
-   if(!model?.id)continue;
-   const row=document.createElement('button');row.type='button';row.className='core-model-option';
-   const current=selection.provider===provider&&selection.model===model.id;
-   row.disabled=!availability.available;
-   row.classList.toggle('is-current',current);
-   row.setAttribute('aria-pressed',String(current));
-   const copy=document.createElement('span');copy.className='core-model-option-copy';
-   const title=document.createElement('strong');title.textContent=model.name||model.id;
-   const specialty=document.createElement('small');specialty.textContent=model.specialty||'Modelo de conversación';
-   copy.append(title,specialty);
-   const state=document.createElement('span');state.className='core-model-option-state '+(availability.available?'is-ready':'is-blocked');
-   state.textContent=!availability.available?'Bloqueado':current?(selection.usedAt?'En uso':'Seleccionado'):'Elegir';
-   row.append(copy,state);
-   if(availability.available)row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
-   else row.title=availability.reason;
-   group.append(row);
+  if(!providerAvailability(provider,'chat').available)continue;
+  const models=(Array.isArray(catalog[provider])?catalog[provider]:[]).filter(isCoreChatModel);
+  if(!models.length)continue;
+  visible+=models.length;
+  const suggested=suggestedCoreModel(provider,models),expanded=expandedModelProvider===provider;
+  const currentProvider=chosen.provider===provider;
+  const section=document.createElement('section');
+  section.className='core-model-provider'+(expanded?' is-expanded':'');
+  const toggle=document.createElement('button');toggle.type='button';
+  toggle.className='core-model-provider-toggle';
+  toggle.setAttribute('aria-expanded',String(expanded));
+  toggle.setAttribute('aria-label',(expanded?'Ocultar':'Mostrar')+' modelos de '+(MODEL_PROVIDER_LABELS[provider]||provider));
+  const copy=document.createElement('span');copy.className='core-model-provider-copy';
+  const title=document.createElement('strong');title.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
+  const subtitle=document.createElement('small');
+  subtitle.textContent=currentProvider?'Elegido: '+modelLabel(chosen.provider,chosen.model):
+   models.length+' modelos · sugerido: '+(suggested?.name||suggested?.id||'Automático');
+  copy.append(title,subtitle);
+  const trail=document.createElement('span');trail.className='core-model-provider-trailing';
+  const state=document.createElement('span');state.className='core-model-provider-count';
+  state.textContent=currentProvider?'Elegido':String(models.length);
+  const chevron=document.createElement('span');chevron.className='core-model-chevron';chevron.textContent='⌄';
+  trail.append(state,chevron);toggle.append(copy,trail);
+  toggle.addEventListener('click',()=>{expandedModelProvider=expanded?'':provider;renderChatModelOptions();});
+  section.append(toggle);
+  if(expanded){
+   const options=document.createElement('div');options.className='core-model-provider-options';
+   for(const model of models){
+    const selected=chosen.provider===provider&&chosen.model===model.id;
+    const meta=describeCoreModel(model);
+    const row=document.createElement('button');row.type='button';
+    row.className='core-model-option'+(selected?' is-current':'');
+    row.setAttribute('aria-pressed',String(selected));
+    const info=document.createElement('span');info.className='core-model-option-copy';
+    const name=document.createElement('strong');name.textContent=model.name||model.id;
+    const specialty=document.createElement('small');specialty.textContent=model.specialty||meta.description;
+    const kind=document.createElement('span');kind.className='core-model-capability';kind.textContent=meta.label;
+    info.append(name,specialty,kind);
+    const action=document.createElement('span');action.className='core-model-option-state';
+    action.textContent=selected?'Elegido':model.id===suggested?.id?'Sugerido':'Elegir';
+    row.append(info,action);
+    row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
+    options.append(row);
+   }
+   section.append(options);
   }
-  list.append(group);
+  list.append(section);
  }
- if(!count){
+ if(!visible){
   const empty=document.createElement('p');empty.className='core-model-empty';
-  empty.textContent='El catálogo de modelos aún no está disponible. Prisma seguirá usando la selección automática cuando se restablezca la conexión.';
+  empty.textContent='No hay proveedores de chat disponibles por ahora. Los modelos no configurados se mantienen ocultos.';
   list.append(empty);
  }
+ if(panel)panel.scrollTop=scrollTop;
 }
 function renderImageModelControls(){
  const providerSelect=$('#core-image-provider'),modelSelect=$('#core-image-model'),hint=$('#core-image-model-hint');
@@ -508,45 +532,68 @@ function renderImageModelControls(){
  }
 }
 function renderModelPicker(){
- const details=$('.core-model-settings'),summary=details?.querySelector('summary');
- if(!details||!summary)return;
+ const details=$('.core-model-settings'),summary=details?.querySelector('summary');if(!details||!summary)return;
  const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
- const current=selection.provider&&selection.model?modelLabel(selection.provider,selection.model):'Automático';
- summary.title=selection.provider&&selection.model?'Modelo actual: '+current:'Seleccionar modelo de IA';
+ const chosen=displayedConversationPreference(selection);
+ const name=chosen.model?modelLabel(chosen.provider,chosen.model):'Automático';
+ const actual=selection.model?modelLabel(selection.provider,selection.model):'';
+ summary.title=chosen.model?'Modelo elegido: '+name:'Seleccionar modelo de IA';
  summary.setAttribute('aria-label',summary.title);
- const statusLabel=$('#core-model-selection-status');
- if(statusLabel){
-  const activeAvailability=selection.provider?providerAvailability(selection.provider,'chat'):{available:true};
-  statusLabel.textContent=selection.provider&&selection.model
-   ?(!activeAvailability.available?'No disponible · se usará un respaldo: '+current:
-     (selection.source==='fallback'?'Respaldo activo · ':selection.usedAt?'Modelo activo · ':'Modelo seleccionado · ')+current)
-   :'Prisma seleccionará un modelo al comenzar y lo conservará en este chat';
+ const label=$('#core-model-selection-status');
+ if(label){
+  const available=chosen.provider?providerAvailability(chosen.provider,'chat').available:true;
+  label.textContent=chosen.fallbackActive
+   ?'Elegiste '+name+'. '+actual+' respondió como respaldo; tu elección se conserva.'
+   :chosen.model&&selection.mode==='manual'
+    ?'Elegiste '+name+(available?'.':' · temporalmente sin conexión; hay respaldo automático.')
+    :actual?'Automático · respondió '+actual+'.':'Prisma elige según la tarea, disponibilidad y límites.';
  }
- const autoButton=$('#core-model-auto');
- if(autoButton){
-  autoButton.classList.toggle('is-current',selection.mode==='auto');
-  const autoState=autoButton.querySelector('.core-model-auto-state');
-  if(autoState)autoState.textContent=selection.mode==='auto'?'Activo':'Cambiar';
-  const description=autoButton.querySelector('small');
-  if(description)description.textContent=selection.provider&&selection.model&&selection.mode==='auto'
-   ?'En uso: '+current+'. Se mantendrá hasta que falle o pasen 30 minutos sin actividad.'
-   :'Prisma elige según la tarea, disponibilidad, rendimiento y cuotas.';
+ const auto=$('#core-model-auto');
+ if(auto){
+  auto.classList.toggle('is-current',selection.mode==='auto');
+  auto.setAttribute('aria-pressed',String(selection.mode==='auto'));
+  const state=auto.querySelector('.core-model-auto-state');
+  if(state)state.textContent=selection.mode==='auto'?'Activo':'Elegir';
+  const desc=auto.querySelector('small');
+  if(desc)desc.textContent=selection.mode==='auto'&&actual
+   ?'Último modelo: '+actual+'. Se adapta a la disponibilidad.'
+   :'Prisma prioriza eficiencia, disponibilidad y estabilidad.';
  }
- renderChatModelOptions();
- renderImageModelControls();
+ renderChatModelOptions();renderImageModelControls();
  const panel=$('#core-model-panel');
  if(panel){
-  panel.querySelectorAll('[data-model-tab]').forEach(button=>{
-   const active=button.dataset.modelTab===activeModelTab;
-   button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));
+  panel.querySelectorAll('[data-model-tab]').forEach(b=>{
+   const selected=b.dataset.modelTab===activeModelTab;
+   b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));
   });
-  panel.querySelectorAll('[data-model-pane]').forEach(pane=>pane.classList.toggle('active',pane.dataset.modelPane===activeModelTab));
+  panel.querySelectorAll('[data-model-pane]').forEach(p=>p.classList.toggle('active',p.dataset.modelPane===activeModelTab));
  }
+ const imageButton=$('#core-image-activate');
+ if(imageButton)imageButton.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
+}
+function renderComposerMode(){
+ const image=activeChatRecord()?.creativeMode==='image';
+ const banner=$('#core-composer-mode'),label=$('#core-composer-mode-label'),input=$('#core-input');
+ banner?.classList.toggle('hidden',!image);
+ if(label)label.textContent=image?'Modo imagen · Describe lo que quieres generar':'';
+ if(input)input.placeholder=image?'Describe la imagen que quieres crear…':'Escribe a Prisma…';
+}
+function setCoreCreativeMode(mode){
+ const chat=activeChatRecord();if(!chat)return;
+ if(mode==='image'&&!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady)){
+  status('No hay un motor de imágenes disponible en este momento.','warning');return;
+ }
+ chat.creativeMode=mode==='image'?'image':'chat';
+ chat.updated=Date.now();activeModelTab=chat.creativeMode;
+ persistChatHistory();renderModelPicker();renderComposerMode();
+ const picker=$('.core-model-settings');if(picker)picker.open=false;
+ $('#core-input')?.focus();
+ status(chat.creativeMode==='image'?'Modo imagen activado: este campo generará una imagen real, no una respuesta de texto.':'Modo chat activado.','success');
 }
 function saveImageSelection(){
  const chat=activeChatRecord();if(!chat)return;
  chat.imageSelection={provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||''};
- persistChatHistory();
+ chat.updated=Date.now();persistChatHistory();
 }
 
 async function persistGeneratedResults(results){
@@ -840,7 +887,9 @@ function setBusy(value){
   const sendLabel=$('#core-send-label');if(sendLabel)sendLabel.textContent=value?'Trabajando…':'Enviar';
   $('#core-composer').setAttribute('aria-busy',String(value));
   const cancelButton=$('#core-cancel');if(cancelButton){cancelButton.classList.toggle('hidden',!(value&&executionActive));cancelButton.disabled=false;}
-  if(value)setProgress(.02,'Preparando…');
+  // A conversational turn already has an inline thinking indicator. Keep the
+  // separate progress rail for real tool executions only, never for LLM latency.
+  if(value&&executionActive)setProgress(.02,'Preparando herramienta…');
   else $('#core-progress')?.classList.add('hidden');
 }
 const attachmentPreviewUrls=new Map();
@@ -2454,7 +2503,7 @@ async function sendMessage(){
   // Preserve both the draft and attached files when a fifth guest task is
   // requested. The onboarding gate is cumulative across local chats.
   if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage),
-    fileTask:isGuestFileTask({text,attachments})})){
+    fileTask:activeChatRecord()?.creativeMode==='image'||isGuestFileTask({text,attachments})})){
     status('Los 4 trabajos con archivos de prueba terminaron. Regístrate para procesar o generar más archivos; puedes seguir chateando gratis.','info');
     input.blur();
     openPrismaAuthForGuestLimit();
@@ -2478,7 +2527,12 @@ async function sendMessage(){
     priorRequest?'Continúa esta solicitud anterior con el archivo adjunto: '+priorRequest:
     'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
-  try{await requestPlan(requestText);}
+  try{
+    if(activeChat?.creativeMode==='image'&&!filesNow.length){
+      await refreshCoreProviderStatus();
+      await generateVisualRequest(requestText,credentials(),'image');
+    }else await requestPlan(requestText);
+  }
   catch(error){
     console.warn('Prisma Core',error?.code||error?.message||error);
     const detail=String(error?.message||'');
@@ -2685,11 +2739,14 @@ export function initPrismaCore(){
   }));
   $('#core-image-provider')?.addEventListener('change',()=>{
     const chat=activeChatRecord();
-    if(chat)chat.imageSelection={provider:$('#core-image-provider').value||'auto',model:''};
+    if(chat){chat.imageSelection={provider:$('#core-image-provider').value||'auto',model:''};chat.updated=Date.now();}
     persistChatHistory();renderModelPicker();
+    if($('#core-image-provider').value!=='auto')setCoreCreativeMode('image');
   });
-  $('#core-image-model')?.addEventListener('change',saveImageSelection);
-  renderModelPicker();
+  $('#core-image-model')?.addEventListener('change',()=>{saveImageSelection();setCoreCreativeMode('image');});
+  $('#core-image-activate')?.addEventListener('click',()=>setCoreCreativeMode('image'));
+  $('#core-composer-mode-exit')?.addEventListener('click',()=>setCoreCreativeMode('chat'));
+  renderModelPicker();renderComposerMode();
   // The signup card is in the chat-column flow (not on top of messages).
   // Opening the account panel keeps the card hidden until the user returns.
   document.addEventListener('prisma:guest-gate-open',()=>{

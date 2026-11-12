@@ -46,7 +46,6 @@ export const CHAT_MODELS = {
     {id:"poolside/laguna-m.1",name:"Poolside Laguna M.1",specialty:"Programación · gratuito"},
     {id:"google/gemma-4-31b-it",name:"Gemma 4 31B IT",specialty:"Chat y razonamiento · gratuito"},
     {id:"mistral/leanstral-1-5",name:"Mistral Leanstral 1.5",specialty:"Pruebas formales y programación · gratuito"},
-    {id:"nvidia/nemotron-3.5-content-safety",name:"Nemotron 3.5 Content Safety",specialty:"Clasificación de seguridad · gratuito"},
     {id:"nvidia/nemotron-3.5-lightning-30b-a3b",name:"Nemotron 3.5 Lightning 30B",specialty:"Agentes y razonamiento · gratuito"},
     {id:"nvidia/muse-glimmer-30b",name:"Muse Glimmer 30B",specialty:"Razonamiento y herramientas · gratuito"},
     {id:"novita/ling-3.1-flash",name:"Ling 3.1 Flash",specialty:"Razonamiento híbrido · Novita · gratuito"},
