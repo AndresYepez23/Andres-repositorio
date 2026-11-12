@@ -488,6 +488,53 @@ function renderChatModelOptions(){
  }
  if(panel)panel.scrollTop=scrollTop;
 }
+function renderCreativeCatalog(){
+ const root=$('#core-creative-catalog');if(!root)return;
+ root.replaceChildren();
+ const catalog=centralModelCatalog?.creative||{};
+ const kindNames={music:'Música',video:'Vídeo',image:'Imágenes',audio:'Voz y audio',
+  transcription:'Transcripción',safety:'Seguridad',embedding:'Vectores',other:'Especializado'};
+ const providers=Object.keys(catalog).filter(provider=>provider!=='huggingface'&&provider!=='requesty');
+ for(const provider of providers){
+  const models=Array.isArray(catalog[provider])?catalog[provider]:[];
+  if(!models.length)continue;
+  const section=document.createElement('details');section.className='core-creative-provider';
+  const heading=document.createElement('summary');
+  heading.textContent=(MODEL_PROVIDER_LABELS[provider]||provider)+' · '+models.length+' modelos';
+  section.append(heading);
+  const list=document.createElement('div');list.className='core-creative-list';
+  for(const model of models){
+   const kind=model.kind||'other';
+   const item=document.createElement('div');item.className='core-creative-model';
+   const name=document.createElement('strong');name.textContent=model.name||model.id;
+   const type=document.createElement('small');type.textContent=(kindNames[kind]||'Especializado')+
+    ' · '+(model.specialty||'Modelo especializado');
+   const state=document.createElement('small');state.className='core-creative-state';
+   const isImage=kind==='image'&&['cloudflare','pollinations','gemini'].includes(provider)&&imageProviderReady(provider);
+   if(isImage){
+    const select=document.createElement('button');select.type='button';select.className='core-image-activate';
+    select.textContent='Usar para imágenes';
+    select.addEventListener('click',()=>{
+     const chat=activeChatRecord();if(!chat)return;
+     chat.imageSelection={provider,model:model.id};
+     persistChatHistory();renderModelPicker();setCoreCreativeMode('image');
+    });
+    item.append(name,type,select);
+   }else{
+    state.textContent=kind==='music'?'Catálogo visible · requiere integración de audio':
+     'Catálogo visible · ejecución especializada no habilitada';
+    item.append(name,type,state);
+   }
+   list.append(item);
+  }
+  section.append(list);root.append(section);
+ }
+ if(!root.childElementCount){
+  const empty=document.createElement('p');empty.className='core-model-footnote';
+  empty.textContent='Los modelos especializados aparecerán aquí cuando el proveedor los anuncie en su catálogo.';
+  root.append(empty);
+ }
+}
 function renderImageModelControls(){
  const providerSelect=$('#core-image-provider'),modelSelect=$('#core-image-model'),hint=$('#core-image-model-hint');
  if(!providerSelect||!modelSelect)return;
@@ -559,7 +606,7 @@ function renderModelPicker(){
    ?'Último modelo: '+actual+'. Se adapta a la disponibilidad.'
    :'Prisma prioriza eficiencia, disponibilidad y estabilidad.';
  }
- renderChatModelOptions();renderImageModelControls();
+ renderChatModelOptions();renderImageModelControls();renderCreativeCatalog();
  const panel=$('#core-model-panel');
  if(panel){
   panel.querySelectorAll('[data-model-tab]').forEach(b=>{
