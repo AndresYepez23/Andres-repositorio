@@ -12,7 +12,7 @@ const source=JSON.parse(await read('src/locales/ui-source.es.json'));
 const nonUiSourceFragments=new Set([
   ":\n   /\\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\\b/i.test(taskText)?",
   ".  Solicitud del usuario:",
-  ".' ,\n    'pdf-remove-pages':'Usa params.pages con las páginas que se eliminarán, por ejemplo",
+  ".',\n    'pdf-remove-pages':'Usa params.pages con las páginas que se eliminarán, por ejemplo",
   "))\n   throw Error(",
   "))throw Error(",
   "&&/\\b(compara|comparacion|comparativa|versus|pros y contras|que conviene|cual conviene|mejor opcion|ventajas y desventajas)\\b/.test(normalizedTask)?",
@@ -55,7 +55,7 @@ test('English requests are normalized without losing negative instructions or co
 test('English language selection respects explicit routes, saved preferences and regional Spanish browsers',async()=>{
  const i18n=await read('src/i18n.js');
  assert.match(i18n,/preferredBrowserLanguage = String\(browserLanguages\[0\]/);
- assert.match(i18n,/const routeLanguage = \/\^\\\/en/);
+ assert.ok(i18n.includes('const routeLanguage = /^\\/en'));
  assert.match(i18n,/const initialLanguage = routeLanguage \|\| savedLanguage \|\|/);
  assert.match(i18n,/browserSpanish \? 'es' : 'en'/);
  assert.match(i18n,/location\.pathname === '\/' && initialLanguage === 'en'/);
