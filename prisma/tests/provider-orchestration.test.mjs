@@ -183,12 +183,13 @@ await assert.rejects(
 const fs=await import('node:fs');
 const statusSource=fs.readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
 assert.match(statusSource,/getCredentialHealthSnapshot/,'Provider status checks every credential pool');
-assert.match(statusSource,/getCredentialMetricsSnapshot/,'Provider status exposes per-key usage and rate-limit telemetry');
+assert.doesNotMatch(statusSource,/getCredentialMetricsSnapshot|credentialUsage/,'Public provider status does not expose per-key balance or usage telemetry');
 assert.match(statusSource,/getProviderDailyCapacity/,'Provider status reports capacity scaled across independent account pools');
 assert.match(statusSource,/providerHealth\.cloudflare/,'Cloudflare Workers AI has a visible shared health state');
 const chatSource=fs.readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(chatSource,/function providerFailure/,'Backend preserves provider error metadata');
 assert.match(chatSource,/setProviderHold\(env,"cloudflare"/,'Cloudflare failures open a shared circuit breaker');
+assert.match(chatSource,/sweepRateLimitSlots:\["zai","sensenova","aihubmix"\]\.includes\(provider\)/,'Only providers with independent account rate limits sweep 429 across keys');
 const engineSource=fs.readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(engineSource,/status:Number\(data\.status\)\|\|response\.status/,'The router retains the original upstream status');
 assert.match(engineSource,/p\.centralProviderUsage\|\|\{\}/,'The intelligent router uses shared provider utilization, not only this browser session');
