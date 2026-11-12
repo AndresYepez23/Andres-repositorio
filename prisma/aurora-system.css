@@ -966,3 +966,57 @@ body.is-core-view .core-model-pane.active{display:grid}
  }
  body.is-core-view .core-model-pane.active{display:grid}
 }
+
+
+/* iOS / PWA composer: prevent the text field shrinking under the model,
+   voice and send controls. Keep identical geometry while busy or idle. */
+body.is-core-view .core-compose-surface{min-width:0;box-sizing:border-box}
+body.is-core-view .core-compose-surface #core-input{
+ min-width:0;box-sizing:border-box;
+}
+body.is-core-view .core-progress.hidden{display:none!important}
+body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
+ min-height:52px;
+}
+@media(max-width:620px){
+ body.is-core-view .core-compose-surface{
+  display:grid!important;
+  grid-template-columns:32px minmax(0,1fr);
+  grid-template-rows:minmax(38px,auto) 37px;
+  column-gap:4px;
+  row-gap:1px;
+  align-items:center;
+  padding:5px 7px!important;
+  min-height:86px;
+ }
+ body.is-core-view .core-compose-surface .core-attach-button{
+  grid-column:1;grid-row:1;
+  width:32px;min-width:32px;height:36px;min-height:36px;
+ }
+ body.is-core-view .core-compose-surface #core-input{
+  grid-column:2;grid-row:1;
+  width:100%!important;min-width:0!important;
+  height:38px;min-height:38px;
+  padding:8px 7px!important;
+  font-size:16px;line-height:1.35;
+ }
+ body.is-core-view .core-compose-surface .core-composer-footer{
+  grid-column:1 / -1;grid-row:2;
+  display:flex;justify-content:flex-end;align-items:center;
+  width:100%;min-width:0;
+  gap:3px;margin:0!important;padding:0!important;
+ }
+ body.is-core-view .core-compose-surface .core-composer-tools{
+  display:flex;gap:3px;flex:0 0 auto;
+ }
+ body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
+  min-height:86px;
+ }
+ body.is-core-view .core-progress:not(.hidden){
+  padding:5px 9px;
+  min-height:24px;
+ }
+ body.is-core-view .core-progress:not(.hidden) small{
+  min-width:0;max-width:54%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ }
+}
