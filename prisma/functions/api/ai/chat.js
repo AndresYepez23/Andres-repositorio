@@ -498,10 +498,27 @@ export async function onRequestPost(context){
  try{
   response=await executeChatRequest(context,provider=>{reservedProvider=provider;});
  }catch(error){
-  if(reservedProvider)await refundFailedProviderUsage(context.env,reservedProvider);
-  throw error;
+  if(reservedProvider){
+   try{await refundFailedProviderUsage(context.env,reservedProvider);}catch(refundError){
+    console.warn("Prisma failed-inference budget release failed.",String(refundError?.message||refundError).slice(0,120));
+   }
+  }
+  const diagnosticId=crypto.randomUUID();
+  const safeMessage=String(error?.message||"Unhandled chat handler exception")
+    .replace(/(?:Bearer\\s+)[A-Za-z0-9._~+\\/-]+/gi,"Bearer [redacted]")
+    .replace(/(?:sk-|AIza)[A-Za-z0-9_\\-]{12,}/g,"[redacted]").slice(0,240);
+  console.error("Prisma chat handler exception",diagnosticId,String(error?.name||"Error"),safeMessage);
+  return json({
+   ok:false,
+   error:"Prisma encontró un error interno al procesar la solicitud. No se ha confirmado ningún proveedor.",
+   code:"INTERNAL_ERROR",
+   diagnosticId
+  },500);
  }
- if(reservedProvider&&!response?.ok)
-  await refundFailedProviderUsage(context.env,reservedProvider);
+ if(reservedProvider&&!response?.ok){
+  try{await refundFailedProviderUsage(context.env,reservedProvider);}catch(refundError){
+   console.warn("Prisma failed-inference budget release failed.",String(refundError?.message||refundError).slice(0,120));
+  }
+ }
  return response;
 }
