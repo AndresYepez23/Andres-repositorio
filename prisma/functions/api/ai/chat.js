@@ -87,12 +87,12 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       }),
     }),{
       sweepAuthSlots:["sensenova","zai","requesty","aihubmix"].includes(provider),
-      // Z.AI keys were supplied from separate general API accounts: isolate
-      // quota/rate-limit holds per credential and try the next account.
+      // These pools are configured as independent accounts: isolate
+      // balance and account-scoped rate-limit holds per credential.
       sweepQuotaSlots:["zai","sensenova","aihubmix"].includes(provider),
       sweepRateLimitSlots:["zai","sensenova","aihubmix"].includes(provider),
-      // Z.AI and Requesty keys belong to separate accounts; a 403 can reject
-      // one account's key/model permissions without invalidating the others.
+      // A 403 may reject one account's key/model permissions without
+      // invalidating the other independent accounts.
       retryStatuses:["requesty","zai","aihubmix"].includes(provider)?[401,403]:[401]
     });
   } catch (error) {
