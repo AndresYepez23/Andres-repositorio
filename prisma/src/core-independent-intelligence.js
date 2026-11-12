@@ -438,7 +438,7 @@ export function resolveContextualCoreRequest(text,history=[]){
  const useEnglish=english();
  if(!q||q.length>500||!Array.isArray(history))return null;
  const explicitComparison=q.match(/^(?:cual es )?(?:la )?diferencia entre (.+?) y (.+?)(?: por favor)?$/)||
-  q.match(/^(?:what is )?(?:the )?difference between (.+?) and (.+?)(?: please)?$/);
+  q.match(/^(?:(?:what is|whats) )?(?:the )?difference between (.+?) and (.+?)(?: please)?$/);
  if(explicitComparison){
   const left=fold(explicitComparison[1]).replace(/^(?:la|el|una|un|the|a|an)\s+/,'');
   const right=fold(explicitComparison[2]).replace(/^(?:la|el|una|un|the|a|an)\s+/,'');
@@ -448,7 +448,7 @@ export function resolveContextualCoreRequest(text,history=[]){
    return {kind:'comparison',text:'**'+left+'**: '+first.definition+'\n\n**'+right+'**: '+second.definition+'\n\n**Diferencia práctica:** '+first.application+' '+second.application+'\n\n*Comparación basada en conocimientos internos de Prisma.*'};
   }
  }
- const asksContinuation=/^(?:y\s+)?(?:para que sirve|como (?:se usa|funciona|lo uso|se aplica)|dame (?:un )?ejemplo|explicalo (?:mejor|mas facil)|puedes ampliarlo|y eso que significa|y en la practica|por que es importante|and )?(?:what is it used for|how do i use it|how does it work|give me an example|explain further|can you expand|why is it important)?(?: (?:eso|en la practica|por favor|please))?$/.test(q);
+ const asksContinuation=/^(?:y\s+)?(?:para que sirve|como (?:se usa|funciona|lo uso|se aplica)|dame (?:un )?ejemplo|explicalo (?:mejor|mas facil)|puedes ampliarlo|y eso que significa|y en la practica|por que es importante|what is it used for|how do i use it|how does it work|give me an example|explain further|can you expand|why is it important)(?: (?:eso|en la practica|por favor|please))?$/.test(q);
  if(asksContinuation){
   const previous=history.slice(-8).reverse().find(item=>item?.role==='user'&&String(item.content||'').trim());
   const topic=previous?knownTopicIn(previous.content):'';
