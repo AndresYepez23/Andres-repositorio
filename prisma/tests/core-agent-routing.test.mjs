@@ -497,6 +497,10 @@ const cooled=rankProviders({task:'planner',available:availableAll,now,health:{
  'groq:planner':{at:now,failures:3,coolingUntil:now+60000,averageMs:22000}
 }});
 assert.equal(cooled[0],'cloudflare','a cooled provider must move behind healthy alternatives');
+const sessionBalanced=rankProviders({task:'general',available:availableAll,now,health:{
+  'groq:general':{at:now,successes:1,averageMs:500}
+}});
+assert.equal(sessionBalanced[0],'cloudflare','Recent successful use rotates the next request to another compatible provider even before the shared usage cache refreshes');
 assert.equal(cooled.at(-1),'openrouter','OpenRouter stays the final independent reserve');
 assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
