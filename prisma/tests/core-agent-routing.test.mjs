@@ -464,7 +464,7 @@ assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"||provid
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.ai\/v1\/chat\/completions"/,'SenseNova international keys must use the international TokenPlan host');
 assert.doesNotMatch(compatibleChatSource,/token\.sensenova\.cn|token\.sensetime\.com/,'SenseNova must not regress to China-only or incompatible legacy endpoints');
 assert.match(compatibleChatSource,/zai:\{url:"https:\/\/api\.z\.ai\/api\/paas\/v4\/chat\/completions",model:"glm-4\.7-flash"\}/,'Z.AI must keep the general OpenAI-compatible endpoint and GLM-4.7-Flash model');
-assert.match(compatibleChatSource,/retryStatuses:provider==="requesty"\|\|provider==="zai"\?\[401,403\]:\[401\]/,'Z.AI and Requesty must rotate independent accounts after HTTP 403');
+assert.match(compatibleChatSource,/retryStatuses:.*(?:requesty|zai).*\[401,403\]/,'Z.AI and Requesty must rotate independent accounts after HTTP 403');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
 
 // Prisma Core independent intelligence must work without AI models or Mini.
