@@ -56,7 +56,274 @@ const DATA=[
 ['metodologia','Conjunto de procedimientos para realizar una tarea o estudio.','Describe objetivos, datos, criterios y límites.'],
 ['resumen ejecutivo','Resumen breve de hallazgos, implicaciones y próximos pasos.','Redáctalo con base en el informe completo.']
 ];
-const GLOSSARY=new Map(DATA.map(([k,definition,application])=>[fold(k),{definition,application}]));
+const DATA_EN = [
+  [
+    "Artificial Intelligence",
+    "Techniques that enable the automation of perception, prediction, classification, or generation; not all AI requires neural networks.",
+    "Distinguishes statistical models, programmed logic, and mixed systems."
+  ],
+  [
+    "IA Training",
+    "Process of adjusting a model's parameters with data and optimization. Incorporating rules or text into code does not equate to training a neural network.",
+    "To increase autonomy, combine verified knowledge, algorithms, and tools that can be executed locally."
+  ],
+  [
+    "Language Model",
+    "Model that recognizes language patterns and generates text; it can convincingly make mistakes.",
+    "Verifies critical information with reliable data."
+  ],
+  [
+    "Algorithm",
+    "Finite sequence of instructions to transform inputs into results.",
+    "Checks inputs, outputs, and edge cases."
+  ],
+  [
+    "API",
+    "Interface for communication between programs.",
+    "Validates permissions, limits, and errors."
+  ],
+  [
+    "API Key",
+    "A credential used to access an API.",
+    "Store it as a server secret."
+  ],
+  [
+    "HTTP 401",
+    "A response to a request without valid authentication.",
+    "Check token, authorization, and regional endpoint."
+  ],
+  [
+    "HTTP 403",
+    "A response indicating access denied.",
+    "Verify permissions and authorized product."
+  ],
+  [
+    "HTTP 429",
+    "A response indicating the request limit has been reached.",
+    "Respect Retry-After and avoid evading quotas."
+  ],
+  [
+    "HTTP 502",
+    "An intermediary received an invalid response from another server.",
+    "Investigate the actual origin of the error, do not assume an incorrect token."
+  ],
+  [
+    "HTTP 503",
+    "Temporarily unavailable service.",
+    "Check service provider health and controlled retries."
+  ],
+  [
+    "JavaScript",
+    "Browser and server-side scripting language.",
+    "Validates data and handles asynchronous errors."
+  ],
+  [
+    "JSON",
+    "Data format with objects, arrays, and simple values.",
+    "Checks syntax and schema."
+  ],
+  [
+    "SQL",
+    "Relational database query language.",
+    "Use parameters and minimum privileges."
+  ],
+  [
+    "Database",
+    "System for storing and querying information.",
+    "Define integrity, indexes, permissions, and backups."
+  ],
+  [
+    "Authentication",
+    "The process of verifying identity.",
+    "Do not confuse it with Authorization, which determines permissions."
+  ],
+  [
+    "Authorization",
+    "Control of actions and resources allowed.",
+    "Apply permissions on the server."
+  ],
+  [
+    "OAuth",
+    "A limited access delegation protocol without sharing a password.",
+    "For federated identity, it is often combined with OpenID Connect."
+  ],
+  [
+    "Progressive Web App (PWA)",
+    "An installable web application that can offer offline functions.",
+    "Check service worker, manifest, and compatibility."
+  ],
+  [
+    "Service Worker",
+    "Browser script for caching requests and managing some tasks outside the page.",
+    "Version cache on update."
+  ],
+  [
+    "DNS",
+    "Domain Name System, a system of names and records for locating internet services.",
+    "Checks A, AAAA, CNAME, and TXT records."
+  ],
+  [
+    "Domain",
+    "A registered name used to identify resources on the internet.",
+    "A domain does not necessarily include hosting or email."
+  ],
+  [
+    "HTTPS",
+    "A secure version of the HTTP protocol protected by TLS.",
+    "Does not replace authentication or permissions."
+  ],
+  [
+    "SMTP",
+    "A protocol for outgoing email transport.",
+    "Verify authentication and sender logs."
+  ],
+  [
+    "DKIM",
+    "A cryptographic signature to verify the integrity of emails and the signing domain.",
+    "Publish the DNS record indicated by the provider."
+  ],
+  [
+    "DMARC",
+    "A policy that evaluates email authentication alignment.",
+    "Monitor before blocking."
+  ],
+  [
+    "Git",
+    "A version control system for code.",
+    "Make small commits and test."
+  ],
+  [
+    "GitHub Actions",
+    "A service for automating tests and deployments.",
+    "Review real execution results."
+  ],
+  [
+    "Cloudflare Pages",
+    "A platform for publishing web applications and executing functions.",
+    "Distinguish between Preview and Production."
+  ],
+  [
+    "Supabase",
+    "PostgreSQL services including authentication, storage, and functions.",
+    "Protect data with Row-Level Security (RLS)."
+  ],
+  [
+    "Row-Level Security",
+    "Access control to rows in a database.",
+    "Test restrictions between different users."
+  ],
+  [
+    "Optical Character Recognition",
+    "Visual text recognition in images.",
+    "Validates reading errors."
+  ],
+  [
+    "Image Weight",
+    "The weight measures the bytes of the file; dimensions measure width and height in pixels. Reducing quality can lower bytes without changing dimensions.",
+    "Prisma distinguishes compression and resizing; a KB limit is verified against the generated file."
+  ],
+  [
+    "Portable Network Graphics",
+    "Image format with lossless compression and support for transparency.",
+    "Reducing a quality parameter in canvas does not guarantee reducing a PNG; use WebP/JPG if you accept another format."
+  ],
+  [
+    "WebP",
+    "Image format that supports compression and transparency.",
+    "In Prisma, you can select WebP when converting or compressing; preserve the original for comparison."
+  ],
+  [
+    "jpg",
+    "A commonly used compressed image format with loss, no transparency channel.",
+    "To maintain a transparent background, choose PNG or WebP."
+  ],
+  [
+    "metadata",
+    "Additional information associated with a file, such as author, date, or EXIF location.",
+    "Removing metadata does not erase information that may still be visible in pixels or document text."
+  ],
+  [
+    "csv",
+    "A text table organized by rows and columns with delimiters.",
+    "Delimiters within values must be quoted; preserve headers and check for empty fields."
+  ],
+  [
+    "valid json",
+    "A valid JSON document respects the format's syntax; this does not guarantee it has the fields your application needs.",
+    "A schema allows you to check structure and types after validating syntax."
+  ],
+  [
+    "pdf",
+    "A document format that preserves visual design.",
+    "Distinguishes selectable text from scans."
+  ],
+  [
+    "Token",
+    "A processed text unit handled by language models, not always a word.",
+    "Consider context and output limits."
+  ],
+  [
+    "Context",
+    "Relevant information to interpret a request.",
+    "Use relevant history without mixing conversations."
+  ],
+  [
+    "Prompt Injection",
+    "An attempt to pass external data as instructions for an assistant.",
+    "Separate untrusted data from commands."
+  ],
+  [
+    "Webhook",
+    "An automatically triggered HTTP request due to an event.",
+    "Verify signature, duplicates, and retries."
+  ],
+  [
+    "Latency",
+    "Time elapsed between a request and response.",
+    "Distinguish network, server, and computation delays."
+  ],
+  [
+    "Backup",
+    "A recoverable copy of data or configurations.",
+    "Test its restoration."
+  ],
+  [
+    "Hypothesis",
+    "A testable proposition based on observations.",
+    "Define what would support or refute it."
+  ],
+  [
+    "Correlation",
+    "A statistical association between variables that does not imply causality on its own.",
+    "Investigate confounding factors."
+  ],
+  [
+    "Percentage",
+    "A proportion relative to 100 units.",
+    "To calculate p% of N, multiply N by p and divide by 100."
+  ],
+  [
+    "Mean",
+    "The sum of values divided by the number of values.",
+    "Consider the median if there are extreme values."
+  ],
+  [
+    "Median",
+    "The central value of a sorted series.",
+    "It is less sensitive to extreme values."
+  ],
+  [
+    "Methodology",
+    "A set of procedures to perform a task or study.",
+    "It describes objectives, data, criteria, and limits."
+  ],
+  [
+    "Executive Summary",
+    "A brief summary of findings, implications, and next steps.",
+    "Write it based on the complete report."
+  ]
+];
+const GLOSSARY=new Map([...DATA.map(([k,definition,application],i)=>[fold(k),{definition,application,topicEn:DATA_EN[i][0],definitionEn:DATA_EN[i][1],applicationEn:DATA_EN[i][2]}]),...DATA_EN.map(([k,definition,application],i)=>[fold(k),{definition:DATA[i][1],application:DATA[i][2],topicEn:k,definitionEn:definition,applicationEn:application}])]);
 const N='[-+]?(?:\\d+(?:[.,]\\d+)?|[.,]\\d+)';
 const number=x=>Number(String(x).replace(',','.'));
 const format=x=>Number.isFinite(x)?new Intl.NumberFormat('es-CO',{maximumFractionDigits:6}).format(Number(x.toPrecision(12))):null;
