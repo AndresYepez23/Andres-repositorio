@@ -2,8 +2,9 @@ import { getProviderHold } from "../../_lib/provider-health.js";
 import { tavilyKeys } from "../research/search.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, getCredentialMetricsSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
-import { getKiloFreeModels } from "../../_lib/kilo-models.js";
-import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
+import { getKiloFreeModels, getKiloFreeCreativeModels } from "../../_lib/kilo-models.js";
+import { getAihubmixFreeModels, getAihubmixFreeCreativeModels } from "../../_lib/aihubmix-models.js";
+import { GEMINI_MUSIC_MODELS, creativeKind } from "../../_lib/creative-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getProviderDailyCapacity, getProviderMinuteCapacity, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
@@ -141,6 +142,39 @@ export async function onRequestGet({ env }) {
   const modelCatalog = modelsForUI();
   modelCatalog.chat.kilo = kiloModels;
   modelCatalog.chat.aihubmix = aihubmixModels;
+  // Complete creative catalogue, separate from conversational routing. Do not
+  // silently turn a music/video request into a text completion.
+  const [kiloCreative,aihubmixCreative]=await Promise.all([
+    getKiloFreeCreativeModels(env),
+    configured.aihubmix>0?getAihubmixFreeCreativeModels(env):Promise.resolve([])
+  ]);
+  modelCatalog.creative={
+    kilo:kiloCreative,
+    aihubmix:aihubmixCreative,
+    gemini:configured.gemini>0?GEMINI_MUSIC_MODELS:[],
+  };
+  // Preserve all specialized entries from the existing static catalog too.
+  for(const [provider,models] of Object.entries(modelCatalog.image||{})){
+    if(provider==="huggingface"||provider==="requesty")continue;
+    const existing=modelCatalog.creative[provider]||[];
+    for(const model of models){
+      if(!existing.some(item=>item.id===model.id))existing.push({
+        ...model,kind:creativeKind(model)||"image"
+      });
+    }
+    modelCatalog.creative[provider]=existing;
+  }
+  for(const [provider,models] of Object.entries(modelCatalog.audio||{})){
+    if(provider==="huggingface"||provider==="requesty")continue;
+    const existing=modelCatalog.creative[provider]||[];
+    for(const model of models){
+      if(!existing.some(item=>item.id===model.id))existing.push({
+        ...model,kind:creativeKind(model)||"audio"
+      });
+    }
+    modelCatalog.creative[provider]=existing;
+  }
+
 
   const providerHealth=Object.fromEntries(poolProviders.map(provider => {
     const h=quotaHealth[provider]||{};
