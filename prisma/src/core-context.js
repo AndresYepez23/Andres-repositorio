@@ -28,8 +28,10 @@ export function isCoreNewTask(value=''){
  if(/\b(?:cambiando de tema|otra cosa|por otro lado|nuevo tema|tema distinto|dejando eso aparte)\b/.test(q))return true;
  // Explicit references to the current artifact/file keep the previous context.
  if(/\b(?:esa foto|esa imagen|ese archivo|ese documento|lo anterior|la misma|otra version|el mismo|con eso|a partir de eso)\b/.test(q))return false;
- return /^(?:(?:y\s+)?ahora\s+)?(?:redacta|escribe|crea|genera|diseña|convierte|traduce|resume|analiza|calcula|busca|compara|prepara|planifica|programa|implementa)\b/.test(q)||
-  /^(?:necesito|quiero que)\s+(?:me\s+)?(?:redactes|escribas|crees|generes|diseñes|conviertas|traduzcas|resumas|analices|calcules|busques|compares|prepares|planifiques|programes|implementes|redactar|escribir|crear|generar|diseñar|convertir|traducir|resumir|analizar|calcular|buscar|comparar|preparar|planificar|programar|implementar)\b/.test(q);
+ const actions='redacta|escribe|crea|genera|diseña|convierte|traduce|resume|analiza|calcula|busca|compara|prepara|planifica|programa|implementa';
+ if(new RegExp('^(?:(?:y\\\\s+)?ahora\\\\s+)(?:'+actions+')\\\\b').test(q))return true;
+ if(/^(?:necesito|quiero que)\\s+(?:me\\s+)?(?:redactes|escribas|crees|generes|diseñes|conviertas|traduzcas|resumas|analices|calcules|busques|compares|prepares|planifiques|programes|implementes|redactar|escribir|crear|generar|diseñar|convertir|traducir|resumir|analizar|calcular|buscar|comparar|preparar|planificar|programar|implementar)\\b/.test(q))return true;
+ return new RegExp('^(?:'+actions+')\\\\s+(?:un|una|el|la|los|las)?\\\\s*(?:correo|mensaje|carta|resumen|informe|ensayo|presentacion|miniatura|logo|banner|imagen|portada|guion|publicacion|plan|cronograma|tabla|lista|documento|archivo|codigo)\\\\b').test(q);
 }
 
 function attachmentNames(item){
