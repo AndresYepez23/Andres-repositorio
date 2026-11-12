@@ -3,7 +3,7 @@
   "source": "seo/content-guides.json",
   "guides": [
     {
-      "id": "G01",
+      "slug": "unir-varios-pdf",
       "title": "How to Merge Multiple PDFs into One File | Prisma Space",
       "h1": "How to Merge Multiple PDFs into One File",
       "description": "Learn how to combine multiple PDF documents into one, maintain the page order, and review the final file before sharing it.",
@@ -47,6 +47,15 @@
           "toolId": "pdf-merge"
         }
       ],
+      "primaryPageSlug": "unir-pdf",
+      "toolIds": [
+        "pdf-merge",
+        "pdf-split",
+        "pdf-extract"
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf"
+      ],
       "note": "Work on copies and keep the original documents. The tool combines files but does not validate the content or requirements of the entity receiving the PDF.",
       "faqs": [
         [
@@ -55,13 +64,14 @@
         ],
         [
           "Does merging reduce the PDF weight?",
-          "No necessarily. Combining files can produce a larger document; if you need to reduce it, review a separate optimization tool."
+          "Not necessarily. Combining files can produce a larger document; if you need to reduce it, use a separate optimization tool."
         ]
       ],
+      "sourceSlug": "unir-varios-pdf",
       "englishSlug": "how-to-merge-multiple-pdfs-into-one-file"
     },
     {
-      "id": "G02",
+      "slug": "dividir-pdf-por-paginas",
       "title": "How to Split a PDF by Pages or Ranges | Prisma Space",
       "h1": "How to Split a PDF by Pages or Ranges",
       "description": "Separate a PDF into smaller documents or extract specific pages to share only the part you need.",
@@ -105,6 +115,15 @@
           "toolId": "pdf-extract"
         }
       ],
+      "primaryPageSlug": "dividir-pdf",
+      "toolIds": [
+        "pdf-split",
+        "pdf-extract",
+        "pdf-remove-pages"
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf"
+      ],
       "note": "Ranges refer to the page position in the PDF. Review the visible numbering before deleting or separating pages.",
       "faqs": [
         [
@@ -116,10 +135,11 @@
           "No, it should not replace your original file. Always keep an independent copy."
         ]
       ],
+      "sourceSlug": "dividir-pdf-por-paginas",
       "englishSlug": "how-to-split-a-pdf-by-pages-or-ranges"
     },
     {
-      "id": "G03",
+      "slug": "reducir-peso-pdf",
       "title": "How to Reduce the Size of a PDF Before Sending | Prisma Space",
       "h1": "How to Reduce the Size of a PDF Before Sending",
       "description": "Review options to reduce the size of a PDF, understand what affects its weight, and ensure it remains legible.",
@@ -163,6 +183,15 @@
           "toolId": "pdf-compress"
         }
       ],
+      "primaryPageSlug": "comprimir-pdf",
+      "toolIds": [
+        "pdf-compress",
+        "pdf-to-image",
+        "pdf-metadata"
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf"
+      ],
       "note": "The optimization tool is in beta. A fixed percentage of reduction is not guaranteed, and not all PDFs can be compressed without loss.",
       "faqs": [
         [
@@ -174,10 +203,11 @@
           "It depends on the content and method. Compare the exported file and do not use a degraded version for documents that require high legibility."
         ]
       ],
+      "sourceSlug": "reducir-peso-pdf",
       "englishSlug": "how-to-reduce-the-size-of-a-pdf-before-sending"
     },
     {
-      "id": "G04",
+      "slug": "convertir-imagenes-a-pdf",
       "title": "How to Convert JPG and PNG to PDF | Prisma Space",
       "h1": "How to Convert JPG and PNG Images to PDF",
       "description": "Convert one or multiple JPG or PNG images to a PDF document and review the order and size of the pages.",
@@ -221,6 +251,16 @@
           "toolId": "image-pdf"
         }
       ],
+      "primaryPageSlug": "jpg-a-pdf",
+      "toolIds": [
+        "image-pdf",
+        "pdf-compress",
+        "pdf-metadata"
+      ],
+      "solutionSlugs": [
+        "convertir-documentos-entre-formatos",
+        "organizar-documentos-pdf"
+      ],
       "note": "The conversion places images in PDF pages; it does not automatically recognize text from a photograph. To extract text, you need OCR.",
       "faqs": [
         [
@@ -232,10 +272,11 @@
           "Not necessarily. If the origin is a photograph, the page will remain an image until OCR is applied."
         ]
       ],
+      "sourceSlug": "convertir-imagenes-a-pdf",
       "englishSlug": "how-to-convert-jpg-and-png-images-to-pdf"
     },
     {
-      "id": "G05",
+      "slug": "comprimir-imagen-para-enviar",
       "title": "How to Compress an Image for Sending | Prisma Space",
       "h1": "How to Compress an Image for Sending",
       "description": "Reduce the weight of a photograph for email, forms, or messaging and learn to check the quality after exporting it.",
@@ -279,6 +320,15 @@
           "toolId": "image-compress"
         }
       ],
+      "primaryPageSlug": "comprimir-imagen",
+      "toolIds": [
+        "image-compress",
+        "image-resize",
+        "image-convert"
+      ],
+      "solutionSlugs": [
+        "optimizar-imagenes-para-web"
+      ],
       "note": "Compression can reduce quality. Do not replace the original and avoid degrading documents or photographs that must preserve proof details.",
       "faqs": [
         [
@@ -290,10 +340,11 @@
           "Yes, when the original dimensions clearly exceed the necessary ones for the destination."
         ]
       ],
+      "sourceSlug": "comprimir-imagen-para-enviar",
       "englishSlug": "how-to-compress-an-image-for-sending"
     },
     {
-      "id": "G06",
+      "slug": "convertir-imagenes-a-webp",
       "title": "How to Convert JPG or PNG to WebP | Prisma Space",
       "h1": "How to Convert JPG or PNG to WebP",
       "description": "Convert images to WebP for use on a website and review transparency, compatibility, and quality before publishing.",
@@ -337,6 +388,15 @@
           "toolId": "image-convert"
         }
       ],
+      "primaryPageSlug": "jpg-a-webp",
+      "toolIds": [
+        "image-convert",
+        "image-compress",
+        "image-resize"
+      ],
+      "solutionSlugs": [
+        "optimizar-imagenes-para-web"
+      ],
       "note": "Compatibility depends on the browser, CMS, and environment where the image will be published. Keep the original file and test the output on the destination site.",
       "faqs": [
         [
@@ -348,10 +408,11 @@
           "The format supports transparency, but you must verify that the specific conversion maintains it."
         ]
       ],
+      "sourceSlug": "convertir-imagenes-a-webp",
       "englishSlug": "how-to-convert-jpg-or-png-to-webp"
     },
     {
-      "id": "G07",
+      "slug": "eliminar-metadatos-de-una-foto",
       "title": "How to Remove EXIF Metadata from an Image | Prisma Space",
       "h1": "How to Remove EXIF Metadata from an Image",
       "description": "Find out what information a photograph may contain and remove compatible EXIF metadata before sharing a copy.",
@@ -395,6 +456,15 @@
           "toolId": "image-metadata"
         }
       ],
+      "primaryPageSlug": "eliminar-metadatos-imagen",
+      "toolIds": [
+        "image-metadata",
+        "image-strip-metadata",
+        "file-inspector"
+      ],
+      "solutionSlugs": [
+        "proteger-privacidad-de-archivos"
+      ],
       "note": "Removing EXIF metadata reduces some metadata, but it does not guarantee anonymity. Review the visible content, file name, and publication context.",
       "faqs": [
         [
@@ -406,10 +476,11 @@
           "No. If the location appears on a sign, document, or map within the image, you must edit that content separately."
         ]
       ],
+      "sourceSlug": "eliminar-metadatos-de-una-foto",
       "englishSlug": "how-to-remove-exif-metadata-from-an-image"
     },
     {
-      "id": "G08",
+      "slug": "convertir-csv-a-json",
       "title": "How to Convert CSV to JSON and JSON to CSV | Prisma Space",
       "h1": "How to Convert CSV to JSON and JSON to CSV",
       "description": "Convert tabular data between CSV and JSON, understand their differences, and review delimiters, headers, and values before importing.",
@@ -453,6 +524,16 @@
           "toolId": "json-csv"
         }
       ],
+      "primaryPageSlug": "csv-a-json",
+      "toolIds": [
+        "csv-json",
+        "json-csv",
+        "csv-profile-local",
+        "csv-stats"
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos"
+      ],
       "note": "The conversion does not fully validate data quality. Review delimiters, types, required fields, and sensitive values before importing.",
       "faqs": [
         [
@@ -464,10 +545,11 @@
           "It depends on how values are interpreted. Check identifiers, zip codes, and account numbers as text when applicable."
         ]
       ],
+      "sourceSlug": "convertir-csv-a-json",
       "englishSlug": "how-to-convert-csv-to-json-and-json-to-csv"
     },
     {
-      "id": "G09",
+      "slug": "revisar-archivo-csv",
       "title": "How to Review a CSV File Before Analyzing It | Prisma Space",
       "h1": "How to Review a CSV File Before Analyzing It",
       "description": "Verify headers, rows, columns, and basic statistics of a CSV before importing it into a spreadsheet or system.",
@@ -507,6 +589,16 @@
           "body": "Make the necessary adjustments in your spreadsheet tool or editor and re-inspect the file."
         }
       ],
+      "primaryPageSlug": "auditar-archivo-csv",
+      "toolIds": [
+        "csv-profile-local",
+        "csv-stats",
+        "csv-json",
+        "json-csv"
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos"
+      ],
       "note": "A statistical profile does not determine if the data is true or if a column is well-defined. Validation should consider the context and project rules.",
       "faqs": [
         [
@@ -518,10 +610,11 @@
           "It is safer to work on a copy and keep an unchanged version for comparing results."
         ]
       ],
+      "sourceSlug": "revisar-archivo-csv",
       "englishSlug": "how-to-review-a-csv-file-before-analyzing-it"
     },
     {
-      "id": "G10",
+      "slug": "crear-referencias-apa-vancouver",
       "title": "How to Create APA and Vancouver References | Prisma Space",
       "h1": "How to Create Bibliographic References in APA and Vancouver",
       "description": "Organize source data and prepare a reference in common bibliographic styles with a final review.",
@@ -561,6 +654,14 @@
           "body": "Compare the result with the style guide and faculty or journal instructions."
         }
       ],
+      "primaryPageSlug": "generador-citas-apa-vancouver",
+      "toolIds": [
+        "citation-generator",
+        "citation-ids-local"
+      ],
+      "solutionSlugs": [
+        "estudiar-y-citar-fuentes"
+      ],
       "note": "The generator prepares references from the data you enter. It does not certify that metadata is correct or substitute the official style guide required.",
       "faqs": [
         [
@@ -572,10 +673,11 @@
           "Yes, when the source type and style rules permit. Do not invent a DOI or substitute data with an unverified link."
         ]
       ],
+      "sourceSlug": "crear-referencias-apa-vancouver",
       "englishSlug": "how-to-create-bibliographic-references-in-apa-and-vancouver"
     },
     {
-      "id": "G11",
+      "slug": "crear-codigo-qr",
       "title": "How to Create a QR Code Online | Prisma Space",
       "h1": "How to Create a QR Code for a Link or Text",
       "description": "Generate a QR code from a link or text, download it, and verify that it can be scanned before printing or sharing it.",
@@ -619,6 +721,15 @@
           "toolId": "qr"
         }
       ],
+      "primaryPageSlug": "generador-de-codigos-qr",
+      "toolIds": [
+        "qr",
+        "qr-scan",
+        "qr-vcard"
+      ],
+      "solutionSlugs": [
+        "preparar-imagenes-para-redes"
+      ],
       "note": "A QR code can continue to circulate even if the destination link changes. Use a stable URL and do not encode confidential information.",
       "faqs": [
         [
@@ -630,10 +741,11 @@
           "No in a static QR code. To change the destination, you would need to generate another code or use a redirect service that you control."
         ]
       ],
+      "sourceSlug": "crear-codigo-qr",
       "englishSlug": "how-to-create-a-qr-code-for-a-link-or-text"
     },
     {
-      "id": "G12",
+      "slug": "extraer-audio-de-video",
       "title": "How to Extract Audio from a Video | Prisma Space",
       "h1": "How to Extract Audio from a Video",
       "description": "Separate the audio track from a video and verify the format and playback of the exported file.",
@@ -677,6 +789,15 @@
           "toolId": "video-audio"
         }
       ],
+      "primaryPageSlug": "extraer-audio-de-video",
+      "toolIds": [
+        "video-audio",
+        "audio-trim",
+        "audio-convert"
+      ],
+      "solutionSlugs": [
+        "editar-audio-y-video"
+      ],
       "note": "Audio extraction is in beta and may depend on the format, device memory, and browser. Respect the original material's copyright and permissions.",
       "faqs": [
         [
@@ -688,10 +809,11 @@
           "Extraction and format conversion are distinct operations. Verify the output extension and use the converter if you need another format."
         ]
       ],
+      "sourceSlug": "extraer-audio-de-video",
       "englishSlug": "how-to-extract-audio-from-a-video"
     },
     {
-      "id": "G13",
+      "slug": "transcribir-audio-con-ia",
       "title": "How to Transcribe Audio to Text with AI | Prisma Space",
       "h1": "How to Transcribe Audio to Text with AI",
       "description": "Prepare a recording, request a transcription with AI when the provider is connected, and review names, numbers, and punctuation.",
@@ -731,6 +853,16 @@
           "body": "Listen to the doubtful fragments and review names, dates, numbers, and technical terms before using the result."
         }
       ],
+      "primaryPageSlug": "transcribir-audio-ia",
+      "toolIds": [
+        "ai-transcribe",
+        "video-audio",
+        "ai-voice"
+      ],
+      "solutionSlugs": [
+        "editar-audio-y-video",
+        "estudiar-y-citar-fuentes"
+      ],
       "note": "This feature is in beta and may require a BYOK (Bring Your Own Key) provider, in addition to external credits or limits. Do not upload recordings without the involved parties' authorization.",
       "faqs": [
         [
@@ -742,10 +874,11 @@
           "Depends on the provider, file size, and your configuration limits. Consult the conditions before processing long recordings."
         ]
       ],
+      "sourceSlug": "transcribir-audio-con-ia",
       "englishSlug": "how-to-transcribe-audio-to-text-with-ai"
     },
     {
-      "id": "G14",
+      "slug": "validar-estructuras-y-datos",
       "title": "How to Validate JSON Structures and Test Data | Prisma Space",
       "h1": "How to Validate JSON Structures and Test Data",
       "description": "Review a JSON structure, validate its fields with a schema, and test patterns or formats before integrating data.",
@@ -785,6 +918,16 @@
           "body": "Check for empty values, optional fields, arrays, and unexpected types before integrating the response."
         }
       ],
+      "primaryPageSlug": "validar-json-schema",
+      "toolIds": [
+        "json-schema-validate",
+        "regex-test",
+        "jwt-decode",
+        "hash-file"
+      ],
+      "solutionSlugs": [
+        "trabajar-con-codigo-y-apis"
+      ],
       "note": "Schema validation does not verify the authenticity of a response or replace backend testing. Do not paste credentials, active JWTs, or secrets into a public tool.",
       "faqs": [
         [
@@ -796,6 +939,7 @@
           "No. Decoding allows you to read its content, but the signature must be verified with the correct procedure and keys."
         ]
       ],
+      "sourceSlug": "validar-estructuras-y-datos",
       "englishSlug": "how-to-validate-json-structures-and-test-data"
     }
   ]
