@@ -28,6 +28,7 @@ export const CHAT_MODELS = {
   ],
   gemini: [
     {id:"gemini-3.8-flash",name:"Gemini 3.8 Flash",specialty:"Tareas complejas y razonamiento"},
+    {id:"gemini-3.7-flash",name:"Gemini 3.7 Flash",specialty:"Respaldo avanzado"},
     {id:"gemini-3.6-flash",name:"Gemini 3.6 Flash",specialty:"Respaldo equilibrado"},
     {id:"gemini-3.5-flash-lite",name:"Gemini 3.5 Flash-Lite",specialty:"Respaldo rápido y económico"}
   ],
