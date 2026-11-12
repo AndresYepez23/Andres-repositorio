@@ -1619,7 +1619,7 @@ async function requestPlan(userText){
   // multimodel planner without breaking the existing chat experience.
   if(!attachments.length&&isExplicitResearchRequest(userText)){
     try{
-      status('Buscando fuentes actuales con Tavily…');
+      status('Buscando fuentes actuales con Tavily; Jina queda como respaldo…');
       setProgress(.08,'Investigando en internet…');
       const research=await searchPrismaWeb(userText);
       const sources=formatResearchSources(research.results);
@@ -1652,7 +1652,7 @@ async function requestPlan(userText){
           engine:synthesis.provider||'prisma-core-research',
           model:synthesis.model||'Investigación web · Tavily'
         });
-        status('Investigación completada · '+sources.length+' fuentes consultadas.','success');
+        status('Investigación completada · '+sources.length+' fuentes · '+String(research.provider||'Tavily/Jina')+'.','success');
         return;
       }
       status('Tavily no encontró fuentes suficientes; continuaré con los motores habituales.','info');
