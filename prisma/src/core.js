@@ -1733,11 +1733,7 @@ async function interpretAttachedImageText(userText){
   status('No se encontró texto legible para interpretar.','warning');
   return;
  }
- const available=await getCentralProviderStatus();
- centralProviders=available.providers||centralProviders;
- centralFeatures=available.features||centralFeatures;
- centralModelCatalog=available.modelCatalog||centralModelCatalog;
- centralProviderUsage=available.usage||centralProviderUsage;
+ const available=await refreshCoreProviderStatus();
  if(!Object.values(centralProviders).some(Boolean)){
   addMessage('assistant','Reconocí el siguiente texto, pero ahora no tengo un motor de análisis disponible para contextualizarlo. No lo presentaré como un análisis:\n\n'+extracted.join('\n\n').slice(0,9000));
   status('Texto reconocido; análisis no disponible.','warning');
@@ -1755,13 +1751,17 @@ async function interpretAttachedImageText(userText){
   extracted.join('\n\n').slice(0,22000)
  ].filter(Boolean).join('\n\n');
  try{
+  const chat=activeChatRecord();
+  const modelRequest=conversationModelRequest(chat?.modelSelection);
   const response=await runTool('ai-assistant',[],{
-   ...credentials(),prompt,provider:'auto',reasoning:'balanced',tone:'professional',
+   ...credentials(),prompt,...modelRequest,reasoning:'balanced',tone:'professional',
    length:'long',task:'reasoning'
   },(p,message)=>{status(message||'Contextualizando el documento…');setProgress(Math.max(.08,Math.min(.96,Number(p)||.15)),message||'Analizando…');});
   const answer=String(response?.text||'').trim();
   if(!answer)throw Error('Respuesta de análisis vacía');
+  if(chat&&response.provider&&response.model)chat.modelSelection=pinConversationModel(chat.modelSelection,response,Date.now());
   addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
+  renderModelPicker();
   status('Análisis contextual de imagen completado.','success');
   attachments=[];renderAttachments();$('#core-file-input').value='';
   recordCompletedCoreTask({fileTask:true});
