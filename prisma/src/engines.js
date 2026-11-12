@@ -802,7 +802,8 @@ function orderModelsForTask(preferred,task,baseOrder,available,health={}){
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
- const tones={professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
+ const responseLanguage=typeof window!=='undefined'&&window.prismaI18n?.language==='en'?'English':'Spanish';
+ const tones=responseLanguage==='en'?{professional:'Use a professional and clear tone.',friendly:'Use a warm, natural, friendly tone.',creative:'Use a creative, original and expressive approach.',academic:'Use an academic, precise and well-structured tone.',concise:'Be direct and concise, without unnecessary explanations.'}:{professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const tier=p.reasoning||'balanced';
  const task=p.task||classifyTextTask(prompt,tier);
  const songInstruction=task==='songwriting'
@@ -813,7 +814,7 @@ async function generateText(p,cb){
    'Nunca afirmes que Prisma Core es GPT-4, GPT-6, ChatGPT, OpenAI, Gemini o Google. Eres el asistente de Prisma Space.',
    'No inventes qué motor concreto respondió: la aplicación muestra esa información de forma independiente.',
    'Mantén el hilo real de los mensajes, especialmente ante preguntas cortas como «eso», «aquí» y «¿y ahora?».',
-   'Responde en español, salvo petición contraria. Evita repetir saludos cuando la conversación continúa.',
+   'Respond in '+responseLanguage+', unless the user explicitly requests another language. Keep the conversation language consistent and avoid repeating greetings when the conversation continues.',
    'Calidad universal: responde primero a lo que se preguntó, con información concreta y útil. Ajusta la profundidad a la complejidad; evita relleno, introducciones largas, frases repetidas y listas artificiales.',
    'Formato universal: utiliza Markdown estándar cuando mejore la lectura. Usa títulos breves solo si hay secciones, listas para enumerar, pasos numerados para instrucciones y bloques de código cercados para código. Separa los párrafos y evita muros de texto.',
    'No escribas tablas ASCII ni filas de barras verticales y guiones como texto. Si una tabla facilita una comparación real, usa una tabla Markdown válida con encabezado y fila separadora; en los demás casos prefiere listas claras. No conviertas una respuesta sencilla en una tabla.',
