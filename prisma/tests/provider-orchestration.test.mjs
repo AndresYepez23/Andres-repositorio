@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rankProviders, adaptiveProviderDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
+import { rankProviders, adaptiveProviderDeadline, sensenovaRequestDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialHealthSnapshot, getCredentialMetricsSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
 import { getProviderDailyCapacity, getProviderMinuteCapacity } from '../functions/_lib/limits.js';
@@ -84,6 +84,15 @@ assert.equal(adaptiveProviderDeadline({averageMs:5000,baseMs:21000,minMs:12000})
   'Observed latency informs the per-engine deadline');
 assert.equal(adaptiveProviderDeadline({averageMs:60000,baseMs:21000,minMs:12000}),21000,
   'A deadline never exceeds the task safety ceiling');
+
+assert.equal(sensenovaRequestDeadline({remainingMs:65000,automatic:true,task:'general',hasOpenRouterBackup:true}),16000,
+  'SenseNova reasoning preview gets a useful 16s window instead of a 5-10s fairness slice');
+assert.equal(sensenovaRequestDeadline({remainingMs:65000,automatic:true,task:'reasoning',hasOpenRouterBackup:true}),22000,
+  'Reasoning tasks can use a 22s window without consuming OpenRouter reserve');
+assert.equal(sensenovaRequestDeadline({remainingMs:25000,automatic:true,hasOpenRouterBackup:true}),null,
+  'SenseNova is skipped when no viable window remains instead of starting a doomed costly call');
+assert.equal(sensenovaRequestDeadline({remainingMs:65000,automatic:false}),45000,
+  'Explicit SenseNova selection can run long enough for preview reasoning');
 
 const capacityEnv={
   PRISMA_SENSENOVA_DAILY_LIMIT:'100',
