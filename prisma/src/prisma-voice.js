@@ -3,6 +3,8 @@ const $=selector=>document.querySelector(selector);
 let recorder=null,recognition=null,mediaStream=null,active=false,mode='dictate',conversationOpen=false;
 let waitingForResponse=false,readableResponse='',recordTimer=0,generation=0,remoteFailed=false;
 const speechEngine=()=>window.SpeechRecognition||window.webkitSpeechRecognition;
+const speechLanguage=()=>window.prismaI18n?.language==='en'?'en':'es';
+const speechLocale=()=>speechLanguage()==='en'?'en-US':'es-ES';
 const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
 function feedback(value){
  const text=String(value||'');
@@ -57,8 +59,8 @@ function speak(text){
  try{
   window.speechSynthesis.cancel();
   const utterance=new SpeechSynthesisUtterance(readableResponse);
-  utterance.lang='es-ES';utterance.rate=1;utterance.pitch=1;
-  utterance.voice=window.speechSynthesis.getVoices().find(v=>/^es(?:-|_)/i.test(v.lang))||null;
+  utterance.lang=speechLocale();utterance.rate=1;utterance.pitch=1;
+  utterance.voice=window.speechSynthesis.getVoices().find(v=>new RegExp('^'+speechLanguage()+'(?:-|_)','i').test(v.lang))||null;
   utterance.onstart=()=>feedback('Prisma está respondiendo en voz alta…');
   utterance.onend=()=>feedback('Tu turno. Pulsa Hablar para continuar.');
   utterance.onerror=()=>feedback('Pulsa «Escuchar respuesta» para permitir la reproducción en este dispositivo.');
@@ -93,7 +95,7 @@ async function captureWithRecorder(token){
      if(token!==generation)return;
      const body=new FormData();
      body.append('file',new File([blob],'prisma-voz.'+ext,{type}));
-     body.append('provider',option.provider);body.append('model',option.model);body.append('language','es');
+     body.append('provider',option.provider);body.append('model',option.model);body.append('language',speechLanguage());
      try{
       const response=await fetch('/api/ai/transcribe',{method:'POST',body,signal:AbortSignal.timeout(45000)});
       const result=await response.json().catch(()=>({}));
@@ -123,7 +125,7 @@ function captureWithRecognition(token,Recognizer){
   const session=new Recognizer();
   recognition=session;
   let final='',failure='';
-  session.lang='es-ES';session.continuous=false;session.interimResults=true;session.maxAlternatives=1;
+  session.lang=speechLocale();session.continuous=false;session.interimResults=true;session.maxAlternatives=1;
   session.onstart=()=>{setActive(true);feedback('Escuchando…')};
   session.onresult=event=>{
    let partial='';
