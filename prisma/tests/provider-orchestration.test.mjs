@@ -193,7 +193,8 @@ await assert.rejects(
 const fs=await import('node:fs');
 const statusSource=fs.readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
 assert.match(statusSource,/getCredentialHealthSnapshot/,'Provider status checks every credential pool');
-assert.doesNotMatch(statusSource,/getCredentialMetricsSnapshot|credentialUsage/,'Public provider status does not expose per-key balance or usage telemetry');
+assert.match(statusSource,/getCredentialMetricsSnapshot/,'Provider status uses private per-key telemetry to calculate aggregate health');
+assert.doesNotMatch(statusSource,/credentialUsage|slotsWithMetrics/,'Public provider status never serializes per-key balance or usage telemetry');
 assert.match(statusSource,/getProviderDailyCapacity/,'Provider status reports capacity scaled across independent account pools');
 assert.match(statusSource,/providerHealth\.cloudflare/,'Cloudflare Workers AI has a visible shared health state');
 const chatSource=fs.readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
