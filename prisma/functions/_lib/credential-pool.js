@@ -227,7 +227,7 @@ export async function recordCredentialMetrics(env, provider, slot, response, sup
       if (totals.output) writes.push(writeCredentialMetric(env, provider, slot, "daily-output-tokens", day, totals.output, "increment"));
       if (totals.total) writes.push(writeCredentialMetric(env, provider, slot, "daily-tokens", day, totals.total, "increment"));
       const costMicro = Number(payload?.usage?.cost_microdollars ?? payload?.cost_microdollars);
-      const costUsd = Number(payload?.usage?.cost_usd ?? payload?.cost_usd);
+      const costUsd = Number(payload?.usage?.cost_usd ?? payload?.cost_usd ?? payload?.usage?.cost ?? payload?.cost);
       const cost = Number.isFinite(costMicro) && costMicro >= 0
         ? Math.floor(costMicro)
         : Number.isFinite(costUsd) && costUsd >= 0 ? Math.floor(costUsd * 1_000_000) : 0;
@@ -260,6 +260,8 @@ export async function recordCredentialMetrics(env, provider, slot, response, sup
     if (Number.isFinite(balanceLimit) && balanceLimit >= 0) {
       writes.push(writeCredentialMetric(env, provider, slot, "balance-limit-microusd", 0, Math.floor(balanceLimit * 1_000_000)));
     }
+    const resetAt = typeof keyData?.limit_reset === "string" ? Math.floor(Date.parse(keyData.limit_reset) / 1000) : 0;
+    if (Number.isFinite(resetAt) && resetAt > 0) writes.push(writeCredentialMetric(env, provider, slot, "balance-reset", 0, resetAt));
   }
   await Promise.all(writes);
 }
@@ -313,6 +315,7 @@ export async function getCredentialMetricsSnapshot(env, providers = Object.keys(
     else if (window === 0 && metric === "last-status") item.lastStatus = value;
     else if (window === 0 && metric === "balance-microusd") item.balanceRemainingUsd = value / 1_000_000;
     else if (window === 0 && metric === "balance-limit-microusd") item.balanceLimitUsd = value / 1_000_000;
+    else if (window === 0 && metric === "balance-reset") item.balanceResetAt = value;
     else if (window > nowMinute && ["remaining-requests", "limit-requests", "remaining-tokens", "limit-tokens"].includes(metric)) {
       const key = provider + ":" + slotNumber + ":" + metric;
       const previous = resetRows.get(key);
@@ -415,15 +418,15 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     const error = new Error("No existe una credencial configurada para este proveedor.");
     error.code = "MISSING_CREDENTIAL"; error.status = 503; throw error;
   }
-  // For providers whose keys belong to separate accounts, a provider-wide
-  // cooldown from one account must not suppress the other independent accounts.
-  if (options.sweepQuotaSlots === true) {
-    // Expire a legacy provider-wide hold so independent account credentials can
-    // be evaluated individually; subsequent failures are held per credential.
-    await setProviderHold(env, provider, "credential_rotation", "Using independent account credential checks.", 0);
+  // A per-account quota/auth hold must not suppress independent accounts,
+  // but a provider-wide network/5xx circuit breaker must remain in force.
+  let providerHold = await getProviderHold(env, provider);
+  if (options.sweepQuotaSlots === true && providerHold &&
+      ["quota_exhausted","rate_limited","auth_error","credential_rotation"].includes(providerHold.state)) {
+    await setProviderHold(env, provider, "credential_rotation", "Checking independent account credentials.", 0);
+    providerHold = null;
   }
-  const providerHold = options.ignoreProviderHold === true || options.sweepQuotaSlots === true
-    ? null : await getProviderHold(env, provider);
+  if (options.ignoreProviderHold === true) providerHold = null;
   if (providerHold) {
     const error = new Error(providerHold.reason || "El proveedor está temporalmente en pausa.");
     error.code = "PROVIDER_COOLDOWN";
@@ -456,6 +459,11 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     const healthKey = await credentialHealthKey(provider, slot);
     const slotMetric = slotMetrics[slot.number] || {};
     const nowSeconds = Math.floor(Date.now() / 1000);
+    if (Number(slotMetric.balanceRemainingUsd) <= 0 && Number(slotMetric.balanceLimitUsd) > 0) {
+      const resetAt = Number(slotMetric.balanceResetAt) > nowSeconds ? Number(slotMetric.balanceResetAt) : nowSeconds + 21600;
+      if (!earliestPausedUntil || resetAt < earliestPausedUntil) earliestPausedUntil = resetAt;
+      continue;
+    }
     const rateResetActive = Number(slotMetric.requestsResetAt || 0) > nowSeconds || Number(slotMetric.tokensResetAt || 0) > nowSeconds;
     if (rateResetActive && (
       (Number(slotMetric.remainingRequests) === 0 && Number(slotMetric.requestsResetAt || 0) > nowSeconds) ||
