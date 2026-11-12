@@ -1,4 +1,5 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
+import { tavilyKeys } from "../research/search.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
@@ -175,8 +176,8 @@ export async function onRequestGet({ env }) {
     imageUsage,
     modelCatalog,
     research: {
-      tavily: { configured: Array.from({length:7},(_,index)=>String(env["TAVILY_API_KEY"+(index===0?"":"_"+(index+1))]||"").trim()).filter(Boolean).length > 0,
-        configuredKeys: Array.from({length:7},(_,index)=>String(env["TAVILY_API_KEY"+(index===0?"":"_"+(index+1))]||"").trim()).filter(Boolean).length },
+      tavily: { configured: tavilyKeys(env).length > 0,
+        configuredKeys: tavilyKeys(env).length },
       jina: { configured: Boolean(String(env.JINA_API_KEY||"").trim()) }
     },
     features: {
