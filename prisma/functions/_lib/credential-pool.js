@@ -179,7 +179,10 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     const error = new Error("No existe una credencial configurada para este proveedor.");
     error.code = "MISSING_CREDENTIAL"; error.status = 503; throw error;
   }
-  const providerHold = options.ignoreProviderHold === true ? null : await getProviderHold(env, provider);
+  // For providers whose keys belong to separate accounts, a provider-wide
+  // cooldown from one account must not suppress the other independent accounts.
+  const providerHold = options.ignoreProviderHold === true || options.sweepQuotaSlots === true
+    ? null : await getProviderHold(env, provider);
   if (providerHold) {
     const error = new Error(providerHold.reason || "El proveedor está temporalmente en pausa.");
     error.code = "PROVIDER_COOLDOWN";
@@ -190,7 +193,8 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   // Keys are alternatives only for key-specific authentication failures.
   // Provider-wide limits/outages must not duplicate paid or quota-consuming calls.
   const sweepAuthSlots = options.sweepAuthSlots === true;
-  const maxAttempts = Math.min(slots.length,sweepAuthSlots ? maxCredentialSlots(provider) : Math.min(2,Math.max(1,Number(options.maxAttempts)||2)));
+  const sweepQuotaSlots = options.sweepQuotaSlots === true;
+  const maxAttempts = Math.min(slots.length,(sweepAuthSlots || sweepQuotaSlots) ? maxCredentialSlots(provider) : Math.min(2,Math.max(1,Number(options.maxAttempts)||2)));
   const startIndex = Number.isInteger(options.startIndex) ? ((options.startIndex % slots.length) + slots.length) % slots.length : Math.floor(Math.random() * slots.length);
   const retryable = new Set(options.retryStatuses || [401]);
   let lastResponse, attempted = 0, earliestPausedUntil = 0;
@@ -215,10 +219,18 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     lastResponse=response;
     if(response.ok)return response;
     if(response.status===402){
+      if (sweepQuotaSlots) {
+        await setProviderHold(env,healthKey,"quota_exhausted","Esta cuenta de "+provider+" no tiene saldo o crédito disponible; Prisma probará la siguiente cuenta independiente.",21600);
+        continue;
+      }
       await setProviderHold(env,provider,"quota_exhausted","El proveedor agotó el saldo o crédito disponible; Prisma pausó el conjunto de credenciales sin probar otras cuentas.",21600);
       return response;
     }
     if(response.status===429){
+      if (sweepQuotaSlots) {
+        await setProviderHold(env,healthKey,"rate_limited","Esta cuenta de "+provider+" alcanzó un límite temporal; Prisma probará la siguiente cuenta independiente.",retryHoldSeconds(429,response.headers));
+        continue;
+      }
       await setProviderHold(env,provider,"rate_limited","El proveedor alcanzó un límite de solicitudes; Prisma pausó el proveedor y utilizará otro motor.",retryHoldSeconds(429,response.headers));
       return response;
     }
