@@ -34,9 +34,9 @@ export const CREDENTIAL_POOL_VARIABLES = Object.freeze({
 });
 
 export const CREDENTIAL_SLOT_LIMITS = Object.freeze(
-  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [provider, provider === "requesty" ? 3 : 6]))
+  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [provider, provider === "requesty" ? 3 : provider === "gemini" ? 7 : 6]))
 );
-export const MAX_CREDENTIAL_SLOTS = 6;
+export const MAX_CREDENTIAL_SLOTS = 7;
 
 export function maxCredentialSlots(provider) {
   return CREDENTIAL_SLOT_LIMITS[provider] || 0;
