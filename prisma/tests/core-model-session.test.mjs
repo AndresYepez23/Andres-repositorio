@@ -88,6 +88,25 @@ test('follow-up questions retain an older image exchange beyond the recent messa
   assert.ok(context.length<=13);
 });
 
+test('short follow-ups retain the original task and answer after many intervening turns',()=>{
+  const history=[
+    {role:'user',content:'Compara tres alternativas de financiación y recomiéndame una.'},
+    {role:'assistant',content:'Alternativa 1: menor cuota. Alternativa 2: mejor plazo y coste total. Alternativa 3: mayor flexibilidad. Recomiendo la alternativa 2 por su equilibrio.'},
+    ...Array.from({length:7},(_,i)=>[
+      {role:'user',content:'Y también explícame el detalle número '+(i+1)+' de esa comparación.'},
+      {role:'assistant',content:'Detalle adicional '+(i+1)+' relacionado con la comparación original.'}
+    ]).flat()
+  ];
+  const query='¿Y la segunda opción?';
+  assert.equal(isCoreFollowUp(query),true);
+  const options=chooseCoreContextOptions('conversation',query);
+  const context=buildConversationContext(history,query,options);
+  const combined=context.map(item=>item.content).join('\\n');
+  assert.match(combined,/Compara tres alternativas de financiación/);
+  assert.match(combined,/mejor plazo y coste total/);
+  assert.ok(context.length<=15);
+});
+
 test('explicit new tasks start with a clean context instead of importing an old photo',()=>{
   const history=[
     {role:'user',content:'Analiza esta fotografía.',files:['foto-anterior.jpg']},
