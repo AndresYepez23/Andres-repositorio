@@ -3,23 +3,40 @@ import translations from './locales/en.js';
 const STORAGE_KEY = 'prisma-language';
 const root = document.documentElement;
 const defaultMeta = document.querySelector('meta[name="prisma-default-language"]')?.content;
-const savedLanguage = (() => { try { const value = localStorage.getItem(STORAGE_KEY); return value === 'en' || value === 'es' ? value : ''; } catch { return ''; } })();
+const savedLanguage = (() => {
+  try {
+    const value = localStorage.getItem(STORAGE_KEY);
+    return value === 'en' || value === 'es' ? value : '';
+  } catch { return ''; }
+})();
 const browserLanguages = Array.isArray(navigator.languages) && navigator.languages.length
   ? navigator.languages : [navigator.language || 'es'];
 const browserSpanish = browserLanguages.some(value => /^es(?:-|$)/i.test(value));
-const initialLanguage = savedLanguage || (defaultMeta === 'en' ? 'en' : defaultMeta === 'es' ? 'es' : browserSpanish ? 'es' : 'en');
+const routeLanguage = /^\/en(?:\/|$)/i.test(location.pathname) ? 'en' : '';
+const initialLanguage = routeLanguage || savedLanguage ||
+  (defaultMeta === 'en' ? 'en' : defaultMeta === 'es' ? 'es' : browserSpanish ? 'es' : 'en');
 
 const manualTranslations = {
-  'Prisma Space — Crea, convierte y experimenta': 'Prisma Space — Create, convert and explore',
+  'Prisma Space — Crea, convierte y experimenta': 'Prisma Space — Create, Convert, and Experiment',
   'Prisma Space reúne herramientas digitales, procesamiento local e inteligencia artificial para crear, convertir, optimizar y experimentar en un solo lugar.': 'Prisma Space brings together digital tools, local processing, and artificial intelligence to create, convert, optimize, and explore in one place.',
   'Crea, convierte, optimiza y experimenta con IA en un solo lugar.': 'Create, convert, optimize, and explore with AI in one place.',
   'Restaurando tu espacio de trabajo…': 'Restoring your workspace…',
   'TÚ': 'YOU',
   'PRISMA CORE': 'PRISMA CORE',
   'CONFIGURACIÓN': 'SETTINGS',
-  'Ecosistema digital': 'Digital ecosystem'
+  'Ecosistema digital': 'Digital ecosystem',
+  'Gemini, Groq, Cloudflare y Pollinations central pueden estar disponibles para todos sin cuenta personal, según saldo y cuotas. Pollinations Connect es una conexión individual opcional; su estado no indica si el motor compartido está disponible.': 'Gemini, Groq, Cloudflare, and Pollinations Central may be available to everyone without a personal account, subject to balance and usage limits. Pollinations Connect is an optional personal connection; its status does not indicate whether the shared engine is available.',
+  'Las claves maestras se guardan como secretos en Cloudflare. Los visitantes usan los motores de Prisma sin introducir sus propias credenciales.': 'Master keys are stored as Cloudflare secrets. Visitors can use Prisma engines without entering their own credentials.',
+  'Consumo de IA de esta sesión: sin solicitudes registradas.': 'AI usage for this session: no requests recorded.'
 };
 const dictionary = { ...translations, ...manualTranslations };
+const phraseTranslations = Object.entries(dictionary)
+  .filter(([source]) => source.length >= 7 && /\s/.test(source) &&
+    !/[<>\\{};]/.test(source) && !/[&|]{2}|=>|\/\\|\\b/.test(source) &&
+    !/^\s*[,.:;)\]]/.test(source) &&
+    !/\b(?:return|const|function|document|window|localStorage|undefined|null)\b/.test(source))
+  .sort((a,b) => b[0].length - a[0].length);
+
 const originalText = new WeakMap();
 const lastText = new WeakMap();
 const originalAttributes = new WeakMap();
@@ -29,7 +46,7 @@ let applying = false;
 
 const SKIP_TEXT = [
   'script', 'style', 'code', 'pre', 'textarea', 'input', 'svg',
-  '[contenteditable="true"]', '[data-no-translate]',
+  '[contenteditable="true"]', '[data-no-translate]', '[data-user-content]',
   '.core-message-body', '.core-message-files', '.core-message-engine',
   '.core-message-results', '.tool-output', '#tool-output',
   '.workflow-result', '.artifact-content', '.artifact-preview',
@@ -40,7 +57,7 @@ const SKIP_TEXT = [
 ].join(',');
 
 const SKIP_ATTRIBUTES = [
-  'script', 'style', 'code', 'pre', '[data-no-translate]',
+  'script', 'style', 'code', 'pre', '[data-no-translate]', '[data-user-content]',
   '.core-message-body', '.tool-output', '#tool-output',
   '.conversation-title', '.conversation-name', '.conversation-item-title',
   '.chat-title', '.history-item-title', '.message-content',
@@ -56,13 +73,13 @@ function preserveWhitespace(source, translated) {
 function translateValue(source) {
   const value = String(source ?? '');
   const trimmed = value.trim();
-  if (!trimmed) return value;
+  if (!trimmed || language !== 'en') return value;
   if (dictionary[trimmed]) return preserveWhitespace(value, dictionary[trimmed]);
 
   let match = trimmed.match(/^(\d+)\s+(herramientas?)$/i);
   if (match) return preserveWhitespace(value, match[1] + ' tools');
   match = trimmed.match(/^(\d+)\s+(archivos?)$/i);
-  if (match) return preserveWhitespace(value, match[1] + (match[2].toLowerCase().startsWith('archivo') ? ' files' : ' files'));
+  if (match) return preserveWhitespace(value, match[1] + ' files');
   match = trimmed.match(/^(\d+)\s+(páginas?)$/i);
   if (match) return preserveWhitespace(value, match[1] + ' pages');
   match = trimmed.match(/^(\d+)\s+(modelos?)\s+disponibles$/i);
@@ -76,6 +93,10 @@ function translateValue(source) {
   match = trimmed.match(/^(\d+)\s+palabras?$/i);
   if (match) return preserveWhitespace(value, match[1] + ' words');
 
+  let translated = trimmed;
+  for (const [original, english] of phraseTranslations) {
+    if (translated.includes(original)) translated = translated.split(original).join(english);
+  }
   const prefixes = [
     ['¡Bienvenido a Prisma,', 'Welcome to Prisma,'],
     ['Conectando con', 'Connecting to'],
@@ -88,9 +109,9 @@ function translateValue(source) {
     ['Se cambió a otro motor conectado después de un fallo.', 'Switched to another connected engine after a failure.']
   ];
   for (const [prefix, replacement] of prefixes) {
-    if (trimmed.startsWith(prefix)) return preserveWhitespace(value, replacement + trimmed.slice(prefix.length));
+    if (translated.startsWith(prefix)) translated = replacement + translated.slice(prefix.length);
   }
-  return value;
+  return preserveWhitespace(value, translated);
 }
 
 function isSkippedText(node) {
@@ -146,6 +167,16 @@ function translateAttribute(element, attribute) {
   }
 }
 
+function updateLanguageButton() {
+  const button = document.getElementById('prisma-language-toggle');
+  if (!button) return;
+  button.textContent = language === 'en' ? 'ES' : 'EN';
+  const label = language === 'en' ? 'Switch to Spanish' : 'Switch to English';
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  button.setAttribute('aria-pressed', language === 'en' ? 'true' : 'false');
+}
+
 function applyAll() {
   root.lang = language;
   root.dataset.language = language;
@@ -158,24 +189,15 @@ function applyAll() {
   updateLanguageButton();
 }
 
-function updateLanguageButton() {
-  const button = document.getElementById('prisma-language-toggle');
-  if (!button) return;
-  button.textContent = language === 'en' ? 'ES' : 'EN';
-  const label = language === 'en' ? 'Switch to Spanish' : 'Switch to English';
-  button.setAttribute('aria-label', label);
-  button.title = label;
-  button.setAttribute('aria-pressed', language === 'en' ? 'true' : 'false');
-}
-
 function installLanguageButton() {
   if (document.getElementById('prisma-language-toggle')) return;
-  const host = document.querySelector('.topbar-actions') || document.querySelector('.topbar') || document.querySelector('.app-topbar');
+  const host = document.querySelector('.topbar-actions') || document.querySelector('.topbar');
   if (!host) return;
   const button = document.createElement('button');
   button.type = 'button';
   button.id = 'prisma-language-toggle';
   button.className = 'icon-button prisma-language-toggle';
+  button.setAttribute('data-no-translate','');
   button.addEventListener('click', () => {
     setLanguage(language === 'en' ? 'es' : 'en', { persist: true });
   });
@@ -188,6 +210,10 @@ function setLanguage(next, { persist = true } = {}) {
   language = next;
   if (persist) {
     try { localStorage.setItem(STORAGE_KEY, next); } catch {}
+  }
+  if (location.pathname === '/' || location.pathname === '/en/') {
+    const target = next === 'en' ? '/en/' : '/';
+    if (location.pathname !== target) history.replaceState(history.state, '', target + location.search + location.hash);
   }
   applyAll();
   document.dispatchEvent(new CustomEvent('prisma:language-change', { detail: { language } }));
