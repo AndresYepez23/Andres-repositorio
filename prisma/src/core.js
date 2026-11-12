@@ -603,12 +603,6 @@ function setCoreCreativeMode(mode){
  $('#core-input')?.focus();
  status(chat.creativeMode==='image'?'Modo imagen activado: este campo generará una imagen real, no una respuesta de texto.':'Modo chat activado.','success');
 }
-function saveImageSelection(){
- const chat=activeChatRecord();if(!chat)return;
- chat.imageSelection={provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||''};
- chat.updated=Date.now();persistChatHistory();
-}
-
 async function persistGeneratedResults(results){
  let allSaved=true;
  for(const entry of results||[]){
