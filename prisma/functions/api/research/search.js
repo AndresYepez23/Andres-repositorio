@@ -14,9 +14,17 @@ function json(data, status = 200) {
 
 async function readPayload(response) {
   const type = String(response.headers.get("content-type") || "").toLowerCase();
-  if (type.includes("json")) return response.json().catch(() => ({}));
+  if (type.includes("json")) {
+    const parsed = await response.json().catch(() => ({}));
+    return parsed && typeof parsed === "object" ? parsed : {};
+  }
   const raw = await response.text().catch(() => "");
-  try { return JSON.parse(raw); } catch { return { text: raw }; }
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : { text: raw };
+  } catch {
+    return { text: raw };
+  }
 }
 
 function providerMessage(provider, status, error) {
@@ -121,18 +129,22 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "La solicitud no contiene JSON válido." }, 400);
   }
 
-  const query = cleanResearchQuery(payload.query);
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return json({ error: "La solicitud debe contener una consulta de texto." }, 400);
+  }
+  const query = cleanResearchQuery(typeof payload.query === "string" ? payload.query : "");
   if (query.length < 4 || query.length > 1000) {
     return json({ error: "La consulta debe contener entre 4 y 1.000 caracteres." }, 400);
   }
 
   const options = inferResearchSearchOptions(query);
   const tavily = await searchTavily(env, query, options);
+  const tavilyUnique = mergeResearchResults([tavily.results], 10);
   const jinaConfigured = getCredentialSlots(env, "jina").length;
-  const jina = tavily.results.length < 4 && jinaConfigured
+  const jina = tavilyUnique.length < 4 && jinaConfigured
     ? await searchJina(env, query, options)
     : { configured: jinaConfigured, attempted: false, ok: false, results: [], error: null };
-  const results = mergeResearchResults([tavily.results, jina.results], 10);
+  const results = mergeResearchResults([tavilyUnique, jina.results], 10);
   const providers = [];
   if (tavily.results.length) providers.push("tavily");
   if (jina.results.length) providers.push("jina");
