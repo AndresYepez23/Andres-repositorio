@@ -1462,19 +1462,19 @@ async function handleWebsiteConversation(text){
  chat.websiteBrief=null;persistChatHistory();
  try{
   status('Preparando una página web en un archivo descargable…');
-  const central=await getCentralProviderStatus();
-  centralProviders=central.providers||centralProviders;
-  centralFeatures=central.features||centralFeatures;
-  centralModelCatalog=central.modelCatalog||centralModelCatalog;
-  centralProviderUsage=central.usage||centralProviderUsage;
+  await refreshCoreProviderStatus();
   if(!Object.values(centralProviders).some(Boolean))
    throw Error('No hay motores de texto compartidos disponibles. El diseño puede retomarse cuando se recupere la cuota.');
+  const chat=activeChatRecord();
+  const modelRequest=conversationModelRequest(chat?.modelSelection);
   const result=await runTool('ai-webpage',[],{
-   ...credentials(),prompt:route.description,provider:'auto',reasoning:'smart',length:'long'
+   ...credentials(),prompt:route.description,...modelRequest,reasoning:'smart',length:'long'
   },(p,msg)=>{status(msg||'Generando el archivo HTML…');
    setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Diseñando tu página…');});
   if(!result?.blob||!String(result.blob.type||'').startsWith('text/html'))
    throw Error('No se recibió un archivo HTML verificable.');
+  if(chat&&result.provider&&result.model)chat.modelSelection=pinConversationModel(chat.modelSelection,result,Date.now());
+  renderModelPicker();
   addMessage('assistant','Preparé una primera versión HTML de tu página web. Puedes previsualizarla y descargar el HTML. No está publicada en Internet: para ponerla en un dominio se requiere un paso posterior.',{
    engine:result.provider,model:result.model,
    fallbackFrom:result.fallbackFrom,fallbackReason:result.fallbackReason,
