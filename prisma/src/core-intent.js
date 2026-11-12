@@ -40,7 +40,7 @@ export function routeWebsiteRequest(text,pending=null,hasAttachments=false,now=D
    return null;
   if(!CREATE.test(q)&&!/^una (?:pagina|web|landing)/.test(q))return null;
   const detail=siteDetail(q);
-  if(!detail)return {type:'ask',message:WEBSITE_FOLLOWUP};
+  if(!detail)return {type:'ask',message:typeof window!=='undefined'&&window.prismaI18n?.language==='en'?'Yes. I can prepare a responsive website for mobile and desktop and give you an HTML file to download and test. What kind of website do you need?':WEBSITE_FOLLOWUP};
   // "¿Puedes hacer una página web para...?" contains a real brief; build it.
   return {type:'build',description:String(text).trim()};
  }
