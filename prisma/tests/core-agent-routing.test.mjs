@@ -202,6 +202,8 @@ assert.match(coreSource,/conversationModelRequest\(chat\?\.modelSelection\)/,'Th
 const imageInterpretationSource=coreSource.slice(coreSource.indexOf('async function interpretAttachedImageText'),coreSource.indexOf('async function requestPlan'));
 assert.match(imageInterpretationSource,/conversationModelRequest\(chat\?\.modelSelection\)/,'Image interpretation must honor the current chat model preference');
 assert.match(coreSource,/pinConversationModel\(chat\.modelSelection,response/,'Successful responses and automatic fallbacks must pin the actual model to the chat');
+assert.match(coreSource,/modelDrivenTextTools\.has\(tool\.id\)/,'User-facing text generation tools must use the selected conversation model');
+assert.match(coreSource,/prompt:plannerPrompt,provider:'auto'/,'Core's internal tool planner must remain independently automatic');
 assert.match(modelSessionSource,/MODEL_SESSION_IDLE_MS = 30 \* 60 \* 1000/,'Automatic selection must be reconsidered after 30 minutes of inactivity');
 assert.match(engineCode,/localStorage/,'Provider performance and cooldown memory must survive page reloads without storing prompts');
 assert.match(chatHtmlSource,/id="core-file-button"[\s\S]*?id="core-input"/,'Attachment control must be inside the composer at the left of the input');
