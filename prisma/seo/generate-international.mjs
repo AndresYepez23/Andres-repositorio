@@ -73,7 +73,7 @@ function header(esUrl) {
   return [
     '<header class="seo-header"><div class="seo-header-inner">',
     '<a class="seo-brand" href="/en/" aria-label="Back to Prisma Space"><img src="/assets/prisma-mark.svg" alt="" width="36" height="36"><span><strong>Prisma Space</strong><small>AI WORKSPACE</small></span></a>',
-    '<nav class="seo-nav" aria-label="Main navigation"><a href="/en/categories/">Categories</a><a href="/en/guides/">Guides</a><a href="/en/solutions/">Solutions</a><a href="/en/tools/">Tools</a><a href="/en/">Prisma Core</a><button id="seo-theme" type="button" aria-label="Change theme">◐ <span>Theme</span></button><a class="seo-language-switch" href="' + esc(esUrl) + '" lang="es">Español</a></nav>',
+    '<nav class="seo-nav" aria-label="Main navigation"><a href="/en/categories/">Categories</a><a href="/en/guides/">Guides</a><a href="/en/solutions/">Solutions</a><a href="/en/tools/">Tools</a><a href="/en/">Prisma Core</a><button id="seo-theme" type="button" aria-label="Change theme">◐ <span>Theme</span></button><a class="seo-language-switch" href="' + esc(esUrl) + '" lang="es">Switch to Spanish</a></nav>',
     '</div></header>'
   ].join('\n');
 }
@@ -249,13 +249,9 @@ function hubIndex(kind,title,description,url,items,prefix,esUrl) {
 function injectAlternates(html,esUrl,enUrl) {
   if (!html.includes('hreflang="en"')) html=html.replace('</head>',alternateTags(esUrl,enUrl)+'\n</head>');
   if (html.includes('class="seo-nav"') && !html.includes('seo-language-switch')) {
-    html=html.replace(/(<nav class="seo-nav"[^>]*>)([\s\S]*?)(<\/nav>)/, '$1$2<a class="seo-language-switch" href="'+enUrl+'" lang="en">English</a>$3');
+    html=html.replace(/(<nav class="seo-nav"[^>]*>)([\s\S]*?)(<\/nav>)/, '$1$2<a class="seo-language-switch" href="'+enUrl+'" lang="en">Cambiar a inglés</a>$3');
   }
   return html;
-}
-function injectSpanishPrivacyLink(html) {
-  if (html.includes('href="/en/privacy.html"')) return html;
-  return html.replace(/(<a class="back"[^>]*>[\s\S]*?<\/a>)/, '$1 <a class="back language-link" href="/en/privacy.html">English</a>');
 }
 function appEnglishHtml(html) {
   html=html.replace('<html lang="es"','<html lang="en"')
@@ -383,7 +379,6 @@ export async function generateInternationalPages(output) {
     const esFile=localFile(esUrl,output);
     let html=await readFile(esFile,'utf8');
     html=injectAlternates(html,esUrl,enUrl);
-    if(esUrl===BASE+'/privacy.html') html=injectSpanishPrivacyLink(html);
     await writeFile(esFile,html,'utf8');
   }
   const xhtml='xmlns:xhtml="http://www.w3.org/1999/xhtml"';
