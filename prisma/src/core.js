@@ -69,6 +69,7 @@ export async function getPrismaCoreExecutionContext(){
     centralProviders=status.providers||centralProviders;
     centralFeatures=status.features||centralFeatures;
     centralModelCatalog=status.modelCatalog||centralModelCatalog;
+    centralProviderUsage=status.usage||centralProviderUsage;
   }catch(error){
     console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);
   }
@@ -81,6 +82,7 @@ let cancelRequested = false;
 let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false };
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
+let centralProviderUsage = {};
 let userPinnedToBottom = true;
 let userScrollRevision = 0;
 let localBrainEnabled = false;
@@ -102,7 +104,8 @@ function credentials(){
     groqKey:'',
     centralProviders,
     centralFeatures,
-    centralModelCatalog
+    centralModelCatalog,
+    centralProviderUsage
   };
 }
 function escapeHtml(value){
@@ -1257,6 +1260,7 @@ async function handleWebsiteConversation(text){
   centralProviders=central.providers||centralProviders;
   centralFeatures=central.features||centralFeatures;
   centralModelCatalog=central.modelCatalog||centralModelCatalog;
+  centralProviderUsage=central.usage||centralProviderUsage;
   if(!Object.values(centralProviders).some(Boolean))
    throw Error('No hay motores de texto compartidos disponibles. El diseño puede retomarse cuando se recupere la cuota.');
   const result=await runTool('ai-webpage',[],{
@@ -1316,6 +1320,8 @@ async function handleImageCreationRequest(text){
   centralProviders=available.providers||centralProviders;
   centralFeatures=available.features||centralFeatures;
   centralModelCatalog=available.modelCatalog||centralModelCatalog;
+ centralProviderUsage=available.usage||centralProviderUsage;
+  centralProviderUsage=available.usage||centralProviderUsage;
   await generateVisualRequest(description,credentials(),kind||'image');
  }catch(error){
   const detail=String(error?.message||'El motor de imágenes no respondió.').slice(0,420);
@@ -1799,6 +1805,7 @@ async function requestPlan(userText){
   centralProviders=centralStatus.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
   centralFeatures=centralStatus.features||centralFeatures;
   centralModelCatalog=centralStatus.modelCatalog||centralModelCatalog;
+  centralProviderUsage=centralStatus.usage||centralProviderUsage;
   const creds=credentials();
   // Personal Pollinations Connect is deliberately excluded from Core auto
   // inference. It is available only on explicitly selected personal routes.
@@ -2476,6 +2483,7 @@ export function initPrismaCore(){
     centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
+    centralProviderUsage=result.usage||centralProviderUsage;
     const creds=credentials();
     const ready=Object.values(centralProviders).some(Boolean);
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
