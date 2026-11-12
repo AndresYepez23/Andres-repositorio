@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { rankProviders, adaptiveProviderDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialHealthSnapshot, getCredentialMetricsSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
+import { getProviderDailyCapacity, getProviderMinuteCapacity } from '../functions/_lib/limits.js';
 
 function mockD1() {
   const rows=new Map();
@@ -83,6 +84,21 @@ assert.equal(adaptiveProviderDeadline({averageMs:5000,baseMs:21000,minMs:12000})
   'Observed latency informs the per-engine deadline');
 assert.equal(adaptiveProviderDeadline({averageMs:60000,baseMs:21000,minMs:12000}),21000,
   'A deadline never exceeds the task safety ceiling');
+
+const capacityEnv={
+  PRISMA_SENSENOVA_DAILY_LIMIT:'100',
+  SENSENOVA_API_KEY:'sense-a',
+  SENSENOVA_API_KEY_2:'sense-b',
+  SENSENOVA_API_KEY_3:'sense-c'
+};
+assert.equal(getProviderDailyCapacity(capacityEnv,'sensenova'),300,
+  'The app-side ceiling scales with three independent SenseNova accounts instead of throttling the whole provider at 100');
+const aihubmixCapacityEnv={
+  AIHUBMIX_API_KEY:'mix-a',
+  AIHUBMIX_API_KEY_2:'mix-b'
+};
+assert.equal(getProviderMinuteCapacity(aihubmixCapacityEnv,'aihubmix'),20,
+  'AIHubMix minute capacity is allocated per configured account');
 
 const now=Date.now();
 const healthyOrder=rankProviders({task:'general',available:()=>true,now});
@@ -167,12 +183,17 @@ await assert.rejects(
 const fs=await import('node:fs');
 const statusSource=fs.readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
 assert.match(statusSource,/getCredentialHealthSnapshot/,'Provider status checks every credential pool');
+assert.match(statusSource,/getCredentialMetricsSnapshot/,'Provider status exposes per-key usage and rate-limit telemetry');
+assert.match(statusSource,/getProviderDailyCapacity/,'Provider status reports capacity scaled across independent account pools');
 assert.match(statusSource,/providerHealth\.cloudflare/,'Cloudflare Workers AI has a visible shared health state');
 const chatSource=fs.readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(chatSource,/function providerFailure/,'Backend preserves provider error metadata');
 assert.match(chatSource,/setProviderHold\(env,"cloudflare"/,'Cloudflare failures open a shared circuit breaker');
 const engineSource=fs.readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(engineSource,/status:Number\(data\.status\)\|\|response\.status/,'The router retains the original upstream status');
+assert.match(engineSource,/p\.centralProviderUsage\|\|\{\}/,'The intelligent router uses shared provider utilization, not only this browser session');
+const coreSource=fs.readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
+assert.match(coreSource,/centralProviderUsage/,'Prisma Core passes central usage metrics into the model router');
 const db5=mockD1();
 const env5={PRISMA_RATE_DB:db5,GEMINI_API_KEY:'gemini-key'};
 db5.rows.set('gemini',{state:'provider_unavailable',reason:'temporary outage',valid_until:Math.floor(Date.now()/1000)+60});
