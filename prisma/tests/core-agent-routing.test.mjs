@@ -434,7 +434,7 @@ const networkSense=await requestWithCredentialPool(senseKeys,'sensenova',async()
 assert.equal(networkSense.status,502);
 assert.equal(networkAttempts,1,'Provider-wide network outages must not retry through alternate credentials');
 const credentialPoolSource=readFileSync(new URL('../functions/_lib/credential-pool.js',import.meta.url),'utf8');
-assert.match(credentialPoolSource,/crypto\.subtle\.digest\('SHA-256',bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
+assert.match(credentialPoolSource,/crypto\.subtle\.digest\("SHA-256", bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
 assert.match(credentialPoolSource,/await credentialHealthKey\(provider, slot\)/,'A replaced secret must not inherit its prior slot cooldown');
 assert.match(credentialPoolSource,/Esta credencial de .* fue rechazada/,'Provider health should identify per-credential authentication errors');
 assert.match(credentialPoolSource,/response.status === 401 \|\| response.status === 403/,'Only explicitly retryable authentication statuses should put an individual credential on authentication cooldown');
