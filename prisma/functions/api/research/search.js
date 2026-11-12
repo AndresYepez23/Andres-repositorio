@@ -145,7 +145,30 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "La consulta debe contener entre 4 y 1.000 caracteres." }, 400);
   }
 
+  // Explicit provider selection is intended for connection diagnostics and
+  // isolated searches. "auto" retains Tavily-first, Jina-fallback behavior.
+  const selectedProvider = String(payload.provider || "auto").toLowerCase();
+  if (!["auto", "tavily", "jina"].includes(selectedProvider)) {
+    return json({ error: "Proveedor de investigación no válido. Usa auto, tavily o jina." }, 400);
+  }
+  if (selectedProvider === "jina") {
+    const jina = await searchJina(env, query);
+    if (jina.results.length) {
+      return json({ ok: true, provider: "jina", query, results: jina.results, fallbackUsed: false, diagnostic: true });
+    }
+    return json({ ok: false, provider: "jina", error: "Jina no devolvió fuentes utilizables.",
+      diagnostics: { jina: { code: jina.error || "NO_RESULTS", status: jina.status || null, detail: jina.detail || null } } }, 502);
+  }
+
   const tavily = await searchTavily(env, query);
+  if (selectedProvider === "tavily") {
+    if (tavily.results.length) {
+      return json({ ok: true, provider: "tavily", query, results: tavily.results, usage: tavily.usage || null,
+        fallbackUsed: false, diagnostic: true });
+    }
+    return json({ ok: false, provider: "tavily", error: "Tavily no devolvió fuentes utilizables.",
+      diagnostics: { tavily: { code: tavily.error || "NO_RESULTS", status: tavily.status || null, detail: tavily.detail || null } } }, 502);
+  }
   if (tavily.results.length) {
     return json({ ok: true, provider: "tavily", query, results: tavily.results, usage: tavily.usage || null,
       fallbackUsed: false });
