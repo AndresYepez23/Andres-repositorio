@@ -87,13 +87,17 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
   const data=await response.json().catch(()=>({}));
   if (!response.ok) {
     const status=response.status;
-    const detail=String(data.error?.message||data.error?.code||data.message||"").slice(0,180);
+    // Expose only the upstream's bounded error code/message, never request headers,
+    // credentials, or raw response bodies. This makes provider diagnostics actionable.
+    const rawDetail=data.error?.message||data.error?.detail||data.message||"";
+    const detail=String(rawDetail).replace(/(?:Bearer\\s+)[A-Za-z0-9._~+\\/-]+/gi,"Bearer [redacted]").replace(/(?:sk-|AIza)[A-Za-z0-9_\\-]{12,}/g,"[redacted]").slice(0,240);
+    const upstreamCode=String(data.error?.code||data.code||"").slice(0,48)||null;
     const message=status===429?provider+" alcanzó su límite temporal. Prisma probará otro motor."
       :status===402?provider+" no tiene crédito gratuito disponible."
       :status===401||status===403?provider+" devolvió HTTP "+status+" (autenticación o permisos). Comprueba la clave, su cuenta, el modelo permitido y la región del endpoint."
       :provider+" respondió con un error ("+status+")."+(detail?" "+detail:"");
     const code=status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":status===401||status===403?"PROVIDER_AUTH":[408,500,502,503,504].includes(status)?"PROVIDER_UNAVAILABLE":"PROVIDER_ERROR";
-    return json({error:message,provider,status,code,retryAfter:[408,500,502,503,504].includes(status)?45:null},[400,401,402,403,429].includes(status)?status:status===503?503:502);
+    return json({error:message,provider,status,code,upstreamCode,upstreamMessage:detail||null,retryAfter:[408,500,502,503,504].includes(status)?45:null},[400,401,402,403,429].includes(status)?status:status===503?503:502);
   }
   const content=data.choices?.[0]?.message?.content;
   const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
