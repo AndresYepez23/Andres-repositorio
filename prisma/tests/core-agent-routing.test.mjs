@@ -209,6 +209,8 @@ assert.match(auroraSource,/position:fixed!important;left:auto!important;right:18
 assert.match(auroraSource,/left:12px!important;right:12px!important/,'Model panel must fit narrow mobile viewports');
 assert.match(contextSource,/fileTurns/,'Follow-ups must retain earlier file and image analysis context');
 assert.match(contextSource,/isCoreNewTask/,'A clearly new task must be separated from a contextual follow-up');
+assert.match(coreSource,/El mensaje actual tiene prioridad/,'The current request must override stale conversation context');
+assert.match(coreSource,/no mezcles instrucciones ni hallazgos/,'Core must not contaminate a new task with an unrelated earlier file or image');
 // The welcome visuals must be shipped in production, not merely referenced locally.
 assert.match(chatHtmlSource,/<link rel="stylesheet" href="\.\/aurora-system\.css">/,'Aurora stylesheet must be referenced by the application');
 assert.match(buildSource,/"styles\.css", "aurora-system\.css"/,'Production build must publish the Aurora stylesheet');
