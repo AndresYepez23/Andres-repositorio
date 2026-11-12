@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rankProviders, adaptiveProviderDeadline, sensenovaRequestDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
+import { rankProviders, adaptiveProviderDeadline, sensenovaRequestDeadline, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialHealthSnapshot, getCredentialMetricsSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
 import { getProviderDailyCapacity, getProviderMinuteCapacity } from '../functions/_lib/limits.js';
