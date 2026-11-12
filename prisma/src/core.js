@@ -1658,7 +1658,7 @@ async function requestPlan(userText){
         },(p,msg)=>{status(msg||'Analizando las fuentes…');setProgress(.4+Math.max(0,Math.min(1,Number(p)||0))*.56,msg||'Analizando las fuentes…');});
         const answer=String(synthesis?.text||'').trim();
         if(!answer)throw new Error('El motor de síntesis no devolvió una respuesta.');
-        const sourceList=sources.map(source=>'['+source.number+'] ['+source.title.replace(/[\[\]]/g,'')+']('+source.url+')').join('\n');
+        const sourceList=sources.map(source=>'['+source.number+'] ['+source.title.replace(/[\[\]]/g,'')+']('+source.url+')'+(source.publishedDate?' · '+source.publishedDate:'')+(source.provider?' · '+source.provider:'')).join('\n');
         addMessage('assistant',answer+'\n\n**Fuentes consultadas**\n'+sourceList,{
           engine:synthesis.provider||'prisma-core-research',
           model:synthesis.model||'Investigación web · '+providerLabel
