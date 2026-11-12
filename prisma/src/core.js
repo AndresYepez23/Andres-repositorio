@@ -488,47 +488,62 @@ function renderChatModelOptions(){
  }
  if(panel)panel.scrollTop=scrollTop;
 }
+const CREATE_GROUPS=[
+ {key:'image',title:'Imágenes',description:'Generación visual desde una descripción.'},
+ {key:'audio',title:'Audio',description:'Transcripción y procesamiento de voz.'},
+ {key:'music',title:'Música',description:'Modelos que producen pistas musicales reales.'},
+ {key:'video',title:'Vídeo',description:'Modelos que producen clips reales.'}
+];
+const CREATE_IMAGE_PROVIDERS=['cloudflare','pollinations','gemini'];
 function renderImageModelControls(){
- const providerSelect=$('#core-image-provider'),modelSelect=$('#core-image-model'),hint=$('#core-image-model-hint');
- if(!providerSelect||!modelSelect)return;
- const chat=activeChatRecord();
- const saved=chat?.imageSelection||{provider:'auto',model:''};
- const selectedProvider=String(saved.provider||'auto');
- for(const option of providerSelect.options){
-  if(option.value==='auto'){
-   option.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
-   option.textContent=option.disabled?'Automático · sin motores disponibles':'Automático · respaldo disponible';
-  }else{
-   const availability=providerAvailability(option.value,'image');
-   option.disabled=!availability.available;
-   const base=MODEL_PROVIDER_LABELS[option.value]||option.value;
-   option.textContent=availability.available?base+' · disponible':base+' · '+availability.reason;
-   option.title=availability.reason;
+ const root=$('#core-create-groups');if(!root)return;
+ root.replaceChildren();
+ const catalog=centralModelCatalog||{};
+ const selected=activeChatRecord()?.imageSelection||{provider:'auto',model:''};
+ for(const group of CREATE_GROUPS){
+  const section=document.createElement('section');section.className='core-create-group';
+  const heading=document.createElement('div');heading.className='core-create-group-heading';
+  const title=document.createElement('strong');title.textContent=group.title;
+  const desc=document.createElement('small');desc.textContent=group.description;
+  heading.append(title,desc);section.append(heading);
+  const entries=[];
+  for(const [provider,models] of Object.entries(catalog[group.key]||{})){
+   if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
+   for(const model of models)if(model?.id)entries.push({provider,model});
   }
- }
- providerSelect.value=selectedProvider;
- if(providerSelect.value!==selectedProvider)providerSelect.value='auto';
- const provider=providerSelect.value||'auto';
- modelSelect.replaceChildren();
- const automatic=document.createElement('option');automatic.value='';automatic.textContent=provider==='auto'?'Automático · según motor':'Automático · modelo recomendado';
- modelSelect.append(automatic);
- const models=provider==='auto'?[]:(centralModelCatalog?.image?.[provider]||[]);
- for(const model of models){
-  const option=document.createElement('option');option.value=model.id;
-  option.textContent=(model.name||model.id)+(model.specialty?' · '+model.specialty:'');
-  modelSelect.append(option);
- }
- modelSelect.value=String(saved.model||'');
- if(modelSelect.value!==String(saved.model||''))modelSelect.value='';
- const ready=provider==='auto'?['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
- modelSelect.disabled=provider==='auto'||!ready||!models.length;
- if(hint){
-  const usage=centralImageUsage?.[provider]?.daily;
-  hint.textContent=provider==='auto'
-   ?'Prisma probará los motores de imagen habilitados y respetará sus cuotas.'
-   :ready
-    ?'Modelo de imagen disponible para este chat.'
-    :providerAvailability(provider,'image').reason+(usage?.resetAt?' · Reinicio de cuota: '+new Date(Number(usage.resetAt)*1000).toLocaleString():'');
+  const list=document.createElement('div');list.className='core-create-options';
+  for(const {provider,model} of entries){
+   const supported=group.key==='image'&&CREATE_IMAGE_PROVIDERS.includes(provider);
+   const availability=supported?providerAvailability(provider,'image'):{available:false,reason:group.key==='audio'?'Usar desde las herramientas de transcripción':'No conectado a generación'};
+   const ready=supported&&availability.available;
+   const chosen=ready&&activeChatRecord()?.creativeMode==='image'&&selected.provider===provider&&selected.model===model.id;
+   const row=document.createElement('button');row.type='button';row.className='core-create-option'+(chosen?' is-current':'');
+   row.disabled=!ready;row.setAttribute('aria-pressed',String(Boolean(chosen)));
+   const copy=document.createElement('span');copy.className='core-create-option-copy';
+   const name=document.createElement('strong');name.textContent=model.name||model.id;
+   const providerLabel=document.createElement('small');providerLabel.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
+   const purpose=document.createElement('small');purpose.className='core-create-purpose';
+   purpose.textContent=String(model.specialty||({image:'Genera imágenes',audio:'Transcribe audio',music:'Genera música',video:'Genera vídeo'}[group.key]));
+   copy.append(name,providerLabel,purpose);
+   const state=document.createElement('span');state.className='core-create-option-state';
+   state.textContent=chosen?'Elegido':ready?'Elegir':supported?availability.reason:'Solo catálogo';
+   row.title=ready?'Crear imágenes con '+(model.name||model.id):availability.reason;
+   row.append(copy,state);
+   if(ready)row.addEventListener('click',()=>{
+    const chat=activeChatRecord();if(!chat)return;
+    chat.imageSelection={provider,model:model.id};chat.updated=Date.now();
+    persistChatHistory();setCoreCreativeMode('image');
+   });
+   list.append(row);
+  }
+  if(!entries.length){
+   const empty=document.createElement('p');empty.className='core-create-empty';
+   empty.textContent=group.key==='music'?'Sin modelo musical verificado y conectado por ahora.':
+    group.key==='video'?'Sin modelo de vídeo verificado y conectado por ahora.':
+    'No hay modelos publicados en esta categoría.';
+   list.append(empty);
+  }
+  section.append(list);root.append(section);
  }
 }
 function renderModelPicker(){
@@ -572,15 +587,13 @@ function renderModelPicker(){
  if(imageButton)imageButton.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
 }
 function renderComposerMode(){
- const image=activeChatRecord()?.creativeMode==='image';
- const banner=$('#core-composer-mode'),label=$('#core-composer-mode-label'),input=$('#core-input');
- banner?.classList.toggle('hidden',!image);
- if(label)label.textContent=image?'Modo imagen · Describe lo que quieres generar':'';
- if(input)input.placeholder=image?'Describe la imagen que quieres crear…':'Escribe a Prisma…';
+ // Keep the composer visually identical in both modes.
+ $('#core-composer-mode')?.classList.add('hidden');
+ const input=$('#core-input');if(input)input.placeholder='Escribe a Prisma…';
 }
 function setCoreCreativeMode(mode){
  const chat=activeChatRecord();if(!chat)return;
- if(mode==='image'&&!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady)){
+ if(mode==='image'&&!CREATE_IMAGE_PROVIDERS.some(imageProviderReady)){
   status('No hay un motor de imágenes disponible en este momento.','warning');return;
  }
  chat.creativeMode=mode==='image'?'image':'chat';
@@ -590,12 +603,6 @@ function setCoreCreativeMode(mode){
  $('#core-input')?.focus();
  status(chat.creativeMode==='image'?'Modo imagen activado: este campo generará una imagen real, no una respuesta de texto.':'Modo chat activado.','success');
 }
-function saveImageSelection(){
- const chat=activeChatRecord();if(!chat)return;
- chat.imageSelection={provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||''};
- chat.updated=Date.now();persistChatHistory();
-}
-
 async function persistGeneratedResults(results){
  let allSaved=true;
  for(const entry of results||[]){
@@ -1469,7 +1476,7 @@ async function generateVisualRequest(text,creds,kind){
   (headline?'Reserve a clean area for a precise typography overlay to be applied locally. Do not draw any letters or text in the generated background.':'Avoid unwanted watermarks and illegible small lettering.');
  status('Generando '+label+' con respaldo automático si el motor principal no está disponible…');
  const result=await runTool('image-gen',[],{
-  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||'',ratio,style
+  ...creds,prompt,provider:activeChatRecord()?.imageSelection?.provider||'auto',model:activeChatRecord()?.imageSelection?.model||'',ratio,style
  },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),msg||'Generando '+label+'…');});
  if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
  if(headline){
@@ -2737,14 +2744,6 @@ export function initPrismaCore(){
     activeModelTab=button.dataset.modelTab==='image'?'image':'chat';
     renderModelPicker();
   }));
-  $('#core-image-provider')?.addEventListener('change',()=>{
-    const chat=activeChatRecord();
-    if(chat){chat.imageSelection={provider:$('#core-image-provider').value||'auto',model:''};chat.updated=Date.now();}
-    persistChatHistory();renderModelPicker();
-    if($('#core-image-provider').value!=='auto')setCoreCreativeMode('image');
-  });
-  $('#core-image-model')?.addEventListener('change',()=>{saveImageSelection();setCoreCreativeMode('image');});
-  $('#core-image-activate')?.addEventListener('click',()=>setCoreCreativeMode('image'));
   $('#core-composer-mode-exit')?.addEventListener('click',()=>setCoreCreativeMode('chat'));
   renderModelPicker();renderComposerMode();
   // The signup card is in the chat-column flow (not on top of messages).

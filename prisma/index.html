@@ -227,8 +227,8 @@
                             <button type="button" id="core-model-close" aria-label="Cerrar selector de modelos">×</button>
                           </header>
                           <div class="core-model-tabs" role="tablist" aria-label="Tipo de modelo">
-                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Conversación</button>
-                            <button type="button" role="tab" data-model-tab="image" aria-selected="false">Imágenes</button>
+                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Conversar</button>
+                            <button type="button" role="tab" data-model-tab="image" aria-selected="false">Crear</button>
                           </div>
                           <section class="core-model-pane active" data-model-pane="chat" role="tabpanel">
                             <button type="button" class="core-model-auto" id="core-model-auto">
@@ -240,26 +240,13 @@
                             <div class="core-model-groups" id="core-model-options" aria-label="Modelos disponibles"></div>
                             <p class="core-model-footnote">Solo se muestran los proveedores habilitados. Tu modelo elegido se conserva; un respaldo temporal no lo reemplaza.</p>
                           </section>
-                          <section class="core-model-pane" data-model-pane="image" role="tabpanel">
-                            <div class="core-image-model-heading">
-                              <strong>Generación de imágenes</strong>
-                              <small>Selecciona un motor y, si está disponible, un modelo concreto.</small>
+                          <section class="core-model-pane" data-model-pane="image" role="tabpanel" aria-label="Modelos de creación">
+                            <div class="core-create-intro">
+                              <strong>Modelos para crear</strong>
+                              <small>Explora los modelos por especialidad. Debajo de cada modelo verás qué hace y si está disponible.</small>
                             </div>
-                            <label class="core-model-field">Motor de imagen
-                              <select id="core-image-provider">
-                                <option value="auto">Automático · respaldo disponible</option>
-                                <option value="cloudflare">Cloudflare Workers AI</option>
-                                <option value="pollinations">Pollinations</option>
-                                <option value="huggingface">Hugging Face</option>
-                                <option value="gemini">Gemini Image</option>
-                              </select>
-                            </label>
-                            <label class="core-model-field">Modelo de imagen
-                              <select id="core-image-model"><option value="">Automático · modelo recomendado</option></select>
-                            </label>
-                            <small class="core-image-model-hint" id="core-image-model-hint">Prisma probará los motores de imagen habilitados y respetará sus cuotas.</small>
-                            <button type="button" class="core-image-activate" id="core-image-activate">Usar modo imagen en este chat</button>
-                            <p class="core-model-footnote">El campo de escritura cambiará a generación visual. No se enviará como una pregunta de razonamiento.</p>
+                            <div class="core-create-groups" id="core-create-groups" aria-live="polite"></div>
+                            <p class="core-model-footnote">Solo se pueden activar modelos conectados a una función real. Los modelos de pago o sin conexión no se ejecutan automáticamente.</p>
                           </section>
                         </div>
                       </details>
