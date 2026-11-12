@@ -193,7 +193,7 @@ const appMetadata = {
   }
 };
 function syncAppMetadata() {
-  if (location.pathname !== '/' && !/^\\/en\\/?$/i.test(location.pathname)) return;
+  if (!['/', '/en', '/en/'].includes(location.pathname)) return;
   const metadata = appMetadata[language];
   document.title = metadata.title;
   for (const [selector, content] of [
