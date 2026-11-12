@@ -235,4 +235,28 @@ const requestyAllForbidden=await requestWithCredentialPool(env12,'requesty',asyn
 assert.equal(requestyAllForbidden.status,403,'Return HTTP 403 when all independent Requesty accounts are forbidden');
 assert.equal(requestyForbiddenAttempts,3,'All three Requesty accounts are checked independently');
 
+const db13=mockD1();
+const env13={PRISMA_RATE_DB:db13,...Object.fromEntries(Array.from({length:6},(_,i)=>['ZAI_API_KEY'+(i===0?'':'_'+(i+1)),'independent-zai-403-account-'+(i+1)]))};
+let zai403Attempts=0;
+const zai403Recovered=await requestWithCredentialPool(env13,'zai',async(key)=>{
+  zai403Attempts++;
+  return key==='independent-zai-403-account-6'
+    ? new Response('ok',{status:200})
+    : new Response(JSON.stringify({error:{code:'PERMISSION_DENIED',message:'account/model permission denied'}}),{status:403});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403],startIndex:0});
+assert.equal(zai403Recovered.status,200,'Z.AI must try the next independent account after a key-specific HTTP 403');
+assert.equal(zai403Attempts,6,'All six Z.AI accounts are checked until one succeeds after HTTP 403');
+assert.equal(await getProviderHold(env13,'zai'),null,'A single Z.AI account permission rejection must not pause the entire provider');
+
+const db14=mockD1();
+const env14={PRISMA_RATE_DB:db14,...Object.fromEntries(Array.from({length:6},(_,i)=>['ZAI_API_KEY'+(i===0?'':'_'+(i+1)),'forbidden-zai-403-account-'+(i+1)]))};
+let zaiAllForbiddenAttempts=0;
+const zaiAllForbidden=await requestWithCredentialPool(env14,'zai',async()=>{
+  zaiAllForbiddenAttempts++;
+  return new Response(JSON.stringify({error:{code:'PERMISSION_DENIED',message:'account/model permission denied'}}),{status:403});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403],startIndex:0});
+assert.equal(zaiAllForbidden.status,403,'Return HTTP 403 when all independent Z.AI accounts reject the request');
+assert.equal(zaiAllForbiddenAttempts,6,'All six Z.AI accounts are checked independently after HTTP 403');
+assert.equal(await getProviderHold(env14,'zai'),null,'Six independent Z.AI permission rejections must not create a provider-wide hold');
+
 console.log('Provider orchestration regressions passed.');
