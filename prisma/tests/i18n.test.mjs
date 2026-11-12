@@ -80,3 +80,22 @@ test('Core and model prompts produce English responses when English is selected'
  assert.match(voice,/session\.lang=speechLocale\(\)/);
  assert.match(core,/utterance\.lang=voice\?\.lang\|\|\(language==='en'\?'en-US':'es-ES'\)/);
 });
+
+test('app keeps legal/navigation links and PWA metadata in the selected language', async()=>{
+ const i18n=await read('src/i18n.js');
+ const index=await read('index.html');
+ for(const [es,en] of [
+  ['/herramientas/','/en/tools/'],
+  ['/categorias/','/en/categories/'],
+  ['/soluciones/','/en/solutions/'],
+  ['/guias/','/en/guides/'],
+  ['/privacy.html','/en/privacy.html']
+ ]) assert.ok(i18n.includes("['"+es+"', '"+en+"']"),'Missing locale link mapping '+es);
+ assert.match(i18n,/translateInternalLinks\(root\)/);
+ assert.match(i18n,/translateInternalLinks\(added\)/);
+ assert.match(i18n,/syncAppMetadata\(\)/);
+ assert.ok(i18n.includes("language === 'en' ? '/manifest.en.webmanifest' : '/manifest.webmanifest'"));
+ assert.match(i18n,/element\?\.tagName === 'META'/);
+ assert.ok(index.includes('<meta name="prisma-default-language" content="auto">'));
+ assert.ok(index.includes('<base href="/">'));
+});
