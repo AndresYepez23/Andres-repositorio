@@ -179,22 +179,6 @@ async function executeChatRequest({ request, env }, markReserved) {
   }
   if(provider==="kilo"&&!kiloModels?.length)return json({error:"Kilo no publica modelos gratuitos de chat disponibles en este momento.",provider},503);
   if(provider==="aihubmix"&&!aihubmixModels?.length)return json({error:"AIHubMix no devolvió modelos gratuitos de texto con peso de cuota 1 para esta clave.",provider},503);
-  if(provider==="pollinations"&&getCredentialSlots(env,"pollinations").length<=1){
-    const hold=await getProviderHold(env,"pollinations");
-    if(hold)return json({error:hold.reason,provider:"pollinations",status:402},402);
-  }
-  if(provider==="huggingface"&&getCredentialSlots(env,"huggingface").length<=1){
-    const hold=await getProviderHold(env,"huggingface");
-    if(hold)return json({error:hold.reason,provider:"huggingface",status:402},402);
-  }
-  if(provider==="groq"&&getCredentialSlots(env,"groq").length<=1){
-    const hold=await getProviderHold(env,"groq");
-    if(hold)return json({error:hold.reason,provider:"groq",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
-  }
-  if(provider==="openrouter"&&getCredentialSlots(env,"openrouter").length<=1){
-    const hold=await getProviderHold(env,"openrouter");
-    if(hold)return json({error:hold.reason,provider:"openrouter",status:429,retryAfter:hold.valid_until?Math.max(1,Number(hold.valid_until)-Math.floor(Date.now()/1000)):90},429);
-  }
   const limitError = await checkLimits(env, request, provider);
   if (limitError) return json({error:limitError.error,code:limitError.code,scope:limitError.scope,retryAfter:limitError.retryAfter},limitError.status);
   markReserved(provider);
