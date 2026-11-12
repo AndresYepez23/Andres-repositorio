@@ -75,3 +75,42 @@ test('Tavily credentials can be consolidated into one encrypted JSON binding', (
   assert.deepEqual(tavilyKeys({TAVILY_API_KEYS_JSON:JSON.stringify(pool),TAVILY_API_KEY:'replaced-primary'}),['replaced-primary',...pool.slice(1)]);
   assert.deepEqual(tavilyKeys({TAVILY_API_KEYS_JSON:'invalid',TAVILY_API_KEY:'single-key'}),['single-key']);
 });
+
+test('Jina can be tested independently without calling Tavily', async t => {
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.match(String(url), /s\.jina\.ai/);
+    assert.equal(init.headers.Authorization, 'Bearer jina-test');
+    return Response.json({ code: 200, data: [{ title: 'Jina source', url: 'https://example.org/jina', content: 'Jina diagnostic result' }] });
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const response = await onRequestPost({ request: new Request('https://prismaspace.pages.dev/api/research/search', {
+    method: 'POST', headers: { Origin: 'https://prismaspace.pages.dev', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: 'test Jina search provider', provider: 'jina' })
+  }), env: { TAVILY_API_KEY: 'tavily-test', JINA_API_KEY: 'jina-test' } });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.provider, 'jina');
+  assert.equal(data.diagnostic, true);
+  assert.equal(calls, 1, 'A direct Jina test must not call Tavily');
+});
+
+test('Tavily can be tested independently without silently falling back to Jina', async t => {
+  let calls = 0;
+  globalThis.fetch = async url => {
+    calls++;
+    assert.match(String(url), /api\.tavily\.com/);
+    return Response.json({ error: 'quota' }, { status: 429 });
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const response = await onRequestPost({ request: new Request('https://prismaspace.pages.dev/api/research/search', {
+    method: 'POST', headers: { Origin: 'https://prismaspace.pages.dev', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: 'test Tavily search provider', provider: 'tavily' })
+  }), env: { TAVILY_API_KEY: 'tavily-test', JINA_API_KEY: 'jina-test' } });
+  const data = await response.json();
+  assert.equal(response.status, 502);
+  assert.equal(data.provider, 'tavily');
+  assert.equal(data.diagnostics.tavily.status, 429);
+  assert.equal(calls, 1, 'A direct Tavily test must not call Jina');
+});
