@@ -980,17 +980,29 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
   try{
     const availability=typeof NativeModel.availability==='function'?await NativeModel.availability(): 'available';
     if(availability==='unavailable'||availability==='after-download'||availability==='downloadable')return null;
-    session=await NativeModel.create({systemPrompt:[
+    const instructions=responseLanguage==='English'?[
+      'You are Prisma Core, a private local agent that organizes tasks using browser tools.',
+      'Return only valid JSON with message, needs_clarification, question, and steps. Each step contains tool_id, reason, and params.',
+      'Select only local or browser tools with ready or beta status from the catalog. Do not invent tools or parameters.',
+      'Plan no more than 6 steps. Do not send data to external services. Do not use BYOK, online tools, or irreversible actions.',
+      'If the request cannot be completed locally, return an empty steps array and explain the limitation honestly.',
+      'Write the user-facing message, clarification question, and reasons in English.',
+      'For document analysis, use the attached text and select a local operation that can process it.'
+    ]:[
       'Eres Prisma Core, un agente local privado que organiza tareas usando herramientas del navegador.',
       'Devuelve exclusivamente JSON con message, needs_clarification, question y steps. Cada step contiene tool_id, reason y params.',
       'Selecciona solo herramientas con modo local o browser y estado ready o beta del catálogo. No inventes herramientas ni parámetros.',
       'Planifica máximo 6 pasos. No envíes datos a servicios externos. No uses herramientas byok, online ni acciones irreversibles.',
       'Si el pedido no se puede resolver localmente, devuelve steps vacíos y explica honestamente la limitación.',
-       'Write the user-facing message and clarification question in '+responseLanguage+'.',
+      'Escribe en español el mensaje, la pregunta de aclaración y los motivos visibles para el usuario.',
       'Para análisis de documentos, utiliza el texto adjunto y selecciona una operación local que pueda procesarlo.'
-    ].join(' ')});
+    ];
+    session=await NativeModel.create({systemPrompt:instructions.join(' ')});
     const catalog=availableCatalog().filter(tool=>['local','browser'].includes(tool.mode));
-    const prompt='CATÁLOGO LOCAL:\n'+JSON.stringify(catalog)+'\nCONTEXTO DE ARCHIVOS:\n'+attachmentContext.slice(0,12000)+'\nMENSAJES RECIENTES:\n'+messages.slice(-6).map(m=>(m.role==='user'?'Usuario: ':'Prisma: ')+m.content).join('\n').slice(-4000)+'\nSOLICITUD:\n'+userText;
+    const recent=messages.slice(-6).map(m=>(m.role==='user'?(responseLanguage==='English'?'User: ':'Usuario: '):(responseLanguage==='English'?'Prisma: ':'Prisma: '))+m.content).join('\n').slice(-4000);
+    const prompt=responseLanguage==='English'
+      ?'LOCAL TOOL CATALOG:\n'+JSON.stringify(catalog)+'\nATTACHED FILE CONTEXT:\n'+attachmentContext.slice(0,12000)+'\nRECENT MESSAGES:\n'+recent+'\nUSER REQUEST:\n'+userText
+      :'CATÁLOGO LOCAL:\n'+JSON.stringify(catalog)+'\nCONTEXTO DE ARCHIVOS:\n'+attachmentContext.slice(0,12000)+'\nMENSAJES RECIENTES:\n'+recent+'\nSOLICITUD:\n'+userText;
     const answer=await session.prompt(prompt);
     const plan=parsePlan(answer);
     if(!plan||!Array.isArray(plan.steps)||plan.steps.length>6)return null;
