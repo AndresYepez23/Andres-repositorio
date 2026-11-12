@@ -1,5 +1,5 @@
 // OpenRouter Free Router account metadata and conservative shared limits.
-import { getCredentialSlots, requestWithCredentialPool } from "./credential-pool.js";
+import { getCredentialSlots, recordCredentialMetrics } from "./credential-pool.js";
 let accountCache = null;
 let accountCacheAt = 0;
 let accountCacheKey = "";
@@ -17,29 +17,55 @@ export async function getOpenRouterAccount(env) {
     return accountCache;
   }
   try {
-    const response = await requestWithCredentialPool(env, "openrouter", async key => {
+    // OpenRouter exposes key-specific credit caps through GET /api/v1/key.
+    // Refresh every configured key so the allocator can prefer the key with
+    // the healthiest remaining cap without treating shared account credits
+    // or free-model rate limits as multiplied capacity.
+    const snapshots = await Promise.all(slots.map(async slot => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
       try {
-        return await fetch("https://openrouter.ai/api/v1/key", {
+        const response = await fetch("https://openrouter.ai/api/v1/key", {
           method: "GET",
-          headers: { Authorization: "Bearer " + key, Accept: "application/json" },
+          headers: { Authorization: "Bearer " + slot.value, Accept: "application/json" },
           cache: "no-store",
           signal: controller.signal,
         });
+        const payload = await response.json().catch(() => ({}));
+        await recordCredentialMetrics(env,"openrouter",slot,response,payload,{countRequest:false});
+        if (!response.ok || !payload?.data) return null;
+        const data = payload.data;
+        return {
+          slot: slot.number,
+          data,
+          keyBudget: {
+            slot: slot.number,
+            limitUsd: numericOrNull(data.limit),
+            remainingUsd: numericOrNull(data.limit_remaining),
+            usageDailyUsd: numericOrNull(data.usage_daily),
+            freeModelDaily: data.free_model_daily_requests && typeof data.free_model_daily_requests === "object"
+              ? {
+                  used: numericOrNull(data.free_model_daily_requests.used),
+                  limit: numericOrNull(data.free_model_daily_requests.limit),
+                  remaining: numericOrNull(data.free_model_daily_requests.remaining),
+                }
+              : null,
+          },
+        };
       } finally {
         clearTimeout(timeout);
       }
-    });
-    if (!response.ok) return null;
-    const payload = await response.json().catch(() => ({}));
-    const data = payload.data || {};
+    }));
+    const valid = snapshots.filter(Boolean);
+    if (!valid.length) return null;
+    const data = valid[0].data;
     const account = {
       isFreeTier: data.is_free_tier !== false,
       dailySpendUsd: numericOrNull(data.usage_daily),
       spendLimitUsd: numericOrNull(data.limit),
       spendRemainingUsd: numericOrNull(data.limit_remaining),
       spendLimitReset: typeof data.limit_reset === "string" ? data.limit_reset : null,
+      keyBudgets: valid.map(item => item.keyBudget),
     };
     accountCache = account;
     accountCacheKey = suffix;
@@ -49,7 +75,6 @@ export async function getOpenRouterAccount(env) {
     return null;
   }
 }
-
 export async function getOpenRouterLimits(env) {
   const account = await getOpenRouterAccount(env);
   // OpenRouter's free-model allowance is 50 requests/day by default, or
