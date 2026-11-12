@@ -31,6 +31,7 @@ import { readConversationSnapshot, queueConversationSnapshot, clearConversationS
 import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
+import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest } from './core-model-session.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -70,6 +71,11 @@ export async function getPrismaCoreExecutionContext(){
     centralFeatures=status.features||centralFeatures;
     centralModelCatalog=status.modelCatalog||centralModelCatalog;
     centralProviderUsage=status.usage||centralProviderUsage;
+    centralProviderHealth=status.providerHealth||centralProviderHealth;
+    centralWarnings=status.warnings||centralWarnings;
+    centralConfigured=status.configured||centralConfigured;
+    centralImageUsage=status.imageUsage||centralImageUsage;
+    renderModelPicker();
   }catch(error){
     console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);
   }
@@ -83,6 +89,11 @@ let centralProviders = { gemini: false, huggingface: false, groq: false, cloudfl
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let centralProviderUsage = {};
+let centralProviderHealth = {};
+let centralWarnings = {};
+let centralConfigured = {};
+let centralImageUsage = {};
+let activeModelTab = 'chat';
 let userPinnedToBottom = true;
 let userScrollRevision = 0;
 let localBrainEnabled = false;
@@ -105,7 +116,11 @@ function credentials(){
     centralProviders,
     centralFeatures,
     centralModelCatalog,
-    centralProviderUsage
+    centralProviderUsage,
+    centralProviderHealth,
+    centralWarnings,
+    centralConfigured,
+    centralImageUsage
   };
 }
 function escapeHtml(value){
@@ -155,7 +170,9 @@ function newChatRecord(content=[]){
  const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
  const first=content.find(message=>message.role==='user'&&message.content?.trim());
  return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
-   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false};
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false,
+   modelSelection:{mode:'auto',provider:'',model:'',source:'auto',lastUserAt:0},
+   imageSelection:{provider:'auto',model:''}};
 }
 function persistChatHistory(activeSerialized=null){
  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).map(chat=>serializeConversation({
@@ -319,7 +336,7 @@ function openConversation(id){
  if(busy||executionActive)return;
  const chat=conversations.find(item=>item.id===id);if(!chat)return;
  speechSynthesisStop();
- activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();
+ activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();renderModelPicker();
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
  pendingPlan=null;$('#core-plan')?.classList.add('hidden');
  userPinnedToBottom=true;renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();
@@ -334,13 +351,13 @@ function startNewConversation(){
  const record=newChatRecord();conversations=conversations.filter(hasConversationMessages);
  conversations.unshift(record);activeConversationId=record.id;
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
- messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');
+ messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');renderModelPicker();
  // Creating a blank draft must not trigger storage writes or cloud sync.
  renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
  status('Nueva conversación. El historial anterior sigue disponible.','success');
  $('#core-input')?.focus();
 }
-function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';}
+function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';renderModelPicker();}
 async function persistGeneratedResults(results){
  let allSaved=true;
  for(const entry of results||[]){
