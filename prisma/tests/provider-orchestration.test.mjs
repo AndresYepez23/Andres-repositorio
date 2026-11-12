@@ -108,7 +108,7 @@ const aihubmixPaidEnv={
   AIHUBMIX_API_KEY_5:'mix-e'
 };
 assert.equal(getProviderDailyCapacity(aihubmixPaidEnv,'aihubmix'),500,
-  'AIHubMix's verified 100-request daily quota is multiplied across five separately configured accounts');
+  "AIHubMix's verified 100-request daily quota is multiplied across five separately configured accounts");
 
 const now=Date.now();
 const healthyOrder=rankProviders({task:'general',available:()=>true,now});
