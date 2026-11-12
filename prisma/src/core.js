@@ -450,7 +450,7 @@ function renderChatModelOptions(){
    const specialty=document.createElement('small');specialty.textContent=model.specialty||'Modelo de conversación';
    copy.append(title,specialty);
    const state=document.createElement('span');state.className='core-model-option-state '+(availability.available?'is-ready':'is-blocked');
-   state.textContent=current?(selection.usedAt?'En uso':'Seleccionado'):availability.available?'Elegir':'Bloqueado';
+   state.textContent=!availability.available?'Bloqueado':current?(selection.usedAt?'En uso':'Seleccionado'):'Elegir';
    row.append(copy,state);
    if(availability.available)row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
    else row.title=availability.reason;
@@ -516,8 +516,10 @@ function renderModelPicker(){
  summary.setAttribute('aria-label',summary.title);
  const statusLabel=$('#core-model-selection-status');
  if(statusLabel){
+  const activeAvailability=selection.provider?providerAvailability(selection.provider,'chat'):{available:true};
   statusLabel.textContent=selection.provider&&selection.model
-   ?(selection.source==='fallback'?'Respaldo activo · ':selection.usedAt?'Modelo activo · ':'Modelo seleccionado · ')+current
+   ?(!activeAvailability.available?'No disponible · se usará un respaldo: '+current:
+     (selection.source==='fallback'?'Respaldo activo · ':selection.usedAt?'Modelo activo · ':'Modelo seleccionado · ')+current)
    :'Prisma seleccionará un modelo al comenzar y lo conservará en este chat';
  }
  const autoButton=$('#core-model-auto');
