@@ -184,4 +184,19 @@ test('SEO navigation labels are in the page language across both catalogues',asy
   await check('herramientas/'+page.sourceSlug+'/index.html','es','Cambiar a inglés','Switch to Spanish');
   await check('en/tools/'+page.englishSlug+'/index.html','en','Switch to Spanish','Cambiar a inglés');
  }
+ for (const [esDirectory,enDirectory,esItems,enItems] of [
+  ['categorias','en/categories',sourceCategories,hubs.categories],
+  ['soluciones','en/solutions',sourceSolutions,hubs.solutions],
+  ['guias','en/guides',sourceGuides,hubs.guides]
+ ]) {
+  await check(esDirectory+'/index.html','es','Cambiar a inglés','Switch to Spanish');
+  await check(enDirectory+'/index.html','en','Switch to Spanish','Cambiar a inglés');
+  const englishBySource=new Map(enItems.map(item=>[item.sourceSlug,item]));
+  for(const item of esItems) {
+   const english=englishBySource.get(item.slug);
+   assert.ok(english,'Missing translated content hub: '+item.slug);
+   await check(esDirectory+'/'+item.slug+'/index.html','es','Cambiar a inglés','Switch to Spanish');
+   await check(enDirectory+'/'+english.englishSlug+'/index.html','en','Switch to Spanish','Cambiar a inglés');
+  }
+ }
 });
