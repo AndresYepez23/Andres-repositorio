@@ -92,6 +92,8 @@ const ENGLISH_ALIASES = {
  'tsv-to-csv-local':['convert tsv to csv'],
  'github-discover':['find github repositories','search open source repositories'],
  'api-explorer':['test api endpoint','inspect api endpoint','send api request'],
+ 'citation-ids-local':['extract citation ids','find doi references','extract doi identifiers'],
+ 'qr-vcard':['create contact qr code','make a vcard qr code','share contact with qr'],
  'pdf-compress':['compress pdf','reduce pdf file size'],
  'pdf-to-image':['convert pdf to images','export pdf pages as images'],
  'image-pdf':['convert images to pdf','images to pdf'],
