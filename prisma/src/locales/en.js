@@ -1691,7 +1691,7 @@ const translations = {
   "Google no aceptó la clave. Comprueba que la API de Gemini esté habilitada para ese proyecto.": "Google did not accept the key. Check if the Gemini API is enabled for that project.",
   "Groq no reconoció la clave o esta no tiene acceso a la API.": "Groq did not recognize the key or it does not have access to the API.",
   "El proveedor alcanzó un límite temporal. Inténtalo más tarde o utiliza otro motor conectado.": "The provider has reached a temporary limit. Try again later or use another connected engine.",
-  "El proveedor respondió con el código": "The provider responded with code {code}.",
+  "El proveedor respondió con el código": "The provider responded with code",
   "Este proveedor no utiliza una clave personal.": "This provider does not use a personal key.",
   "Pega primero tu clave de conexión.": "Paste your connection key first.",
   "El token de Hugging Face debe comenzar por hf_.": "The Hugging Face token must start with hf_.",
@@ -1720,7 +1720,7 @@ const translations = {
   "Prisma Mini devolvió vectores semánticos incompletos.": "Prisma Mini returned incomplete semantic vectors.",
   "Prisma Mini no pudo representar la solicitud.": "Prisma Mini could not represent the request.",
   "Operación solicitada": "Requested operation",
-  "Indica unas dimensiones entre 16 y 8000 píxeles.": "Indicates dimensions between 16 and 8000 pixels.",
+  "Indica unas dimensiones entre 16 y 8000 píxeles.": "Enter dimensions between 16 and 8000 pixels.",
   "Redimensionar a": "Resize to"
 };
 export default translations;
