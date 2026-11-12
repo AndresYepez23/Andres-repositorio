@@ -774,11 +774,12 @@ function toolParamsHint(id){
   };
   return hints[id]||'Usa únicamente parámetros que estén descritos por la herramienta; si no requiere opciones, deja params como {}.';
 }
+const localizeCoreText=value=>typeof window!=='undefined'&&window.prismaI18n?.language==='en'?(window.prismaI18n?.t?.(String(value))||String(value)):String(value);
 function availableCatalog(){
   return tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>({
-    id:tool.id,name:tool.name,description:tool.description,category:tool.category,
+    id:tool.id,name:localizeCoreText(tool.name),description:localizeCoreText(tool.description),category:localizeCoreText(tool.category),
     mode:tool.mode,file:!!tool.file,multiple:!!tool.multiple,accept:tool.accept||'',
-    tag:tool.tag||'',paramsHint:toolParamsHint(tool.id),policy:toolPolicy(tool)
+    tag:tool.tag||'',paramsHint:localizeCoreText(toolParamsHint(tool.id)),policy:toolPolicy(tool)
   }));
 }
 function compactPlanningCatalog(userText){
@@ -786,17 +787,23 @@ function compactPlanningCatalog(userText){
   // task, attachment type and related capabilities, not exact keywords alone.
   // This avoids spending model tokens listing 138 tools per request.
   return searchCoreTools(userText,attachments,32).map(tool=>({
-    id:tool.id,name:tool.name,category:tool.category,mode:tool.mode,
-    description:tool.description.slice(0,115),file:!!tool.file,
+    id:tool.id,name:localizeCoreText(tool.name),category:localizeCoreText(tool.category),mode:tool.mode,
+    description:localizeCoreText(tool.description).slice(0,115),file:!!tool.file,
     ...(tool.file?{accept:String(tool.accept||'').slice(0,65)}:{}),
-    hint:toolParamsHint(tool.id).slice(0,190),
+    hint:localizeCoreText(toolParamsHint(tool.id)).slice(0,190),
     ...(tool.related?.length?{related:tool.related.slice(0,5)}:{})
   }));
 }
 function buildPlannerPrompt(userText,optionalCatalog=null){
+  const english=typeof window!=='undefined'&&window.prismaI18n?.language==='en';
   const catalog=optionalCatalog||compactPlanningCatalog(userText);
+  const history=messages.slice(-5).map(item=>(item.role==='user'?(english?'User: ':'Usuario: '):(english?'Prisma: ':'Prisma: '))+String(item.content).slice(0,600)).join('\n').slice(-2400);
+  const languageInstruction=english
+   ?'Output language: English. Write every user-facing JSON string value (message, question, reason) in English. Keep JSON keys, tool IDs, parameter names, filenames, and literal data unchanged.'
+   :'Idioma de salida: español. Escribe en español todos los valores JSON que verá el usuario (message, question, reason). Conserva sin cambios las claves JSON, IDs de herramientas, nombres de parámetros, archivos y datos literales.';
   return [
     'Eres PRISMA CORE, asistente central que ejecuta tareas con las herramientas de Prisma.',
+    languageInstruction,
     'Responde SOLO JSON valido, sin Markdown. Formato: {"message":"breve explicación","needs_clarification":false,"question":"","steps":[{"tool_id":"id exacto","reason":"motivo","params":{}}]}.',
     'Máximo '+MAX_STEPS+' pasos. Selecciona solo IDs del catálogo; el orden respeta dependencias. Usa params.text para texto, params.prompt para tareas con IA. No simules operaciones ejecutadas. No publiques, compres, elimines recursos externos ni autorices consumos.',
     'Para crear una canción o letra original, selecciona music-lyrics; redacta letra original completa y un prompt de producción musical. ai-voice es texto a voz, no genera música. No afirmes que has creado un archivo musical si no existe un generador de música en el catálogo. Si piden audio musical final y no hay motor, explica la limitación y ofrece crear la letra como paso disponible.',
@@ -805,10 +812,10 @@ function buildPlannerPrompt(userText,optionalCatalog=null){
     'Eres el agente coordinador de las herramientas disponibles desde el CHAT, no un menú. Prioriza las herramientas de navegador para operaciones mecánicas; no insertes una llamada ai-assistant para explicar o autorizar cada paso local. Reserva los modelos para razonamiento, escritura, interpretación semántica realmente necesaria o generación. Para seleccionar páginas de un PDF y entregarlas por separado, encadena pdf-extract seguido de pdf-split; para añadir numeración/marca de agua, realiza esos pasos antes de pdf-split. Nunca afirmes haber procesado un archivo sin una herramienta ejecutada.',
     'Compara herramientas equivalentes y complementarias antes de elegir. Prefiere la ruta con menos pasos y menos consumo; evita conversiones repetidas, OCR innecesario y generación remota si existe herramienta local. Si dos capacidades son similares, elige la que produce el archivo solicitado y considera sus salidas y compatibilidades. Pregunta solo cuando falta un parámetro esencial o hay cambios destructivos, nunca inventes valores. Las herramientas relacionadas se marcan con related.',
     'Puedes generar un plan con 0 pasos si la solicitud es solo una pregunta o no puede ejecutarse con las herramientas mostradas. Explícalo en message sin inventar capacidades.',
-    'HISTORIAL RECIENTE:\n'+messages.slice(-5).map(item=>(item.role==='user'?'Usuario: ':'Prisma: ')+String(item.content).slice(0,600)).join('\n').slice(-2400),
-    'HERRAMIENTAS RELEVANTES (seleccionadas y relacionadas desde un índice de '+coreToolCatalog().length+' herramientas disponibles; otras herramientas pueden estar en el registro completo):\n'+JSON.stringify(catalog),
-    'ARCHIVOS:\n'+JSON.stringify(attachments.map(f=>({name:f.name,type:f.type,size:f.size}))),
-    'PETICION:\n'+String(userText).slice(0,10500)
+    (english?'RECENT CONVERSATION:\n':'HISTORIAL RECIENTE:\n')+history,
+    (english?'RELEVANT TOOLS (selected and related from an index of ':'HERRAMIENTAS RELEVANTES (seleccionadas y relacionadas desde un índice de ')+coreToolCatalog().length+(english?' available tools; other tools may be in the full registry):\n':' herramientas disponibles; otras herramientas pueden estar en el registro completo):\n')+JSON.stringify(catalog),
+    (english?'FILES:\n':'ARCHIVOS:\n')+JSON.stringify(attachments.map(f=>({name:f.name,type:f.type,size:f.size}))),
+    (english?'USER REQUEST:\n':'PETICION:\n')+String(userText).slice(0,10500)
   ].join('\n\n');
 }
 
