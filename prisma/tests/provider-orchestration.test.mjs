@@ -225,7 +225,7 @@ const independentZai=await requestWithCredentialPool(env7,'zai',async(key)=>{
   return key==='independent-zai-account-6'
     ? new Response('ok',{status:200})
     : new Response(JSON.stringify({error:{code:'1308',message:'account rate limited'}}),{status:429});
-},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,sweepRateLimitSlots:true,startIndex:0});
 assert.equal(independentZai.status,200,'Z.AI must try the next independent account after a per-account 429');
 assert.equal(independentZaiAttempts,6,'All six Z.AI accounts are checked until one succeeds');
 assert.equal(await getProviderHold(env7,'zai'),null,'A rate limit on one independent account must not open a provider-wide circuit');
@@ -236,7 +236,7 @@ let allLimitedAttempts=0;
 const allLimited=await requestWithCredentialPool(env8,'zai',async()=>{
   allLimitedAttempts++;
   return new Response(JSON.stringify({error:{code:'1308',message:'account rate limited'}}),{status:429});
-},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,sweepRateLimitSlots:true,startIndex:0});
 assert.equal(allLimited.status,429,'Return the last upstream limit if every independent account is limited');
 assert.equal(allLimitedAttempts,6,'A rate limit is isolated and recorded for each of the six independent accounts');
 assert.equal(await getProviderHold(env8,'zai'),null,'Exhausted independent accounts must not create a global provider hold');
@@ -348,7 +348,7 @@ let sensenovaAttempts=0;
 const sensenovaRecovered=await requestWithCredentialPool(env16,'sensenova',async key=>{
   sensenovaAttempts++;
   return key==='independent-sensenova-account-6'?new Response('ok',{status:200}):new Response('account quota exhausted',{status:429});
-},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,sweepRateLimitSlots:true,startIndex:0});
 assert.equal(sensenovaRecovered.status,200,'SenseNova rotates through independent accounts after per-account 429');
 assert.equal(sensenovaAttempts,6);
 
@@ -358,7 +358,7 @@ let aihubmixAttempts=0;
 const aihubmixRecovered=await requestWithCredentialPool(env17,'aihubmix',async key=>{
   aihubmixAttempts++;
   return key==='independent-aihubmix-account-5'?new Response('ok',{status:200}):new Response('account quota exhausted',{status:402});
-},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,sweepRateLimitSlots:true,startIndex:0});
 assert.equal(aihubmixRecovered.status,200,'AIHubMix rotates to the next account when one account has no remaining quota');
 assert.equal(aihubmixAttempts,5);
 
