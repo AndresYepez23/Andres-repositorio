@@ -425,8 +425,10 @@ function renderChatModelOptions(){
  list.replaceChildren();
  const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
  let count=0;
- for(const provider of MODEL_PROVIDER_ORDER){
-  const models=centralModelCatalog?.chat?.[provider];
+ const catalog=centralModelCatalog?.chat||{};
+ const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(provider=>!MODEL_PROVIDER_ORDER.includes(provider)).sort()];
+ for(const provider of providers){
+  const models=catalog[provider];
   if(!Array.isArray(models)||!models.length)continue;
   count+=models.length;
   const availability=providerAvailability(provider,'chat');
