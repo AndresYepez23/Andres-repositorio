@@ -327,7 +327,7 @@ const GLOSSARY=new Map([
  ...DATA.map(([key,definition,application],index)=>[fold(key),{definition,application,topicEn:DATA_EN[index][0],definitionEn:DATA_EN[index][1],applicationEn:DATA_EN[index][2]}]),
  ...DATA_EN.map(([key,definition,application],index)=>[fold(key),{definition:DATA[index][1],application:DATA[index][2],topicEn:key,definitionEn:definition,applicationEn:application}])
 ]);
-const N='[-+]?(?:\d+(?:[.,]\d+)?|[.,]\d+)';
+const N='[-+]?(?:\\d+(?:[.,]\\d+)?|[.,]\\d+)';
 const number=x=>Number(String(x).replace(',','.'));
 const english=()=>typeof window!=='undefined'&&window.prismaI18n?.language==='en';
 const format=x=>Number.isFinite(x)?new Intl.NumberFormat(english()?'en-US':'es-CO',{maximumFractionDigits:6}).format(Number(x.toPrecision(12))):null;
