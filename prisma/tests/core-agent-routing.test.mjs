@@ -465,6 +465,8 @@ assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova 
 // Prisma Core independent intelligence must work without AI models or Mini.
 assert.ok(INDEPENDENT_CORE_KNOWLEDGE_COUNT>=40,'Ship at least 40 curated, bounded factual concepts');
 assert.match(solveOfflineArithmetic('15% de 200'),/30/,'Offline percentage');
+assert.match(solveOfflineArithmetic('15% of 200'),/30/,'English offline percentage');
+assert.match(solveOfflineArithmetic('What is 25 * 4?'),/100/,'English offline multiplication');
 assert.match(solveOfflineArithmetic('¿Cuánto es 25 * 4?'),/100/,'Offline multiplication');
 assert.match(solveOfflineArithmetic('10 / 0'),/dividir entre cero/,'Zero division');
 assert.match(resolveIndependentCoreRequest('¿Qué es RLS?').text,/filas/,'Offline technical knowledge');
