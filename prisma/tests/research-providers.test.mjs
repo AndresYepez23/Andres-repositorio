@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequestPost } from '../functions/api/research/search.js';
+import { onRequestPost, tavilyKeys } from '../functions/api/research/search.js';
 
 const originalFetch = globalThis.fetch;
 const request = query => new Request('https://prismaspace.pages.dev/api/research/search', {
@@ -67,4 +67,11 @@ test('research rejects cross-origin requests and missing search credentials', as
   assert.equal(blocked.status, 403);
   const missing = await onRequestPost({ request: request('latest AI news'), env: {} });
   assert.equal(missing.status, 502);
+});
+
+test('Tavily credentials can be consolidated into one encrypted JSON binding', () => {
+  const pool=Array.from({length:7},(_,i)=>'tavily-credential-'+(i+1));
+  assert.deepEqual(tavilyKeys({TAVILY_API_KEYS_JSON:JSON.stringify(pool)}),pool);
+  assert.deepEqual(tavilyKeys({TAVILY_API_KEYS_JSON:JSON.stringify(pool),TAVILY_API_KEY:'replaced-primary'}),['replaced-primary',...pool.slice(1)]);
+  assert.deepEqual(tavilyKeys({TAVILY_API_KEYS_JSON:'invalid',TAVILY_API_KEY:'single-key'}),['single-key']);
 });
