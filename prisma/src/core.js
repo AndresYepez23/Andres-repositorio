@@ -1471,7 +1471,7 @@ async function transcribeAttachedImageBatch(userText){
    const recognized=String(result?.text||'').trim();
    if(recognized&&recognized!=='No se detectó texto.'){
     successCount++;
-    outputs.push('### '+file.name+'\n\n'+recognized);
+    outputs.push('### '+file.name+'\n\n```text\n'+recognized+'\n```');
    }else outputs.push('### '+file.name+'\n\nNo se detectó texto legible.');
   }catch(error){
    console.warn('Prisma OCR: no se pudo procesar',file.name,error?.message||error);
