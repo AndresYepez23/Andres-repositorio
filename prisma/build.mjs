@@ -1,5 +1,6 @@
 import { cp, copyFile, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { generateSeoPages } from "./seo/generate.mjs";
+import { generateInternationalPages } from "./seo/generate-international.mjs";
 // Abort publication if Core can no longer discover or safely chain its tools.
 import "./tests/core-agent-routing.test.mjs";
 import "./tests/conversation-history.test.mjs";
@@ -10,6 +11,7 @@ import "./tests/cloudflare-whisper.test.mjs";
 import "./tests/welcome-email.test.mjs";
 import "./tests/settings-ui.test.mjs";
 import "./tests/core-mobile-prism-layout.test.mjs";
+import "./tests/i18n.test.mjs";
 
 const output = new URL("./dist/", import.meta.url);
 await rm(output, { recursive: true, force: true });
@@ -39,8 +41,10 @@ await writeFile(new URL("./dist/prisma-build.json", import.meta.url),
 const sw = await readFile(new URL("./sw.js", import.meta.url), "utf8");
 await writeFile(new URL("./dist/sw.js", import.meta.url), sw.replace("__BUILD_VERSION__", deploymentBuild));
 await generateSeoPages(output);
+await generateInternationalPages(output);
 // Validate the generated static HTML as part of the Cloudflare deployment gate.
 await import("./tests/seo-build.test.mjs");
+await import("./tests/seo-international.test.mjs");
 await import("./tests/seo-capabilities.test.mjs");
 await import("./tests/performance-layout.test.mjs");
 console.log("PRISMA build complete: dist/ contains the public application, generated SEO landings and PWA shell.");

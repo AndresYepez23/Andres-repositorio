@@ -1,0 +1,946 @@
+{
+  "version": 1,
+  "source": "seo/content-guides.json",
+  "guides": [
+    {
+      "slug": "unir-varios-pdf",
+      "title": "How to Merge Multiple PDFs into One File | Prisma Space",
+      "h1": "How to Merge Multiple PDFs into One File",
+      "description": "Learn how to combine multiple PDF documents into one, maintain the page order, and review the final file before sharing it.",
+      "primaryQuery": "merge multiple PDFs into one file",
+      "intro": "Merging PDFs is useful when you have separate certificates, forms, invoices, or notes and need to deliver a single document. Before combining, decide the order and check that all files open correctly.",
+      "sections": [
+        {
+          "heading": "Before Combining the Documents",
+          "paragraphs": [
+            "Rename or identify the files according to the order in which they should appear. If the recipient requires a specific sequence, follow that instruction instead of ordering by download date.",
+            "Keep the originals and avoid including unnecessary pages. The merger does not review whether the file is complete or meets administrative requirements."
+          ]
+        },
+        {
+          "heading": "What to Review After Merging",
+          "paragraphs": [
+            "Open the resulting file and check the first and last pages, the continuity of the content, and the orientation of each page. If you mixed different sizes, it's normal for the final PDF to retain different dimensions.",
+            "If the document contains private information, also review the metadata and visible content before sending it."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Open the Tool and Select the PDFs",
+          "body": "Add all the documents that should form part of the final file. Check that you haven't selected a duplicate version.",
+          "toolId": "pdf-merge"
+        },
+        {
+          "title": "Order the Documents",
+          "body": "Organize the files in the reading or delivery order. Review the list before executing the merge.",
+          "toolId": "pdf-merge"
+        },
+        {
+          "title": "Generate and Download the Document",
+          "body": "Execute the operation and save the combined PDF with an easily identifiable name.",
+          "toolId": "pdf-merge"
+        },
+        {
+          "title": "Verify the Result",
+          "body": "Open the file and browse its pages to confirm that the order and legibility are correct.",
+          "toolId": "pdf-merge"
+        }
+      ],
+      "primaryPageSlug": "unir-pdf",
+      "toolIds": [
+        "pdf-merge",
+        "pdf-split",
+        "pdf-extract"
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf"
+      ],
+      "note": "Work on copies and keep the original documents. The tool combines files but does not validate the content or requirements of the entity receiving the PDF.",
+      "faqs": [
+        [
+          "Can I merge PDFs with different page sizes?",
+          "Yes, the pages can retain their original dimensions within the same document."
+        ],
+        [
+          "Does merging reduce the PDF weight?",
+          "Not necessarily. Combining files can produce a larger document; if you need to reduce it, use a separate optimization tool."
+        ]
+      ],
+      "sourceSlug": "unir-varios-pdf",
+      "englishSlug": "how-to-merge-multiple-pdfs-into-one-file"
+    },
+    {
+      "slug": "dividir-pdf-por-paginas",
+      "title": "How to Split a PDF by Pages or Ranges | Prisma Space",
+      "h1": "How to Split a PDF by Pages or Ranges",
+      "description": "Separate a PDF into smaller documents or extract specific pages to share only the part you need.",
+      "primaryQuery": "split PDF by pages",
+      "intro": "Splitting a PDF allows you to separate chapters, annexes, or specific pages without sending the complete document. Before starting, identify the page numbers and decide if you need multiple files or a single PDF with a selection.",
+      "sections": [
+        {
+          "heading": "Choosing Between Splitting and Extracting Pages",
+          "paragraphs": [
+            "Splitting is suitable for separating a document into parts; extracting pages is more suitable when you only need to keep a selection. The correct operation depends on how you plan to use the results.",
+            "Note that the printed page numbering may not match the actual page position in the file. Use the PDF view to confirm the numbers."
+          ]
+        },
+        {
+          "heading": "Reviewing the Separated Files",
+          "paragraphs": [
+            "Open each resulting file and check that it includes the correct start and end. If a section depends on a cover or annex, include it in the corresponding range.",
+            "Keep the original saved until you've verified all the parts."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Select the Original PDF",
+          "body": "Load a copy of the document you want to separate and confirm that it opens correctly.",
+          "toolId": "pdf-split"
+        },
+        {
+          "title": "Indicate How You Want to Separate",
+          "body": "Choose the available division or specify the pages and ranges you need.",
+          "toolId": "pdf-split"
+        },
+        {
+          "title": "Generate the Files",
+          "body": "Execute the separation and download the resulting documents.",
+          "toolId": "pdf-split"
+        },
+        {
+          "title": "Check Each Part",
+          "body": "Open the files and verify that the pages are not incomplete or out of order.",
+          "toolId": "pdf-extract"
+        }
+      ],
+      "primaryPageSlug": "dividir-pdf",
+      "toolIds": [
+        "pdf-split",
+        "pdf-extract",
+        "pdf-remove-pages"
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf"
+      ],
+      "note": "Ranges refer to the page position in the PDF. Review the visible numbering before deleting or separating pages.",
+      "faqs": [
+        [
+          "Can I extract only three pages?",
+          "Yes. Use the extraction tool and select the pages you want to keep."
+        ],
+        [
+          "Does splitting delete the original PDF?",
+          "No, it should not replace your original file. Always keep an independent copy."
+        ]
+      ],
+      "sourceSlug": "dividir-pdf-por-paginas",
+      "englishSlug": "how-to-split-a-pdf-by-pages-or-ranges"
+    },
+    {
+      "slug": "reducir-peso-pdf",
+      "title": "How to Reduce the Size of a PDF Before Sending | Prisma Space",
+      "h1": "How to Reduce the Size of a PDF Before Sending",
+      "description": "Review options to reduce the size of a PDF, understand what affects its weight, and ensure it remains legible.",
+      "primaryQuery": "reduce PDF size",
+      "intro": "A PDF can be too large to attach to an email or upload to a form. The size depends on images, fonts, scans, and internal content. Before optimizing, save a copy of the original and define the size limit you need to reach.",
+      "sections": [
+        {
+          "heading": "What Usually Increases the Size of a PDF",
+          "paragraphs": [
+            "Photographs and scanned pages usually take up more space than vector text. Embedded fonts, repeated images, and other document resources can also influence the size.",
+            "Reducing the size may involve a loss of quality. If the document contains seals, signatures, or small text, check that they remain legible after optimizing."
+          ]
+        },
+        {
+          "heading": "How to Evaluate the Result",
+          "paragraphs": [
+            "Don't rely solely on the number of kilobytes. Open the file, enlarge small text pages, and compare images and graphics with the original.",
+            "If the document must meet a specific limit, check the final size in the file properties before uploading."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Save a Copy of the PDF",
+          "body": "Conserve the original file and work on a duplicated version.",
+          "toolId": "pdf-compress"
+        },
+        {
+          "title": "Perform the Optimization",
+          "body": "Open the optimization tool and use the available options for the document.",
+          "toolId": "pdf-compress"
+        },
+        {
+          "title": "Compare Size and Quality",
+          "body": "Check the final size and review text, images, signatures, and seals on multiple pages.",
+          "toolId": "pdf-compress"
+        },
+        {
+          "title": "Use the File Only if it Meets the Requirements",
+          "body": "If the quality or size is not suitable, conserve the original and try another configuration or method.",
+          "toolId": "pdf-compress"
+        }
+      ],
+      "primaryPageSlug": "comprimir-pdf",
+      "toolIds": [
+        "pdf-compress",
+        "pdf-to-image",
+        "pdf-metadata"
+      ],
+      "solutionSlugs": [
+        "organizar-documentos-pdf"
+      ],
+      "note": "The optimization tool is in beta. A fixed percentage of reduction is not guaranteed, and not all PDFs can be compressed without loss.",
+      "faqs": [
+        [
+          "Is compression always effective?",
+          "No. Some PDFs are already optimized, or they contain elements that cannot be significantly reduced."
+        ],
+        [
+          "Can I compress without losing quality?",
+          "It depends on the content and method. Compare the exported file and do not use a degraded version for documents that require high legibility."
+        ]
+      ],
+      "sourceSlug": "reducir-peso-pdf",
+      "englishSlug": "how-to-reduce-the-size-of-a-pdf-before-sending"
+    },
+    {
+      "slug": "convertir-imagenes-a-pdf",
+      "title": "How to Convert JPG and PNG to PDF | Prisma Space",
+      "h1": "How to Convert JPG and PNG Images to PDF",
+      "description": "Convert one or multiple JPG or PNG images to a PDF document and review the order and size of the pages.",
+      "primaryQuery": "convert JPG to PDF",
+      "intro": "Converting images to PDF makes it easier to gather photographs, scans, or receipts in a single document that can be shared as a single file. Before converting, decide the order of the images and check that the text in each capture is legible.",
+      "sections": [
+        {
+          "heading": "Preparing the Images",
+          "paragraphs": [
+            "Use JPG or PNG files with the correct orientation and sufficient resolution. If an image is rotated or has unnecessary margins, correct it before creating the PDF.",
+            "Order the images according to the reading sequence. For example, a cover page or an identification page may need to appear first in a form."
+          ]
+        },
+        {
+          "heading": "Checking the Generated PDF",
+          "paragraphs": [
+            "Open the document and review that each image occupies the page as expected. Check that there are no crops, rotations, or small text.",
+            "If you need to send a lightweight file, measure its size and consider optimizing a copy after verifying the quality."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Select the Images",
+          "body": "Add one or multiple JPG or PNG images to the tool.",
+          "toolId": "image-pdf"
+        },
+        {
+          "title": "Check the Order",
+          "body": "Review the sequence in which the images will be incorporated into the document.",
+          "toolId": "image-pdf"
+        },
+        {
+          "title": "Generate the PDF",
+          "body": "Perform the conversion and download the resulting document.",
+          "toolId": "image-pdf"
+        },
+        {
+          "title": "Review Pages and Legibility",
+          "body": "Open the PDF and confirm that the images are complete and readable.",
+          "toolId": "image-pdf"
+        }
+      ],
+      "primaryPageSlug": "jpg-a-pdf",
+      "toolIds": [
+        "image-pdf",
+        "pdf-compress",
+        "pdf-metadata"
+      ],
+      "solutionSlugs": [
+        "convertir-documentos-entre-formatos",
+        "organizar-documentos-pdf"
+      ],
+      "note": "The conversion places images in PDF pages; it does not automatically recognize text from a photograph. To extract text, you need OCR.",
+      "faqs": [
+        [
+          "Can I convert multiple photos to a single PDF?",
+          "Yes. Select multiple images and check their order before generating the document."
+        ],
+        [
+          "Will the PDF have selectable text?",
+          "Not necessarily. If the origin is a photograph, the page will remain an image until OCR is applied."
+        ]
+      ],
+      "sourceSlug": "convertir-imagenes-a-pdf",
+      "englishSlug": "how-to-convert-jpg-and-png-images-to-pdf"
+    },
+    {
+      "slug": "comprimir-imagen-para-enviar",
+      "title": "How to Compress an Image for Sending | Prisma Space",
+      "h1": "How to Compress an Image for Sending",
+      "description": "Reduce the weight of a photograph for email, forms, or messaging and learn to check the quality after exporting it.",
+      "primaryQuery": "compress image online",
+      "intro": "When a photo exceeds the limit of a form or takes too long to send, reducing its weight can help. The goal is not to achieve the smallest file at any cost: seek a balance between size, dimensions, and detail.",
+      "sections": [
+        {
+          "heading": "Deciding What to Reduce First",
+          "paragraphs": [
+            "If the image has more pixels than needed, resizing can reduce the weight without forcing too much compression. If your dimensions are already correct, adjust the quality of the format.",
+            "For photographs, it's often useful to compare JPG or WebP; for graphics with transparency, check that the destination format preserves the alpha channel in the output file."
+          ]
+        },
+        {
+          "heading": "Checking the Result",
+          "paragraphs": [
+            "Zoom in on areas with text, edges, and fine details. Aggressive compression can produce blocks, halos, or loss of sharpness.",
+            "Review the final size in KB or MB and confirm that the form or receiving service accepts that format."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Upload a Copy of the Image",
+          "body": "Select the photograph you want to reduce and keep the original.",
+          "toolId": "image-compress"
+        },
+        {
+          "title": "Adjust the Compression",
+          "body": "Modify the quality with moderate steps and compare the preview when available.",
+          "toolId": "image-compress"
+        },
+        {
+          "title": "Resize if Necessary",
+          "body": "If the image has more pixels than you need, change its dimensions before exporting.",
+          "toolId": "image-resize"
+        },
+        {
+          "title": "Download and Verify",
+          "body": "Check the weight and open the final image to confirm it remains legible.",
+          "toolId": "image-compress"
+        }
+      ],
+      "primaryPageSlug": "comprimir-imagen",
+      "toolIds": [
+        "image-compress",
+        "image-resize",
+        "image-convert"
+      ],
+      "solutionSlugs": [
+        "optimizar-imagenes-para-web"
+      ],
+      "note": "Compression can reduce quality. Do not replace the original and avoid degrading documents or photographs that must preserve proof details.",
+      "faqs": [
+        [
+          "What quality should I choose?",
+          "There is no universal value. Compare the visual result and the final size according to the image's use."
+        ],
+        [
+          "Does resizing also help?",
+          "Yes, when the original dimensions clearly exceed the necessary ones for the destination."
+        ]
+      ],
+      "sourceSlug": "comprimir-imagen-para-enviar",
+      "englishSlug": "how-to-compress-an-image-for-sending"
+    },
+    {
+      "slug": "convertir-imagenes-a-webp",
+      "title": "How to Convert JPG or PNG to WebP | Prisma Space",
+      "h1": "How to Convert JPG or PNG to WebP",
+      "description": "Convert images to WebP for use on a website and review transparency, compatibility, and quality before publishing.",
+      "primaryQuery": "convert JPG to WebP",
+      "intro": "WebP is a modern image format that can reduce the size of many web resources. Conversion is not an automatic improvement for all files: compare the result, verify if you need transparency, and keep a copy of the original.",
+      "sections": [
+        {
+          "heading": "Choosing the Source Format",
+          "paragraphs": [
+            "JPG is often used for photographs, and PNG for graphics or images with transparency. Before converting, confirm that the original file looks correct and that the destination accepts WebP.",
+            "If the PNG contains transparency, check that the converter preserves the alpha channel in the output file."
+          ]
+        },
+        {
+          "heading": "Evaluating Quality and Compatibility",
+          "paragraphs": [
+            "Open the exported WebP and compare edges, text, and gradients. A smaller size does not compensate if the result loses details that are important.",
+            "Check that the website, CMS, or application where you will publish the image supports WebP. Keep an alternative if you need compatibility with older systems."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Open the Image Converter",
+          "body": "Select the conversion tool and upload a JPG or PNG.",
+          "toolId": "image-convert"
+        },
+        {
+          "title": "Choose WebP as Output",
+          "body": "Select the WebP format in the available options.",
+          "toolId": "image-convert"
+        },
+        {
+          "title": "Generate the New Image",
+          "body": "Execute the conversion and download the resulting file.",
+          "toolId": "image-convert"
+        },
+        {
+          "title": "Compare the File",
+          "body": "Review the quality, transparency, and size before replacing the resource on your website.",
+          "toolId": "image-convert"
+        }
+      ],
+      "primaryPageSlug": "jpg-a-webp",
+      "toolIds": [
+        "image-convert",
+        "image-compress",
+        "image-resize"
+      ],
+      "solutionSlugs": [
+        "optimizar-imagenes-para-web"
+      ],
+      "note": "Compatibility depends on the browser, CMS, and environment where the image will be published. Keep the original file and test the output on the destination site.",
+      "faqs": [
+        [
+          "Is WebP suitable for photographs?",
+          "Yes, it can be suitable for photographs and other resources, as long as the final quality is sufficient."
+        ],
+        [
+          "Does WebP preserve PNG transparency?",
+          "The format supports transparency, but you must verify that the specific conversion maintains it."
+        ]
+      ],
+      "sourceSlug": "convertir-imagenes-a-webp",
+      "englishSlug": "how-to-convert-jpg-or-png-to-webp"
+    },
+    {
+      "slug": "eliminar-metadatos-de-una-foto",
+      "title": "How to Remove EXIF Metadata from an Image | Prisma Space",
+      "h1": "How to Remove EXIF Metadata from an Image",
+      "description": "Find out what information a photograph may contain and remove compatible EXIF metadata before sharing a copy.",
+      "primaryQuery": "remove EXIF metadata from an image",
+      "intro": "Images can store technical data such as date, camera model, and in some cases, GPS coordinates. Before publishing an image, you can inspect those metadata and clean a copy if you don't need to preserve them.",
+      "sections": [
+        {
+          "heading": "What are EXIF metadata",
+          "paragraphs": [
+            "EXIF is information that some cameras and phones store along with the image. It can include capture settings, date, device, and location, depending on the configuration and file.",
+            "Not all images contain the same fields. Platforms can also remove or modify metadata when processing a photograph."
+          ]
+        },
+        {
+          "heading": "What the EXIF cleanup does not remove",
+          "paragraphs": [
+            "Removing metadata does not delete addresses, names, license plates, documents, or faces that appear within the image. It also does not automatically remove file name or publication data.",
+            "After cleaning, go back and inspect the copy, and review the visible content before sharing it."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Inspect the photograph",
+          "body": "Load a copy and check the available metadata to identify fields you don't want to publish.",
+          "toolId": "image-metadata"
+        },
+        {
+          "title": "Clean the metadata",
+          "body": "Open the metadata removal tool and process the image copy.",
+          "toolId": "image-strip-metadata"
+        },
+        {
+          "title": "Download the cleaned file",
+          "body": "Save the output with a different name to avoid overwriting the original.",
+          "toolId": "image-strip-metadata"
+        },
+        {
+          "title": "Double-check it",
+          "body": "Inspect the final file and also review what is visible within the photograph.",
+          "toolId": "image-metadata"
+        }
+      ],
+      "primaryPageSlug": "eliminar-metadatos-imagen",
+      "toolIds": [
+        "image-metadata",
+        "image-strip-metadata",
+        "file-inspector"
+      ],
+      "solutionSlugs": [
+        "proteger-privacidad-de-archivos"
+      ],
+      "note": "Removing EXIF metadata reduces some metadata, but it does not guarantee anonymity. Review the visible content, file name, and publication context.",
+      "faqs": [
+        [
+          "Can EXIF metadata include GPS?",
+          "Some photographs store coordinates when the camera or phone records location. Check the available fields in the file."
+        ],
+        [
+          "Does removing EXIF eliminate the location visible in the photo?",
+          "No. If the location appears on a sign, document, or map within the image, you must edit that content separately."
+        ]
+      ],
+      "sourceSlug": "eliminar-metadatos-de-una-foto",
+      "englishSlug": "how-to-remove-exif-metadata-from-an-image"
+    },
+    {
+      "slug": "convertir-csv-a-json",
+      "title": "How to Convert CSV to JSON and JSON to CSV | Prisma Space",
+      "h1": "How to Convert CSV to JSON and JSON to CSV",
+      "description": "Convert tabular data between CSV and JSON, understand their differences, and review delimiters, headers, and values before importing.",
+      "primaryQuery": "convert CSV to JSON",
+      "intro": "CSV represents data in rows and columns using separators; JSON uses objects and arrays. Converting between both formats is useful for moving information between spreadsheets, scripts, and APIs, but it requires reviewing how fields are represented.",
+      "sections": [
+        {
+          "heading": "Preparing a valid CSV",
+          "paragraphs": [
+            "Check that the first row contains headers, that the delimiter is consistent, and that fields with commas or line breaks are correctly quoted.",
+            "Review leading zeros, dates, and long numbers. Some applications interpret these values differently when opening them."
+          ]
+        },
+        {
+          "heading": "Reviewing the output JSON",
+          "paragraphs": [
+            "In JSON, each row usually converts to an object with properties associated with the headers. If header column names are repeated or empty, the structure may not represent what you expect.",
+            "After converting, compare several records with the original CSV and validate that no characters, columns, or values have been lost."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Open CSV to JSON",
+          "body": "Select the file or paste the CSV content according to available fields.",
+          "toolId": "csv-json"
+        },
+        {
+          "title": "Check headers and delimiters",
+          "body": "Make sure columns are recognized correctly before executing.",
+          "toolId": "csv-json"
+        },
+        {
+          "title": "Generate the JSON",
+          "body": "Run the conversion and review that the output contains an array of records with their properties.",
+          "toolId": "csv-json"
+        },
+        {
+          "title": "Convert back if needed",
+          "body": "Use JSON to CSV to recover a table and check the headers and values exported.",
+          "toolId": "json-csv"
+        }
+      ],
+      "primaryPageSlug": "csv-a-json",
+      "toolIds": [
+        "csv-json",
+        "json-csv",
+        "csv-profile-local",
+        "csv-stats"
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos"
+      ],
+      "note": "The conversion does not fully validate data quality. Review delimiters, types, required fields, and sensitive values before importing.",
+      "faqs": [
+        [
+          "Does CSV support lists or nested objects?",
+          "CSV is tabular and does not natively represent nested structures. JSON can express arrays and objects within other objects."
+        ],
+        [
+          "Does the conversion preserve leading zeros?",
+          "It depends on how values are interpreted. Check identifiers, zip codes, and account numbers as text when applicable."
+        ]
+      ],
+      "sourceSlug": "convertir-csv-a-json",
+      "englishSlug": "how-to-convert-csv-to-json-and-json-to-csv"
+    },
+    {
+      "slug": "revisar-archivo-csv",
+      "title": "How to Review a CSV File Before Analyzing It | Prisma Space",
+      "h1": "How to Review a CSV File Before Analyzing It",
+      "description": "Verify headers, rows, columns, and basic statistics of a CSV before importing it into a spreadsheet or system.",
+      "primaryQuery": "analyze CSV file online",
+      "intro": "A CSV file can be opened in a spreadsheet and still contain errors that affect analysis: incorrect delimiters, empty columns, repeated headers, or mixed data. An initial review helps detect problems before transformation.",
+      "sections": [
+        {
+          "heading": "What to Review in the Structure",
+          "paragraphs": [
+            "Verify the number of columns, the name of the headers, and whether each row maintains the same structure. Observe if there are commas within text fields or line breaks that should be enclosed in quotes.",
+            "Do not confuse an empty row with a missing value. Decide if the data is absent, if the field does not apply, or if it is an error in capture."
+          ]
+        },
+        {
+          "heading": "What to Review in Values",
+          "paragraphs": [
+            "Search for dates with different formats, numbers stored as text, extra spaces, and values that should have leading zeros.",
+            "Descriptive statistics help recognize patterns, but do not explain the meaning of the data by themselves. Contrast the results with the origin of the file."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Load the CSV",
+          "body": "Select the file you want to review and keep a copy of the original."
+        },
+        {
+          "title": "Inspect Headers and Structure",
+          "body": "Check the columns and basic metrics offered by the profiler."
+        },
+        {
+          "title": "Review Statistics",
+          "body": "Use statistics to detect unexpected values or distributions that deserve a check."
+        },
+        {
+          "title": "Correct in a Copy",
+          "body": "Make the necessary adjustments in your spreadsheet tool or editor and re-inspect the file."
+        }
+      ],
+      "primaryPageSlug": "auditar-archivo-csv",
+      "toolIds": [
+        "csv-profile-local",
+        "csv-stats",
+        "csv-json",
+        "json-csv"
+      ],
+      "solutionSlugs": [
+        "analizar-y-convertir-datos"
+      ],
+      "note": "A statistical profile does not determine if the data is true or if a column is well-defined. Validation should consider the context and project rules.",
+      "faqs": [
+        [
+          "Can I detect duplicates with a CSV review?",
+          "The review helps inspect the structure, but you must choose a key and a duplication rule suitable for your dataset."
+        ],
+        [
+          "Should I modify the original file?",
+          "It is safer to work on a copy and keep an unchanged version for comparing results."
+        ]
+      ],
+      "sourceSlug": "revisar-archivo-csv",
+      "englishSlug": "how-to-review-a-csv-file-before-analyzing-it"
+    },
+    {
+      "slug": "crear-referencias-apa-vancouver",
+      "title": "How to Create APA and Vancouver References | Prisma Space",
+      "h1": "How to Create Bibliographic References in APA and Vancouver",
+      "description": "Organize source data and prepare a reference in common bibliographic styles with a final review.",
+      "primaryQuery": "citation generator APA and Vancouver",
+      "intro": "A bibliographic reference allows identifying and locating the source that supports a statement. APA and Vancouver styles order information differently; before generating a citation, gather the publication data and confirm which edition your institution requires.",
+      "sections": [
+        {
+          "heading": "Data to Gather",
+          "paragraphs": [
+            "For an article, locate authors, title, journal name, year, volume, number, pages, and DOI when available. For books and chapters, also check publisher, edition, and publication data.",
+            "Do not invent missing fields. If a source lacks a DOI or does not publish a date, follow the style and document type rules instead of completing the data by intuition."
+          ]
+        },
+        {
+          "heading": "Review After Generating",
+          "paragraphs": [
+            "Compare the reference with the editorial page or the original document. Review author order, punctuation, italics, capitalization, abbreviations, and links.",
+            "A correct reference should also correspond to a citation within the text and appear in the final list. Maintain consistency throughout the work."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Identify the Source Type",
+          "body": "Determine if you are citing an article, book, chapter, website, or other type of publication."
+        },
+        {
+          "title": "Enter Verified Data",
+          "body": "Complete available fields using the original source information."
+        },
+        {
+          "title": "Select the Style",
+          "body": "Choose APA, Vancouver, or another style accepted by the tool."
+        },
+        {
+          "title": "Contrast and Correct",
+          "body": "Compare the result with the style guide and faculty or journal instructions."
+        }
+      ],
+      "primaryPageSlug": "generador-citas-apa-vancouver",
+      "toolIds": [
+        "citation-generator",
+        "citation-ids-local"
+      ],
+      "solutionSlugs": [
+        "estudiar-y-citar-fuentes"
+      ],
+      "note": "The generator prepares references from the data you enter. It does not certify that metadata is correct or substitute the official style guide required.",
+      "faqs": [
+        [
+          "Do APA and Vancouver styles look the same?",
+          "No. APA usually organizes references alphabetically; Vancouver uses numbering according to the order of citation. Check the exact rules of the requested edition."
+        ],
+        [
+          "Can I cite a source without a DOI?",
+          "Yes, when the source type and style rules permit. Do not invent a DOI or substitute data with an unverified link."
+        ]
+      ],
+      "sourceSlug": "crear-referencias-apa-vancouver",
+      "englishSlug": "how-to-create-bibliographic-references-in-apa-and-vancouver"
+    },
+    {
+      "slug": "crear-codigo-qr",
+      "title": "How to Create a QR Code Online | Prisma Space",
+      "h1": "How to Create a QR Code for a Link or Text",
+      "description": "Generate a QR code from a link or text, download it, and verify that it can be scanned before printing or sharing it.",
+      "primaryQuery": "create QR code online",
+      "intro": "A QR code allows you to open a link or read information from a phone's camera. For it to work well, the content must be correct, and the code must retain sufficient contrast and size on the support where it will be published.",
+      "sections": [
+        {
+          "heading": "Prepare the Content",
+          "paragraphs": [
+            "If the QR code contains a URL, open the link first and verify that it is the final destination. Avoid shortened links or redirects that you do not control.",
+            "For text, use a brief string and verify that it does not include private data that you do not want to share with anyone who scans the code."
+          ]
+        },
+        {
+          "heading": "Test Before Publishing",
+          "paragraphs": [
+            "Download the code and scan it with more than one device if possible. Verify that the destination opens correctly and that the QR code remains legible in the final size.",
+            "If you plan to print it, leave a free margin around it and avoid placing elements on the code's modules."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Open the QR Code Generator",
+          "body": "Enter the URL or text you want to encode.",
+          "toolId": "qr"
+        },
+        {
+          "title": "Generate the Code",
+          "body": "Run the tool and review the obtained image.",
+          "toolId": "qr"
+        },
+        {
+          "title": "Download the File",
+          "body": "Save the QR code in the available format and avoid compressing it excessively.",
+          "toolId": "qr"
+        },
+        {
+          "title": "Scan and Verify",
+          "body": "Test the code from another device before printing or distributing it.",
+          "toolId": "qr"
+        }
+      ],
+      "primaryPageSlug": "generador-de-codigos-qr",
+      "toolIds": [
+        "qr",
+        "qr-scan",
+        "qr-vcard"
+      ],
+      "solutionSlugs": [
+        "preparar-imagenes-para-redes"
+      ],
+      "note": "A QR code can continue to circulate even if the destination link changes. Use a stable URL and do not encode confidential information.",
+      "faqs": [
+        [
+          "Can a QR code open a web page?",
+          "Yes. If you encode a valid URL, the camera or reader can open the link when scanning it."
+        ],
+        [
+          "Can I change the link after downloading it?",
+          "No in a static QR code. To change the destination, you would need to generate another code or use a redirect service that you control."
+        ]
+      ],
+      "sourceSlug": "crear-codigo-qr",
+      "englishSlug": "how-to-create-a-qr-code-for-a-link-or-text"
+    },
+    {
+      "slug": "extraer-audio-de-video",
+      "title": "How to Extract Audio from a Video | Prisma Space",
+      "h1": "How to Extract Audio from a Video",
+      "description": "Separate the audio track from a video and verify the format and playback of the exported file.",
+      "primaryQuery": "extract audio from a video online",
+      "intro": "Extracting audio from a video can be useful for reviewing an interview, reusing your own narration, or working with a recording without loading the entire image. Before processing, confirm that you have the right to use the content and that the file is compatible.",
+      "sections": [
+        {
+          "heading": "Prepare the Video",
+          "paragraphs": [
+            "Verify that the video plays and has an audible audio track. If the file is very long or heavy, try it first with a shorter copy to evaluate the performance.",
+            "Not all combinations of containers and codecs are compatible. A file that cannot be opened in the browser may require converting it first."
+          ]
+        },
+        {
+          "heading": "Review the Exported Audio",
+          "paragraphs": [
+            "Listen to the beginning, a middle part, and the end to confirm that the track has been extracted completely. Verify the format and duration.",
+            "Extraction does not automatically improve quality or remove noise. If you need other adjustments, use a specific tool and review each result."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Select a Compatible Video",
+          "body": "Upload a copy of the file and verify that the browser can process it.",
+          "toolId": "video-audio"
+        },
+        {
+          "title": "Execute the Extraction",
+          "body": "Start the operation to separate the audio track from the video.",
+          "toolId": "video-audio"
+        },
+        {
+          "title": "Download the Audio File",
+          "body": "Save the output and confirm its extension and size.",
+          "toolId": "video-audio"
+        },
+        {
+          "title": "Listen to the Result",
+          "body": "Play the exported file and verify that there are no unexpected cuts or silences.",
+          "toolId": "video-audio"
+        }
+      ],
+      "primaryPageSlug": "extraer-audio-de-video",
+      "toolIds": [
+        "video-audio",
+        "audio-trim",
+        "audio-convert"
+      ],
+      "solutionSlugs": [
+        "editar-audio-y-video"
+      ],
+      "note": "Audio extraction is in beta and may depend on the format, device memory, and browser. Respect the original material's copyright and permissions.",
+      "faqs": [
+        [
+          "Can I extract audio from any video?",
+          "No. Compatibility depends on the container, codecs, file size, and browser resources."
+        ],
+        [
+          "Does the tool automatically convert to MP3?",
+          "Extraction and format conversion are distinct operations. Verify the output extension and use the converter if you need another format."
+        ]
+      ],
+      "sourceSlug": "extraer-audio-de-video",
+      "englishSlug": "how-to-extract-audio-from-a-video"
+    },
+    {
+      "slug": "transcribir-audio-con-ia",
+      "title": "How to Transcribe Audio to Text with AI | Prisma Space",
+      "h1": "How to Transcribe Audio to Text with AI",
+      "description": "Prepare a recording, request a transcription with AI when the provider is connected, and review names, numbers, and punctuation.",
+      "primaryQuery": "transcribe audio to text with AI",
+      "intro": "A transcription converts a recording into text that can be searched, reviewed, and reused. Quality depends on noise, accents, the number of speakers, language, and the chosen engine. In Prisma, this feature is in beta and requires a connected provider's availability.",
+      "sections": [
+        {
+          "heading": "Prepare a Useful Recording",
+          "paragraphs": [
+            "Use a file with clear voice and avoid cutting the beginning or end of a sentence. If there are multiple speakers, identify the speaker changes during review.",
+            "Confirm that you have permission to process the recording, especially if it contains private conversations, personal data, or third-party information."
+          ]
+        },
+        {
+          "heading": "Review the Transcription",
+          "paragraphs": [
+            "AI may confuse proper nouns, numbers, abbreviations, and words with similar pronunciation. Compare the text with the audio before citing or sharing it.",
+            "Do not assume that punctuation, timestamps, or speaker identification are accurate if the tool does not explicitly offer them."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Check AI Connection",
+          "body": "Verify that the required provider is available and that your configuration and quota allow for transcription."
+        },
+        {
+          "title": "Select the Audio",
+          "body": "Upload a compatible recording and ensure it plays correctly."
+        },
+        {
+          "title": "Request the Transcription",
+          "body": "Run the function and wait for the provider to process the file."
+        },
+        {
+          "title": "Correct the Text",
+          "body": "Listen to the doubtful fragments and review names, dates, numbers, and technical terms before using the result."
+        }
+      ],
+      "primaryPageSlug": "transcribir-audio-ia",
+      "toolIds": [
+        "ai-transcribe",
+        "video-audio",
+        "ai-voice"
+      ],
+      "solutionSlugs": [
+        "editar-audio-y-video",
+        "estudiar-y-citar-fuentes"
+      ],
+      "note": "This feature is in beta and may require a BYOK (Bring Your Own Key) provider, in addition to external credits or limits. Do not upload recordings without the involved parties' authorization.",
+      "faqs": [
+        [
+          "Is the transcription always accurate?",
+          "No. Noise, accents, proper nouns, and overlapping voices can cause errors. Review the text with the audio."
+        ],
+        [
+          "Can I transcribe any duration?",
+          "Depends on the provider, file size, and your configuration limits. Consult the conditions before processing long recordings."
+        ]
+      ],
+      "sourceSlug": "transcribir-audio-con-ia",
+      "englishSlug": "how-to-transcribe-audio-to-text-with-ai"
+    },
+    {
+      "slug": "validar-estructuras-y-datos",
+      "title": "How to Validate JSON Structures and Test Data | Prisma Space",
+      "h1": "How to Validate JSON Structures and Test Data",
+      "description": "Review a JSON structure, validate its fields with a schema, and test patterns or formats before integrating data.",
+      "primaryQuery": "validate JSON online",
+      "intro": "When an API returns JSON or a file feeds an application, a small structural error can break the flow. Validating allows you to check that fields and types match what is expected; formatting, comparing, and testing patterns are distinct tasks that should be separated.",
+      "sections": [
+        {
+          "heading": "Define What the JSON Should Contain",
+          "paragraphs": [
+            "Before validating, identify the required fields, their types, allowed values, and whether a property can be missing or null. A schema should represent the real project rules, not just the form of an example.",
+            "Use test data and remove tokens, keys, or personal information before pasting content into an external tool."
+          ]
+        },
+        {
+          "heading": "Interpret the Results",
+          "paragraphs": [
+            "A validator can detect missing fields or incompatible types, but it does not determine if values are true or if the business works correctly.",
+            "After correcting the structure, test edge cases and validate the response within the application environment."
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "title": "Prepare a Sample Without Sensitive Data",
+          "body": "Create a small representation of the object you want to check."
+        },
+        {
+          "title": "Define or Select the Schema",
+          "body": "Indicate the fields, types, and restrictions that the JSON should comply with."
+        },
+        {
+          "title": "Run the Validation",
+          "body": "Review the errors and distinguish between syntax problems and structural rules."
+        },
+        {
+          "title": "Test Edge Cases",
+          "body": "Check for empty values, optional fields, arrays, and unexpected types before integrating the response."
+        }
+      ],
+      "primaryPageSlug": "validar-json-schema",
+      "toolIds": [
+        "json-schema-validate",
+        "regex-test",
+        "jwt-decode",
+        "hash-file"
+      ],
+      "solutionSlugs": [
+        "trabajar-con-codigo-y-apis"
+      ],
+      "note": "Schema validation does not verify the authenticity of a response or replace backend testing. Do not paste credentials, active JWTs, or secrets into a public tool.",
+      "faqs": [
+        [
+          "Is validating JSON the same as formatting it?",
+          "No. Formatting changes the presentation; validating checks if the data complies with defined rules."
+        ],
+        [
+          "Does decoding a JWT check if it is valid?",
+          "No. Decoding allows you to read its content, but the signature must be verified with the correct procedure and keys."
+        ]
+      ],
+      "sourceSlug": "validar-estructuras-y-datos",
+      "englishSlug": "how-to-validate-json-structures-and-test-data"
+    }
+  ]
+}

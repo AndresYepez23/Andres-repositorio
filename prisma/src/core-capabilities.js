@@ -2,8 +2,120 @@
 import { tools } from './registry.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
 import { workflowCatalog } from './workflow-catalog.js';
-export const normalizeIntent = value => String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
- .replace(/\b(comrpime|conprime)\b/g,'comprime').replace(/\bfndo\b/g,'fondo').replace(/\bpalbras\b/g,'palabras').replace(/\borganisa\b/g,'organiza');
+const ENGLISH_NEGATIONS = [
+ [/\b(?:do not|don't|dont) want to\b/g,'no quiero'],
+ [/\b(?:do not|don't|dont) remove\b/g,'no quites'],
+ [/\b(?:do not|don't|dont) delete\b/g,'no elimines'],
+ [/\b(?:do not|don't|dont) erase\b/g,'no borres'],
+ [/\b(?:do not|don't|dont) split\b/g,'no dividas'],
+ [/\b(?:do not|don't|dont) merge\b/g,'no unas'],
+ [/\b(?:do not|don't|dont) combine\b/g,'no combines'],
+ [/\b(?:do not|don't|dont) compress\b/g,'no comprimas'],
+ [/\b(?:do not|don't|dont) convert\b/g,'no conviertas'],
+ [/\b(?:do not|don't|dont) resize\b/g,'no redimensiones'],
+ [/\b(?:do not|don't|dont) crop\b/g,'no recortes'],
+ [/\b(?:do not|don't|dont) rotate\b/g,'no gires'],
+ [/\b(?:do not|don't|dont) overwrite\b/g,'no sobrescribas'],
+ ['without removing','sin quitar'],['without deleting','sin eliminar'],
+ ['without cropping','sin recortar'],['without compressing','sin comprimir']
+];
+const ENGLISH_PHRASES = [
+ ['remove the image background','quitar fondo'],['remove image background','quitar fondo'],
+ ['remove the background','quitar fondo'],['remove background','quitar fondo'],
+ ['make the background transparent','quitar fondo'],['make background transparent','quitar fondo'],
+ ['black and white','blanco y negro'],['grayscale','escala de grises'],
+ ['pdf to word','pdf a word'],['convert pdf to word','convierte pdf a word'],
+ ['convert to word','a word'],['word to pdf','word a pdf'],['convert word to pdf','convierte word a pdf'],
+ ['pdf to text','pdf a texto'],['extract text from pdf','extrae texto del pdf'],
+ ['read text from pdf','lee texto pdf'],['extract text from image','extrae texto imagen'],
+ ['convert images to pdf','imagenes a pdf'],['images to pdf','imagenes a pdf'],['image to pdf','imagen a pdf'],
+ ['convert image to png','convierte imagen a png'],['convert image to jpg','convierte imagen a jpg'],
+ ['convert image to jpeg','convierte imagen a jpeg'],['convert image to webp','convierte imagen a webp'],
+ ['convert to png','a png'],['convert to jpg','a jpg'],['convert to jpeg','a jpeg'],['convert to webp','a webp'],
+ ['csv to json','csv a json'],['convert csv to json','convierte csv a json'],
+ ['json to csv','json a csv'],['convert json to csv','convierte json a csv'],
+ ['excel to csv','excel a csv'],['convert excel to csv','convierte excel a csv'],
+ ['csv to excel','csv a excel'],['convert csv to excel','convierte csv a excel'],
+ ['json to xml','json a xml'],['convert json to xml','convierte json a xml'],
+ ['xml to json','xml a json'],['convert xml to json','convierte xml a json'],
+ ['html to markdown','html a markdown'],['convert html to markdown','convierte html a markdown'],
+ ['video to gif','video a gif'],['convert video to gif','convierte video a gif'],
+ ['audio to text','audio a texto'],['speech to text','voz a texto'],['text to speech','texto a voz'],
+ ['remove duplicate lines','elimina lineas duplicadas'],['delete duplicate lines','elimina lineas duplicadas'],
+ ['sort lines alphabetically','ordena lineas alfabeticamente'],
+ ['extract email addresses','extrae correos'],['extract urls','extrae enlaces'],['extract links','extrae enlaces'],
+ ['create qr code','crea codigo qr'],['generate qr code','genera codigo qr'],['scan qr code','escanea codigo qr'],
+ ['count words','cuenta palabras'],['word count','cuenta palabras'],
+ ['add page numbers','numera paginas'],['number pdf pages','numera paginas'],
+ ['add a watermark','marca de agua'],['add watermark','marca de agua'],
+ ['remove exif metadata','quita metadatos exif'],['remove gps metadata','quita metadatos gps'],
+ ['remove metadata','quita metadatos'],['strip exif','quita exif'],
+ ['remove accents','quita tildes'],['remove diacritics','quita diacriticos'],
+ ['remove sensitive data','oculta datos sensibles'],['anonymize text','anonimiza texto'],
+ ['hide api keys','oculta claves api'],['create subtitles','crea subtitulos'],
+ ['generate subtitles','genera subtitulos'],['create flashcards','crea tarjetas'],
+ ['make a study guide','crea guia de estudio'],['create an action plan','crea plan de accion'],
+ ['create a website','crea una pagina web'],['build a website','crea una pagina web'],
+ ['resize video','redimensiona video'],['trim video','recorta video'],['cut video','recorta video'],
+ ['mute video','silencia video'],['extract audio from video','extrae audio de video'],
+ ['speed up video','acelera video'],['slow down video','ralentiza video'],
+ ['compress pdf','comprime pdf'],['compress image','comprime imagen'],
+ ['reduce file size','reduce peso'],['resize image','redimensiona imagen'],['resize photo','redimensiona foto'],
+ ['change image dimensions','cambia dimensiones imagen'],['crop image','recorta imagen'],['crop photo','recorta foto'],
+ ['rotate pdf','rota pdf'],['rotate image','rota imagen'],['rotate photo','rota foto'],
+ ['split pdf','divide pdf'],['split this pdf','divide pdf'],['split pdf into pages','divide pdf'],
+ ['merge pdfs','une pdf'],['merge pdf files','une pdf'],['combine pdfs','combina pdf'],
+ ['combine pdf files','combina pdf'],['join pdf','une pdf'],
+ ['extract pages','extrae paginas'],['extract pdf pages','extrae paginas pdf'],
+ ['remove pages','elimina paginas'],['delete pages','elimina paginas'],
+ ['format json','formatea json'],['pretty print json','formatea json'],
+ ['minify json','minifica json'],['validate json','valida json'],
+ ['clean text','limpia texto'],['analyze text','analiza texto'],['summarize text','resume texto'],
+ ['compare texts','compara textos'],['flip image','voltea imagen'],['mirror image','espejo imagen']
+].sort((a,b)=>b[0].length-a[0].length);
+const ENGLISH_WORDS = [
+ [/\bimages\b/g,'imagenes'],[/\bimage\b/g,'imagen'],[/\bphotos\b/g,'fotos'],[/\bphoto\b/g,'foto'],
+ [/\bpictures\b/g,'imagenes'],[/\bpicture\b/g,'imagen'],
+ [/\bfiles\b/g,'archivos'],[/\bfile\b/g,'archivo'],
+ [/\bdocuments\b/g,'documentos'],[/\bdocument\b/g,'documento'],
+ [/\bpages\b/g,'paginas'],[/\bpage\b/g,'pagina'],
+ [/\bbackgrounds\b/g,'fondos'],[/\bbackground\b/g,'fondo'],
+ [/\bmetadata\b/g,'metadatos'],[/\bwatermark\b/g,'marca de agua'],
+ [/\bwords\b/g,'palabras'],
+ [/\blines\b/g,'lineas'],[/\bline\b/g,'linea'],
+ [/\bemails\b/g,'correos'],[/\bemail\b/g,'correo'],
+ [/\burls\b/g,'urls'],[/\burl\b/g,'url'],[/\blinks\b/g,'enlaces'],[/\blink\b/g,'enlace'],
+ [/\bsubtitles\b/g,'subtitulos'],[/\bsubtitle\b/g,'subtitulo'],
+ [/\bspreadsheets\b/g,'hojas de calculo'],[/\bspreadsheet\b/g,'hoja de calculo'],
+ [/\bduplicates\b/g,'duplicados'],[/\bduplicate\b/g,'duplicado'],
+ [/\bto\b/g,'a'],[/\bfrom\b/g,'de'],[/\binto\b/g,'a'],[/\bwith\b/g,'con'],
+ [/\bwithout\b/g,'sin'],[/\bfor\b/g,'para'],[/\band\b/g,'y'],[/\bor\b/g,'o'],
+ [/\bunder\b/g,'debajo de'],[/\bbelow\b/g,'debajo de'],
+ [/\bplease\b/g,' '],[/\bkindly\b/g,' '],[/\bthe\b/g,' '],
+ [/\bthis\b/g,'este'],[/\bthese\b/g,'estos'],[/\bmy\b/g,'mi'],[/\byour\b/g,'tu'],
+ [/\bremove\b/g,'quita'],[/\bdelete\b/g,'elimina'],[/\berase\b/g,'borra'],
+ [/\bmerge\b/g,'une'],[/\bcombine\b/g,'combina'],[/\bjoin\b/g,'une'],
+ [/\bsplit\b/g,'divide'],[/\bseparate\b/g,'separa'],[/\bextract\b/g,'extrae'],
+ [/\bcompress(?:ed|ing)?\b/g,'comprime'],[/\bresize(?:d|ing)?\b/g,'redimensiona'],[/\bconvert(?:ed|ing)?\b/g,'convierte'],
+ [/\brotate(?:d|ing)?\b/g,'rota'],[/\bcrop(?:ped|ping)?\b/g,'recorta'],[/\btrim(?:med|ming)?\b/g,'recorta'],
+ [/\bmute\b/g,'silencia'],[/\bnormalize\b/g,'normaliza'],[/\btranscribe\b/g,'transcribe'],
+ [/\bcount\b/g,'cuenta'],[/\bformat\b/g,'formatea'],[/\bminify\b/g,'minifica'],
+ [/\bvalidate\b/g,'valida'],[/\bscan\b/g,'escanea'],[/\bcreate\b/g,'crea'],
+ [/\bgenerate\b/g,'genera'],[/\bsort\b/g,'ordena'],[/\bclean\b/g,'limpia'],
+ [/\banalyze\b/g,'analiza'],[/\bsummarize\b/g,'resume'],[/\badd\b/g,'anade'],
+ [/\bnumber\b/g,'numera'],[/\bread\b/g,'lee'],[/\bflip\b/g,'voltea'],
+ [/\bmirror\b/g,'espejo'],[/\bpdfs\b/g,'pdf'],[/\bqr code\b/g,'codigo qr']
+];
+export const normalizeIntent = value => {
+ let q=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ q=q.replace(/\b(comrpime|conprime)\b/g,'comprime').replace(/\bfndo\b/g,'fondo')
+  .replace(/\bpalbras\b/g,'palabras').replace(/\borganisa\b/g,'organiza');
+ for(const [pattern,replacement] of ENGLISH_NEGATIONS)q=q.replace(pattern,replacement);
+ for(const [phrase,replacement] of ENGLISH_PHRASES)q=q.replaceAll(phrase,replacement);
+ for(const [pattern,replacement] of ENGLISH_WORDS)q=q.replace(pattern,replacement);
+ return q.replace(/\s+/g,' ').trim();
+};
+
 export function fileKind(f){const n=String(f?.name||'').toLowerCase(),t=String(f?.type||'');return t==='application/pdf'||n.endsWith('.pdf')?'pdf':t.startsWith('image/')||/\.(png|jpe?g|webp|gif)$/.test(n)?'image':t.startsWith('video/')?'video':t.startsWith('audio/')?'audio':'data';}
 export const CAPABILITIES = [
  ['image-bg','image',/quitar?\w*.*fondo|elimin\w*.*fondo|borr\w*.*fondo|retir\w*.*fondo|sin fondo|fondo.*desapare|dej\w*.*transparen|(?:solo|solamente) el objeto|solo (?:la persona|el sujeto)|aislar? el sujeto|recorta el sujeto.*detras|conserva el objeto/],
@@ -42,7 +154,7 @@ export const CAPABILITIES = [
 export const CAPABILITY_WORKFLOWS=workflowCatalog.map(flow=>({...flow}));
 export function extractPayload(raw){
  const s=String(raw||'');const fenced=s.match(/```[^\n]*\n([\s\S]*?)\n?```/);if(fenced)return {instruction:s.slice(0,fenced.index),text:fenced[1]};
- const label=s.match(/(?:texto|contenido|datos|lista)\s*:\s*([\s\S]*)$/i);if(label)return {instruction:s.slice(0,label.index),text:label[1]};
+ const label=s.match(/(?:texto|contenido|datos|lista|text|content|data|list)\s*:\s*([\s\S]*)$/i);if(label)return {instruction:s.slice(0,label.index),text:label[1]};
  const json=s.search(/[\[{]/);if(json>=0&&/json/i.test(s.slice(0,json)))return {instruction:s.slice(0,json),text:s.slice(json)};
  const colon=s.search(/:(?!\/\/)/);if(colon>=0)return {instruction:s.slice(0,colon),text:s.slice(colon+1).replace(/^\s/, '')};
  const quote=s.match(/[“"]([^”"]+)[”"]\s*$/);if(quote)return {instruction:s.slice(0,quote.index),text:quote[1]};
@@ -53,13 +165,19 @@ export function extractPayload(raw){
 export function isInformationalIntent(raw){
  const {instruction}=extractPayload(raw);
  const q=normalizeIntent(instruction).trim().replace(/^[¿¡\s]+/,'');
- // "¿Cuántas palabras tiene este texto: ...?" is an executable count request,
- // even though it begins with a question word.
+ // A direct English request such as "Can you compress this PDF?" is an
+ // action request, not an informational question. Do not block execution.
+ const original=String(instruction||'').trim().toLowerCase();
+ if(/^(?:can|could|would)\s+you\s+(?:please\s+)?(?:remove|delete|erase|split|merge|combine|compress|convert|resize|crop|rotate|extract|trim|mute|transcribe|count|format|validate|scan|create|generate|sort|clean|analyze|summarize|add|number)\b/.test(original))return false;
+ if(/^how many (?:words|characters|letters)\b/.test(original)&&
+    /(?:text|content|data|list)\s*:/i.test(String(raw||'')))return false;
+ if(/^how\b|^what\b|^why\b|^which\b|^where\b|^when\b|^(?:can|could|would)\s+you\s+(?:explain|tell me|show me)\b|^tell me how\b/.test(original))return true;
  if(/^cuant[ao]s?\s+(?:palabras|letras|caracteres)\b/.test(q)&&
-    /(?:texto|contenido|datos|lista)\s*:/i.test(String(raw||'')))return false;
+    /(?:texto|contenido|datos|lista|text|content|data|list)\s*:/i.test(String(raw||'')))return false;
  return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
   /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
 }
+
 function positiveClauses(original) {
  const parts=original.split(/[,;]|\bpero\b|\s+y\s+(?=(?:no|solo|solamente|unicamente)\b)/).map(v=>v.trim()).filter(Boolean);
  let negated=0;

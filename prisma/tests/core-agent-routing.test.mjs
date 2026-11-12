@@ -341,6 +341,15 @@ assert.deepEqual(webEditing?.steps?.map(step=>step.tool_id),
 assert.equal(webEditing.steps[1].params.format,'image/webp');
 assert.equal(webEditing.steps[1].params.quality,82);
 assert.equal(router.planCoreOfflineAction(webEditingRequest,[],[])?.type,'needs-input');
+// English language may translate whole words, never corrupt Spanish "imagen".
+// An English request about an existing image also requires a supplied file.
+const englishWebEditing='Prepare this image for my website, remove metadata and get dominant colors';
+assert.equal(router.planCoreOfflineAction(englishWebEditing,[],[])?.type,'needs-input');
+assert.deepEqual(router.planCoreOfflineAction(englishWebEditing,picture,[])?.steps?.map(step=>step.tool_id),
+ ['image-strip-metadata','image-compress','image-palette']);
+assert.deepEqual(router.planCoreOfflineAction(webEditingRequest,picture,[])?.steps?.map(step=>step.tool_id),
+ ['image-strip-metadata','image-compress','image-palette']);
+
 assert.equal(router.planCoreOfflineAction('Quiero preparar una imagen nueva para mi página web',[],[]),null);
 assert.deepEqual(router.planCoreOfflineAction('Saca los colores principales de esta imagen',picture,[])?.steps?.map(x=>x.tool_id),['image-palette']);
 // Route existing-image work before any remote image generator.
@@ -456,6 +465,8 @@ assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova 
 // Prisma Core independent intelligence must work without AI models or Mini.
 assert.ok(INDEPENDENT_CORE_KNOWLEDGE_COUNT>=40,'Ship at least 40 curated, bounded factual concepts');
 assert.match(solveOfflineArithmetic('15% de 200'),/30/,'Offline percentage');
+assert.match(solveOfflineArithmetic('15% of 200'),/30/,'English offline percentage');
+assert.match(solveOfflineArithmetic('What is 25 * 4?'),/100/,'English offline multiplication');
 assert.match(solveOfflineArithmetic('¿Cuánto es 25 * 4?'),/100/,'Offline multiplication');
 assert.match(solveOfflineArithmetic('10 / 0'),/dividir entre cero/,'Zero division');
 assert.match(resolveIndependentCoreRequest('¿Qué es RLS?').text,/filas/,'Offline technical knowledge');
