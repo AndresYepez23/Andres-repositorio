@@ -47,7 +47,7 @@ let applying = false;
 const SKIP_TEXT = [
   'script', 'style', 'code', 'pre', 'textarea', 'input', 'svg',
   '[contenteditable="true"]', '[data-no-translate]', '[data-user-content]',
-  '.core-message-body', '.core-message-files', '.core-message-engine',
+  '.core-message-files', '.core-message-engine',
   '.core-message-results', '.tool-output', '#tool-output',
   '.workflow-result', '.artifact-content', '.artifact-preview',
   '.conversation-title', '.conversation-name', '.conversation-item-title',
@@ -58,7 +58,7 @@ const SKIP_TEXT = [
 
 const SKIP_ATTRIBUTES = [
   'script', 'style', 'code', 'pre', '[data-no-translate]', '[data-user-content]',
-  '.core-message-body', '.tool-output', '#tool-output',
+  '.tool-output', '#tool-output',
   '.conversation-title', '.conversation-name', '.conversation-item-title',
   '.chat-title', '.history-item-title', '.message-content',
   '.markdown-body', '.user-content', '.assistant-content'
