@@ -51,7 +51,7 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
       const id = String(model?.id || "");
       if(!id.endsWith("-free"))return false;
       const weight=Number(weights[id]??1);
-      if(!Number.isFinite(weight)||weight!==1)return false;
+      if (!Number.isFinite(weight) || weight !== 1) return false;
       const pricing=model?.pricing;
       return !pricing||((pricing.prompt==null||Number(pricing.prompt)===0)&&
         (pricing.completion==null||Number(pricing.completion)===0));
