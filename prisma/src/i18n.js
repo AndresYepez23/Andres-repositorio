@@ -179,7 +179,7 @@ function updateLanguageButton() {
   const button = document.getElementById('prisma-language-toggle');
   if (!button) return;
   button.textContent = language === 'en' ? 'ES' : 'EN';
-  const label = language === 'en' ? 'Switch to Spanish' : 'Switch to English';
+  const label = language === 'en' ? 'Switch to Spanish' : 'Cambiar a inglés';
   button.setAttribute('aria-label', label);
   button.title = label;
   button.setAttribute('aria-pressed', language === 'en' ? 'true' : 'false');
