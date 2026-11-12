@@ -154,3 +154,34 @@ test('bilingual sitemap exposes paired alternates for every published page',asyn
  const robots=await readOutput('robots.txt');
  assert.ok(robots.includes('Sitemap: '+SEO_BASE+'/sitemap.xml'));
 });
+
+test('legal navigation uses complete localized labels and separates the language selector',async()=>{
+ const spanish=await readOutput('privacy.html');
+ const english=await readOutput('en/privacy.html');
+ assert.match(spanish,/<html lang="es"/);
+ assert.match(spanish,/← Volver a Prisma Space<\/a>/);
+ assert.match(spanish,/<div class="legal-language-options"><a href="\/en\/privacy\.html"[^>]*>Ver esta página en inglés<\/a><\/div>/);
+ assert.doesNotMatch(spanish,/<a class="back"[^>]*>[^<]*<\/a>\s*<a[^>]*>English<\/a>/);
+ assert.match(english,/← Return to Prisma Space<\/a>/);
+ assert.match(english,/<div class="legal-language-options"><a href="\/privacy\.html"[^>]*>View this page in Spanish<\/a><\/div>/);
+ assert.match(english,/aria-label="Sections on this page"/);
+ assert.doesNotMatch(english,/aria-label="Secciones de esta página"/);
+ assert.match(spanish,/rel="canonical" href="https:\/\/prismaspace\.space\/privacy\.html"/);
+});
+
+test('SEO navigation labels are in the page language across both catalogues',async()=>{
+ const check=async(path,language,label,otherLanguage)=>{
+  const html=await readOutput(path);
+  assert.match(html,new RegExp('<html lang="'+language+'"'));
+  const navigation=html.match(/<nav class="seo-nav"[^>]*>[\s\S]*?<\/nav>/)?.[0]||'';
+  assert.ok(navigation.includes('class="seo-language-switch"'),path+' missing language selector');
+  assert.ok(navigation.includes('>'+label+'</a>'),path+' unlocalized language selector');
+  assert.ok(!navigation.includes('>'+otherLanguage+'</a>'),path+' mixed language switch label');
+ };
+ await check('herramientas/index.html','es','Cambiar a inglés','Switch to Spanish');
+ await check('en/tools/index.html','en','Switch to Spanish','Cambiar a inglés');
+ for(const page of pages) {
+  await check('herramientas/'+page.sourceSlug+'/index.html','es','Cambiar a inglés','Switch to Spanish');
+  await check('en/tools/'+page.englishSlug+'/index.html','en','Switch to Spanish','Cambiar a inglés');
+ }
+});
