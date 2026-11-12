@@ -358,6 +358,183 @@ function startNewConversation(){
  $('#core-input')?.focus();
 }
 function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';renderModelPicker();}
+
+const MODEL_PROVIDER_LABELS={
+ groq:'Groq',zai:'Z.AI',gemini:'Google Gemini',openrouter:'OpenRouter',
+ sensenova:'SenseNova',kilo:'Kilo Gateway',aihubmix:'AIHubMix',
+ requesty:'Requesty',huggingface:'Hugging Face',cloudflare:'Cloudflare Workers AI',
+ pollinations:'Pollinations'
+};
+const MODEL_PROVIDER_ORDER=['groq','zai','gemini','openrouter','sensenova','kilo','aihubmix','requesty','huggingface','cloudflare','pollinations'];
+function activeChatRecord(){return conversations.find(chat=>chat.id===activeConversationId)||null;}
+function imageProviderReady(provider){
+ const flag={cloudflare:'cloudflareImages',pollinations:'pollinationsImages',huggingface:'huggingfaceImages',gemini:'geminiImages'}[provider];
+ if(provider==='pollinations'&&readPollinationsToken())return true;
+ return Boolean(flag&&centralFeatures?.[flag]===true);
+}
+function providerAvailability(provider,type='chat'){
+ if(type==='image'){
+  const ready=imageProviderReady(provider);
+  const remaining=centralImageUsage?.[provider]?.daily?.remaining;
+  const reason=remaining===0?'Cuota diaria de imágenes agotada':centralWarnings?.[provider]||'Motor de imágenes no habilitado';
+  return {available:ready,reason,label:ready?'Disponible':reason};
+ }
+ const personal=provider==='pollinations'&&Boolean(readPollinationsToken());
+ const ready=Boolean(centralProviders?.[provider]||personal);
+ const health=centralProviderHealth?.[provider]||{};
+ let reason=health.reason||centralWarnings?.[provider]||'';
+ if(!reason){
+  if(health.state==='daily_limit')reason='Límite diario alcanzado';
+  else if(health.state==='minute_limit')reason='Límite por minuto alcanzado';
+  else if(health.state==='credentials_paused')reason='Credenciales temporalmente en pausa';
+  else if(!centralConfigured?.[provider]&&!personal&&provider!=='kilo')reason='Proveedor no conectado';
+  else reason='Temporalmente no disponible';
+ }
+ return {available:ready,reason,label:ready?'Disponible':reason};
+}
+function modelLabel(provider,modelId){
+ const models=centralModelCatalog?.chat?.[provider]||[];
+ return models.find(item=>item.id===modelId)?.name||modelId||'Automático';
+}
+function chooseConversationModel(provider,modelId){
+ const chat=activeChatRecord();if(!chat)return;
+ const availability=providerAvailability(provider,'chat');
+ if(!availability.available)return;
+ chat.modelSelection=selectManualConversationModel(chat.modelSelection,provider,modelId,Date.now());
+ persistChatHistory();
+ renderModelPicker();
+ status('Modelo fijado para este chat. Prisma Core conservará el contexto y activará un respaldo si el motor falla.','success');
+}
+function chooseAutomaticConversationModel(){
+ const chat=activeChatRecord();if(!chat)return;
+ chat.modelSelection=selectAutomaticConversationModel(chat.modelSelection,Date.now());
+ persistChatHistory();
+ renderModelPicker();
+ status('Selección automática activada. Prisma elegirá y mantendrá un modelo para este chat.','success');
+}
+function renderChatModelOptions(){
+ const list=$('#core-model-options');if(!list)return;
+ list.replaceChildren();
+ const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
+ let count=0;
+ for(const provider of MODEL_PROVIDER_ORDER){
+  const models=centralModelCatalog?.chat?.[provider];
+  if(!Array.isArray(models)||!models.length)continue;
+  count+=models.length;
+  const availability=providerAvailability(provider,'chat');
+  const group=document.createElement('section');group.className='core-model-group';
+  const heading=document.createElement('div');heading.className='core-model-group-heading';
+  const name=document.createElement('strong');name.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
+  const statusLabel=document.createElement('span');statusLabel.className='core-model-group-status '+(availability.available?'is-ready':'is-blocked');
+  statusLabel.textContent=availability.available?'Disponible':availability.reason;
+  heading.append(name,statusLabel);group.append(heading);
+  for(const model of models){
+   if(!model?.id)continue;
+   const row=document.createElement('button');row.type='button';row.className='core-model-option';
+   const current=selection.provider===provider&&selection.model===model.id;
+   row.disabled=!availability.available;
+   row.classList.toggle('is-current',current);
+   row.setAttribute('aria-pressed',String(current));
+   const copy=document.createElement('span');copy.className='core-model-option-copy';
+   const title=document.createElement('strong');title.textContent=model.name||model.id;
+   const specialty=document.createElement('small');specialty.textContent=model.specialty||'Modelo de conversación';
+   copy.append(title,specialty);
+   const state=document.createElement('span');state.className='core-model-option-state '+(availability.available?'is-ready':'is-blocked');
+   state.textContent=current?'En uso':availability.available?'Elegir':'Bloqueado';
+   row.append(copy,state);
+   if(availability.available)row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
+   else row.title=availability.reason;
+   group.append(row);
+  }
+  list.append(group);
+ }
+ if(!count){
+  const empty=document.createElement('p');empty.className='core-model-empty';
+  empty.textContent='El catálogo de modelos aún no está disponible. Prisma seguirá usando la selección automática cuando se restablezca la conexión.';
+  list.append(empty);
+ }
+}
+function renderImageModelControls(){
+ const providerSelect=$('#core-image-provider'),modelSelect=$('#core-image-model'),hint=$('#core-image-model-hint');
+ if(!providerSelect||!modelSelect)return;
+ const chat=activeChatRecord();
+ const saved=chat?.imageSelection||{provider:'auto',model:''};
+ const selectedProvider=String(saved.provider||'auto');
+ for(const option of providerSelect.options){
+  if(option.value==='auto'){
+   option.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
+   option.textContent=option.disabled?'Automático · sin motores disponibles':'Automático · respaldo disponible';
+  }else{
+   const availability=providerAvailability(option.value,'image');
+   option.disabled=!availability.available;
+   const base=MODEL_PROVIDER_LABELS[option.value]||option.value;
+   option.textContent=availability.available?base+' · disponible':base+' · '+availability.reason;
+   option.title=availability.reason;
+  }
+ }
+ providerSelect.value=selectedProvider;
+ if(providerSelect.value!==selectedProvider)providerSelect.value='auto';
+ const provider=providerSelect.value||'auto';
+ modelSelect.replaceChildren();
+ const automatic=document.createElement('option');automatic.value='';automatic.textContent=provider==='auto'?'Automático · según motor':'Automático · modelo recomendado';
+ modelSelect.append(automatic);
+ const models=provider==='auto'?[]:(centralModelCatalog?.image?.[provider]||[]);
+ for(const model of models){
+  const option=document.createElement('option');option.value=model.id;
+  option.textContent=(model.name||model.id)+(model.specialty?' · '+model.specialty:'');
+  modelSelect.append(option);
+ }
+ modelSelect.value=String(saved.model||'');
+ if(modelSelect.value!==String(saved.model||''))modelSelect.value='';
+ const ready=provider==='auto'?['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
+ modelSelect.disabled=provider==='auto'||!ready||!models.length;
+ if(hint){
+  const usage=centralImageUsage?.[provider]?.daily;
+  hint.textContent=provider==='auto'
+   ?'Prisma probará los motores de imagen habilitados y respetará sus cuotas.'
+   :ready
+    ?'Modelo de imagen disponible para este chat.'
+    :providerAvailability(provider,'image').reason+(usage?.resetAt?' · Reinicio de cuota: '+new Date(Number(usage.resetAt)*1000).toLocaleString():'');
+ }
+}
+function renderModelPicker(){
+ const details=$('.core-model-settings'),summary=details?.querySelector('summary');
+ if(!details||!summary)return;
+ const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
+ const current=selection.provider&&selection.model?modelLabel(selection.provider,selection.model):'Automático';
+ summary.title=selection.provider&&selection.model?'Modelo actual: '+current:'Seleccionar modelo de IA';
+ summary.setAttribute('aria-label',summary.title);
+ const statusLabel=$('#core-model-selection-status');
+ if(statusLabel){
+  statusLabel.textContent=selection.provider&&selection.model
+   ?(selection.source==='fallback'?'Respaldo activo · ':'Modelo fijado · ')+current
+   :'Prisma seleccionará un modelo al comenzar y lo conservará en este chat';
+ }
+ const autoButton=$('#core-model-auto');
+ if(autoButton){
+  autoButton.classList.toggle('is-current',selection.mode==='auto');
+  const description=autoButton.querySelector('small');
+  if(description)description.textContent=selection.provider&&selection.model&&selection.mode==='auto'
+   ?'En uso: '+current+'. Se mantendrá hasta que falle o pasen 30 minutos sin actividad.'
+   :'Prisma elige según la tarea, disponibilidad, rendimiento y cuotas.';
+ }
+ renderChatModelOptions();
+ renderImageModelControls();
+ const panel=$('#core-model-panel');
+ if(panel){
+  panel.querySelectorAll('[data-model-tab]').forEach(button=>{
+   const active=button.dataset.modelTab===activeModelTab;
+   button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));
+  });
+  panel.querySelectorAll('[data-model-pane]').forEach(pane=>pane.classList.toggle('active',pane.dataset.modelPane===activeModelTab));
+ }
+}
+function saveImageSelection(){
+ const chat=activeChatRecord();if(!chat)return;
+ chat.imageSelection={provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||''};
+ persistChatHistory();
+}
+
 async function persistGeneratedResults(results){
  let allSaved=true;
  for(const entry of results||[]){
