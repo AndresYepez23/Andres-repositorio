@@ -169,6 +169,8 @@ export function isInformationalIntent(raw){
  // action request, not an informational question. Do not block execution.
  const original=String(instruction||'').trim().toLowerCase();
  if(/^(?:can|could|would)\s+you\s+(?:please\s+)?(?:remove|delete|erase|split|merge|combine|compress|convert|resize|crop|rotate|extract|trim|mute|transcribe|count|format|validate|scan|create|generate|sort|clean|analyze|summarize|add|number)\b/.test(original))return false;
+ if(/^how many (?:words|characters|letters)\b/.test(original)&&
+    /(?:text|content|data|list)\s*:/i.test(String(raw||'')))return false;
  if(/^how\b|^what\b|^why\b|^which\b|^where\b|^when\b|^(?:can|could|would)\s+you\s+(?:explain|tell me|show me)\b|^tell me how\b/.test(original))return true;
  if(/^cuant[ao]s?\s+(?:palabras|letras|caracteres)\b/.test(q)&&
     /(?:texto|contenido|datos|lista|text|content|data|list)\s*:/i.test(String(raw||'')))return false;
