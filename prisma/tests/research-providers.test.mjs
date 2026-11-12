@@ -80,7 +80,7 @@ test('Jina can be tested independently without calling Tavily', async t => {
   let calls = 0;
   globalThis.fetch = async (url, init) => {
     calls++;
-    assert.match(String(url), /s\\.jina\\.ai/);
+    assert.match(String(url), /s\.jina\.ai/);
     assert.equal(init.headers.Authorization, 'Bearer jina-test');
     return Response.json({ code: 200, data: [{ title: 'Jina source', url: 'https://example.org/jina', content: 'Jina diagnostic result' }] });
   };
@@ -100,7 +100,7 @@ test('Tavily can be tested independently without silently falling back to Jina',
   let calls = 0;
   globalThis.fetch = async url => {
     calls++;
-    assert.match(String(url), /api\\.tavily\\.com/);
+    assert.match(String(url), /api\.tavily\.com/);
     return Response.json({ error: 'quota' }, { status: 429 });
   };
   t.after(() => { globalThis.fetch = originalFetch; });
