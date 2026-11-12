@@ -785,7 +785,7 @@ assert.equal(chooseCoreReasoning('coding','Depura este código'),'smart');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast');
 assert.equal(isCoreFollowUp('¿Y las demás?'),true,'Short follow-up must reference the conversation');
 assert.equal(isCoreFollowUp('¿Qué es un PDF?'),false,'Independent factual question must not be forced to use a previous artifact');
-assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:13,maxChars:14500},'Short follow-ups need ample relevant context');
+assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:13,maxChars:14500,newTask:false},'Short follow-ups need ample relevant context');
 assert.equal(chooseCoreReasoning('conversation','Analiza por qué falla esta autenticación y evalúa las causas'),'smart','Complex requests deserve deeper model routing');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast','Quick greetings remain efficient');
 assert.equal(chooseCoreResponseLength('conversation','Explica cómo funciona y cuándo conviene usar un sistema de registro de pacientes'),'long','Meaningful explanations must not be artificially short');
