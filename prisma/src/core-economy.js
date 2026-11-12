@@ -11,10 +11,10 @@ export function selectInferenceCandidates(ranked=[],{preferred='auto',allowFallb
  // Automatic mode may reach any eligible provider after actual failures.
  // The engine enforces an overall deadline and per-attempt timeouts, so
  // additional configured providers do not cause unbounded retries.
- // OpenRouter remains the last, independently capped reserve.
- const backup=names.includes('openrouter')?'openrouter':null;
- const primaries=names.filter(name=>name!=='openrouter');
- return backup?[...primaries,backup]:primaries;
+ // Keep OpenRouter in its measured priority position (usually third).
+ // Its independently enforced credits and per-visitor ceilings still apply;
+ // a successful earlier provider prevents any extra model invocation.
+ return names;
 }
 
 export function stopInferenceFallback(error={}){
