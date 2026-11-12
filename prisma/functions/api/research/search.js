@@ -1,5 +1,6 @@
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
 import { setProviderHold } from "../../_lib/provider-health.js";
+import { checkResearchLimits } from "../../_lib/limits.js";
 import { cleanResearchQuery, inferResearchSearchOptions, normalizeResearchResults, mergeResearchResults } from "../../_lib/research-search.js";
 
 const headers = {
@@ -136,6 +137,9 @@ export async function onRequestPost({ request, env }) {
   if (query.length < 4 || query.length > 1000) {
     return json({ error: "La consulta debe contener entre 4 y 1.000 caracteres." }, 400);
   }
+
+  const limitError = await checkResearchLimits(env, request);
+  if (limitError) return json({ error: limitError.error, code: limitError.code, scope: limitError.scope, retryAfter: limitError.retryAfter }, limitError.status);
 
   const options = inferResearchSearchOptions(query);
   const tavily = await searchTavily(env, query, options);
