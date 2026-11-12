@@ -1073,3 +1073,14 @@ body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
  }
  body.is-core-view .core-compose-surface #core-send{flex-basis:36px!important;width:36px!important;min-width:36px!important}
 }
+
+
+body.is-core-view .core-creative-catalog{display:grid;gap:6px;min-width:0}
+body.is-core-view .core-creative-provider{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel-2)}
+body.is-core-view .core-creative-provider summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:650;color:var(--text)}
+body.is-core-view .core-creative-list{display:grid;gap:5px;padding:7px;border-top:1px solid var(--line)}
+body.is-core-view .core-creative-model{display:grid;gap:4px;padding:9px;border:1px solid var(--line);border-radius:9px;min-width:0}
+body.is-core-view .core-creative-model strong{font-size:11px;overflow-wrap:anywhere}
+body.is-core-view .core-creative-model small{font-size:10px;line-height:1.4}
+body.is-core-view .core-creative-state{color:var(--muted)}
+body.is-core-view .core-creative-model .core-image-activate{margin-top:3px}
