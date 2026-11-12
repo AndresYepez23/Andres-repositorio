@@ -56,8 +56,13 @@ test('English language selection respects explicit routes, saved preferences and
 test('Core and model prompts produce English responses when English is selected',async()=>{
  const core=await read('src/core.js');
  const engines=await read('src/engines.js');
+ const i18n=await read('src/i18n.js');
  assert.match(core,/Output language: English/);
  assert.match(core,/window\.prismaI18n\?\.language==='en'/);
+ assert.match(core,/pre\.setAttribute\('data-user-content',''\)/);
+ assert.match(core,/label\.setAttribute\('data-user-content',''\)/);
+ assert.doesNotMatch(i18n,/\.core-message-results/);
+ assert.match(i18n,/\.core-message-files/);
  assert.match(engines,/responseLanguage=typeof window!=='undefined'&&window\.prismaI18n\?\.language==='en'\?'English':'Spanish'/);
  assert.match(engines,/const tones=responseLanguage==='English'\?/);
  assert.doesNotMatch(engines,/const tones=responseLanguage==='en'\?/);
