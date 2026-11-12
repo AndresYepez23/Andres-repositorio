@@ -157,7 +157,7 @@ let zaiAttempts=0;
 const zaiRecovered=await requestWithCredentialPool(env6,'zai',async(key)=>{
   zaiAttempts++;
   return key==='zai-key-6'?new Response('ok',{status:200}):new Response('invalid key',{status:401});
-},{sweepAuthSlots:true});
+},{sweepAuthSlots:true,startIndex:0});
 assert.equal(zaiRecovered.status,200,'Z.AI checks all configured slots after key-specific authentication failures');
 assert.equal(zaiAttempts,6);
 
