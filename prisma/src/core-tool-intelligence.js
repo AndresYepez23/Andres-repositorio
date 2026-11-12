@@ -338,7 +338,7 @@ export function planCoreOfflineAction(query,files=[],history=[]){
  if(!q)return null;
  // A reference to an existing image is an editing request, not permission to
  // create a new one. Ask for the missing file before any provider/API call.
- if(!file&&/(?:esta|esa|mi|la|una imagen adjunta)\s+(?:imagen|foto|fotografia)\b/.test(q)
+ if(!file&&/(?:esta|esa|mi|la|una imagen adjunta|this|that|my|the)\s+(?:imagen|foto|fotografia)\b/.test(q)
    &&/(?:prepar|adapt|optimiz|edit|retoc|quit|elimin|borr|limpi|metadatos|exif|colores|paleta|redimension|web|png|webp|comprim)/.test(q))
   return flow('Puedo preparar esa imagen sin consumir IA: optimizarla para web, quitar sus metadatos y extraer sus colores. Adjunta primero la imagen original para procesarla desde aquí.');
  if(file&&/^(?:aqui|adjunto|listo|hazlo|este archivo|te lo envio|ya lo subi)\b/.test(q)){
