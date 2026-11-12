@@ -132,6 +132,7 @@ function generalContent() {
     try { return localStorage.getItem('prisma-start-view') === 'explore' ? 'explore' : 'core'; }
     catch { return 'core'; }
   })();
+  const currentLanguage = window.prismaI18n?.language === 'en' ? 'en' : 'es';
   return [
     '<section class="settings-card settings-general-card">',
       '<div class="settings-row"><span class="settings-field-icon" data-icon="house"></span><div><strong>Pantalla de inicio</strong><small>Elige dónde empieza Prisma cuando abras la aplicación.</small></div>',
@@ -140,7 +141,12 @@ function generalContent() {
           '<option value="explore"' + (initialView === 'explore' ? ' selected' : '') + '>Herramientas</option>',
         '</select>',
       '</div>',
-      '<div class="settings-row"><span class="settings-field-icon" data-icon="globe"></span><div><strong>Idioma</strong><small>Idioma disponible para la interfaz.</small></div><span class="settings-static-value">Español</span></div>',
+      '<div class="settings-row"><span class="settings-field-icon" data-icon="globe"></span><div><strong>Idioma</strong><small>Elige el idioma de la interfaz.</small></div>',
+        '<select class="settings-select" id="settings-language" aria-label="Idioma de la interfaz" data-no-translate>',
+          '<option value="es"' + (currentLanguage === 'es' ? ' selected' : '') + '>Español</option>',
+          '<option value="en"' + (currentLanguage === 'en' ? ' selected' : '') + '>English</option>',
+        '</select>',
+      '</div>',
       '<div class="settings-row"><span class="settings-field-icon" data-icon="keyboard"></span><div><strong>Atajo para enviar</strong><small>Controla cuándo Enter envía tu mensaje.</small></div>',
         '<select class="settings-select" id="settings-send-shortcut" aria-label="Atajo para enviar">',
           '<option value="enter"' + (shortcut === 'enter' ? ' selected' : '') + '>Enter</option>',
@@ -324,6 +330,10 @@ function setSettingsSection(section) {
   $('#settings-start-view')?.addEventListener('change', event => {
     try { localStorage.setItem('prisma-start-view', event.target.value === 'explore' ? 'explore' : 'core'); } catch {}
   });
+  $('#settings-language')?.addEventListener('change', event => {
+    const next = event.target.value === 'en' ? 'en' : 'es';
+    window.prismaI18n?.setLanguage(next, { persist: true });
+  });
   $('#settings-home-signout')?.addEventListener('click', () => { closeSettings(); $('#account-signout')?.click(); });
   $('#settings-content').querySelectorAll('[data-settings-action="open-ai"]').forEach(button => {
     button.addEventListener('click', () => { closeSettings(); document.querySelector('[data-view="ai"]')?.click(); });
@@ -416,6 +426,10 @@ export function initPrismaSettings() {
     if (action) setSettingsSection(action.dataset.settingsOpen);
   });
   document.addEventListener('prisma:theme-changed', updateThemeChoices);
+  document.addEventListener('prisma:language-change', event => {
+    const select = $('#settings-language');
+    if (select) select.value = event.detail?.language === 'en' ? 'en' : 'es';
+  });
   const viewportQuery = window.matchMedia('(max-width: 900px)');
   const syncResponsiveView = () => {
     const panel = $('#prisma-settings');
