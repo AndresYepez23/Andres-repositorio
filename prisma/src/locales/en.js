@@ -1846,6 +1846,9 @@ const translations = {
   "Redimensionar": "Resize",
   "Instantáneo": "Instant",
   "Diseño": "Design",
-  "Desarrollo": "Development"
+  "Desarrollo": "Development",
+  "Reconocimiento visual mediante el modelo ViT ONNX en tu navegador. El modelo se descarga la primera vez; etiquetas en inglés.": "Visual recognition using the ViT ONNX model in your browser. The model is downloaded on first use; labels are in English.",
+  "Crea un prototipo de página web responsive en un único archivo HTML con CSS y JavaScript integrados; permite descargar y previsualizar. No publica en Internet ni activa pagos, cuentas o backend.": "Create a responsive website prototype in a single HTML file with integrated CSS and JavaScript; it can be downloaded and previewed. It does not publish to the Internet or enable payments, accounts, or a backend.",
+  "Reduce resolución y tasa de bits de un vídeo MP4/MOV/WebM; conserva audio y entrega un archivo descargable solo si realmente ocupa menos. En Safari iPhone utiliza codificación local nativa cuando está disponible.": "Reduce the resolution and bitrate of an MP4/MOV/WebM video; preserves audio and provides a downloadable file only if the result is actually smaller. On iPhone Safari, it uses native local encoding when available."
 };
 export default translations;
