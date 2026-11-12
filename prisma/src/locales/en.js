@@ -1721,6 +1721,23 @@ const translations = {
   "Prisma Mini no pudo representar la solicitud.": "Prisma Mini could not represent the request.",
   "Operación solicitada": "Requested operation",
   "Indica unas dimensiones entre 16 y 8000 píxeles.": "Enter dimensions between 16 and 8000 pixels.",
-  "Redimensionar a": "Resize to"
+  "Redimensionar a": "Resize to",
+  "». Por ahora necesito un PDF, Word, una imagen, vídeo, audio, CSV, JSON, Excel o archivo de texto.": "Currently, I need a PDF, Word, image, video, audio, CSV, JSON, Excel, or text file.",
+  "El cuerpo debe ser JSON válido.": "The body must be a valid JSON.",
+  "Prisma recibió una versión más reciente. Actualizando el motor para ejecutar las tareas de forma segura.": "Prisma received a newer version. Updating the engine to execute tasks safely.",
+  "supera el límite de 24 MB para descargas de Prisma Developer.": "Exceeds the 24 MB limit for Prisma Developer downloads.",
+  "La herramienta terminó sin proporcionar un resumen.": "The tool ended without providing a summary.",
+  "La herramienta no existe o no está habilitada en el registro actual de Prisma.": "The tool does not exist or is not enabled in the current Prisma registry.",
+  "Adjunta un archivo compatible en el panel de archivos de Prisma Core y vuelve a ejecutar la tarea.": "Attach a compatible file in the Prisma Core file panel and rerun the task.",
+  "El flujo inteligente solicitado no existe en Prisma.": "The requested smart flow does not exist in Prisma.",
+  "Adjunta un archivo compatible en Prisma Core y vuelve a ejecutar el flujo.": "Attach a compatible file in Prisma Core and rerun the flow.",
+  "Prisma Core no generó pasos ejecutables para esta solicitud.": "Prisma Core did not generate executable steps for this request.",
+  "El plan supera el límite de diez operaciones.": "The plan exceeds the ten-operation limit.",
+  "utiliza una herramienta no disponible:": "uses an unavailable tool:",
+  "Prisma Core completó": "Prisma Core completed",
+  "Tipo de tarea no reconocido por el puente de Prisma.": "Task type not recognized by the Prisma bridge.",
+  "Prisma terminó el proceso, pero no pudo registrar el resultado en el servidor.": "Prisma finished the process, but could not register the result on the server.",
+  "Error inesperado durante la ejecución.": "Unexpected error during execution.",
+  "La ejecución no pudo completarse.": "Execution could not be completed."
 };
 export default translations;
