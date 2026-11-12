@@ -514,7 +514,8 @@ function renderCreativeCatalog(){
    const note=document.createElement('small');note.className='core-model-catalog-note';
    note.textContent=model.specialty||'Consulta los requisitos y la disponibilidad del proveedor';
    const state=document.createElement('small');state.className='core-creative-state';
-   const isImage=kind==='image'&&['cloudflare','pollinations','gemini'].includes(provider)&&imageProviderReady(provider);
+   const isImage=kind==='image'&&['cloudflare','pollinations','gemini'].includes(provider)&&imageProviderReady(provider)&&
+    (centralModelCatalog?.image?.[provider]||[]).some(item=>item.id===model.id);
    if(isImage){
     const select=document.createElement('button');select.type='button';select.className='core-image-activate';
     select.textContent='Usar para imágenes';
