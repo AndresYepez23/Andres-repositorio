@@ -86,13 +86,13 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
         ...(provider==="zai"?{thinking:{type:"disabled"}}:{})
       }),
     }),{
-      sweepAuthSlots:provider==="sensenova"||provider==="zai"||provider==="requesty",
+      sweepAuthSlots:["sensenova","zai","requesty","aihubmix"].includes(provider),
       // Z.AI keys were supplied from separate general API accounts: isolate
       // quota/rate-limit holds per credential and try the next account.
-      sweepQuotaSlots:provider==="zai",
+      sweepQuotaSlots:["zai","sensenova","aihubmix"].includes(provider),
       // Z.AI and Requesty keys belong to separate accounts; a 403 can reject
       // one account's key/model permissions without invalidating the others.
-      retryStatuses:provider==="requesty"||provider==="zai"?[401,403]:[401]
+      retryStatuses:["requesty","zai","aihubmix"].includes(provider)?[401,403]:[401]
     });
   } catch (error) {
     return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
@@ -218,7 +218,7 @@ async function executeChatRequest({ request, env }, markReserved) {
           stream: false,
           usage: { include: true },
         }),
-      }));
+      }),{sweepAuthSlots:true,retryStatuses:[401,403]});
     } catch(error) {
       return providerFailure(error,"openrouter","No fue posible conectar con OpenRouter.");
     }
@@ -263,7 +263,7 @@ async function executeChatRequest({ request, env }, markReserved) {
         method:"POST",
         headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential},
         body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.7,max_tokens:clamp(payload.maxOutputTokens,128,2200,800),stream:false})
-      }));
+      }),{sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403]});
     } catch(error) {
       return providerFailure(error,"pollinations","No fue posible conectar con Pollinations. Prisma probará otro motor.");
     }
@@ -305,7 +305,9 @@ async function executeChatRequest({ request, env }, markReserved) {
       }), {
         // Hugging Face credentials belong to separate accounts. A 402/429
         // applies to that account's own quota, not to every HF account.
+        sweepAuthSlots: true,
         sweepQuotaSlots: true,
+        retryStatuses: [401,403],
       });
     } catch(error) {
       return providerFailure(error,"huggingface","No fue posible conectar con Hugging Face. Inténtalo nuevamente.");
@@ -349,7 +351,7 @@ async function executeChatRequest({ request, env }, markReserved) {
       body:JSON.stringify({model,messages:normalized.openaiMessages,temperature:0.65,max_completion_tokens:clamp(payload.maxOutputTokens,128,4096,1200),stream:false})
     });
     try{
-      response=await requestWithCredentialPool(env,"groq",askGroq);
+      response=await requestWithCredentialPool(env,"groq",askGroq,{sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403]});
     }catch(error){
       return providerFailure(error,"groq","No fue posible conectar con Groq. Prisma probará otro motor.");
     }
@@ -411,7 +413,7 @@ async function executeChatRequest({ request, env }, markReserved) {
     let response;
     try{
       response=slots.length
-        ? await requestWithCredentialPool(env,"kilo",key=>send(key))
+        ? await requestWithCredentialPool(env,"kilo",key=>send(key),{sweepAuthSlots:true,sweepQuotaSlots:!String(model).endsWith(":free"),retryStatuses:[401,403]})
         : await send("");
     }catch(error){
       return providerFailure(error,"kilo","No fue posible conectar con Kilo Gateway.");
@@ -480,12 +482,12 @@ async function executeChatRequest({ request, env }, markReserved) {
 
   let response, data, activeModel = model;
   try {
-    response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
+    response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key),{sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403]});
     data = await response.json().catch(() => ({}));
     if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
       // The higher-capability model can be temporarily overloaded; use a lower-cost model.
       activeModel = "gemini-3.5-flash-lite";
-      response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key),{ignoreProviderHold:true});
+      response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key),{ignoreProviderHold:true,sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403]});
       data = await response.json().catch(() => ({}));
     }
   } catch(error) {
