@@ -142,8 +142,8 @@ const latencyOrder=rankProviders({
     'cloudflare:general':{at:now,averageMs:900,failures:0,successes:4}
   }
 });
-assert.ok(latencyOrder.indexOf('gemini')<latencyOrder.indexOf('groq'),
-  'A significantly faster top-tier provider may overtake a slow top-tier provider');
+assert.ok(latencyOrder.indexOf('zai')<latencyOrder.indexOf('groq'),
+  'A significantly faster measured top-tier provider may overtake a slow top-tier provider');
 assert.equal(latencyOrder.at(-2),'cloudflare',
   'Cloudflare stays penultimate even when its measured latency is unusually low');
 assert.equal(latencyOrder.at(-1),'pollinations',
