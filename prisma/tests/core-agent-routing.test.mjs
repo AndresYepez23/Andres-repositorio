@@ -458,11 +458,11 @@ const rejectedSenseKeys={
 };
 const providerStatusSource=readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
 assert.match(providerStatusSource,/credentialHealth\[provider\]\?\.healthySlots/,'Prisma must not route to a provider when all its keys are on auth cooldown');
-assert.match(providerStatusSource,/HTTP 401\/403/,'Provider panel must explain authentication rejection clearly');
+assert.match(providerStatusSource,/HTTP 401/,'Provider panel must explain key-specific authentication rejection clearly');
 
 
 const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
-assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"/,'SenseNova must enable valid-key auth sweep');
+assert.match(compatibleChatSource,/sweepAuthSlots:true/,'All OpenAI-compatible providers must sweep valid keys after HTTP 401');
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.cn\/v1\/chat\/completions"/,'SenseNova keys must use the documented official API host');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
 
