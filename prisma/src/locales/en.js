@@ -1748,6 +1748,20 @@ const translations = {
   "Voy a ejecutar ": "I'll run ",
   " operación(es), procesando todos los archivos compatibles y comprobando cada resultado.": " operation(s), processing all compatible files and verifying each result.",
   "Entendí lo que necesitas. Voy a utilizar ": "I understand what you need. I'll use ",
-  " directamente en tu dispositivo, sin solicitar una API key ni enviar el archivo a un proveedor de IA.": " directly on your device, without requesting an API key or sending the file to an AI provider."
+  " directamente en tu dispositivo, sin solicitar una API key ni enviar el archivo a un proveedor de IA.": " directly on your device, without requesting an API key or sending the file to an AI provider.",
+  ", e indica qué páginas quieres conservar (por ejemplo, 2-4, 7)": ", and specify which pages you want to keep (for example, 2-4, 7)",
+  ": no se encontró texto seleccionable. Si es un escaneo, necesitará OCR.": ": no selectable text was found. If this is a scan, OCR will be required.",
+  ": no se pudo extraer texto (": ": text could not be extracted (",
+  ". Composición visual clara, alto contraste, sujeto dominante, espacio para título corto, sin marcas ni texto ilegible.": ". Clear visual composition, high contrast, a dominant subject, room for a short title, and no logos or illegible text.",
+  ". Creada con Prisma Space": ". Created with Prisma Space",
+  ". El archivo final está listo para descargar.": ". The final file is ready to download.",
+  ". Entregaré el resultado descargable.": ". I'll provide a downloadable result.",
+  ". Para un video, indica si deseas transcribir su audio o analizar fotogramas.": ". For a video, specify whether you want to transcribe its audio or analyze frames.",
+  ". Prueba con una foto más nítida, mejor iluminación o un recorte del documento. No voy a inventar una interpretación de contenido que no pude leer.": ". Try a sharper photo, better lighting, or a crop of the document. I won't invent an interpretation of content I couldn't read.",
+  ". Puedes dictar con el teclado.": ". You can dictate using your keyboard.",
+  ". Puedes pegar el texto directamente.": ". You can paste the text directly.",
+  ". Se conserva el kit editorial.": ". The content kit is preserved.",
+  ". Se conservará la imagen y continuarán las demás operaciones.": ". The image will be preserved and the remaining operations will continue.",
+  ". Texto preparado con": ". Text prepared with"
 };
 export default translations;
