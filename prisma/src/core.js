@@ -32,7 +32,7 @@ import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGen
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest } from './core-model-session.js';
-import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference } from './core-model-experience.js';
+import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference, coreModelPurpose } from './core-model-experience.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -468,9 +468,10 @@ function renderChatModelOptions(){
     row.setAttribute('aria-pressed',String(selected));
     const info=document.createElement('span');info.className='core-model-option-copy';
     const name=document.createElement('strong');name.textContent=model.name||model.id;
-    const specialty=document.createElement('small');specialty.textContent=model.specialty||meta.description;
+    const specialty=document.createElement('small');specialty.textContent=coreModelPurpose(model);
     const kind=document.createElement('span');kind.className='core-model-capability';kind.textContent=meta.label;
     info.append(name,specialty,kind);
+    if(model.specialty){const note=document.createElement('small');note.className='core-model-catalog-note';note.textContent=model.specialty;info.append(note);}
     const action=document.createElement('span');action.className='core-model-option-state';
     action.textContent=selected?'Elegido':model.id===suggested?.id?'Sugerido':'Elegir';
     row.append(info,action);
@@ -507,8 +508,11 @@ function renderCreativeCatalog(){
    const kind=model.kind||'other';
    const item=document.createElement('div');item.className='core-creative-model';
    const name=document.createElement('strong');name.textContent=model.name||model.id;
-   const type=document.createElement('small');type.textContent=(kindNames[kind]||'Especializado')+
-    ' · '+(model.specialty||'Modelo especializado');
+   const type=document.createElement('small');type.textContent=coreModelPurpose(model);
+   const category=document.createElement('small');category.className='core-model-capability';
+   category.textContent=kindNames[kind]||'Especializado';
+   const note=document.createElement('small');note.className='core-model-catalog-note';
+   note.textContent=model.specialty||'Consulta los requisitos y la disponibilidad del proveedor';
    const state=document.createElement('small');state.className='core-creative-state';
    const isImage=kind==='image'&&['cloudflare','pollinations','gemini'].includes(provider)&&imageProviderReady(provider);
    if(isImage){
@@ -519,11 +523,11 @@ function renderCreativeCatalog(){
      chat.imageSelection={provider,model:model.id};
      persistChatHistory();renderModelPicker();setCoreCreativeMode('image');
     });
-    item.append(name,type,select);
+    item.append(name,category,type,note,select);
    }else{
     state.textContent=kind==='music'?'Catálogo visible · requiere integración de audio':
      'Catálogo visible · ejecución especializada no habilitada';
-    item.append(name,type,state);
+    item.append(name,category,type,note,state);
    }
    list.append(item);
   }
