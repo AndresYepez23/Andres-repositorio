@@ -867,10 +867,10 @@ async function generateText(p,cb){
   );
   return true;
  },routeMemory,p.centralProviderUsage||{});
- // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
- const ordered=rankedCandidates.filter(provider=>provider!=='openrouter');
- if(rankedCandidates.includes('openrouter'))ordered.push('openrouter');
- const candidates=selectInferenceCandidates(ordered,{
+ // A successful model ends the sequence. Automatic routing is ordered by
+ // measured responsiveness and task suitability; OpenRouter stays near the
+ // front instead of being held back until every other motor has failed.
+ const candidates=selectInferenceCandidates(rankedCandidates,{
   preferred,allowFallback:p.allowFallback===true,task
  });
  const startedAt=Date.now();
@@ -897,23 +897,19 @@ async function generateText(p,cb){
    if(provider===preferred||(preferred==='auto'&&provider===baseOrder[0]))errors.push(providerNames[provider]+' no está disponible en Prisma en este momento.');
    continue;
   }
-  if(provider!=='openrouter'&&candidates.includes('openrouter')&&p.centralProviders?.openrouter){
-   // Reserve enough of the total deadline to actually reach the independent backup
-   // if one or more primary providers hang instead of returning a quick 429/5xx.
-   const reserve=task==='songwriting'?18000:task==='planner'?10000:14000;
-   if(remaining<=reserve+2500){errors.push('Se reserva tiempo para probar OpenRouter como último respaldo.');continue;}
-   // Avoid spending the entire budget waiting on one unresponsive provider.
-   // Several alternative providers can be attempted if the first models hang.
-   const primarySlots=Math.max(1,Math.min(5,candidates.slice(candidateIndex).filter(id=>id!=='openrouter').length));
-   const fairSlice=Math.max(5500,Math.floor((remaining-reserve)/primarySlots));
-   requestDeadline=Math.min(individualDeadline,remaining-reserve,fairSlice);
+  if(preferred==='auto'){
+   // Divide time fairly between candidates instead of giving the earliest
+   // stalled provider all 65 seconds. Preserve a small margin for fallback.
+   const slotsLeft=Math.max(1,Math.min(5,candidates.length-candidateIndex));
+   const fairSlice=Math.max(5500,Math.floor((remaining-1000)/slotsLeft));
+   requestDeadline=Math.min(requestDeadline,fairSlice);
   }
   if(provider==='sensenova'){
    const viableDeadline=sensenovaRequestDeadline({
     remainingMs:remaining,
     automatic:preferred==='auto',
     task,
-    hasOpenRouterBackup:candidates.includes('openrouter')&&Boolean(p.centralProviders?.openrouter)
+    hasOpenRouterBackup:false
    });
    if(viableDeadline===null){
     errors.push('SenseNova omitido: quedaba muy poco tiempo para una respuesta útil.');

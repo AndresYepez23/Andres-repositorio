@@ -496,12 +496,13 @@ const now=Date.now();
 const cooled=rankProviders({task:'planner',available:availableAll,now,health:{
  'groq:planner':{at:now,failures:3,coolingUntil:now+60000,averageMs:22000}
 }});
-assert.equal(cooled[0],'cloudflare','a cooled provider must move behind healthy alternatives');
+assert.equal(cooled[0],'gemini','a cooling Groq provider hands requests to the next fast provider');
 const sessionBalanced=rankProviders({task:'general',available:availableAll,now,health:{
   'groq:general':{at:now,successes:1,averageMs:500}
 }});
-assert.equal(sessionBalanced[0],'cloudflare','Recent successful use rotates the next request to another compatible provider even before the shared usage cache refreshes');
-assert.equal(cooled.at(-1),'openrouter','OpenRouter stays the final independent reserve');
+assert.equal(sessionBalanced[0],'groq','A single fast Groq response should not demote it beneath scarce Cloudflare');
+assert.deepEqual(cooled.slice(-2),['cloudflare','sensenova'],
+  'The automatic sequence always keeps Cloudflare penultimate and SenseNova last');
 assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
 assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
@@ -856,7 +857,7 @@ assert.match(connectionsSource,/const count=Object\.values\(central\.providers\|
 
 
 // Core 4: bounded API budget, no hidden personal credits, and observable usage.
-const rankedEngines=['groq','cloudflare','gemini','requesty','sensenova','zai','kilo','openrouter'];
+const rankedEngines=['groq','gemini','openrouter','pollinations','zai','kilo','cloudflare','sensenova'];
 assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'conversation'}),rankedEngines,
  'Automatic routing must not discard healthy providers outside the old first-five cutoff');
 assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'reasoning'}),rankedEngines);

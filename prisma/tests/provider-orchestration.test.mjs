@@ -122,7 +122,10 @@ assert.equal(getProviderDailyCapacity(aihubmixPaidEnv,'aihubmix'),500,
 const now=Date.now();
 const healthyOrder=rankProviders({task:'general',available:()=>true,now});
 assert.deepEqual(healthyOrder,ROUTE_ORDER.general,'Healthy providers preserve the task-specialized route');
-assert.equal(healthyOrder.at(-1),'openrouter','OpenRouter remains the final reserve');
+assert.deepEqual(healthyOrder.slice(0,4),['groq','gemini','openrouter','pollinations'],
+  'Healthy text requests start with fast providers, including OpenRouter in third position');
+assert.deepEqual(healthyOrder.slice(-2),['cloudflare','sensenova'],
+  'Scarce Cloudflare and slow SenseNova remain the last two automatic candidates');
 
 const latencyOrder=rankProviders({
   task:'general',
@@ -133,8 +136,10 @@ const latencyOrder=rankProviders({
     'cloudflare:general':{at:now,averageMs:900,failures:0,successes:4}
   }
 });
-assert.ok(latencyOrder.indexOf('cloudflare')<latencyOrder.indexOf('groq'),
-  'A consistently faster, successful engine can outrank a slow first-choice engine');
+assert.ok(latencyOrder.indexOf('gemini')<latencyOrder.indexOf('groq'),
+  'A significantly faster top-tier provider may overtake a slow top-tier provider');
+assert.ok(latencyOrder.indexOf('cloudflare')>latencyOrder.indexOf('pollinations'),
+  'A fast Cloudflare reply must not move a scarce provider into the high-priority group');
 
 const coolingOrder=rankProviders({
   task:'general',
@@ -345,8 +350,8 @@ const balancedOrder=rankProviders({
     cloudflare:{daily:{used:0,limit:100}}
   }
 });
-assert.equal(balancedOrder[0],'cloudflare',
-  'The router distributes compatible tasks away from a provider whose shared pool is saturated');
+assert.equal(balancedOrder[0],'gemini',
+  'The router moves overloaded Groq traffic to healthy fast alternatives, not Cloudflare');
 const secondBalancedOrder=rankProviders({
   task:'general',
   available:()=>true,
@@ -355,8 +360,8 @@ const secondBalancedOrder=rankProviders({
     cloudflare:{daily:{used:1,limit:5000}}
   }
 });
-assert.equal(secondBalancedOrder[0],'gemini',
-  'Weighted fair routing cycles to the next compatible provider instead of permanently preferring the first one');
+assert.equal(secondBalancedOrder[0],'groq',
+  'A small usage difference must not override the configured fast-provider priority');
 
 const db15=mockD1();
 const env15={PRISMA_RATE_DB:db15,GROQ_API_KEY:'round-robin-a',GROQ_API_KEY_2:'round-robin-b',GROQ_API_KEY_3:'round-robin-c'};
