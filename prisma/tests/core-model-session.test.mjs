@@ -21,6 +21,7 @@ test('automatic chats pin the first successful model and keep it for the convers
   selection=pinConversationModel(selection,{provider:'groq',model:'openai/gpt-oss-20b'},1200);
   assert.equal(selection.provider,'groq');
   assert.equal(selection.model,'openai/gpt-oss-20b');
+  assert.equal(selection.usedAt,1200);
   const next=beginConversationModelTurn(selection,5000);
   assert.equal(next.provider,'groq');
   assert.equal(conversationModelRequest(next).provider,'groq');
@@ -34,6 +35,7 @@ test('automatic model pin is refreshed after 30 minutes without a user message',
   assert.equal(refreshed.mode,'auto');
   assert.equal(refreshed.provider,'');
   assert.equal(refreshed.model,'');
+  assert.equal(refreshed.usedAt,0);
   assert.equal(conversationModelRequest(refreshed).provider,'auto');
 });
 
@@ -46,6 +48,7 @@ test('manual choice remains primary, fallback becomes sticky, and idle retries t
   assert.equal(selection.mode,'manual');
   assert.equal(selection.provider,'groq');
   assert.equal(selection.source,'fallback');
+  assert.ok(selection.usedAt>0);
   assert.equal(selection.requestedProvider,'zai');
   assert.equal(selection.requestedModel,'glm-4.5-flash');
   assert.equal(beginConversationModelTurn(selection,400).provider,'groq');
