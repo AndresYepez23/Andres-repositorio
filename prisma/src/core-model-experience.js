@@ -75,29 +75,3 @@ export function displayedConversationPreference(selection = {}) {
       (selection.provider !== selection.requestedProvider || selection.model !== selection.requestedModel))
   };
 }
-
-/**
- * Visible explanation beneath every model. Prefer an explicit catalog purpose;
- * never guess a model's capability from a marketing name alone.
- */
-export function coreModelPurpose(model = {}) {
- const kind = model.kind || describeCoreModel(model).kind;
- const named = describeCoreModel(model);
- const descriptions = {
-  chat:'Conversación y redacción: responde preguntas y ayuda con tareas de texto.',
-  reasoning:'Razonamiento: analiza problemas y explica soluciones paso a paso.',
-  code:'Programación: escribe, revisa y explica código.',
-  vision:'Texto e imágenes: analiza contenido visual cuando el proveedor lo permite.',
-  music:'Música: genera o procesa composiciones musicales; requiere un flujo de audio compatible.',
-  image:'Imágenes: crea contenido visual a partir de una descripción.',
-  video:'Vídeo: genera o procesa secuencias visuales; requiere un flujo de vídeo.',
-  audio:'Voz y audio: genera o transforma sonido.',
-  transcription:'Transcripción: convierte voz o grabaciones en texto.',
-  safety:'Moderación: clasifica contenido y detecta riesgos; no conversa.',
-  embedding:'Vectores: convierte contenido en representaciones para búsqueda.',
-  other:'Herramienta especializada: revisa sus capacidades antes de utilizarla.'
- };
- const specific = String(model.description || model.purpose || '').trim();
- if(specific) return specific;
- return descriptions[kind] || named.description || descriptions.other;
-}

@@ -1,7 +1,6 @@
 import { getCredentialSlots, requestWithCredentialPool } from "./credential-pool.js";
-import { creativeKind } from "./creative-models.js";
 
-let cache = { keyTag: "", expiresAt: 0, models: [], creative: [] };
+let cache = { keyTag: "", expiresAt: 0, models: [] };
 const NON_CHAT_OUTPUTS = new Set([
   "gpt-image-2-free",
   "gemini-3.1-flash-image-preview-free",
@@ -47,27 +46,29 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
       return [];
     }
 
-    const eligible = models.filter(model => {
+    const freeModels = models.filter(model => {
       const id = String(model?.id || "");
-      if(!id.endsWith("-free"))return false;
-      const weight=Number(weights[id]??1);
+      if (!id.endsWith("-free") || NON_CHAT_OUTPUTS.has(id) ||
+          /(lyria|music|image|video|audio|speech|tts|embedding|transcrib|moderation|content.safety|guardrail)/i.test(id + " " + String(model?.name || ""))) return false;
+      const weight = Number(weights[id] ?? 1);
       if (!Number.isFinite(weight) || weight !== 1) return false;
-      const pricing=model?.pricing;
-      return !pricing||((pricing.prompt==null||Number(pricing.prompt)===0)&&
-        (pricing.completion==null||Number(pricing.completion)===0));
-    }).map(model=>{
-      const kind=creativeKind(model)||(NON_CHAT_OUTPUTS.has(String(model.id))?"other":"chat");
-      return {
-        id:String(model.id),name:String(model.name||model.id),
-        kind,specialty:"Gratis · peso de cuota 1 · catálogo en vivo"
-      };
-    });
-    // Keep all zero-priced creative models. Never pass an image, audio,
-    // moderation or video endpoint to the text-completion planner.
-    const creativeModels=eligible.filter(item=>item.kind!=="chat");
-    const freeModels=eligible.filter(item=>item.kind==="chat"&&
-      !["elephant-1-free","mammoth-1-free","span-01-lite-free"].includes(item.id))
-      .map(({kind,...rest})=>rest);
+
+      const pricing = model?.pricing;
+      if (pricing && (
+        (pricing.prompt != null && Number(pricing.prompt) !== 0) ||
+        (pricing.completion != null && Number(pricing.completion) !== 0)
+      )) return false;
+
+      const outputs = model?.architecture?.output_modalities || model?.output_modalities;
+      if (Array.isArray(outputs) && (!outputs.includes("text") || outputs.some(type => ["audio","video","image"].includes(String(type).toLowerCase())))) return false;
+      // These three current listings do not publish their output modality.
+      if (!Array.isArray(outputs) && ["elephant-1-free", "mammoth-1-free", "span-01-lite-free"].includes(id)) return false;
+      return true;
+    }).map(model => ({
+      id: String(model.id),
+      name: String(model.name || model.id),
+      specialty: "Gratis · precio cero verificado · peso de cuota 1",
+    }));
 
     const preferred = [
       "coding-glm-5.3-free",
@@ -81,16 +82,11 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
       return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
     });
 
-    cache = { keyTag, expiresAt: Date.now() + 5 * 60_000, models: freeModels, creative: creativeModels };
+    cache = { keyTag, expiresAt: Date.now() + 5 * 60_000, models: freeModels };
     return freeModels;
   } catch (error) {
     console.warn("AIHubMix free model catalogue unavailable", error?.message || error);
     cache = { keyTag, expiresAt: Date.now() + 30_000, models: [] };
     return [];
   }
-}
-
-export async function getAihubmixFreeCreativeModels(env,{force=false}={}){
- await getAihubmixFreeModels(env,{force});
- return cache.creative||[];
 }
