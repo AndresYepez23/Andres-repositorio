@@ -31,6 +31,7 @@ import { readConversationSnapshot, queueConversationSnapshot, clearConversationS
 import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
+import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest } from './core-model-session.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -63,16 +64,28 @@ export function setPrismaCoreViewActive(active){
 }
 let attachments = [];
 export function getPrismaCoreAttachments(){return attachments.slice();}
+function applyCentralProviderStatus(result){
+  if(!result?.ok)return false;
+  centralProviders=result.providers||centralProviders;
+  centralFeatures=result.features||centralFeatures;
+  centralModelCatalog=result.modelCatalog||centralModelCatalog;
+  centralProviderUsage=result.usage||centralProviderUsage;
+  centralProviderHealth=result.providerHealth||centralProviderHealth;
+  centralWarnings=result.warnings||centralWarnings;
+  centralConfigured=result.configured||centralConfigured;
+  centralImageUsage=result.imageUsage||centralImageUsage;
+  centralStatusUpdatedAt=Date.now();
+  renderModelPicker();
+  return true;
+}
+async function refreshCoreProviderStatus(force=false){
+  const result=await getCentralProviderStatus({force});
+  applyCentralProviderStatus(result);
+  return result;
+}
 export async function getPrismaCoreExecutionContext(){
-  try{
-    const status=await getCentralProviderStatus();
-    centralProviders=status.providers||centralProviders;
-    centralFeatures=status.features||centralFeatures;
-    centralModelCatalog=status.modelCatalog||centralModelCatalog;
-    centralProviderUsage=status.usage||centralProviderUsage;
-  }catch(error){
-    console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);
-  }
+  try{await refreshCoreProviderStatus();}
+  catch(error){console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);}
   return credentials();
 }
 let pendingPlan = null;
@@ -83,6 +96,12 @@ let centralProviders = { gemini: false, huggingface: false, groq: false, cloudfl
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
 let centralProviderUsage = {};
+let centralProviderHealth = {};
+let centralWarnings = {};
+let centralConfigured = {};
+let centralImageUsage = {};
+let centralStatusUpdatedAt = 0;
+let activeModelTab = 'chat';
 let userPinnedToBottom = true;
 let userScrollRevision = 0;
 let localBrainEnabled = false;
@@ -105,7 +124,11 @@ function credentials(){
     centralProviders,
     centralFeatures,
     centralModelCatalog,
-    centralProviderUsage
+    centralProviderUsage,
+    centralProviderHealth,
+    centralWarnings,
+    centralConfigured,
+    centralImageUsage
   };
 }
 function escapeHtml(value){
@@ -155,7 +178,9 @@ function newChatRecord(content=[]){
  const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'chat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
  const first=content.find(message=>message.role==='user'&&message.content?.trim());
  return {id,title:first?String(first.content).replace(/\s+/g,' ').trim().slice(0,58):'Nueva conversación',
-   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false};
+   titled:!!first,updated:Date.now(),created:Date.now(),messages:content,thumbnailBrief:null,websiteBrief:null,pinned:false,
+   modelSelection:{mode:'auto',provider:'',model:'',source:'auto',lastUserAt:0},
+   imageSelection:{provider:'auto',model:''}};
 }
 function persistChatHistory(activeSerialized=null){
  const records=conversations.slice().sort((a,b)=>b.updated-a.updated).map(chat=>serializeConversation({
@@ -319,7 +344,7 @@ function openConversation(id){
  if(busy||executionActive)return;
  const chat=conversations.find(item=>item.id===id);if(!chat)return;
  speechSynthesisStop();
- activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();
+ activeConversationId=chat.id;messages=chat.messages.slice();attachments=[];renderAttachments();renderModelPicker();
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
  pendingPlan=null;$('#core-plan')?.classList.add('hidden');
  userPinnedToBottom=true;renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();
@@ -334,13 +359,196 @@ function startNewConversation(){
  const record=newChatRecord();conversations=conversations.filter(hasConversationMessages);
  conversations.unshift(record);activeConversationId=record.id;
  document.dispatchEvent(new Event('prisma:close-conversation-search'));
- messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');
+ messages=[];attachments=[];pendingPlan=null;renderAttachments();$('#core-plan')?.classList.add('hidden');renderModelPicker();
  // Creating a blank draft must not trigger storage writes or cloud sync.
  renderMessages({forceBottom:true});renderConversationList();closeConversationDrawer();updateChatScreen();
  status('Nueva conversación. El historial anterior sigue disponible.','success');
  $('#core-input')?.focus();
 }
-function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';}
+function updateChatScreen(){const section=$('#core-section');section?.classList.toggle('has-conversation',messages.length>0);const title=$('#core-conversation-name');if(title)title.textContent=conversations.find(c=>c.id===activeConversationId)?.title||'Nueva conversación';renderModelPicker();}
+
+const MODEL_PROVIDER_LABELS={
+ groq:'Groq',zai:'Z.AI',gemini:'Google Gemini',openrouter:'OpenRouter',
+ sensenova:'SenseNova',kilo:'Kilo Gateway',aihubmix:'AIHubMix',
+ requesty:'Requesty',huggingface:'Hugging Face',cloudflare:'Cloudflare Workers AI',
+ pollinations:'Pollinations'
+};
+const MODEL_PROVIDER_ORDER=['groq','zai','gemini','openrouter','sensenova','kilo','aihubmix','requesty','huggingface','cloudflare','pollinations'];
+function activeChatRecord(){return conversations.find(chat=>chat.id===activeConversationId)||null;}
+function imageProviderReady(provider){
+ const flag={cloudflare:'cloudflareImages',pollinations:'pollinationsImages',huggingface:'huggingfaceImages',gemini:'geminiImages'}[provider];
+ if(provider==='pollinations'&&readPollinationsToken())return true;
+ return Boolean(flag&&centralFeatures?.[flag]===true);
+}
+function providerAvailability(provider,type='chat'){
+ if(type==='image'){
+  const ready=imageProviderReady(provider);
+  const remaining=centralImageUsage?.[provider]?.daily?.remaining;
+  const reason=remaining===0?'Cuota diaria de imágenes agotada':centralWarnings?.[provider]||'Motor de imágenes no habilitado';
+  return {available:ready,reason,label:ready?'Disponible':reason};
+ }
+ const personal=provider==='pollinations'&&Boolean(readPollinationsToken());
+ const ready=Boolean(centralProviders?.[provider]||personal);
+ const health=centralProviderHealth?.[provider]||{};
+ let reason=health.reason||centralWarnings?.[provider]||'';
+ if(!reason){
+  if(health.state==='daily_limit')reason='Límite diario alcanzado';
+  else if(health.state==='minute_limit')reason='Límite por minuto alcanzado';
+  else if(health.state==='credentials_paused')reason='Credenciales temporalmente en pausa';
+  else if(!centralConfigured?.[provider]&&!personal&&provider!=='kilo')reason='Proveedor no conectado';
+  else reason='Temporalmente no disponible';
+ }
+ return {available:ready,reason,label:ready?'Disponible':reason};
+}
+function modelLabel(provider,modelId){
+ const models=centralModelCatalog?.chat?.[provider]||[];
+ return models.find(item=>item.id===modelId)?.name||modelId||'Automático';
+}
+function chooseConversationModel(provider,modelId){
+ const chat=activeChatRecord();if(!chat)return;
+ const availability=providerAvailability(provider,'chat');
+ if(!availability.available)return;
+ chat.modelSelection=selectManualConversationModel(chat.modelSelection,provider,modelId,Date.now());
+ persistChatHistory();
+ renderModelPicker();
+ status('Modelo fijado para este chat. Prisma Core conservará el contexto y activará un respaldo si el motor falla.','success');
+}
+function chooseAutomaticConversationModel(){
+ const chat=activeChatRecord();if(!chat)return;
+ chat.modelSelection=selectAutomaticConversationModel(chat.modelSelection,Date.now());
+ persistChatHistory();
+ renderModelPicker();
+ status('Selección automática activada. Prisma elegirá y mantendrá un modelo para este chat.','success');
+}
+function renderChatModelOptions(){
+ const list=$('#core-model-options');if(!list)return;
+ list.replaceChildren();
+ const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
+ let count=0;
+ const catalog=centralModelCatalog?.chat||{};
+ const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(provider=>!MODEL_PROVIDER_ORDER.includes(provider)).sort()];
+ for(const provider of providers){
+  const models=catalog[provider];
+  if(!Array.isArray(models)||!models.length)continue;
+  count+=models.length;
+  const availability=providerAvailability(provider,'chat');
+  const group=document.createElement('section');group.className='core-model-group';
+  const heading=document.createElement('div');heading.className='core-model-group-heading';
+  const name=document.createElement('strong');name.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
+  const statusLabel=document.createElement('span');statusLabel.className='core-model-group-status '+(availability.available?'is-ready':'is-blocked');
+  statusLabel.textContent=availability.available?'Disponible':availability.reason;
+  heading.append(name,statusLabel);group.append(heading);
+  for(const model of models){
+   if(!model?.id)continue;
+   const row=document.createElement('button');row.type='button';row.className='core-model-option';
+   const current=selection.provider===provider&&selection.model===model.id;
+   row.disabled=!availability.available;
+   row.classList.toggle('is-current',current);
+   row.setAttribute('aria-pressed',String(current));
+   const copy=document.createElement('span');copy.className='core-model-option-copy';
+   const title=document.createElement('strong');title.textContent=model.name||model.id;
+   const specialty=document.createElement('small');specialty.textContent=model.specialty||'Modelo de conversación';
+   copy.append(title,specialty);
+   const state=document.createElement('span');state.className='core-model-option-state '+(availability.available?'is-ready':'is-blocked');
+   state.textContent=!availability.available?'Bloqueado':current?(selection.usedAt?'En uso':'Seleccionado'):'Elegir';
+   row.append(copy,state);
+   if(availability.available)row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
+   else row.title=availability.reason;
+   group.append(row);
+  }
+  list.append(group);
+ }
+ if(!count){
+  const empty=document.createElement('p');empty.className='core-model-empty';
+  empty.textContent='El catálogo de modelos aún no está disponible. Prisma seguirá usando la selección automática cuando se restablezca la conexión.';
+  list.append(empty);
+ }
+}
+function renderImageModelControls(){
+ const providerSelect=$('#core-image-provider'),modelSelect=$('#core-image-model'),hint=$('#core-image-model-hint');
+ if(!providerSelect||!modelSelect)return;
+ const chat=activeChatRecord();
+ const saved=chat?.imageSelection||{provider:'auto',model:''};
+ const selectedProvider=String(saved.provider||'auto');
+ for(const option of providerSelect.options){
+  if(option.value==='auto'){
+   option.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
+   option.textContent=option.disabled?'Automático · sin motores disponibles':'Automático · respaldo disponible';
+  }else{
+   const availability=providerAvailability(option.value,'image');
+   option.disabled=!availability.available;
+   const base=MODEL_PROVIDER_LABELS[option.value]||option.value;
+   option.textContent=availability.available?base+' · disponible':base+' · '+availability.reason;
+   option.title=availability.reason;
+  }
+ }
+ providerSelect.value=selectedProvider;
+ if(providerSelect.value!==selectedProvider)providerSelect.value='auto';
+ const provider=providerSelect.value||'auto';
+ modelSelect.replaceChildren();
+ const automatic=document.createElement('option');automatic.value='';automatic.textContent=provider==='auto'?'Automático · según motor':'Automático · modelo recomendado';
+ modelSelect.append(automatic);
+ const models=provider==='auto'?[]:(centralModelCatalog?.image?.[provider]||[]);
+ for(const model of models){
+  const option=document.createElement('option');option.value=model.id;
+  option.textContent=(model.name||model.id)+(model.specialty?' · '+model.specialty:'');
+  modelSelect.append(option);
+ }
+ modelSelect.value=String(saved.model||'');
+ if(modelSelect.value!==String(saved.model||''))modelSelect.value='';
+ const ready=provider==='auto'?['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
+ modelSelect.disabled=provider==='auto'||!ready||!models.length;
+ if(hint){
+  const usage=centralImageUsage?.[provider]?.daily;
+  hint.textContent=provider==='auto'
+   ?'Prisma probará los motores de imagen habilitados y respetará sus cuotas.'
+   :ready
+    ?'Modelo de imagen disponible para este chat.'
+    :providerAvailability(provider,'image').reason+(usage?.resetAt?' · Reinicio de cuota: '+new Date(Number(usage.resetAt)*1000).toLocaleString():'');
+ }
+}
+function renderModelPicker(){
+ const details=$('.core-model-settings'),summary=details?.querySelector('summary');
+ if(!details||!summary)return;
+ const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
+ const current=selection.provider&&selection.model?modelLabel(selection.provider,selection.model):'Automático';
+ summary.title=selection.provider&&selection.model?'Modelo actual: '+current:'Seleccionar modelo de IA';
+ summary.setAttribute('aria-label',summary.title);
+ const statusLabel=$('#core-model-selection-status');
+ if(statusLabel){
+  const activeAvailability=selection.provider?providerAvailability(selection.provider,'chat'):{available:true};
+  statusLabel.textContent=selection.provider&&selection.model
+   ?(!activeAvailability.available?'No disponible · se usará un respaldo: '+current:
+     (selection.source==='fallback'?'Respaldo activo · ':selection.usedAt?'Modelo activo · ':'Modelo seleccionado · ')+current)
+   :'Prisma seleccionará un modelo al comenzar y lo conservará en este chat';
+ }
+ const autoButton=$('#core-model-auto');
+ if(autoButton){
+  autoButton.classList.toggle('is-current',selection.mode==='auto');
+  const autoState=autoButton.querySelector('.core-model-auto-state');
+  if(autoState)autoState.textContent=selection.mode==='auto'?'Activo':'Cambiar';
+  const description=autoButton.querySelector('small');
+  if(description)description.textContent=selection.provider&&selection.model&&selection.mode==='auto'
+   ?'En uso: '+current+'. Se mantendrá hasta que falle o pasen 30 minutos sin actividad.'
+   :'Prisma elige según la tarea, disponibilidad, rendimiento y cuotas.';
+ }
+ renderChatModelOptions();
+ renderImageModelControls();
+ const panel=$('#core-model-panel');
+ if(panel){
+  panel.querySelectorAll('[data-model-tab]').forEach(button=>{
+   const active=button.dataset.modelTab===activeModelTab;
+   button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));
+  });
+  panel.querySelectorAll('[data-model-pane]').forEach(pane=>pane.classList.toggle('active',pane.dataset.modelPane===activeModelTab));
+ }
+}
+function saveImageSelection(){
+ const chat=activeChatRecord();if(!chat)return;
+ chat.imageSelection={provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||''};
+ persistChatHistory();
+}
+
 async function persistGeneratedResults(results){
  let allSaved=true;
  for(const entry of results||[]){
@@ -1212,7 +1420,7 @@ async function generateVisualRequest(text,creds,kind){
   (headline?'Reserve a clean area for a precise typography overlay to be applied locally. Do not draw any letters or text in the generated background.':'Avoid unwanted watermarks and illegible small lettering.');
  status('Generando '+label+' con respaldo automático si el motor principal no está disponible…');
  const result=await runTool('image-gen',[],{
-  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',ratio,style
+  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||'',ratio,style
  },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),msg||'Generando '+label+'…');});
  if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
  if(headline){
@@ -1256,19 +1464,19 @@ async function handleWebsiteConversation(text){
  chat.websiteBrief=null;persistChatHistory();
  try{
   status('Preparando una página web en un archivo descargable…');
-  const central=await getCentralProviderStatus();
-  centralProviders=central.providers||centralProviders;
-  centralFeatures=central.features||centralFeatures;
-  centralModelCatalog=central.modelCatalog||centralModelCatalog;
-  centralProviderUsage=central.usage||centralProviderUsage;
+  await refreshCoreProviderStatus();
   if(!Object.values(centralProviders).some(Boolean))
    throw Error('No hay motores de texto compartidos disponibles. El diseño puede retomarse cuando se recupere la cuota.');
+  const chat=activeChatRecord();
+  const modelRequest=conversationModelRequest(chat?.modelSelection);
   const result=await runTool('ai-webpage',[],{
-   ...credentials(),prompt:route.description,provider:'auto',reasoning:'smart',length:'long'
+   ...credentials(),prompt:route.description,...modelRequest,reasoning:'smart',length:'long'
   },(p,msg)=>{status(msg||'Generando el archivo HTML…');
    setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Diseñando tu página…');});
   if(!result?.blob||!String(result.blob.type||'').startsWith('text/html'))
    throw Error('No se recibió un archivo HTML verificable.');
+  if(chat&&result.provider&&result.model)chat.modelSelection=pinConversationModel(chat.modelSelection,result,Date.now());
+  renderModelPicker();
   addMessage('assistant','Preparé una primera versión HTML de tu página web. Puedes previsualizarla y descargar el HTML. No está publicada en Internet: para ponerla en un dominio se requiere un paso posterior.',{
    engine:result.provider,model:result.model,
    fallbackFrom:result.fallbackFrom,fallbackReason:result.fallbackReason,
@@ -1362,6 +1570,10 @@ function directCoreTask(text,history=[]){
  return 'conversation';
 }
 async function answerConversation(text,creds,task='conversation'){
+  if(Date.now()-centralStatusUpdatedAt>30000){
+    try{await refreshCoreProviderStatus();}catch{}
+    creds=credentials();
+  }
   status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
   const instruction=task==='songwriting'
    ? 'Respeta si se pide una canción nueva o una revisión de una canción anterior. Conserva título, tema y partes no solicitadas al editar. Si el último mensaje responde a una pregunta de aclaración, aplícalo a la solicitud original y no lo trates como un tema independiente. No simules haber generado audio.'
@@ -1377,8 +1589,8 @@ async function answerConversation(text,creds,task='conversation'){
    task==='reasoning'&&/\b(revisa|revisar|revision|corrige|critica|contradicciones|coherencia|mejora este texto)\b/.test(normalizedTask)?'ai-text-review':
    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
-  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,
-   chooseCoreContextOptions(task,taskText));
+  const contextOptions=chooseCoreContextOptions(task,taskText);
+  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,contextOptions);
   const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
   if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
@@ -1388,11 +1600,15 @@ async function answerConversation(text,creds,task='conversation'){
   // Tool catalog and provider list are irrelevant to ordinary conversation.
   // Send them only when someone asks about Prisma's actual capabilities.
   const asksAboutPrisma=/\b(?:prisma|core|herramientas|funciones disponibles|que puedes hacer|motores|modelos disponibles|proveedores de ia|conexiones)\b/.test(normalizedTask);
-  const assistantContext=[instruction,
+  const contextPolicy='El mensaje actual tiene prioridad. Mantén continuidad cuando el usuario haga referencia a una respuesta, imagen o archivo anterior, incluso si han pasado varios turnos. Si solicita claramente otra tarea o cambia de tema, no mezcles instrucciones ni hallazgos que ya no correspondan.';
+  const assistantContext=[instruction,contextPolicy,
    ...(asksAboutPrisma?[coreCapabilityContext(),providerContext]:[])
-  ].join('\n\n').slice(0,1950);
+  ].join('\n\n').slice(0,2200);
+  const chat=activeChatRecord();
+  const modelRequest=conversationModelRequest(chat?.modelSelection);
   const response=await runTool(toolId,[],{
-    prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
+    prompt:taskText,context:assistantContext,contextMessages,
+    ...modelRequest,
     reasoning:chooseCoreReasoning(task,taskText),
     tone:task==='songwriting'||task==='creative'?'creative':'friendly',
     length:chooseCoreResponseLength(task,taskText),
@@ -1400,7 +1616,11 @@ async function answerConversation(text,creds,task='conversation'){
   },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
   const answer=String(response?.text||'').trim();
   if(!answer)throw Error('El motor seleccionado no devolvió contenido.');
+  if(chat&&response.provider&&response.model){
+    chat.modelSelection=pinConversationModel(chat.modelSelection,response,Date.now());
+  }
   addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
+  renderModelPicker();
   status('Respuesta lista. Puedes continuar esta conversación.','success');
   /* Chat de texto: no consume tareas con archivos. */
 }
@@ -1515,12 +1735,8 @@ async function interpretAttachedImageText(userText){
   status('No se encontró texto legible para interpretar.','warning');
   return;
  }
- const available=await getCentralProviderStatus();
- centralProviders=available.providers||centralProviders;
- centralFeatures=available.features||centralFeatures;
- centralModelCatalog=available.modelCatalog||centralModelCatalog;
- centralProviderUsage=available.usage||centralProviderUsage;
- if(!Object.values(centralProviders).some(Boolean)){
+ await refreshCoreProviderStatus();
+ if(!Object.values(centralProviders).some(Boolean)&&!credentials().polliToken){
   addMessage('assistant','Reconocí el siguiente texto, pero ahora no tengo un motor de análisis disponible para contextualizarlo. No lo presentaré como un análisis:\n\n'+extracted.join('\n\n').slice(0,9000));
   status('Texto reconocido; análisis no disponible.','warning');
   return;
@@ -1537,13 +1753,17 @@ async function interpretAttachedImageText(userText){
   extracted.join('\n\n').slice(0,22000)
  ].filter(Boolean).join('\n\n');
  try{
+  const chat=activeChatRecord();
+  const modelRequest=conversationModelRequest(chat?.modelSelection);
   const response=await runTool('ai-assistant',[],{
-   ...credentials(),prompt,provider:'auto',reasoning:'balanced',tone:'professional',
+   ...credentials(),prompt,...modelRequest,reasoning:'balanced',tone:'professional',
    length:'long',task:'reasoning'
   },(p,message)=>{status(message||'Contextualizando el documento…');setProgress(Math.max(.08,Math.min(.96,Number(p)||.15)),message||'Analizando…');});
   const answer=String(response?.text||'').trim();
   if(!answer)throw Error('Respuesta de análisis vacía');
+  if(chat&&response.provider&&response.model)chat.modelSelection=pinConversationModel(chat.modelSelection,response,Date.now());
   addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
+  renderModelPicker();
   status('Análisis contextual de imagen completado.','success');
   attachments=[];renderAttachments();$('#core-file-input').value='';
   recordCompletedCoreTask({fileTask:true});
@@ -1637,6 +1857,8 @@ async function requestPlan(userText){
         ).join('\n\n');
         status('Analizando '+sources.length+' fuentes…');
         setProgress(.38,'Contrastando fuentes y preparando la respuesta…');
+        const chat=activeChatRecord();
+        const modelRequest=conversationModelRequest(chat?.modelSelection);
         const synthesis=await runTool('ai-assistant',[],{
           prompt:[
             'Eres Prisma Core en modo de investigación web.',
@@ -1649,10 +1871,12 @@ async function requestPlan(userText){
             'SOLICITUD DEL USUARIO:\n'+userText.slice(0,5000),
             'FUENTES RECUPERADAS:\n'+sourceContext.slice(0,11500)
           ].join('\n\n'),
-          ...credentials(),provider:'auto',reasoning:'balanced',tone:'professional',length:'long',task:'research'
+          ...credentials(),...modelRequest,reasoning:'balanced',tone:'professional',length:'long',task:'research'
         },(p,msg)=>{status(msg||'Analizando las fuentes…');setProgress(.38+Math.max(0,Math.min(1,Number(p)||0))*.58,msg||'Analizando las fuentes…');});
         const answer=String(synthesis?.text||'').trim();
         if(!answer)throw new Error('El motor de síntesis no devolvió una respuesta.');
+        if(chat&&synthesis.provider&&synthesis.model)chat.modelSelection=pinConversationModel(chat.modelSelection,synthesis,Date.now());
+        renderModelPicker();
         const sourceList=sources.map(source=>'['+source.number+'] ['+source.title.replace(/[\[\]]/g,'')+']('+source.url+')').join('\n');
         addMessage('assistant',answer+'\n\n**Fuentes consultadas**\n'+sourceList,{
           engine:synthesis.provider||'prisma-core-research',
@@ -1947,6 +2171,7 @@ async function executePlan(){
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
   const executed=[];let currentFiles=[...attachments],lastText='',successful=false,allResultFilesSaved=true;
+  const modelDrivenTextTools=new Set(['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper','ai-webpage']);
   try{
     for(let index=0;index<steps.length;index++){
       if(cancelRequested)break;
@@ -1966,6 +2191,11 @@ async function executePlan(){
           lastText?'Material del paso anterior: '+lastText.slice(0,12000):''
         ].filter(Boolean).join('\n\n');
         params.provider='auto';params.reasoning='smart';params.tone='creative';params.length='long';params.task='songwriting';
+      }
+      // The model picker controls user-facing text generation only. Core's
+      // internal planner above remains automatic and continues to own tools.
+      if(modelDrivenTextTools.has(tool.id)){
+        Object.assign(params,conversationModelRequest(activeChatRecord()?.modelSelection));
       }
       // Pass the previous result to the next compatible text tool without
       // invoking another model. Explicit model-supplied text always wins.
@@ -1991,6 +2221,10 @@ async function executePlan(){
       const runner=textBatch?async(id,files,p,cb)=>runTool(id,[],{...p,text:await files[0].text()},cb):runTool;
       const result=await runToolBatch(batchTool,textBatch?currentFiles:inputFiles,params,runner,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);},()=>cancelRequested);
       validateAgentStepResult(tool.id,result);
+      if(modelDrivenTextTools.has(tool.id)&&result?.provider&&result?.model){
+        const chat=activeChatRecord();
+        if(chat){chat.modelSelection=pinConversationModel(chat.modelSelection,result,Date.now());renderModelPicker();}
+      }
       executed.push(...executionCards(tool.name,reason,result,index));setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
       if(result?.text)lastText=String(result.text);
       else if(result?.html)lastText=String(result.html);
@@ -2227,11 +2461,14 @@ async function sendMessage(){
     return;
   }
   const filesNow=[...attachments];
+  const activeChat=activeChatRecord();
+  if(activeChat)activeChat.modelSelection=beginConversationModelTurn(activeChat.modelSelection,Date.now());
   addMessage('user',text||'Procesa los archivos adjuntos.',{files:filesNow.map(file=>file.name)});
   // Hide the submitted file tray immediately. The processing pipeline keeps
   // the File objects until it completes; they are cleared in finally.
   $('#core-attachments')?.classList.add('hidden');
   input.value='';input.style.height='39px';
+  renderModelPicker();
   // An attachment-only reply should continue a pending PDF editing request,
   // instead of launching an unrelated AI analysis of the uploaded document.
   const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
@@ -2426,14 +2663,33 @@ export function initPrismaCore(){
     input.style.height='44px';
     input.style.height=Math.min(110,Math.max(44,input.scrollHeight))+'px';
   });
-  // Motor de imágenes: desplegable discreto que se cierra fuera o con Escape.
-  const imageSettings=$('.core-model-settings');
+  // Selector de modelos: popover adaptable, accesible y seguro frente a toques externos.
+  const modelSettings=$('.core-model-settings');
+  modelSettings?.addEventListener('toggle',()=>{
+    if(modelSettings.open){
+      renderModelPicker();
+      if(Date.now()-centralStatusUpdatedAt>30000)refreshCoreProviderStatus().catch(()=>{});
+    }
+  });
   document.addEventListener('pointerdown',event=>{
-    if(imageSettings?.open&&!imageSettings.contains(event.target))imageSettings.open=false;
+    if(modelSettings?.open&&!modelSettings.contains(event.target))modelSettings.open=false;
   });
   document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&imageSettings?.open)imageSettings.open=false;
+    if(event.key==='Escape'&&modelSettings?.open)modelSettings.open=false;
   });
+  $('#core-model-auto')?.addEventListener('click',chooseAutomaticConversationModel);
+  $('#core-model-close')?.addEventListener('click',()=>{if(modelSettings)modelSettings.open=false;});
+  document.querySelectorAll('[data-model-tab]').forEach(button=>button.addEventListener('click',()=>{
+    activeModelTab=button.dataset.modelTab==='image'?'image':'chat';
+    renderModelPicker();
+  }));
+  $('#core-image-provider')?.addEventListener('change',()=>{
+    const chat=activeChatRecord();
+    if(chat)chat.imageSelection={provider:$('#core-image-provider').value||'auto',model:''};
+    persistChatHistory();renderModelPicker();
+  });
+  $('#core-image-model')?.addEventListener('change',saveImageSelection);
+  renderModelPicker();
   // The signup card is in the chat-column flow (not on top of messages).
   // Opening the account panel keeps the card hidden until the user returns.
   document.addEventListener('prisma:guest-gate-open',()=>{
@@ -2479,15 +2735,10 @@ export function initPrismaCore(){
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
-  getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
-    centralFeatures=result.features||centralFeatures;
-    centralModelCatalog=result.modelCatalog||centralModelCatalog;
-    centralProviderUsage=result.usage||centralProviderUsage;
-    const creds=credentials();
+  refreshCoreProviderStatus().then(result=>{
     const ready=Object.values(centralProviders).some(Boolean);
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
-  });
+  }).catch(()=>{});
   status('Listo. Escribe una tarea o adjunta un archivo.','info');
   $('#core-cancel').disabled=false;
 }

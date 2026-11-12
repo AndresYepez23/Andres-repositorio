@@ -223,7 +223,7 @@ export async function onRequestGet({ env }) {
     },
     models: {
       pollinations: "openai/gpt-5.4-nano",
-      gemini: env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
+      gemini: env.GEMINI_TEXT_MODEL || "gemini-3.5-flash-lite",
       huggingface: "openai/gpt-oss-20b:cheapest",
       cloudflare: "@cf/google/gemma-4-26b-a4b-it",
       groq: "openai/gpt-oss-20b",
@@ -231,7 +231,7 @@ export async function onRequestGet({ env }) {
       kilo: "z-ai/glm-5:free",
       requesty: "novita/ling-3.1-flash",
       sensenova: "sensenova-6.8-flash-lite",
-      zai: "glm-4.7-flash",
+      zai: "glm-4.5-flash",
       aihubmix: "coding-glm-5.3-free",
     },
   }), { status: 200, headers });

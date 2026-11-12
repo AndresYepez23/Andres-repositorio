@@ -205,25 +205,65 @@
                 <div class="core-attachments" id="core-attachments"></div>
                 <div class="core-voice-feedback hidden" id="core-voice-feedback" role="status" aria-live="polite"></div>
                 <div class="core-compose-surface">
+                  <button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20.8 11.6-8.6 8.6a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.3 9.3a2 2 0 0 1-2.8-2.8l8.6-8.6"/></svg>
+                  </button>
+                  <input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip">
                   <textarea id="core-input" rows="1" placeholder="Escribe a Prisma…" aria-label="Mensaje para Prisma Core"></textarea>
                   <div class="core-composer-footer">
-                  <div class="core-composer-tools"><button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20.8 11.6-8.6 8.6a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.3 9.3a2 2 0 0 1-2.8-2.8l8.6-8.6"/></svg><span>Adjuntar</span></button>
-<input id="core-file-input" type="file" multiple hidden accept="image/*,application/pdf,.doc,.docx,.xlsx,.xls,.csv,.json,.txt,.md,.html,audio/*,video/*,.zip"><details class="core-model-settings">
-                    <summary aria-label="Configurar motor de imágenes" title="Opciones de generación de imágenes">
-                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5" fill="var(--panel)" stroke="currentColor"/><circle cx="15" cy="17" r="2.5" fill="var(--panel)" stroke="currentColor"/></svg>
-                    </summary>
-                    <div class="core-model-panel">
-                      <strong>Generación de imágenes</strong>
-                      <label>Motor de imagen
-                        <select id="core-image-provider"><option value="auto">Automático · respaldo disponible</option><option value="cloudflare">Cloudflare FLUX · motor compartido</option><option value="pollinations">Pollinations · si hay saldo y cuota</option><option value="huggingface">Hugging Face · requiere autorización</option><option value="gemini">Gemini Image · pago opcional</option></select>
-                      </label>
-                      <small>El motor automático intenta los respaldos autorizados si falla el principal. Adjunta hasta 8 archivos (100 MB en total).</small>
+                    <div class="core-composer-tools">
+                      <details class="core-model-settings">
+                        <summary aria-label="Seleccionar modelo de IA" title="Seleccionar modelo de IA">
+                          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5" fill="var(--panel)" stroke="currentColor"/><circle cx="15" cy="17" r="2.5" fill="var(--panel)" stroke="currentColor"/></svg>
+                        </summary>
+                        <div class="core-model-panel" id="core-model-panel" role="dialog" aria-label="Modelos de IA">
+                          <header class="core-model-panel-header">
+                            <div>
+                              <span class="core-model-kicker">PRISMA CORE</span>
+                              <strong>Modelo de IA</strong>
+                              <small>Controla el motor de este chat</small>
+                            </div>
+                            <button type="button" id="core-model-close" aria-label="Cerrar selector de modelos">×</button>
+                          </header>
+                          <div class="core-model-tabs" role="tablist" aria-label="Tipo de modelo">
+                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Chat</button>
+                            <button type="button" role="tab" data-model-tab="image" aria-selected="false">Imágenes</button>
+                          </div>
+                          <section class="core-model-pane active" data-model-pane="chat" role="tabpanel">
+                            <button type="button" class="core-model-auto" id="core-model-auto">
+                              <span class="core-model-auto-mark" aria-hidden="true">✦</span>
+                              <span class="core-model-auto-copy"><strong>Automático</strong><small>Prisma elige según tarea, rendimiento y disponibilidad.</small></span>
+                              <span class="core-model-auto-state">Activo</span>
+                            </button>
+                            <p class="core-model-selection-status" id="core-model-selection-status">Prisma seleccionará un modelo al comenzar y lo conservará en este chat.</p>
+                            <div class="core-model-groups" id="core-model-options" aria-label="Modelos disponibles"></div>
+                            <p class="core-model-footnote">El modelo se mantiene durante el chat. Si falla, Prisma cambia a un respaldo compatible. Tras 30 minutos sin actividad, vuelve a evaluar la selección automática.</p>
+                          </section>
+                          <section class="core-model-pane" data-model-pane="image" role="tabpanel">
+                            <div class="core-image-model-heading">
+                              <strong>Generación de imágenes</strong>
+                              <small>Selecciona un motor y, si está disponible, un modelo concreto.</small>
+                            </div>
+                            <label class="core-model-field">Motor de imagen
+                              <select id="core-image-provider">
+                                <option value="auto">Automático · respaldo disponible</option>
+                                <option value="cloudflare">Cloudflare Workers AI</option>
+                                <option value="pollinations">Pollinations</option>
+                                <option value="huggingface">Hugging Face</option>
+                                <option value="gemini">Gemini Image</option>
+                              </select>
+                            </label>
+                            <label class="core-model-field">Modelo de imagen
+                              <select id="core-image-model"><option value="">Automático · modelo recomendado</option></select>
+                            </label>
+                            <small class="core-image-model-hint" id="core-image-model-hint">Prisma probará los motores de imagen habilitados y respetará sus cuotas.</small>
+                          </section>
+                        </div>
+                      </details>
+                      <button type="button" class="core-voice-button" id="core-dictate" aria-label="Dictar mensaje" title="Dictar mensaje"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
+                      <button type="button" class="core-voice-button core-talk-button" id="core-talk" aria-label="Conversación por voz" title="Conversación por voz"><svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><path d="M4 9v6m4-10v14m4-17v20m4-15v10m4-8v6"/></svg></button>
                     </div>
-                  </details>
-                  <button type="button" class="core-voice-button" id="core-dictate" aria-label="Dictar mensaje" title="Dictar mensaje"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
-                  <button type="button" class="core-voice-button core-talk-button" id="core-talk" aria-label="Conversación por voz" title="Conversación por voz"><svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><path d="M4 9v6m4-10v14m4-17v20m4-15v10m4-8v6"/></svg></button></div>
-                  <button type="button" class="button button-primary" id="core-send" aria-label="Enviar mensaje"><span id="core-send-label">Enviar</span><span data-icon="arrow-right"></span></button>
+                    <button type="button" class="button button-primary" id="core-send" aria-label="Enviar mensaje"><span id="core-send-label">Enviar</span><span data-icon="arrow-right"></span></button>
                   </div>
                 </div>
               </div>

@@ -195,6 +195,26 @@ assert.match(stylesSource,/flex:0 0 auto/,'Signup banner occupies its own flow a
 assert.match(stylesSource,/body\.prisma-guest-gate-open #auth-modal\.auth-backdrop/,'Mobile limit modal uses a bottom-sheet variant');
 const chatHtmlSource=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const buildSource=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
+const modelSessionSource=readFileSync(new URL('../src/core-model-session.js',import.meta.url),'utf8');
+const contextSource=readFileSync(new URL('../src/core-context.js',import.meta.url),'utf8');
+assert.match(coreSource,/beginConversationModelTurn\(activeChat\.modelSelection/,'Each chat turn must refresh or preserve its own model preference');
+assert.match(coreSource,/conversationModelRequest\(chat\?\.modelSelection\)/,'The selected chat model must reach inference without bypassing Core');
+const imageInterpretationSource=coreSource.slice(coreSource.indexOf('async function interpretAttachedImageText'),coreSource.indexOf('async function requestPlan'));
+assert.match(imageInterpretationSource,/conversationModelRequest\(chat\?\.modelSelection\)/,'Image interpretation must honor the current chat model preference');
+assert.match(coreSource,/pinConversationModel\(chat\.modelSelection,response/,'Successful responses and automatic fallbacks must pin the actual model to the chat');
+assert.match(coreSource,/modelDrivenTextTools\.has\(tool\.id\)/,'User-facing text generation tools must use the selected conversation model');
+assert.match(coreSource,/prompt:plannerPrompt,provider:'auto'/,'El planificador interno de Core debe permanecer automático');
+assert.match(modelSessionSource,/MODEL_SESSION_IDLE_MS = 30 \* 60 \* 1000/,'Automatic selection must be reconsidered after 30 minutes of inactivity');
+assert.match(engineCode,/localStorage/,'Provider performance and cooldown memory must survive page reloads without storing prompts');
+assert.match(chatHtmlSource,/id="core-file-button"[\s\S]*?id="core-input"/,'Attachment control must be inside the composer at the left of the input');
+assert.match(chatHtmlSource,/data-model-tab="chat"[\s\S]*?data-model-tab="image"/,'The model selector must expose chat and image model tabs');
+assert.match(chatHtmlSource,/id="core-model-options"/,'All curated chat models must have a live availability list');
+assert.match(auroraSource,/position:fixed!important;left:auto!important;right:18px!important/,'Model panel must stay inside the viewport on desktop');
+assert.match(auroraSource,/left:12px!important;right:12px!important/,'Model panel must fit narrow mobile viewports');
+assert.match(contextSource,/fileTurns/,'Follow-ups must retain earlier file and image analysis context');
+assert.match(contextSource,/isCoreNewTask/,'A clearly new task must be separated from a contextual follow-up');
+assert.match(coreSource,/El mensaje actual tiene prioridad/,'The current request must override stale conversation context');
+assert.match(coreSource,/no mezcles instrucciones ni hallazgos/,'Core must not contaminate a new task with an unrelated earlier file or image');
 // The welcome visuals must be shipped in production, not merely referenced locally.
 assert.match(chatHtmlSource,/<link rel="stylesheet" href="\.\/aurora-system\.css">/,'Aurora stylesheet must be referenced by the application');
 assert.match(buildSource,/"styles\.css", "aurora-system\.css"/,'Production build must publish the Aurora stylesheet');
@@ -785,7 +805,7 @@ assert.equal(chooseCoreReasoning('coding','Depura este código'),'smart');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast');
 assert.equal(isCoreFollowUp('¿Y las demás?'),true,'Short follow-up must reference the conversation');
 assert.equal(isCoreFollowUp('¿Qué es un PDF?'),false,'Independent factual question must not be forced to use a previous artifact');
-assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:13,maxChars:14500},'Short follow-ups need ample relevant context');
+assert.deepEqual(chooseCoreContextOptions('conversation','¿Y eso por qué?'),{maxMessages:15,maxChars:16000,newTask:false},'Short follow-ups need the task anchor and enough relevant context');
 assert.equal(chooseCoreReasoning('conversation','Analiza por qué falla esta autenticación y evalúa las causas'),'smart','Complex requests deserve deeper model routing');
 assert.equal(chooseCoreReasoning('conversation','Hola, ¿qué tal?'),'fast','Quick greetings remain efficient');
 assert.equal(chooseCoreResponseLength('conversation','Explica cómo funciona y cuándo conviene usar un sistema de registro de pacientes'),'long','Meaningful explanations must not be artificially short');
@@ -895,9 +915,9 @@ assert.deepEqual(readInferenceUsage(usageStorage),{
  requests:2,measuredRequests:1,totalTokens:150
 });
 assert.ok(!usageValues.get(INFERENCE_USAGE_KEY).includes('secret'),'No secret values recorded in usage');
-assert.deepEqual(chooseCoreContextOptions('conversation','Hola'),{maxMessages:3,maxChars:3500});
-assert.deepEqual(chooseCoreContextOptions('songwriting','Cambia el coro de esa canción'),{maxMessages:13,maxChars:14500});
-assert.deepEqual(chooseCoreContextOptions('coding','Implementa una función segura'),{maxMessages:11,maxChars:11500});
+assert.deepEqual(chooseCoreContextOptions('conversation','Hola'),{maxMessages:3,maxChars:3500,newTask:false});
+assert.deepEqual(chooseCoreContextOptions('songwriting','Cambia el coro de esa canción'),{maxMessages:15,maxChars:16000,newTask:false});
+assert.deepEqual(chooseCoreContextOptions('coding','Implementa una función segura'),{maxMessages:11,maxChars:11500,newTask:false});
 const entireSong='TÍTULO\\n'+('Verso de la canción '.repeat(220))+'FIN DEL CORO';
 const revisionContext=buildConversationContext([
  {role:'user',content:'Compón una canción sobre esperanza.'},
