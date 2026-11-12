@@ -463,7 +463,7 @@ assert.match(providerStatusSource,/HTTP 401/,'Provider panel must explain key-sp
 
 const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(compatibleChatSource,/sweepAuthSlots:true/,'All OpenAI-compatible providers must sweep valid keys after HTTP 401');
-assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.cn\/v1\/chat\/completions"/,'SenseNova keys must use the documented official API host');
+assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensetime\.com\/api\/v1\/chat\/completions"/,'SenseNova keys must use the documented official TokenPlan API host');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
 
 // Prisma Core independent intelligence must work without AI models or Mini.
