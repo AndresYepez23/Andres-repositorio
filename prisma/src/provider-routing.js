@@ -130,8 +130,14 @@ export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_O
     // favor other task-compatible providers. This is load balancing, not
     // parallel fan-out: only the first healthy candidate receives the prompt.
     const utilization=limit>0?Math.max(0,Math.min(1,used/limit)):0;
-    const loadPenalty=utilization*15;
-    return {name,score:index*12+latency+reliability+loadPenalty+(cooling?1000:0)+(name==='openrouter'?10000:0)};
+    // Weighted fair queueing: providers earlier in this task's route receive
+    // a higher share, but under-used compatible providers are selected before
+    // a repeatedly used provider. This distributes traffic across the pool
+    // without parallel fan-out or ignoring task affinity.
+    const priorityWeight=1/(1+index*0.35);
+    const loadPenalty=used/priorityWeight;
+    const quotaPenalty=utilization*12;
+    return {name,score:loadPenalty+quotaPenalty+latency+reliability+index*0.05+(cooling?1000:0)+(name==='openrouter'?10000:0)};
   }).sort((a,b)=>a.score-b.score).map(item=>item.name);
 }
 
