@@ -186,7 +186,7 @@ const ENGLISH_INTENT = [
  ['resize image','redimensiona imagen'],['change image dimensions','redimensiona imagen'],['crop image','recorta imagen'],['crop photo','recorta foto'],
  ['convert pdf to docx','pdf a word'],['pdf to word','pdf a word'],['word to pdf','word a pdf'],['convert images to pdf','convierte imagenes a pdf'],
  ['rotate pdf pages','rota pdf'],['rotate pdf','rota pdf'],['grayscale image','escala de grises'],['black and white photo','blanco y negro'],
- ['extract image colors','extrae colores'],['color palette from photo','paleta de la foto'],['flip image','voltear imagen'],['mirror image','espejo imagen'],
+ ['extract image colors','extrae colores'],['dominant colors','colores dominantes'],['get color palette','saca paleta de colores'],['color palette from photo','paleta de la foto'],['flip image','voltear imagen'],['mirror image','espejo imagen'],
  ['mute video','silenciar video'],['remove audio from video','quita audio del video'],['speed up video','acelera video'],['slow down video','ralentiza video'],
  ['trim video','recorta video'],['convert video to gif','video a gif'],['create gif from video','crear gif'],
  ['audio waveform','forma de onda'],['normalize audio volume','normaliza volumen'],['convert audio to mp3','convertir a mp3'],
