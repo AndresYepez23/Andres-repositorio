@@ -465,6 +465,10 @@ const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',im
 assert.match(compatibleChatSource,/sweepAuthSlots:true/,'All OpenAI-compatible providers must sweep valid keys after HTTP 401');
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensetime\.com\/api\/v1\/chat\/completions"/,'SenseNova keys must use the documented official TokenPlan API host');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
+const connectionUiSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+assert.match(connectionUiSource,/Tavily Search \+ Jina Search/,'Connections panel exposes web research providers');
+assert.match(connectionUiSource,/research-credential-slots/,'Connections panel shows safe Tavily/Jina credential slot metadata');
+assert.match(connectionUiSource,/central\.research\?\.available/,'Connections summary reports web research availability');
 
 // Prisma Core independent intelligence must work without AI models or Mini.
 assert.ok(INDEPENDENT_CORE_KNOWLEDGE_COUNT>=40,'Ship at least 40 curated, bounded factual concepts');
