@@ -856,10 +856,9 @@ async function generateText(p,cb){
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
     preferred!=='auto'&&String(p.polliToken||'').trim());
   if(!p.centralProviders?.[provider])return false;
-  // Trial lifetime calls are scarce and must not be spent automatically.
-  // Eligible AIHubMix accounts enter automatic routing only after the owner
-  // confirms daily quota activation; manual choice still permits testing.
-  if(provider==='aihubmix'&&preferred==='auto')return Boolean(p.centralFeatures?.aihubmixDailyQuotaActive);
+  // AIHubMix is eligible while provider status reports remaining trial/daily
+  // capacity. Its late route position and weighted allocator preserve this
+  // limited free quota for fallback instead of routine first-choice traffic.
   // Some NVIDIA trial endpoints may log prompts: never send user text there
   // automatically. A user may select those manually after reading the warning.
   if(provider==='kilo'&&preferred==='auto')return Boolean(
