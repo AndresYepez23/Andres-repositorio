@@ -1,4 +1,4 @@
-const RESEARCH_INTENT = /\b(?:investiga(?:r|cion|ción)?|busca\s+(?:en\s+)?(?:internet|la\s+web)|consulta\s+(?:en\s+)?internet|fuentes\s+(?:actuales|recientes)|noticias\s+(?:actuales|recientes)|ultimas\s+noticias|últimas\s+noticias|informacion\s+actualizada|información\s+actualizada|investigacion\s+profunda|investigación\s+profunda)\b/i;
+const RESEARCH_INTENT = /\b(?:investiga(?:r|cion|ción)?|busca\s+(?:en\s+)?(?:internet|la\s+web)|consulta\s+(?:en\s+)?internet|fuentes\s+(?:actuales|recientes)|noticias\s+(?:actuales|recientes)|ultimas\s+(?:noticias|novedades)|últimas\s+(?:noticias|novedades)|novedades\s+(?:actuales|recientes)|actualidad|informacion\s+actualizada|información\s+actualizada|investigacion\s+profunda|investigación\s+profunda)\b/i
 
 export function isExplicitResearchRequest(value) {
   const text = String(value || "").trim();
@@ -29,6 +29,7 @@ export function formatResearchSources(results) {
     title: String(item.title || "Fuente web").slice(0, 240),
     url: String(item.url || ""),
     content: String(item.content || "").slice(0, 2200),
-    publishedDate: String(item.published_date || "")
+    publishedDate: String(item.published_date || item.publishedTime || item.date || ""),
+    provider: String(item.provider || "web").slice(0, 32)
   })).filter(item => /^https?:\/\//i.test(item.url));
 }
