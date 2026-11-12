@@ -1121,3 +1121,40 @@ body.is-core-view .core-create-option-state{flex:0 0 auto;max-width:92px;font-si
 body.is-core-view .core-create-option:disabled .core-create-option-state{color:var(--muted)}
 body.is-core-view .core-create-empty{margin:0;padding:10px;border:1px dashed var(--line);border-radius:10px;font-size:10px;line-height:1.5;color:var(--muted)}
 body.is-core-view .core-create-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+
+/* Prisma Core: compact categorized creative-model catalog. */
+body.is-core-view .core-creative-groups{display:grid;gap:7px;min-width:0}
+body.is-core-view .core-creative-group{
+ border:1px solid var(--line);border-radius:12px;overflow:hidden;
+ background:color-mix(in srgb,var(--panel-2) 72%,transparent);
+}
+body.is-core-view .core-creative-group-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:11px;cursor:pointer;list-style:none;color:var(--text);
+}
+body.is-core-view .core-creative-group-heading::-webkit-details-marker{display:none}
+body.is-core-view .core-creative-heading-copy{display:grid;gap:3px;min-width:0}
+body.is-core-view .core-creative-heading-copy strong{font-size:12px}
+body.is-core-view .core-creative-heading-copy small{font-size:10px;color:var(--muted)}
+body.is-core-view .core-creative-count{
+ min-width:22px;padding:4px 7px;border-radius:9px;text-align:center;
+ font-size:10px;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);
+}
+body.is-core-view .core-creative-model-list{display:grid;gap:2px;padding:5px;border-top:1px solid var(--line)}
+body.is-core-view .core-creative-model{
+ display:flex;align-items:center;gap:8px;min-width:0;
+ padding:9px 7px;border-radius:9px;
+}
+body.is-core-view .core-creative-model+.core-creative-model{border-top:1px solid var(--line)}
+body.is-core-view .core-creative-model-copy{display:grid;gap:3px;flex:1;min-width:0}
+body.is-core-view .core-creative-model-copy strong{font-size:11px;overflow-wrap:anywhere}
+body.is-core-view .core-creative-model-copy small{font-size:10px;line-height:1.35;color:var(--muted)}
+body.is-core-view .core-creative-model-copy .core-creative-provider{font-size:9px;color:var(--accent)}
+body.is-core-view .core-creative-use{
+ flex:0 0 auto;padding:7px 9px;border-radius:8px;
+ border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));
+ background:color-mix(in srgb,var(--accent) 9%,var(--panel));color:var(--text);
+ font-size:10px;font-weight:700;cursor:pointer;
+}
+body.is-core-view .core-creative-use[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 20%,var(--panel))}
