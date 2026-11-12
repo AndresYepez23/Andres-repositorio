@@ -90,3 +90,41 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
     return [];
   }
 }
+
+let creativeCache={keyTag:"",expiresAt:0,models:[]};
+
+// Separate discovery-only catalogue: no paid execution or chat routing.
+export async function getAihubmixCreativeModels(env,{force=false}={}){
+ const slots=getCredentialSlots(env,"aihubmix");if(!slots.length)return [];
+ const keyTag=slots.map(slot=>slot.value.slice(-8)).join(":");
+ if(!force&&creativeCache.keyTag===keyTag&&Date.now()<creativeCache.expiresAt)return creativeCache.models;
+ try{
+  const [response,quotaResponse]=await Promise.all([
+   requestWithCredentialPool(env,"aihubmix",key=>fetch("https://aihubmix.com/v1/models",{
+    headers:{Authorization:"Bearer "+key,Accept:"application/json"}
+   }),{countRequest:false,sweepAuthSlots:true,sweepQuotaSlots:true,retryStatuses:[401,403]}),
+   fetch("https://aihubmix.com/call/free_quota_config",{headers:{Accept:"application/json"}})
+  ]);
+  if(!response.ok||!quotaResponse.ok)throw Error("Catalogue unavailable");
+  const [payload,quotaPayload]=await Promise.all([response.json(),quotaResponse.json()]);
+  const weights=quotaPayload?.data?.weight_map;
+  if(!quotaPayload?.success||!weights)throw Error("Unverified free quota");
+  const models=(Array.isArray(payload?.data)?payload.data:[]).filter(model=>{
+   const id=String(model?.id||""),name=String(model?.name||"");
+   const outputs=model?.architecture?.output_modalities||model?.output_modalities;
+   const specialist=NON_CHAT_OUTPUTS.has(id)||
+    /(lyria|music|image|video|audio|speech|tts|embedding|transcrib|moderation|guardrail|flux|diffusion)/i.test(id+" "+name)||
+    Array.isArray(outputs)&&outputs.some(x=>["audio","video","image","embedding"].includes(String(x).toLowerCase()));
+   const pricing=model?.pricing;
+   return id.endsWith("-free")&&specialist&&Number(weights[id]??NaN)===1&&
+    (!pricing||((pricing.prompt==null||Number(pricing.prompt)===0)&&
+                 (pricing.completion==null||Number(pricing.completion)===0)));
+  }).map(model=>({id:String(model.id),name:String(model.name||model.id),
+   specialty:"Modelo especializado gratuito · cuota de peso 1 · ejecución pendiente"}));
+  creativeCache={keyTag,expiresAt:Date.now()+5*60_000,models};
+  return models;
+ }catch(error){
+  console.warn("AIHubMix creative catalogue unavailable",error?.message||error);
+  creativeCache={keyTag,expiresAt:Date.now()+30_000,models:[]};return [];
+ }
+}
