@@ -122,6 +122,8 @@ test('explicit new tasks start with a clean context instead of importing an old 
   assert.equal(isCoreNewTask('Necesito redactar un correo para otro trámite.'),true);
   assert.equal(isCoreNewTask('Quiero que generes una presentación nueva.'),true);
   assert.equal(isCoreNewTask('Quiero que mejores esa imagen.'),false);
+  assert.equal(isCoreNewTask('Analiza esta foto nueva.'),true);
+  assert.equal(isCoreNewTask('Analiza esa foto otra vez.'),false);
   const options=chooseCoreContextOptions('conversation',query);
   assert.equal(options.newTask,true);
   const context=buildConversationContext(history,query,options);
