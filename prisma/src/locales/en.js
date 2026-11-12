@@ -1839,6 +1839,13 @@ const translations = {
   "Planificador inteligente": "Intelligent Planner",
   "Transforma objetivos en pasos concretos, entregables, dependencias y riesgos.": "Transform Goals into Concrete Steps, Deliverables, Dependencies, and Risks",
   "IA · Productividad": "AI, Productivity",
-  "IA · Escritura": "AI, Writing"
+  "IA · Escritura": "AI, Writing",
+  "Imágenes": "Images",
+  "Utilidades": "Utilities",
+  "Personalizable": "Customizable",
+  "Redimensionar": "Resize",
+  "Instantáneo": "Instant",
+  "Diseño": "Design",
+  "Desarrollo": "Development"
 };
 export default translations;
