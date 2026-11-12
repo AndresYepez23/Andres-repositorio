@@ -227,8 +227,8 @@
                             <button type="button" id="core-model-close" aria-label="Cerrar selector de modelos">×</button>
                           </header>
                           <div class="core-model-tabs" role="tablist" aria-label="Tipo de modelo">
-                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Conversar</button>
-                            <button type="button" role="tab" data-model-tab="image" aria-selected="false">Crear</button>
+                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Conversación</button>
+                            <button type="button" role="tab" data-model-tab="image" aria-selected="false">Imágenes</button>
                           </div>
                           <section class="core-model-pane active" data-model-pane="chat" role="tabpanel">
                             <button type="button" class="core-model-auto" id="core-model-auto">
@@ -241,16 +241,16 @@
                             <p class="core-model-footnote">Solo se muestran los proveedores habilitados. Tu modelo elegido se conserva; un respaldo temporal no lo reemplaza.</p>
                           </section>
                           <section class="core-model-pane" data-model-pane="image" role="tabpanel">
-                            <div class="core-creative-catalog" id="core-creative-catalog" aria-label="Catálogo de modelos creativos"></div>
                             <div class="core-image-model-heading">
-                              <strong>Herramientas de creación</strong>
-                              <small>Imágenes, música, vídeo y audio. Cada herramienta tiene una función específica.</small>
+                              <strong>Generación de imágenes</strong>
+                              <small>Selecciona un motor y, si está disponible, un modelo concreto.</small>
                             </div>
-                            <label class="core-model-field">Motor para imágenes
+                            <label class="core-model-field">Motor de imagen
                               <select id="core-image-provider">
                                 <option value="auto">Automático · respaldo disponible</option>
                                 <option value="cloudflare">Cloudflare Workers AI</option>
                                 <option value="pollinations">Pollinations</option>
+                                <option value="huggingface">Hugging Face</option>
                                 <option value="gemini">Gemini Image</option>
                               </select>
                             </label>
