@@ -5,6 +5,8 @@ import { generateInternationalPages } from "./seo/generate-international.mjs";
 import "./tests/core-agent-routing.test.mjs";
 import "./tests/conversation-history.test.mjs";
 import "./tests/provider-orchestration.test.mjs";
+import "./tests/core-research.test.mjs";
+import "./tests/research-search.test.mjs";
 import "./tests/core-intelligence-benchmark.test.mjs";
 import "./tests/developer-api.test.mjs";
 import "./tests/cloudflare-whisper.test.mjs";
