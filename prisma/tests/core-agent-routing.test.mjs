@@ -456,7 +456,7 @@ const rejectedSenseKeys={
 };
 const providerStatusSource=readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
 assert.match(providerStatusSource,/quotaHealth\[provider\]\?\.healthySlots/,'Prisma must not route to a provider whose keys are all paused by authentication, quota or balance');
-assert.match(providerStatusSource,/HTTP 401\/403/,'Provider panel must explain authentication rejection clearly');
+assert.match(providerStatusSource,/autenticación, saldo o límites/,'Provider panel explains per-key authentication, balance and quota pauses');
 
 
 const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
