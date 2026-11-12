@@ -1643,7 +1643,7 @@ async function requestPlan(userText){
             'SOLICITUD DEL USUARIO:\n'+userText.slice(0,5000),
             'FUENTES RECUPERADAS:\n'+sourceContext.slice(0,11500)
           ].join('\n\n'),
-          provider:'auto',reasoning:'balanced',tone:'professional',length:'long',task:'research',...creds
+          ...credentials(),provider:'auto',reasoning:'balanced',tone:'professional',length:'long',task:'research'
         },(p,msg)=>{status(msg||'Analizando las fuentes…');setProgress(.38+Math.max(0,Math.min(1,Number(p)||0))*.58,msg||'Analizando las fuentes…');});
         const answer=String(synthesis?.text||'').trim();
         if(!answer)throw new Error('El motor de síntesis no devolvió una respuesta.');
