@@ -204,6 +204,7 @@
               <div class="core-composer" id="core-composer">
                 <div class="core-attachments" id="core-attachments"></div>
                 <div class="core-voice-feedback hidden" id="core-voice-feedback" role="status" aria-live="polite"></div>
+                <div class="core-composer-mode hidden" id="core-composer-mode" role="status"><span class="core-composer-mode-icon" aria-hidden="true">▧</span><span id="core-composer-mode-label">Modo imagen</span><button type="button" id="core-composer-mode-exit" aria-label="Volver al chat de texto">Volver a chat ×</button></div>
                 <div class="core-compose-surface">
                   <button type="button" class="core-attach-button" id="core-file-button" aria-label="Adjuntar archivos" title="Adjuntar imágenes, documentos, audio o vídeo">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20.8 11.6-8.6 8.6a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.3 9.3a2 2 0 0 1-2.8-2.8l8.6-8.6"/></svg>
@@ -220,13 +221,13 @@
                           <header class="core-model-panel-header">
                             <div>
                               <span class="core-model-kicker">PRISMA CORE</span>
-                              <strong>Modelo de IA</strong>
-                              <small>Controla el motor de este chat</small>
+                              <strong>Elegir modelo</strong>
+                              <small>Selecciona un proveedor y luego su modelo</small>
                             </div>
                             <button type="button" id="core-model-close" aria-label="Cerrar selector de modelos">×</button>
                           </header>
                           <div class="core-model-tabs" role="tablist" aria-label="Tipo de modelo">
-                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Chat</button>
+                            <button type="button" role="tab" data-model-tab="chat" class="active" aria-selected="true">Conversación</button>
                             <button type="button" role="tab" data-model-tab="image" aria-selected="false">Imágenes</button>
                           </div>
                           <section class="core-model-pane active" data-model-pane="chat" role="tabpanel">
@@ -237,7 +238,7 @@
                             </button>
                             <p class="core-model-selection-status" id="core-model-selection-status">Prisma seleccionará un modelo al comenzar y lo conservará en este chat.</p>
                             <div class="core-model-groups" id="core-model-options" aria-label="Modelos disponibles"></div>
-                            <p class="core-model-footnote">El modelo se mantiene durante el chat. Si falla, Prisma cambia a un respaldo compatible. Tras 30 minutos sin actividad, vuelve a evaluar la selección automática.</p>
+                            <p class="core-model-footnote">Solo se muestran los proveedores habilitados. Tu modelo elegido se conserva; un respaldo temporal no lo reemplaza.</p>
                           </section>
                           <section class="core-model-pane" data-model-pane="image" role="tabpanel">
                             <div class="core-image-model-heading">
@@ -257,6 +258,8 @@
                               <select id="core-image-model"><option value="">Automático · modelo recomendado</option></select>
                             </label>
                             <small class="core-image-model-hint" id="core-image-model-hint">Prisma probará los motores de imagen habilitados y respetará sus cuotas.</small>
+                            <button type="button" class="core-image-activate" id="core-image-activate">Usar modo imagen en este chat</button>
+                            <p class="core-model-footnote">El campo de escritura cambiará a generación visual. No se enviará como una pregunta de razonamiento.</p>
                           </section>
                         </div>
                       </details>
