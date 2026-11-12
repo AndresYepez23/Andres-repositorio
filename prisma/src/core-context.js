@@ -23,7 +23,7 @@ export function isCoreFollowUp(value=''){
 }
 
 export function isCoreNewTask(value=''){
- const q=fold(value).replace(/^[¿?¡!\s]+/,'').replace(/\s+/g,' ').trim();
+ const q=fold(value).replace(/^[¿?¡!\s]+/,'').replace(/[.,;:]+/g,' ').replace(/\s+/g,' ').trim();
  if(!q)return false;
  if(/\b(?:cambiando de tema|otra cosa|por otro lado|nuevo tema|tema distinto|dejando eso aparte)\b/.test(q))return true;
  // Explicit references to the current artifact/file keep the previous context.
