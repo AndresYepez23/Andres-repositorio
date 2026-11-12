@@ -206,9 +206,13 @@ const ENGLISH_INTENT = [
  ['compress','comprime'],['resize','redimensiona'],['convert','convierte'],['rotate','rota'],['trim','recorta'],['mute','silencia'],
  ['generate','genera'],['create','crea'],['format','formatea'],['minify','minifica'],['compare','compara'],['sort','ordena'],['scan','escanea'],['inspect','inspecciona']
 ].sort((a,b)=>b[0].length-a[0].length);
+const ENGLISH_INTENT_PATTERNS = ENGLISH_INTENT.map(([english,spanish])=>[
+ new RegExp('\\b'+english+'\\b','g'),spanish
+]);
 const normalizeIntent = value => {
  let q=normalize(value);
- for(const [english,spanish] of ENGLISH_INTENT) q=q.replaceAll(english,spanish);
+ // Match whole English words only. 'image' must never mutate Spanish 'imagen'.
+ for(const [pattern,spanish] of ENGLISH_INTENT_PATTERNS) q=q.replace(pattern,spanish);
  return q;
 };
 
