@@ -184,6 +184,18 @@ function parseRateLimitHeader(headers) {
   };
   return { limit: pick("limit"), remaining: pick("remaining"), reset: pick("reset") };
 }
+function openRouterLimitResetAt(raw) {
+  const value = String(raw || "").trim().toLowerCase();
+  const now = new Date();
+  if (value === "daily") return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) / 1000);
+  if (value === "weekly") {
+    const daysUntilMonday = (8 - now.getUTCDay()) % 7 || 7;
+    return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilMonday) / 1000);
+  }
+  if (value === "monthly") return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) / 1000);
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : 0;
+}
 async function responsePayload(response, supplied) {
   if (supplied && typeof supplied === "object") return supplied;
   if (!response) return {};
@@ -260,8 +272,8 @@ export async function recordCredentialMetrics(env, provider, slot, response, sup
     if (Number.isFinite(balanceLimit) && balanceLimit >= 0) {
       writes.push(writeCredentialMetric(env, provider, slot, "balance-limit-microusd", 0, Math.floor(balanceLimit * 1_000_000)));
     }
-    const resetAt = typeof keyData?.limit_reset === "string" ? Math.floor(Date.parse(keyData.limit_reset) / 1000) : 0;
-    if (Number.isFinite(resetAt) && resetAt > 0) writes.push(writeCredentialMetric(env, provider, slot, "balance-reset", 0, resetAt));
+    const resetAt = openRouterLimitResetAt(keyData?.limit_reset);
+    if (resetAt > 0) writes.push(writeCredentialMetric(env, provider, slot, "balance-reset", 0, resetAt));
   }
   await Promise.all(writes);
 }
