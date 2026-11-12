@@ -475,8 +475,9 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       const aScore = credentialCapacityScore(a.metrics), bScore = credentialCapacityScore(b.metrics);
       if (aScore != null && bScore != null && Math.abs(aScore - bScore) > 0.02) return bScore - aScore;
       const aUsed = Number(a.metrics.lastUsedAt) || 0, bUsed = Number(b.metrics.lastUsedAt) || 0;
+      const aCost = Number(a.metrics.estimatedCostUsdMicros) || 0, bCost = Number(b.metrics.estimatedCostUsdMicros) || 0;
       const aTokens = Number(a.metrics.tokensToday) || 0, bTokens = Number(b.metrics.tokensToday) || 0;
-      return aUsed - bUsed || aTokens - bTokens || a.index - b.index;
+      return aUsed - bUsed || aCost - bCost || aTokens - bTokens || a.index - b.index;
     }).map(item => item.slot);
   const retryable = new Set(options.retryStatuses || [401]);
   let lastResponse, attempted = 0, earliestPausedUntil = 0;
