@@ -55,7 +55,7 @@ let applying = false;
 const SKIP_TEXT = [
   'script', 'style', 'code', 'pre', 'textarea', 'input', 'svg',
   '[contenteditable="true"]', '[data-no-translate]', '[data-user-content]',
-  '.core-message-files', '.core-message-engine',
+  '.core-message-files',
   '.tool-output', '#tool-output',
   '.workflow-result', '.artifact-content', '.artifact-preview',
   '.conversation-title', '.conversation-name', '.conversation-item-title',
