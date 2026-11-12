@@ -1406,7 +1406,7 @@ async function generateVisualRequest(text,creds,kind){
   (headline?'Reserve a clean area for a precise typography overlay to be applied locally. Do not draw any letters or text in the generated background.':'Avoid unwanted watermarks and illegible small lettering.');
  status('Generando '+label+' con respaldo automático si el motor principal no está disponible…');
  const result=await runTool('image-gen',[],{
-  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',ratio,style
+  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||'',ratio,style
  },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),msg||'Generando '+label+'…');});
  if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
  if(headline){
@@ -1571,8 +1571,8 @@ async function answerConversation(text,creds,task='conversation'){
    task==='reasoning'&&/\b(revisa|revisar|revision|corrige|critica|contradicciones|coherencia|mejora este texto)\b/.test(normalizedTask)?'ai-text-review':
    /\b(youtube|tiktok|instagram|hashtags|miniatura|publicacion|redes sociales)\b/i.test(taskText)&&task==='creative'?'ai-youtube-kit':
    /\b(guia de estudio|apuntes|cuestionario|tarjetas de estudio)\b/i.test(taskText)?'ai-study-notes':'ai-assistant';
-  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,
-   chooseCoreContextOptions(task,taskText));
+  const contextOptions=chooseCoreContextOptions(task,taskText);
+  const contextMessages=buildConversationContext(messages.slice(0,-1),taskText,contextOptions);
   const connectedNames={groq:'Groq',gemini:'Gemini',cloudflare:'Cloudflare Workers AI',huggingface:'Hugging Face',pollinations:'Pollinations',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI',aihubmix:'AIHubMix'};
   const connected=Object.entries(centralProviders).filter(([id,enabled])=>enabled&&connectedNames[id]).map(([id])=>connectedNames[id]);
   if(creds.polliToken&&!connected.includes('Pollinations'))connected.push('Pollinations Connect personal');
@@ -1585,8 +1585,11 @@ async function answerConversation(text,creds,task='conversation'){
   const assistantContext=[instruction,
    ...(asksAboutPrisma?[coreCapabilityContext(),providerContext]:[])
   ].join('\n\n').slice(0,1950);
+  const chat=activeChatRecord();
+  const modelRequest=conversationModelRequest(chat?.modelSelection);
   const response=await runTool(toolId,[],{
-    prompt:taskText,context:assistantContext,contextMessages,provider:'auto',
+    prompt:taskText,context:assistantContext,contextMessages,
+    ...modelRequest,
     reasoning:chooseCoreReasoning(task,taskText),
     tone:task==='songwriting'||task==='creative'?'creative':'friendly',
     length:chooseCoreResponseLength(task,taskText),
@@ -1594,7 +1597,11 @@ async function answerConversation(text,creds,task='conversation'){
   },(p,msg)=>{status(msg||'Escribiendo…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.12)),msg||'Escribiendo…');});
   const answer=String(response?.text||'').trim();
   if(!answer)throw Error('El motor seleccionado no devolvió contenido.');
+  if(chat&&response.provider&&response.model){
+    chat.modelSelection=pinConversationModel(chat.modelSelection,response,Date.now());
+  }
   addMessage('assistant',answer,{engine:response.provider,model:response.model,fallbackFrom:response.fallbackFrom,fallbackReason:response.fallbackReason});
+  renderModelPicker();
   status('Respuesta lista. Puedes continuar esta conversación.','success');
   /* Chat de texto: no consume tareas con archivos. */
 }
@@ -2421,11 +2428,14 @@ async function sendMessage(){
     return;
   }
   const filesNow=[...attachments];
+  const activeChat=activeChatRecord();
+  if(activeChat)activeChat.modelSelection=beginConversationModelTurn(activeChat.modelSelection,Date.now());
   addMessage('user',text||'Procesa los archivos adjuntos.',{files:filesNow.map(file=>file.name)});
   // Hide the submitted file tray immediately. The processing pipeline keeps
   // the File objects until it completes; they are cleared in finally.
   $('#core-attachments')?.classList.add('hidden');
   input.value='';input.style.height='39px';
+  renderModelPicker();
   // An attachment-only reply should continue a pending PDF editing request,
   // instead of launching an unrelated AI analysis of the uploaded document.
   const awaitingPdfEdit=attachments.some(file=>file.type==='application/pdf'||/\\.pdf$/i.test(file.name))&&
@@ -2678,6 +2688,11 @@ export function initPrismaCore(){
     centralFeatures=result.features||centralFeatures;
     centralModelCatalog=result.modelCatalog||centralModelCatalog;
     centralProviderUsage=result.usage||centralProviderUsage;
+    centralProviderHealth=result.providerHealth||centralProviderHealth;
+    centralWarnings=result.warnings||centralWarnings;
+    centralConfigured=result.configured||centralConfigured;
+    centralImageUsage=result.imageUsage||centralImageUsage;
+    renderModelPicker();
     const creds=credentials();
     const ready=Object.values(centralProviders).some(Boolean);
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
