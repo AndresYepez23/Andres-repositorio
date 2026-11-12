@@ -77,9 +77,14 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
     response = await requestWithCredentialPool(env, provider, credential => fetch(endpoint, {
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential,...extraHeaders},
-      body:JSON.stringify({model,messages,temperature:0.65,
+      body:JSON.stringify({
+        model,messages,temperature:0.65,
         max_tokens:clamp(payload.maxOutputTokens,provider==="sensenova"?2048:128,4096,provider==="sensenova"?2400:1200),
-        stream:false}),
+        stream:false,
+        // GLM-4.7 Flash thinks by default. Disable hidden reasoning for normal
+        // chat so the completion budget is used for the user-visible answer.
+        ...(provider==="zai"?{thinking:{type:"disabled"}}:{})
+      }),
     }),{
       sweepAuthSlots:provider==="sensenova"||provider==="zai"||provider==="requesty",
       // Z.AI keys were supplied from separate general API accounts: isolate
@@ -107,9 +112,20 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
     const code=status===429||status===402?"PROVIDER_LIMIT":status===400?"INVALID_MODEL":status===401||status===403?"PROVIDER_AUTH":[408,500,502,503,504].includes(status)?"PROVIDER_UNAVAILABLE":"PROVIDER_ERROR";
     return json({error:message,provider,status,code,upstreamCode,upstreamMessage:detail||null,retryAfter:[408,500,502,503,504].includes(status)?45:null},[400,401,402,403,429].includes(status)?status:status===503?503:502);
   }
-  const content=data.choices?.[0]?.message?.content;
+  const choice=data.choices?.[0];
+  const message=choice?.message||{};
+  const content=message.content;
   const text=(typeof content==="string"?content:Array.isArray(content)?content.map(part=>part?.text||"").join("\\n"):"").trim();
-  if(!text)return json({error:provider+" no devolvió texto.",provider},502);
+  if(!text)return json({
+    error:provider+" no devolvió texto.",
+    provider,
+    code:"PROVIDER_EMPTY_RESPONSE",
+    model:String(data.model||model).slice(0,100),
+    finishReason:String(choice?.finish_reason||"").slice(0,48)||null,
+    hasReasoningContent:Boolean(message.reasoning_content),
+    hasToolCalls:Array.isArray(message.tool_calls)&&message.tool_calls.length>0,
+    upstreamRequestId:String(data.request_id||data.id||"").slice(0,120)||null
+  },502);
   return json({ok:true,provider,model:data.model||model,text,usage:data.usage||null});
 }
 
