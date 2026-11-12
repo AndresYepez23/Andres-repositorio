@@ -379,7 +379,7 @@ function credentialCapacityScore(metrics) {
 export async function getCredentialHealthSnapshot(env, providers=Object.keys(CREDENTIAL_ROOTS)) {
   const names=[...new Set((Array.isArray(providers)?providers:[]).filter(name=>CREDENTIAL_ROOTS[name]))];
   const slotsByProvider=Object.fromEntries(names.map(name=>[name,getCredentialSlots(env,name)]));
-  const snapshot=Object.fromEntries(names.map(name=>[name,{configuredSlots:slotsByProvider[name].length,healthySlots:slotsByProvider[name].length,pausedSlots:0,retryAt:null}]));
+  const snapshot=Object.fromEntries(names.map(name=>[name,{configuredSlots:slotsByProvider[name].length,healthySlots:slotsByProvider[name].length,pausedSlots:0,retryAt:null,pausedSlotNumbers:[]}]));
   const db=env?.PRISMA_RATE_DB;
   if(!db?.prepare)return snapshot;
   let rows=[];
@@ -394,6 +394,7 @@ export async function getCredentialHealthSnapshot(env, providers=Object.keys(CRE
   const holds=new Map(rows.map(row=>[String(row.provider||""),row]));
   for(const name of names){
     let pausedSlots=0,retryAt=null;
+    const pausedSlotNumbers=[];
     for(const slot of slotsByProvider[name]){
       const key=await credentialHealthKey(name,slot),hold=holds.get(key);
       if(!hold)continue;
@@ -401,7 +402,7 @@ export async function getCredentialHealthSnapshot(env, providers=Object.keys(CRE
       const until=Number(hold.valid_until)||0;
       if(until>0&&(!retryAt||until<retryAt))retryAt=until;
     }
-    snapshot[name]={configuredSlots:slotsByProvider[name].length,healthySlots:Math.max(0,slotsByProvider[name].length-pausedSlots),pausedSlots,retryAt};
+    snapshot[name]={configuredSlots:slotsByProvider[name].length,healthySlots:Math.max(0,slotsByProvider[name].length-pausedSlots),pausedSlots,retryAt,pausedSlotNumbers};
   }
   return snapshot;
 }
