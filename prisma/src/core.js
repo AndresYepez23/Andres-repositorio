@@ -1598,9 +1598,10 @@ async function answerConversation(text,creds,task='conversation'){
   // Tool catalog and provider list are irrelevant to ordinary conversation.
   // Send them only when someone asks about Prisma's actual capabilities.
   const asksAboutPrisma=/\b(?:prisma|core|herramientas|funciones disponibles|que puedes hacer|motores|modelos disponibles|proveedores de ia|conexiones)\b/.test(normalizedTask);
-  const assistantContext=[instruction,
+  const contextPolicy='El mensaje actual tiene prioridad. Mantén continuidad cuando el usuario haga referencia a una respuesta, imagen o archivo anterior, incluso si han pasado varios turnos. Si solicita claramente otra tarea o cambia de tema, no mezcles instrucciones ni hallazgos que ya no correspondan.';
+  const assistantContext=[instruction,contextPolicy,
    ...(asksAboutPrisma?[coreCapabilityContext(),providerContext]:[])
-  ].join('\n\n').slice(0,1950);
+  ].join('\n\n').slice(0,2200);
   const chat=activeChatRecord();
   const modelRequest=conversationModelRequest(chat?.modelSelection);
   const response=await runTool(toolId,[],{
