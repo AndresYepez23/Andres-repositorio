@@ -604,7 +604,7 @@ function refreshPollinationsStatus(){
   const status=$('#polli-status');if(status){status.textContent=label;status.classList.toggle('connected',connected);}
   refreshProviderConnectionStatuses();
 }
-const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,cloudflareAudio:false,openrouterChat:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
+const centralConnectionState={credentialSlots:{},providers:{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false},research:{available:false,providers:{},warnings:{}},features:{pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,cloudflareAudio:false,openrouterChat:false,webResearch:false},warnings:{},configured:{},modelCatalog:{chat:{},image:{},audio:{}}};
 function providerConnectionCard(config){
   if(config.shared){
     const usage=config.usageId?'<div class="provider-connection-detail" id="'+config.usageId+'">Consultando consumo y límites…</div>':'';
@@ -623,7 +623,7 @@ function renderProviderConnections(){
   const configs=[
     {id:'gemini',name:'Google Gemini',summary:'Razonamiento, chat y análisis de texto',detail:'Motor central de Prisma. Admite hasta seis claves protegidas, con rotación entre credenciales y cuotas compartidas por proyecto.',secretName:'GEMINI_API_KEYS_JSON',usageId:'gemini-image-usage',shared:true},
     {id:'huggingface',name:'Hugging Face',summary:'Modelos abiertos y proveedores de inferencia',detail:'Motor compartido mediante Inference Providers. Admite hasta seis tokens. La cuenta gratuita de Hugging Face incluye crédito mensual limitado; Prisma conserva límites compartidos y no activa recargas automáticas.',secretName:'HF_API_KEYS_JSON',usageId:'huggingface-image-usage',shared:true},
-    {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Admite hasta seis claves Groq. Prisma distribuye solicitudes entre las claves sanas, pero mantiene los límites internos y la cuota del proyecto compartidos.',secretName:'GROQ_API_KEYS_JSON',shared:true},
+    {id:'groq',name:'Groq',summary:'Inferencia rápida y modelos de lenguaje',detail:'Admite las cinco claves Groq configuradas. Prisma distribuye solicitudes entre las claves sanas, pero mantiene los límites internos y la cuota del proyecto compartidos.',secretName:'GROQ_API_KEYS_JSON',shared:true},
     {id:'openrouter',name:'OpenRouter',summary:'Respaldo automático de Prisma Core · OpenRouter Free Router',detail:'Último motor de respaldo de texto: solo se intenta después de que Gemini, Groq, Cloudflare, Pollinations y Hugging Face no puedan responder. Admite hasta seis claves y usa openrouter/free para seleccionar automáticamente un modelo gratuito disponible; no enruta a modelos de pago.',secretName:'OPENROUTER_API_KEYS_JSON',usageId:'openrouter-usage',shared:true},
     {id:'cloudflare',name:'Cloudflare Workers AI',summary:'Gemma 4, Llama y FLUX.1 Schnell',detail:'Motor directo integrado en Cloudflare. Generación de texto e imágenes con asignación gratuita diaria y límites propios de Prisma.',bindingName:'AI',usageId:'cloudflare-image-usage',shared:true},
     {id:'pollinations',name:'Pollinations central',summary:'Generación multimodal con la cuenta de Prisma',detail:'Admite hasta seis claves centrales. La clave sk_ se guarda como secreto en Cloudflare y consume el saldo de Prisma. Si no hay clave central, los usuarios pueden usar Pollinations Connect con su propio saldo.',secretName:'POLLINATIONS_API_KEYS_JSON',usageId:'pollinations-image-usage',shared:true},
@@ -632,9 +632,10 @@ function renderProviderConnections(){
      {id:'requesty',name:'Requesty',summary:'13 modelos gratuitos · Nemotron, Gemma, Mistral y Ling',detail:'Plan gratuito oficial: 200 solicitudes/día y 20/minuto por organización, sin tarjeta. Prisma limita su uso compartido a 25 solicitudes/día y 10/minuto, y solo admite los 13 modelos publicados como gratuitos. Admite un máximo de tres claves mediante REQUESTY_API_KEYS_JSON o variables individuales. Secreto base: REQUESTY_API_KEY.',secretName:'REQUESTY_API_KEYS_JSON',shared:true},
      {id:'sensenova',name:'SenseNova / SenseTime',summary:'SenseNova 6.8 Flash Lite',detail:'Beta pública gratuita con hasta 1.500 llamadas por modelo cada cinco horas, según la oferta vigente. Prisma aplica un límite interno menor. Admite hasta seis claves mediante SENSENOVA_API_KEYS_JSON o variables individuales. Secreto base: SENSENOVA_API_KEY.',secretName:'SENSENOVA_API_KEYS_JSON',shared:true},
      {id:'zai',name:'Z.AI / Zhipu',summary:'GLM-4.7 Flash · GLM-4.5 Flash · GLM-4.6V Flash',detail:'Solo se permiten modelos Flash gratuitos. No se habilitan modelos GLM de pago. Admite hasta seis claves mediante ZAI_API_KEYS_JSON o variables individuales. Secreto base: ZAI_API_KEY.',secretName:'ZAI_API_KEYS_JSON',shared:true},
-     {id:'aihubmix',name:'AIHubMix',summary:'Catálogo gratuito dinámico · disponibilidad consultada en vivo',detail:'10 llamadas de prueba totales sin tarjeta. Tras una recarga única de USD 1 se activa la cuota diaria oficial de 100 solicitudes, 10/minuto y 1 millón de tokens. Prisma conserva un límite más prudente de 15 solicitudes/día y 10/minuto, y solo habilita modelos de texto con peso de cuota 1. El respaldo automático de AIHubMix está desactivado hasta confirmar una recarga real de al menos USD 1; no definas AIHUBMIX_DAILY_QUOTA_ACTIVE=1 antes de hacerla. Admite hasta seis claves mediante AIHUBMIX_API_KEYS_JSON o variables individuales. Secreto base: AIHUBMIX_API_KEY.',secretName:'AIHUBMIX_API_KEYS_JSON',shared:true},
+     {id:'aihubmix',name:'AIHubMix',summary:'Catálogo gratuito dinámico · disponibilidad consultada en vivo',detail:'10 llamadas de prueba totales sin tarjeta. Tras una recarga única de USD 1 se activa la cuota diaria oficial de 100 solicitudes, 10/minuto y 1 millón de tokens. Prisma conserva un límite más prudente de 15 solicitudes/día y 10/minuto, y solo habilita modelos de texto con peso de cuota 1. El respaldo automático de AIHubMix está desactivado hasta confirmar una recarga real de al menos USD 1; no definas AIHUBMIX_DAILY_QUOTA_ACTIVE=1 antes de hacerla. Admite las cinco claves configuradas mediante AIHUBMIX_API_KEYS_JSON o variables individuales. Secreto base: AIHUBMIX_API_KEY.',secretName:'AIHUBMIX_API_KEYS_JSON',shared:true},
   ];
-  container.innerHTML=configs.map(providerConnectionCard).join()+
+  const researchCard='<article class="provider-connection-card provider-managed-card" data-research-connection-card><div class="provider-connection-top"><div><h4>Investigación web</h4><p>Tavily Search + Jina Search</p></div><span class="provider-connection-status" id="research-connection-status">Consultando Cloudflare…</span></div><p class="provider-connection-detail">Tavily realiza la búsqueda principal. Jina complementa cuando Tavily no encuentra al menos cuatro fuentes. Son servicios independientes de los motores de inferencia y sus cuotas no consumen el presupuesto de chat.</p><div class="provider-connection-detail" id="research-provider-summary">Consultando disponibilidad y credenciales…</div><details class="provider-credential-details"><summary>Ver estado seguro de las claves de búsqueda</summary><div id="research-credential-slots" class="provider-connection-detail">Las claves se administran únicamente en Cloudflare.</div></details></article>';
+  container.innerHTML=configs.map(providerConnectionCard).join()+researchCard+
     '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Catálogo de Hugging Face</h4><p>6 modelos de chat + catálogo multimedia</p></div><span class="provider-connection-status">Cuotas limitadas</span></div><p class="provider-connection-detail">Hugging Face permite inferencia de chat con modelos seleccionables. FLUX/Stable Diffusion, Whisper y otros modelos multimedia pueden consumir rápidamente el crédito mensual; por eso su acceso central se habilita únicamente con un permiso explícito.</p><div id="hf-model-summary" class="provider-connection-detail">Consultando modelos...</div></article>'+
     '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>OpenCode Zen</h4><p>GLM, Kimi, Nemotron y MiMo</p></div><span class="provider-connection-status">No integrado</span></div><p class="provider-connection-detail">Se conserva en el inventario, pero las condiciones actuales reservan el uso gratuito externo a OpenCode. Prisma no lo llamará desde su backend.</p></article>'+
      '<article class="provider-connection-card provider-managed-card"><div class="provider-connection-top"><div><h4>Motores open source locales</h4><p>Procesamiento en el dispositivo</p></div><span class="provider-connection-status connected">Disponibles</span></div><p class="provider-connection-detail">PDF-Lib, Tesseract.js, FFmpeg y otras bibliotecas ejecutan tareas directamente en el dispositivo cuando es posible.</p></article>';
@@ -686,7 +687,7 @@ async function refreshOpenRouterUsage(){
 }
 async function refreshProviderConnectionStatuses(){
   const central=await getCentralProviderStatus();
-  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured,credentialSlots:central.credentialSlots||{},providerHealth:central.providerHealth||{}});
+  Object.assign(centralConnectionState,{providers:central.providers,features:central.features,modelCatalog:central.modelCatalog,warnings:central.warnings,configured:central.configured,credentialSlots:central.credentialSlots||{},providerHealth:central.providerHealth||{},research:central.research||{available:false,providers:{},warnings:{}}});
   // Safe public metadata: only variable names and occupied slot positions.
   Object.entries(central.credentialSlots||{}).forEach(([provider,info])=>{
     const summary=$('[data-credential-summary="'+provider+'"]');
@@ -706,6 +707,36 @@ async function refreshProviderConnectionStatuses(){
       target.innerHTML=daily+minute+pause+poolError+lines+poolHint+'<small>Las claves no multiplican la cuota del proyecto o cuenta. Prisma distribuye solicitudes entre credenciales sanas; ante un 402/429 pausa todo el proveedor y no rota para eludir límites.</small>';
     }
   });
+  const research=central.research||{};
+  const researchProviders=research.providers||{};
+  const researchStatus=$('#research-connection-status');
+  if(researchStatus){
+    const activeResearch=['tavily','jina'].filter(id=>researchProviders[id]?.available).map(id=>id==='tavily'?'Tavily':'Jina');
+    researchStatus.textContent=!central.ok?'No se pudo consultar Cloudflare':research.available?'Disponible · '+activeResearch.join(' + '):'Sin motor web disponible';
+    researchStatus.classList.toggle('connected',Boolean(research.available));
+  }
+  const researchSummary=$('#research-provider-summary');
+  if(researchSummary){
+    researchSummary.textContent=['tavily','jina'].map(id=>{
+      const info=researchProviders[id]||{};
+      const label=id==='tavily'?'Tavily':'Jina';
+      const state=info.available?'Disponible':info.paused?'En pausa temporal':info.reason||'No configurado';
+      return label+': '+state+' ('+Number(info.count||0)+'/'+Number(info.max||(id==='tavily'?7:1))+')';
+    }).join(' · ');
+  }
+  const researchDetails=$('#research-credential-slots');
+  if(researchDetails){
+    researchDetails.innerHTML=['tavily','jina'].map(id=>{
+      const info=researchProviders[id]||{};
+      const label=id==='tavily'?'Tavily':'Jina';
+      const lines=(Array.isArray(info.slots)?info.slots:[]).map(slot=>
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:5px 0"><code>'+escapeHtml(slot.variable)+'</code><small>'+(slot.configured?'Configurada':'Disponible para añadir')+'</small></div>'
+      ).join('');
+      const poolHint=info.poolVariable?'<small>Secreto recomendado: <code>'+escapeHtml(info.poolVariable)+'</code> · máximo '+Number(info.max||0)+' claves en JSON.</small>':'';
+      const warning=info.reason?'<small>'+escapeHtml(info.reason)+'</small>':'';
+      return '<section><strong>'+label+'</strong><small>Estado: '+escapeHtml(info.available?'Disponible':info.paused?'En pausa temporal':info.reason||'No configurado')+' · claves sanas '+Number(info.healthySlots||0)+' / '+Number(info.count||0)+'</small>'+warning+lines+poolHint+'</section>';
+    }).join('<hr>');
+  }
   const connected={pollinations:!!central.providers.pollinations,'pollinations-connect':!!getPollinationsToken(),huggingface:!!central.providers.huggingface,gemini:!!central.providers.gemini,groq:!!central.providers.groq,cloudflare:!!central.providers.cloudflare,openrouter:!!central.providers.openrouter,kilo:!!central.providers.kilo,requesty:!!central.providers.requesty,sensenova:!!central.providers.sensenova,zai:!!central.providers.zai,aihubmix:!!central.providers.aihubmix};
   Object.entries(connected).forEach(([provider,isConnected])=>{
     const status=$('[data-connection-status="'+provider+'"]');
@@ -757,7 +788,7 @@ async function refreshProviderConnectionStatuses(){
   const summary=$('#connections-summary');
   if(summary){
     const capacity=central.capacity||{};
-    summary.textContent=count+' motores disponibles · '+Number(capacity.configuredCredentials||0)+' credenciales · pool '+Number(capacity.dailyBudget||0)+'/día · '+Number(capacity.visitorDailyLimit||0)+'/día por IP';
+    summary.textContent=count+' motores disponibles · '+Number(capacity.configuredCredentials||0)+' credenciales · pool '+Number(capacity.dailyBudget||0)+'/día · '+Number(capacity.visitorDailyLimit||0)+'/día por IP · investigación web '+(central.research?.available?'disponible':'no disponible');
   }
   const usageNote=$('#inference-usage-summary');
   if(usageNote){
