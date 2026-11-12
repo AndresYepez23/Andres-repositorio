@@ -212,4 +212,27 @@ assert.equal(hfAllLimited.status,402,'Return HTTP 402 when every independent Hug
 assert.equal(hfLimitedAttempts,6,'All six exhausted Hugging Face accounts are checked independently');
 assert.equal(await getProviderHold(env10,'huggingface'),null,'Exhausted Hugging Face accounts must not create a global provider hold');
 
+
+const db11=mockD1();
+const env11={PRISMA_RATE_DB:db11,...Object.fromEntries(Array.from({length:3},(_,i)=>['REQUESTY_API_KEY'+(i===0?'':'_'+(i+1)),'independent-requesty-account-'+(i+1)]))};
+let requestyAttempts=0;
+const requestyRecovered=await requestWithCredentialPool(env11,'requesty',async(key)=>{
+  requestyAttempts++;
+  return key==='independent-requesty-account-3'
+    ? new Response(JSON.stringify({ok:true}),{status:200})
+    : new Response(JSON.stringify({error:{code:'FORBIDDEN',message:'account/model permission denied'}}),{status:403});
+},{sweepAuthSlots:true,retryStatuses:[401,403],startIndex:0});
+assert.equal(requestyRecovered.status,200,'Requesty must try the next independent account after one account returns 403');
+assert.equal(requestyAttempts,3,'All three Requesty accounts are checked until one succeeds');
+
+const db12=mockD1();
+const env12={PRISMA_RATE_DB:db12,...Object.fromEntries(Array.from({length:3},(_,i)=>['REQUESTY_API_KEY'+(i===0?'':'_'+(i+1)),'forbidden-requesty-account-'+(i+1)]))};
+let requestyForbiddenAttempts=0;
+const requestyAllForbidden=await requestWithCredentialPool(env12,'requesty',async()=>{
+  requestyForbiddenAttempts++;
+  return new Response(JSON.stringify({error:{code:'FORBIDDEN',message:'account/model permission denied'}}),{status:403});
+},{sweepAuthSlots:true,retryStatuses:[401,403],startIndex:0});
+assert.equal(requestyAllForbidden.status,403,'Return HTTP 403 when all independent Requesty accounts are forbidden');
+assert.equal(requestyForbiddenAttempts,3,'All three Requesty accounts are checked independently');
+
 console.log('Provider orchestration regressions passed.');

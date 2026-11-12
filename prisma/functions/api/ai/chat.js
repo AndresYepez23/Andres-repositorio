@@ -81,10 +81,13 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
         max_tokens:clamp(payload.maxOutputTokens,provider==="sensenova"?2048:128,4096,provider==="sensenova"?2400:1200),
         stream:false}),
     }),{
-      sweepAuthSlots:provider==="sensenova"||provider==="zai",
+      sweepAuthSlots:provider==="sensenova"||provider==="zai"||provider==="requesty",
       // Z.AI keys were supplied from separate general API accounts: isolate
       // quota/rate-limit holds per credential and try the next account.
-      sweepQuotaSlots:provider==="zai"
+      sweepQuotaSlots:provider==="zai",
+      // Requesty keys belong to separate accounts; a 403 can reject one
+      // account's key/model permissions without invalidating the other accounts.
+      retryStatuses:provider==="requesty"?[401,403]:[401]
     });
   } catch (error) {
     return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
