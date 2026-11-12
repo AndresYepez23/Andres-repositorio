@@ -41,7 +41,7 @@ function normalizeJinaResults(data) {
 
   // Jina Search may return a Markdown SERP in data rather than structured JSON.
   const markdown = typeof raw === "string" ? raw : typeof data?.content === "string" ? data.content : "";
-  const matches = [...markdown.matchAll(/(?:^|\\n)#+\\s*(.+?)\\n+\\s*(https?:\\/\\/[^\\s)]+)[\\s\\S]*?(?=(?:\\n#+\\s)|$)/g)];
+  const matches = [...markdown.matchAll(/(?:^|\n)(?:#{1,6}\s*)?(.{4,240}?)\n+(https?:\/\/[^\s)]+)[\s\S]*?(?=\n(?:#{1,6}\s)|$)/g)];
   return matches.slice(0, 8).map(match => ({
     title: String(match[1] || "Fuente web").trim().slice(0, 300),
     url: String(match[2] || "").trim().replace(/[.,;]+$/, "").slice(0, 1500),
@@ -92,7 +92,7 @@ async function searchJina(env, query) {
         "Authorization": "Bearer " + key,
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "X-Return-Format": "json",
+        "X-Return-Format": "markdown",
         "X-No-Cache": "true"
       },
       body: JSON.stringify({ q: query, count: 8, gl: "co", hl: "es", type: "web" }),
