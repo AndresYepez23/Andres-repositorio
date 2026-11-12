@@ -90,6 +90,7 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       // Z.AI keys were supplied from separate general API accounts: isolate
       // quota/rate-limit holds per credential and try the next account.
       sweepQuotaSlots:["zai","sensenova","aihubmix"].includes(provider),
+      sweepRateLimitSlots:["zai","sensenova","aihubmix"].includes(provider),
       // Z.AI and Requesty keys belong to separate accounts; a 403 can reject
       // one account's key/model permissions without invalidating the others.
       retryStatuses:["requesty","zai","aihubmix"].includes(provider)?[401,403]:[401]
