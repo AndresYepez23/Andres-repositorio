@@ -174,6 +174,11 @@ export async function onRequestGet({ env }) {
     usage,
     imageUsage,
     modelCatalog,
+    research: {
+      tavily: { configured: Array.from({length:7},(_,index)=>String(env["TAVILY_API_KEY"+(index===0?"":"_"+(index+1))]||"").trim()).filter(Boolean).length > 0,
+        configuredKeys: Array.from({length:7},(_,index)=>String(env["TAVILY_API_KEY"+(index===0?"":"_"+(index+1))]||"").trim()).filter(Boolean).length },
+      jina: { configured: Boolean(String(env.JINA_API_KEY||"").trim()) }
+    },
     features: {
       aihubmixDailyQuotaActive: env.AIHUBMIX_DAILY_QUOTA_ACTIVE === "1",
       kiloAutomaticEligible: kiloModels.some(item => !String(item.id).toLowerCase().startsWith("nvidia/")),
