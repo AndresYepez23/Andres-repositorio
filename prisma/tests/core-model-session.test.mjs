@@ -99,6 +99,7 @@ test('explicit new tasks start with a clean context instead of importing an old 
   ];
   const query='Ahora redacta un correo formal para solicitar una reunión.';
   assert.equal(isCoreNewTask(query),true);
+  assert.equal(isCoreNewTask('Ahora, redacta un correo formal.'),true);
   assert.equal(isCoreNewTask('Necesito redactar un correo para otro trámite.'),true);
   assert.equal(isCoreNewTask('Quiero que generes una presentación nueva.'),true);
   assert.equal(isCoreNewTask('Quiero que mejores esa imagen.'),false);
