@@ -64,21 +64,28 @@ export function setPrismaCoreViewActive(active){
 }
 let attachments = [];
 export function getPrismaCoreAttachments(){return attachments.slice();}
+function applyCentralProviderStatus(result){
+  if(!result?.ok)return false;
+  centralProviders=result.providers||centralProviders;
+  centralFeatures=result.features||centralFeatures;
+  centralModelCatalog=result.modelCatalog||centralModelCatalog;
+  centralProviderUsage=result.usage||centralProviderUsage;
+  centralProviderHealth=result.providerHealth||centralProviderHealth;
+  centralWarnings=result.warnings||centralWarnings;
+  centralConfigured=result.configured||centralConfigured;
+  centralImageUsage=result.imageUsage||centralImageUsage;
+  centralStatusUpdatedAt=Date.now();
+  renderModelPicker();
+  return true;
+}
+async function refreshCoreProviderStatus(force=false){
+  const result=await getCentralProviderStatus({force});
+  applyCentralProviderStatus(result);
+  return result;
+}
 export async function getPrismaCoreExecutionContext(){
-  try{
-    const status=await getCentralProviderStatus();
-    centralProviders=status.providers||centralProviders;
-    centralFeatures=status.features||centralFeatures;
-    centralModelCatalog=status.modelCatalog||centralModelCatalog;
-    centralProviderUsage=status.usage||centralProviderUsage;
-    centralProviderHealth=status.providerHealth||centralProviderHealth;
-    centralWarnings=status.warnings||centralWarnings;
-    centralConfigured=status.configured||centralConfigured;
-    centralImageUsage=status.imageUsage||centralImageUsage;
-    renderModelPicker();
-  }catch(error){
-    console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);
-  }
+  try{await refreshCoreProviderStatus();}
+  catch(error){console.warn('Prisma Developer: no se pudo refrescar el estado de motores.',error?.message||error);}
   return credentials();
 }
 let pendingPlan = null;
@@ -93,6 +100,7 @@ let centralProviderHealth = {};
 let centralWarnings = {};
 let centralConfigured = {};
 let centralImageUsage = {};
+let centralStatusUpdatedAt = 0;
 let activeModelTab = 'chat';
 let userPinnedToBottom = true;
 let userScrollRevision = 0;
@@ -1556,6 +1564,10 @@ function directCoreTask(text,history=[]){
  return 'conversation';
 }
 async function answerConversation(text,creds,task='conversation'){
+  if(Date.now()-centralStatusUpdatedAt>30000){
+    try{await refreshCoreProviderStatus();}catch{}
+    creds=credentials();
+  }
   status(task==='songwriting'?'Componiendo una canción original…':'Prisma está preparando tu respuesta…');
   const instruction=task==='songwriting'
    ? 'Respeta si se pide una canción nueva o una revisión de una canción anterior. Conserva título, tema y partes no solicitadas al editar. Si el último mensaje responde a una pregunta de aclaración, aplícalo a la solicitud original y no lo trates como un tema independiente. No simules haber generado audio.'
@@ -2632,7 +2644,12 @@ export function initPrismaCore(){
   });
   // Selector de modelos: popover adaptable, accesible y seguro frente a toques externos.
   const modelSettings=$('.core-model-settings');
-  modelSettings?.addEventListener('toggle',()=>{if(modelSettings.open)renderModelPicker();});
+  modelSettings?.addEventListener('toggle',()=>{
+    if(modelSettings.open){
+      renderModelPicker();
+      if(Date.now()-centralStatusUpdatedAt>30000)refreshCoreProviderStatus().catch(()=>{});
+    }
+  });
   document.addEventListener('pointerdown',event=>{
     if(modelSettings?.open&&!modelSettings.contains(event.target))modelSettings.open=false;
   });
@@ -2697,20 +2714,10 @@ export function initPrismaCore(){
   const openConnections=()=>document.querySelector('[data-view="ai"]')?.click();
   $('#core-open-settings').addEventListener('click',openConnections);
   $('#core-connect-now').addEventListener('click',openConnections);
-  getCentralProviderStatus().then(result=>{
-    centralProviders=result.providers||{gemini:false,huggingface:false,groq:false,cloudflare:false,pollinations:false,openrouter:false,kilo:false,requesty:false,sensenova:false,zai:false,aihubmix:false};
-    centralFeatures=result.features||centralFeatures;
-    centralModelCatalog=result.modelCatalog||centralModelCatalog;
-    centralProviderUsage=result.usage||centralProviderUsage;
-    centralProviderHealth=result.providerHealth||centralProviderHealth;
-    centralWarnings=result.warnings||centralWarnings;
-    centralConfigured=result.configured||centralConfigured;
-    centralImageUsage=result.imageUsage||centralImageUsage;
-    renderModelPicker();
-    const creds=credentials();
+  refreshCoreProviderStatus().then(result=>{
     const ready=Object.values(centralProviders).some(Boolean);
     $('#core-connect-banner')?.classList.toggle('hidden',ready);
-  });
+  }).catch(()=>{});
   status('Listo. Escribe una tarea o adjunta un archivo.','info');
   $('#core-cancel').disabled=false;
 }
