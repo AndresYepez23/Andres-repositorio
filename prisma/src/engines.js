@@ -789,7 +789,7 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   const retryAfterMs=Math.max(30,Math.min(86400,Number(error?.retryAfter)||90))*1000;
   const delay=success?0:status===401?2*60000:status===403?60000:status===402?10*60000:status===429?retryAfterMs:
    error?.code==='CREDENTIALS_PAUSED'||error?.code==='PROVIDER_COOLDOWN'?Math.max(30,Math.min(3600,Number(error?.retryAfter)||60))*1000:
-   error?.name==='AbortError'?120000:[408,500,502,503,504].includes(status)?45000:60000;
+   error?.code==='PROVIDER_TIMEOUT'||error?.name==='AbortError'?120000:[408,500,502,503,504].includes(status)?45000:60000;
   all[key]={at:stamp,successes:success?Math.min(12,(previous.successes||0)+1):0,failures:success?0:Math.min(4,(previous.failures||0)+1),
    averageMs:Math.round(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed),coolingUntil:success?0:stamp+delay};
   for(const [name,entry] of Object.entries(all))if(stamp-Number(entry.at||0)>86400000)delete all[name];
