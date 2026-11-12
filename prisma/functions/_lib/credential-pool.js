@@ -1,7 +1,8 @@
-// Up to six protected API credentials per external provider.
+// Protected API credential pools per external provider.
 // Compact JSON pools keep Cloudflare binding usage practical; individual legacy
-// variables remain supported. Provider quotas are shared and never multiplied
-// by the number of keys. Secret values never leave the backend.
+// variables remain supported. Credentials may represent separate accounts; the
+// caller decides whether quota holds are account-specific or provider-wide.
+// Secret values never leave the backend.
 import { getProviderHold, setProviderHold } from "./provider-health.js";
 
 export const CREDENTIAL_ROOTS = Object.freeze({
@@ -181,6 +182,11 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   }
   // For providers whose keys belong to separate accounts, a provider-wide
   // cooldown from one account must not suppress the other independent accounts.
+  if (options.sweepQuotaSlots === true) {
+    // Expire a legacy provider-wide hold so independent account credentials can
+    // be evaluated individually; subsequent failures are held per credential.
+    await setProviderHold(env, provider, "credential_rotation", "Using independent account credential checks.", 0);
+  }
   const providerHold = options.ignoreProviderHold === true || options.sweepQuotaSlots === true
     ? null : await getProviderHold(env, provider);
   if (providerHold) {
