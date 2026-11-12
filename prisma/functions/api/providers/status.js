@@ -122,9 +122,9 @@ export async function onRequestGet({ env }) {
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotó el cupo de prueba de las cuentas configuradas (10 llamadas por cuenta). Una recarga mínima de USD 1 activa cuotas diarias.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
     else if (configured[provider] > 0 && quotaHealth[provider]?.healthySlots===0)
-      warnings[provider] = "Todas las claves de "+provider+" están temporalmente pausadas tras respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
+      warnings[provider] = "Todas las claves de "+provider+" están temporalmente no disponibles por autenticación, saldo o límites del proveedor. Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
     else if (configured[provider] > 0 && quotaHealth[provider]?.pausedSlots>0)
-      warnings[provider] = quotaHealth[provider].pausedSlots+" de "+configured[provider]+" claves de "+provider+" están temporalmente pausadas; las demás siguen disponibles.";
+      warnings[provider] = quotaHealth[provider].pausedSlots+" de "+configured[provider]+" claves de "+provider+" están temporalmente pausadas por saldo, cuotas o autenticación; las demás siguen disponibles.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (!sharedReady && provider !== "openrouter") warnings[provider] = "Se agotó el presupuesto global de modelos principales; OpenRouter puede seguir disponible como respaldo.";
