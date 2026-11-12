@@ -2018,7 +2018,7 @@ function createExecutionResults(executed,partial){
     const name=document.createElement('strong');name.textContent=(index+1)+'. '+entry.name;card.append(name);
     if(result.summary){const summary=document.createElement('p');summary.textContent=result.summary;card.append(summary);}
     if(result.text){
-      const pre=document.createElement('pre');pre.textContent=String(result.text).slice(0,8000);card.append(pre);
+      const pre=document.createElement('pre');pre.setAttribute('data-user-content','');pre.textContent=String(result.text).slice(0,8000);card.append(pre);
       const copy=document.createElement('button');copy.type='button';copy.className='mini-button';copy.textContent='Copiar texto';
       copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(result.text));status('Texto copiado.','success');}catch{status('No se pudo acceder al portapapeles.','warning');}});
       card.append(copy);
@@ -2037,7 +2037,7 @@ function createExecutionResults(executed,partial){
     if(result.blob){
       const url=resultObjectUrl(result.blob);
       if(String(result.blob.type||'').startsWith('image/')){
-        const preview=document.createElement('img');preview.className='core-result-preview';preview.alt=result.filename||'Imagen generada';preview.loading='lazy';preview.src=url;card.append(preview);
+        const preview=document.createElement('img');preview.className='core-result-preview';preview.setAttribute('data-user-content','');preview.alt=result.filename||'Imagen generada';preview.loading='lazy';preview.src=url;card.append(preview);
       }else if(String(result.blob.type||'').startsWith('audio/')){
         const player=document.createElement('audio');player.className='core-result-player';player.controls=true;player.preload='metadata';player.src=url;card.append(player);
       }else if(String(result.blob.type||'').startsWith('video/')){
@@ -2064,7 +2064,7 @@ function createExecutionResults(executed,partial){
         card.append(previewButton,panel);
       }
       const row=document.createElement('div');row.className='core-result-download';
-      const label=document.createElement('span');label.textContent=result.filename||'Archivo generado';
+      const label=document.createElement('span');label.setAttribute('data-user-content','');label.textContent=result.filename||'Archivo generado';
       const button=document.createElement('button');button.type='button';button.className='mini-button';button.textContent='Descargar';
       button.addEventListener('click',()=>{
         const a=document.createElement('a');a.href=url;a.download=result.filename||'prisma-resultado';
@@ -2147,7 +2147,7 @@ function createExecutionResults(executed,partial){
       }
       card.append(note);
     }
-    if(result.html){const pre=document.createElement('pre');pre.textContent=String(result.html).slice(0,8000);card.append(pre);}
+    if(result.html){const pre=document.createElement('pre');pre.setAttribute('data-user-content','');pre.textContent=String(result.html).slice(0,8000);card.append(pre);}
     wrapper.append(card);
   });
   return wrapper;
