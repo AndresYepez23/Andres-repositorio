@@ -421,8 +421,13 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   // A per-account quota/auth hold must not suppress independent accounts,
   // but a provider-wide network/5xx circuit breaker must remain in force.
   let providerHold = await getProviderHold(env, provider);
-  if (options.sweepQuotaSlots === true && providerHold &&
-      ["quota_exhausted","rate_limited","auth_error","credential_rotation"].includes(providerHold.state)) {
+  const clearableHold = providerHold && (
+    (sweepQuotaSlots && providerHold.state === "quota_exhausted") ||
+    (sweepRateLimitSlots && providerHold.state === "rate_limited") ||
+    (options.sweepAuthSlots === true && providerHold.state === "auth_error") ||
+    providerHold.state === "credential_rotation"
+  );
+  if (sweepIndependentSlots && clearableHold) {
     await setProviderHold(env, provider, "credential_rotation", "Checking independent account credentials.", 0);
     providerHold = null;
   }
@@ -509,7 +514,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
       return response;
     }
     if(response.status===429){
-      if (sweepQuotaSlots) {
+      if (sweepRateLimitSlots) {
         await setProviderHold(env,healthKey,"rate_limited","Esta cuenta de "+provider+" alcanzó un límite temporal; Prisma probará la siguiente cuenta independiente.",retryHoldSeconds(429,response.headers));
         continue;
       }
