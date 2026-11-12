@@ -2630,14 +2630,28 @@ export function initPrismaCore(){
     input.style.height='44px';
     input.style.height=Math.min(110,Math.max(44,input.scrollHeight))+'px';
   });
-  // Motor de imágenes: desplegable discreto que se cierra fuera o con Escape.
-  const imageSettings=$('.core-model-settings');
+  // Selector de modelos: popover adaptable, accesible y seguro frente a toques externos.
+  const modelSettings=$('.core-model-settings');
+  modelSettings?.addEventListener('toggle',()=>{if(modelSettings.open)renderModelPicker();});
   document.addEventListener('pointerdown',event=>{
-    if(imageSettings?.open&&!imageSettings.contains(event.target))imageSettings.open=false;
+    if(modelSettings?.open&&!modelSettings.contains(event.target))modelSettings.open=false;
   });
   document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&imageSettings?.open)imageSettings.open=false;
+    if(event.key==='Escape'&&modelSettings?.open)modelSettings.open=false;
   });
+  $('#core-model-auto')?.addEventListener('click',chooseAutomaticConversationModel);
+  $('#core-model-close')?.addEventListener('click',()=>{if(modelSettings)modelSettings.open=false;});
+  document.querySelectorAll('[data-model-tab]').forEach(button=>button.addEventListener('click',()=>{
+    activeModelTab=button.dataset.modelTab==='image'?'image':'chat';
+    renderModelPicker();
+  }));
+  $('#core-image-provider')?.addEventListener('change',()=>{
+    const chat=activeChatRecord();
+    if(chat)chat.imageSelection={provider:$('#core-image-provider').value||'auto',model:''};
+    persistChatHistory();renderModelPicker();
+  });
+  $('#core-image-model')?.addEventListener('change',saveImageSelection);
+  renderModelPicker();
   // The signup card is in the chat-column flow (not on top of messages).
   // Opening the account panel keeps the card hidden until the user returns.
   document.addEventListener('prisma:guest-gate-open',()=>{
