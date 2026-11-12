@@ -1619,7 +1619,7 @@ async function requestPlan(userText){
   // multimodel planner without breaking the existing chat experience.
   if(!attachments.length&&isExplicitResearchRequest(userText)){
     try{
-      status('Buscando fuentes actuales con Tavily…');
+      status('Buscando fuentes actuales con Tavily; Jina queda como respaldo…');
       setProgress(.08,'Investigando en internet…');
       const research=await searchPrismaWeb(userText);
       const sources=formatResearchSources(research.results);
@@ -1650,15 +1650,19 @@ async function requestPlan(userText){
         const sourceList=sources.map(source=>'['+source.number+'] ['+source.title.replace(/[\[\]]/g,'')+']('+source.url+')').join('\n');
         addMessage('assistant',answer+'\n\n**Fuentes consultadas**\n'+sourceList,{
           engine:synthesis.provider||'prisma-core-research',
-          model:synthesis.model||'Investigación web · Tavily'
+          model:synthesis.model||'Investigación web · '+String(research.provider||'Tavily/Jina')
         });
-        status('Investigación completada · '+sources.length+' fuentes consultadas.','success');
+        status('Investigación completada · '+sources.length+' fuentes · '+String(research.provider||'Tavily/Jina')+'.','success');
         return;
       }
-      status('Tavily no encontró fuentes suficientes; continuaré con los motores habituales.','info');
+      addMessage('assistant','No encontré fuentes web verificables para esta consulta. Tavily y Jina no devolvieron resultados utilizables. No voy a presentar una respuesta genérica como si hubiera investigado en internet. Inténtalo de nuevo en unos minutos.');
+      status('Investigación sin fuentes verificables.','warning');
+      return;
     }catch(error){
-      console.warn('Prisma Core Tavily research unavailable; using standard route',error?.message||error);
-      status('La búsqueda web no estuvo disponible. Continuaré con los motores habituales.','warning');
+      console.warn('Prisma Core web research failed',error?.message||error);
+      addMessage('assistant','No pude completar la investigación web. '+String(error?.message||'Los proveedores de búsqueda no respondieron.').slice(0,260)+' No presentaré información sin fuentes como si fuera una búsqueda actual.');
+      status('Falló la investigación web; revisa Tavily/Jina.','warning');
+      return;
     }
   }
   // Explicit compression of an uploaded video must NEVER be delegated to a

@@ -179,7 +179,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
     const error = new Error("No existe una credencial configurada para este proveedor.");
     error.code = "MISSING_CREDENTIAL"; error.status = 503; throw error;
   }
-  const providerHold = await getProviderHold(env, provider);
+  const providerHold = options.ignoreProviderHold === true ? null : await getProviderHold(env, provider);
   if (providerHold) {
     const error = new Error(providerHold.reason || "El proveedor está temporalmente en pausa.");
     error.code = "PROVIDER_COOLDOWN";

@@ -80,7 +80,7 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       body:JSON.stringify({model,messages,temperature:0.65,
         max_tokens:clamp(payload.maxOutputTokens,provider==="sensenova"?2048:128,4096,provider==="sensenova"?2400:1200),
         stream:false}),
-    }),{sweepAuthSlots:provider==="sensenova"});
+    }),{sweepAuthSlots:provider==="sensenova"||provider==="zai"});
   } catch (error) {
     return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
   }
@@ -399,7 +399,7 @@ async function executeChatRequest({ request, env }, markReserved) {
   }
 
   const compatibleProviders={
-    sensenova:{url:"https://token.sensenova.cn/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
+    sensenova:{url:"https://token.sensetime.com/api/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
     zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
@@ -453,7 +453,7 @@ async function executeChatRequest({ request, env }, markReserved) {
     if (model === "gemini-3.8-flash" && [502, 503].includes(response.status)) {
       // The higher-capability model can be temporarily overloaded; use a lower-cost model.
       activeModel = "gemini-3.5-flash-lite";
-      response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key));
+      response = await requestWithCredentialPool(env,"gemini",key=>askGemini(activeModel,key),{ignoreProviderHold:true});
       data = await response.json().catch(() => ({}));
     }
   } catch(error) {

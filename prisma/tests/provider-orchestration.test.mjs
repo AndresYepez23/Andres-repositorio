@@ -139,4 +139,26 @@ assert.match(chatSource,/function providerFailure/,'Backend preserves provider e
 assert.match(chatSource,/setProviderHold\(env,"cloudflare"/,'Cloudflare failures open a shared circuit breaker');
 const engineSource=fs.readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
 assert.match(engineSource,/status:Number\(data\.status\)\|\|response\.status/,'The router retains the original upstream status');
+const db5=mockD1();
+const env5={PRISMA_RATE_DB:db5,GEMINI_API_KEY:'gemini-key'};
+db5.rows.set('gemini',{state:'provider_unavailable',reason:'temporary outage',valid_until:Math.floor(Date.now()/1000)+60});
+let fallbackAttempts=0;
+const fallbackModel=await requestWithCredentialPool(env5,'gemini',async()=>{
+  fallbackAttempts++;
+  return new Response('fallback model ready',{status:200});
+},{ignoreProviderHold:true});
+assert.equal(fallbackModel.status,200,'An alternate model may be attempted inside the same Gemini provider after a transient model outage');
+assert.equal(fallbackAttempts,1);
+assert.ok(await getProviderHold(env5,'gemini'),'The original provider circuit remains recorded while the alternate model is attempted');
+
+const db6=mockD1();
+const env6={PRISMA_RATE_DB:db6,...Object.fromEntries(Array.from({length:6},(_,i)=>['ZAI_API_KEY'+(i===0?'':'_'+(i+1)),'zai-key-'+(i+1)]))};
+let zaiAttempts=0;
+const zaiRecovered=await requestWithCredentialPool(env6,'zai',async(key)=>{
+  zaiAttempts++;
+  return key==='zai-key-6'?new Response('ok',{status:200}):new Response('invalid key',{status:401});
+},{sweepAuthSlots:true,startIndex:0});
+assert.equal(zaiRecovered.status,200,'Z.AI checks all configured slots after key-specific authentication failures');
+assert.equal(zaiAttempts,6);
+
 console.log('Provider orchestration regressions passed.');
