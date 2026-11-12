@@ -240,10 +240,13 @@
                             <div class="core-model-groups" id="core-model-options" aria-label="Modelos disponibles"></div>
                             <p class="core-model-footnote">Solo se muestran los proveedores habilitados. Tu modelo elegido se conserva; un respaldo temporal no lo reemplaza.</p>
                           </section>
-                          <section class="core-model-pane" data-model-pane="image" role="tabpanel">
-                            <div class="core-image-model-heading"><strong>Crear con IA</strong><small>Explora los modelos por su función. Cada uno indica qué hace y si está listo para utilizarse.</small></div>
-                            <div class="core-creative-groups" id="core-creative-groups" aria-label="Modelos especializados por categoría"></div>
-                            <p class="core-model-footnote">Las herramientas sin integración ejecutable se muestran como pendientes. No se harán llamadas de pago sin autorización.</p>
+                          <section class="core-model-pane" data-model-pane="image" role="tabpanel" aria-label="Modelos de creación">
+                            <div class="core-create-intro">
+                              <strong>Modelos para crear</strong>
+                              <small>Explora los modelos por especialidad. Debajo de cada modelo verás qué hace y si está disponible.</small>
+                            </div>
+                            <div class="core-create-groups" id="core-create-groups" aria-live="polite"></div>
+                            <p class="core-model-footnote">Solo se pueden activar modelos conectados a una función real. Los modelos de pago o sin conexión no se ejecutan automáticamente.</p>
                           </section>
                         </div>
                       </details>
