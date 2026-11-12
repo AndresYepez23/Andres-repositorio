@@ -1482,7 +1482,7 @@ async function generateVisualRequest(text,creds,kind){
   (headline?'Reserve a clean area for a precise typography overlay to be applied locally. Do not draw any letters or text in the generated background.':'Avoid unwanted watermarks and illegible small lettering.');
  status('Generando '+label+' con respaldo automático si el motor principal no está disponible…');
  const result=await runTool('image-gen',[],{
-  ...creds,prompt,provider:$('#core-image-provider')?.value||'auto',model:$('#core-image-model')?.value||'',ratio,style
+  ...creds,prompt,provider:activeChatRecord()?.imageSelection?.provider||'auto',model:activeChatRecord()?.imageSelection?.model||'',ratio,style
  },(p,msg)=>{status(msg||'Generando imagen…');setProgress(Math.max(.05,Math.min(.96,Number(p)||.1)),msg||'Generando '+label+'…');});
  if(!result?.blob||!String(result.blob.type||'').startsWith('image/'))throw Error('El motor no devolvió una imagen utilizable.');
  if(headline){
