@@ -795,7 +795,7 @@ const srt=runLocalCreatorTool('subtitle-srt-local',{text:'Hola Prisma\nBienvenid
 assert.match(srt.text,/00:00:00,000 --> 00:00:03,000/);
 assert.equal(srt.filename,'prisma-subtitulos.srt');
 const autoRouteEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
-assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'AIHubMix automatic routing requires confirmed recurring quota; lifetime trial calls remain protected.');
+assert.doesNotMatch(autoRouteEngineSource,/provider==='aihubmix'&&preferred==='auto'/,'AIHubMix may use remaining trial quota as a late automatic fallback; provider status enforces the real remaining quota.');
 assert.match(autoRouteEngineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
 
 // Additional browser-native utilities and specialist routing.
