@@ -509,10 +509,3 @@ export function isToolDiscoveryQuestion(query){
   const englishTools=/(?:what tools|which tools|tools for|what can i do with|what features|show me tools|recommend a tool|do you have a tool)/.test(q);
   return isBroadCapabilityQuestion(q)||specificCapability||englishTools||generalTools&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
 }
-
-export function isToolDiscoveryQuestion(query){
- const q=normalize(query);
- const specificCapability=/(?:que|cuales|cuantas).{0,40}(?:habilidades|capacidades|puedes hacer|sabes hacer).{0,55}\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|csv|json|codigo|programacion|web)\b/.test(q);
- const generalTools=/(?:que|cuales|cuantas|dime|muestrame|recomienda).{0,45}(?:herramientas|funciones|utilidades|capacidades)|(?:herramientas|funciones|utilidades).{0,35}(?:tienes|hay|recomiendas|puedo usar)|(?:que puedo hacer con|que herramientas usarias para)/.test(q);
- return isBroadCapabilityQuestion(q)||specificCapability||generalTools&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
-}
