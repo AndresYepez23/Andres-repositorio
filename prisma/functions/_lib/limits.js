@@ -3,14 +3,19 @@ import { getCredentialSlots } from "./credential-pool.js";
 
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
 export const OPENROUTER_VISITOR_LIMITS=Object.freeze({perMinute:5,perDay:20});
+// Provider-specific inference is governed by each upstream account's own
+// quota headers, balances and 402/429 responses. These generous app-side
+// ceilings prevent runaway loops without throttling normal multi-key usage.
 export const LIMITS=Object.freeze({
- gemini:50,huggingface:10,groq:80,pollinations:10,cloudflare:30,
- kilo:20,requesty:25,sensenova:25,zai:25,aihubmix:10,
+ gemini:5000,huggingface:5000,groq:5000,pollinations:5000,cloudflare:2000,
+ kilo:2000,requesty:5000,sensenova:5000,zai:5000,aihubmix:10,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
  "groq-audio":3,"cloudflare-audio":3,"pollinations-audio":2,"gemini-image":2
 });
 
-const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,aihubmix:10});
+// AIHubMix publishes a per-account 10 RPM trial / 10 lifetime request cap;
+// once the owner confirms the qualifying top-up, its live daily quota is used.
+const PROVIDER_MINUTE_LIMITS=Object.freeze({aihubmix:10});
 export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[provider]||null;}
 
 // These providers have separate credential/account pools. Internal capacity
