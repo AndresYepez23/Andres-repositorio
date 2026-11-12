@@ -409,15 +409,19 @@ function retryHoldSeconds(status, headers) {
   return 60;
 }
 
-// Distribute healthy requests across configured credentials. A key-specific
-// auth/transient failure can try one alternate at most. Provider-wide 402/429
-// pauses the entire pool: keys are never rotated to evade billing or quotas.
+// Distribute healthy requests across configured credentials. Authentication,
+// account-balance and explicitly account-scoped rate limits may rotate to an
+// independent key; shared provider limits and network outages remain global.
 export async function requestWithCredentialPool(env, provider, send, options = {}) {
   const slots = getCredentialSlots(env, provider);
   if (!slots.length) {
     const error = new Error("No existe una credencial configurada para este proveedor.");
     error.code = "MISSING_CREDENTIAL"; error.status = 503; throw error;
   }
+  const sweepAuthSlots = options.sweepAuthSlots === true;
+  const sweepQuotaSlots = options.sweepQuotaSlots === true;
+  const sweepRateLimitSlots = options.sweepRateLimitSlots === true;
+  const sweepIndependentSlots = sweepAuthSlots || sweepQuotaSlots || sweepRateLimitSlots;
   // A per-account quota/auth hold must not suppress independent accounts,
   // but a provider-wide network/5xx circuit breaker must remain in force.
   let providerHold = await getProviderHold(env, provider);
@@ -441,9 +445,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   }
   // Keys are alternatives only for key-specific authentication failures.
   // Provider-wide limits/outages must not duplicate paid or quota-consuming calls.
-  const sweepAuthSlots = options.sweepAuthSlots === true;
-  const sweepQuotaSlots = options.sweepQuotaSlots === true;
-  const maxAttempts = Math.min(slots.length,(sweepAuthSlots || sweepQuotaSlots) ? maxCredentialSlots(provider) : Math.min(2,Math.max(1,Number(options.maxAttempts)||2)));
+  const maxAttempts = Math.min(slots.length,(sweepAuthSlots || sweepQuotaSlots || sweepRateLimitSlots) ? maxCredentialSlots(provider) : Math.min(2,Math.max(1,Number(options.maxAttempts)||2)));
   const metrics = await getCredentialMetricsSnapshot(env, [provider]);
   const slotMetrics = metrics[provider] || {};
   const startIndex = Number.isInteger(options.startIndex)
