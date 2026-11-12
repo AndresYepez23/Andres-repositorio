@@ -197,7 +197,7 @@ const internalErrorResponse=await onRequestPost({
   env:{}
 });
 assert.equal(internalErrorResponse.status,500,'Unhandled chat errors should return controlled JSON HTTP 500');
-assert.match(internalErrorResponse.headers.get('Content-Type')||'',/application\\/json/,'Chat errors must not leak as HTML platform pages');
+assert.ok((internalErrorResponse.headers.get('Content-Type')||'').includes('application/json'),'Chat errors must not leak as HTML platform pages');
 const internalErrorBody=await internalErrorResponse.json();
 assert.equal(internalErrorBody.code,'INTERNAL_ERROR');
 assert.equal(internalErrorBody.ok,false);
