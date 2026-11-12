@@ -149,6 +149,62 @@ function translateTextNode(node) {
 }
 
 const ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'alt', 'content'];
+
+// Links inside the application must follow the selected language as well.
+// These are public index/legal routes; explicit SEO landing URLs keep their own locale.
+const localizedPaths = new Map([
+  ['/herramientas/', '/en/tools/'],
+  ['/categorias/', '/en/categories/'],
+  ['/soluciones/', '/en/solutions/'],
+  ['/guias/', '/en/guides/'],
+  ['/privacy.html', '/en/privacy.html']
+]);
+const spanishPaths = new Map([...localizedPaths].map(([es, en]) => [en, es]));
+
+function translateInternalLink(anchor) {
+  const href = anchor?.getAttribute?.('href');
+  if (!href || href.startsWith('#')) return;
+  let url;
+  try { url = new URL(href, document.baseURI); } catch { return; }
+  if (url.origin !== location.origin) return;
+  const target = language === 'en' ? localizedPaths.get(url.pathname) : spanishPaths.get(url.pathname);
+  if (!target) return;
+  const next = target + url.search + url.hash;
+  if (href !== next) anchor.setAttribute('href', next);
+}
+
+function translateInternalLinks(container) {
+  if (container?.matches?.('a[href]')) translateInternalLink(container);
+  container?.querySelectorAll?.('a[href]').forEach(translateInternalLink);
+}
+
+// Metadata must match the active SPA language even when the original HTML
+// was served from /en/ and the visitor switches back to Spanish.
+const appMetadata = {
+  es: {
+    title: 'Prisma Space — Crea, convierte y experimenta',
+    description: 'Prisma Space reúne herramientas digitales, procesamiento local e inteligencia artificial para crear, convertir, optimizar y experimentar en un solo lugar.',
+    socialDescription: 'Crea, convierte, optimiza y experimenta con IA en un solo lugar.'
+  },
+  en: {
+    title: 'Prisma Space — Create, convert and explore',
+    description: 'Prisma Space brings together digital tools, local processing, and artificial intelligence to create, convert, optimize, and explore in one place.',
+    socialDescription: 'Create, convert, optimize, and explore with AI in one place.'
+  }
+};
+function syncAppMetadata() {
+  if (location.pathname !== '/' && !/^\\/en\\/?$/i.test(location.pathname)) return;
+  const metadata = appMetadata[language];
+  document.title = metadata.title;
+  for (const [selector, content] of [
+    ['meta[name="description"]', metadata.description],
+    ['meta[property="og:title"]', metadata.title],
+    ['meta[property="og:description"]', metadata.socialDescription]
+  ]) {
+    const element = document.querySelector(selector);
+    if (element && element.content !== content) element.content = content;
+  }
+}
 function translateAttribute(element, attribute) {
   if (!element?.isConnected || element.closest(SKIP_ATTRIBUTES)) return;
   const current = element.getAttribute(attribute);
@@ -205,6 +261,8 @@ function applyAll() {
   let node;
   while ((node = walker.nextNode())) translateTextNode(node);
   root.querySelectorAll('*').forEach(element => ATTRIBUTES.forEach(attribute => translateAttribute(element, attribute)));
+  translateInternalLinks(root);
+  syncAppMetadata();
   updateLanguageButton();
 }
 
@@ -249,7 +307,10 @@ const observer = new MutationObserver(records => {
   if (applying) return;
   for (const record of records) {
     if (record.type === 'characterData') translateTextNode(record.target);
-    if (record.type === 'attributes') translateAttribute(record.target, record.attributeName);
+    if (record.type === 'attributes') {
+      if (record.attributeName === 'href') translateInternalLink(record.target);
+      else translateAttribute(record.target, record.attributeName);
+    }
     if (record.type === 'childList') {
       record.addedNodes.forEach(added => {
         if (added.nodeType === Node.TEXT_NODE) translateTextNode(added);
@@ -261,13 +322,14 @@ const observer = new MutationObserver(records => {
             if (added.hasAttribute?.(attribute)) translateAttribute(added, attribute);
           });
           added.querySelectorAll?.('*').forEach(element => ATTRIBUTES.forEach(attribute => translateAttribute(element, attribute)));
+          translateInternalLinks(added);
         }
       });
     }
   }
   installLanguageButton();
 });
-observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRIBUTES });
+observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: [...ATTRIBUTES, 'href'] });
 
 window.prismaI18n = Object.freeze({
   get language() { return language; },
