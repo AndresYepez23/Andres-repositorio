@@ -8,10 +8,23 @@ function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers });
 }
 
-function tavilyKeys(env) {
+export function tavilyKeys(env) {
+  // A single encrypted JSON array avoids the Workers Free 64-binding limit.
+  // Individual secrets remain supported for backwards compatibility.
+  let pooled = [];
+  if (typeof env?.TAVILY_API_KEYS_JSON === "string") {
+    try {
+      const parsed = JSON.parse(env.TAVILY_API_KEYS_JSON);
+      if (Array.isArray(parsed) && parsed.length <= 7 && parsed.every(key => typeof key === "string")) {
+        pooled = parsed;
+      }
+    } catch {
+      // Invalid JSON does not block individually configured credentials.
+    }
+  }
   const keys = [];
   for (let index = 1; index <= 7; index++) {
-    const key = String(env?.["TAVILY_API_KEY" + (index === 1 ? "" : "_" + index)] || "").trim();
+    const key = String(env?.["TAVILY_API_KEY" + (index === 1 ? "" : "_" + index)] || pooled[index - 1] || "").trim();
     if (key && !keys.includes(key)) keys.push(key);
   }
   return keys;
