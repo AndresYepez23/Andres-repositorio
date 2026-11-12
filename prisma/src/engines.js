@@ -856,9 +856,9 @@ async function generateText(p,cb){
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
     preferred!=='auto'&&String(p.polliToken||'').trim());
   if(!p.centralProviders?.[provider])return false;
-  // Preserve AIHubMix's ten lifetime trial calls unless the owner confirms the
-  // provider's one-time top-up. Manual selection still allows deliberate tests.
-  if(provider==='aihubmix'&&preferred==='auto')return Boolean(p.centralFeatures?.aihubmixDailyQuotaActive);
+  // AIHubMix is eligible automatically only while the status endpoint reports
+  // remaining trial/daily capacity; its position near the end preserves the
+  // quota for fallback rather than spending it on routine low-cost prompts.
   // Some NVIDIA trial endpoints may log prompts: never send user text there
   // automatically. A user may select those manually after reading the warning.
   if(provider==='kilo'&&preferred==='auto')return Boolean(
