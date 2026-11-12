@@ -28,8 +28,9 @@ export async function getKiloFreeModels(env, { force = false } = {}) {
         const completion = Number(model?.pricing?.completion);
         const outputs = model?.architecture?.output_modalities;
         const textOutput = !Array.isArray(outputs) || outputs.includes("text");
-        const chatLike = !/(image|video|audio|speech|embedding|transcrib|ocr)/i.test(id);
-        return id && prompt === 0 && completion === 0 && textOutput && chatLike;
+        const chatLike = !/(lyria|music|image|video|audio|speech|embedding|transcrib|ocr|moderation|content.safety|guardrail|rerank)/i.test(id + " " + String(model?.name || ""));
+        const mediaOutput = Array.isArray(outputs) && outputs.some(type => ["audio","video","image"].includes(String(type).toLowerCase()));
+        return id && prompt === 0 && completion === 0 && textOutput && chatLike && !mediaOutput;
       })
       .map(model => {
         const id = String(model.id);
