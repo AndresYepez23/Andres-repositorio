@@ -48,7 +48,8 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
 
     const freeModels = models.filter(model => {
       const id = String(model?.id || "");
-      if (!id.endsWith("-free") || NON_CHAT_OUTPUTS.has(id)) return false;
+      if (!id.endsWith("-free") || NON_CHAT_OUTPUTS.has(id) ||
+          /(lyria|music|image|video|audio|speech|tts|embedding|transcrib|moderation|content.safety|guardrail)/i.test(id + " " + String(model?.name || ""))) return false;
       const weight = Number(weights[id] ?? 1);
       if (!Number.isFinite(weight) || weight !== 1) return false;
 
@@ -59,7 +60,7 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
       )) return false;
 
       const outputs = model?.architecture?.output_modalities || model?.output_modalities;
-      if (Array.isArray(outputs) && !outputs.includes("text")) return false;
+      if (Array.isArray(outputs) && (!outputs.includes("text") || outputs.some(type => ["audio","video","image"].includes(String(type).toLowerCase())))) return false;
       // These three current listings do not publish their output modality.
       if (!Array.isArray(outputs) && ["elephant-1-free", "mammoth-1-free", "span-01-lite-free"].includes(id)) return false;
       return true;
