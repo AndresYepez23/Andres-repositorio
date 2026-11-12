@@ -17,7 +17,7 @@ function canonicalUrl(value) {
       if (/^(utm_.+|fbclid|gclid|mc_cid|mc_eid)$/i.test(key)) url.searchParams.delete(key);
     }
     if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, "");
-    return url.protocol + "//" + url.host.toLowerCase() + url.pathname.toLowerCase() + url.search;
+    return url.protocol + "//" + url.host.toLowerCase() + url.pathname + url.search;
   } catch {
     return String(value || "").toLowerCase();
   }
