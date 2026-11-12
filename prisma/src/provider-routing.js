@@ -113,7 +113,7 @@ const DEFAULT_MODELS = {
   aihubmix:{fast:"coding-glm-5.3-flash-free",balanced:"coding-glm-5.3-free",smart:"coding-kimi-k3-free"},
 };
 
-export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},now=Date.now()}={}) {
+export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},usage={},now=Date.now()}={}) {
   const order=[...new Set(preferred==="auto"?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])].filter(name=>available(name));
   if(preferred!=="auto")return order;
   return order.map((name,index)=>{
@@ -124,7 +124,14 @@ export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_O
     const averageMs=recent?Math.max(0,Number(record.averageMs)||0):0;
     const latency=averageMs?Math.min(18,averageMs/1800):0;
     const reliability=failures*6-Math.min(6,successes*1.5);
-    return {name,score:index*12+latency+reliability+(cooling?1000:0)+(name==='openrouter'?10000:0)};
+    const daily=usage[name]?.daily||usage[name]||{};
+    const used=Math.max(0,Number(daily.used)||0),limit=Math.max(0,Number(daily.limit)||0);
+    // As a provider approaches its own configured pool capacity, gradually
+    // favor other task-compatible providers. This is load balancing, not
+    // parallel fan-out: only the first healthy candidate receives the prompt.
+    const utilization=limit>0?Math.max(0,Math.min(1,used/limit)):0;
+    const loadPenalty=utilization*15;
+    return {name,score:index*12+latency+reliability+loadPenalty+(cooling?1000:0)+(name==='openrouter'?10000:0)};
   }).sort((a,b)=>a.score-b.score).map(item=>item.name);
 }
 
