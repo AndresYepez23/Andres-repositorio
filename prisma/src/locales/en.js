@@ -1460,6 +1460,15 @@ const translations = {
   "Cuenta personal:": "Personal account:",
   "No hay una cuenta personal de Pollinations conectada. Puedes usar el motor central automático si está disponible.": "No personal Pollinations account is connected. You can use the automatic central engine if it's available.",
   "No se pudo generar el archivo de audio.": "Failed to generate the audio file.",
-  "Puedes conectar una cuenta de Pollinations con permiso para audio. No se activa ningún pago automático.": "You can connect a Pollinations account with audio permission. No automatic payment is activated."
+  "Puedes conectar una cuenta de Pollinations con permiso para audio. No se activa ningún pago automático.": "You can connect a Pollinations account with audio permission. No automatic payment is activated.",
+  "Por rendimiento, limita el texto a 200.000 caracteres.": "By performance, limit text to 200,000 characters.",
+  "Pega el texto que quieres anonimizar.": "Paste the text you want to anonymize.",
+  "dato(s) detectado(s) y reemplazado(s) localmente. Verifica el resultado: no se detectan nombres, direcciones postales ni todos los identificadores personales.": "Local data detected and replaced. Verify the result: no names, addresses, or all personal identifiers are detected.",
+  "Pega las dos versiones JSON para compararlas.": "Paste the two JSON versions to compare them.",
+  "El JSON original no es válido:": "The original JSON is invalid:",
+  "El JSON actualizado no es válido:": "The updated JSON is invalid:",
+  "… Comparación truncada por tamaño.": "... Comparison truncated due to size.",
+  "Los dos documentos JSON son equivalentes.": "The two JSON documents are equivalent.",
+  "Pega un artículo o bibliografía para identificar DOI y PMID.": "Paste an article or bibliography to identify DOI and PMID."
 };
 export default translations;
