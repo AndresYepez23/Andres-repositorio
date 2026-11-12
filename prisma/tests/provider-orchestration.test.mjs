@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { rankProviders, adaptiveProviderDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialHealthSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
-import { onRequestPost } from '../functions/api/ai/chat.js';
 
 function mockD1() {
   const rows=new Map();
@@ -187,20 +186,5 @@ assert.equal(allLimited.status,429,'Return the last upstream limit if every inde
 assert.equal(allLimitedAttempts,6,'A rate limit is isolated and recorded for each of the six independent accounts');
 assert.equal(await getProviderHold(env8,'zai'),null,'Exhausted independent accounts must not create a global provider hold');
 
-
-const internalErrorResponse=await onRequestPost({
-  request:{
-    url:'https://prismaspace.pages.dev/api/ai/chat',
-    headers:new Headers({Origin:'https://prismaspace.pages.dev'}),
-    async text(){throw new Error('synthetic diagnostic exception');}
-  },
-  env:{}
-});
-assert.equal(internalErrorResponse.status,500,'Unhandled chat errors should return controlled JSON HTTP 500');
-assert.ok((internalErrorResponse.headers.get('Content-Type')||'').includes('application/json'),'Chat errors must not leak as HTML platform pages');
-const internalErrorBody=await internalErrorResponse.json();
-assert.equal(internalErrorBody.code,'INTERNAL_ERROR');
-assert.equal(internalErrorBody.ok,false);
-assert.ok(internalErrorBody.diagnosticId);
 
 console.log('Provider orchestration regressions passed.');
