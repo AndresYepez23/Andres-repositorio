@@ -30,5 +30,5 @@ test('Unsupported creative media are informational, never sent to text chat as f
  assert.match(core,/const ready=supported&&availability\.available/);
  assert.match(core,/row\.disabled=!ready/);
  assert.match(core,/if\(ready\)row\.addEventListener/);
- assert.match(core,/banner\?\.classList\.add\('hidden'\)/);
+ assert.match(core,/\$\('#core-composer-mode'\)\?\.classList\.add\('hidden'\)/);
 });
