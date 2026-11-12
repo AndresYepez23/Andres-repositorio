@@ -10,7 +10,7 @@ const aihubmix=read('../functions/_lib/aihubmix-models.js');
 
 test('Crear replaces image-only picker without modifying composer controls',()=>{
  assert.match(html,/data-model-tab="image"[^>]*>Crear<\/button>/);
- assert.match(html,/id="core-creative-groups"/);
+ assert.match(html,/id="core-create-groups"/);
  for(const old of ['Generación de imágenes','Motor de imagen','Modelo de imagen','Usar modo imagen en este chat']){
   assert.ok(!html.includes(old),old+' should not appear in picker');
  }
@@ -18,7 +18,7 @@ test('Crear replaces image-only picker without modifying composer controls',()=>
   assert.ok(html.includes('id="'+id+'"'),id+' remains');
 });
 test('specialist groups include image music audio transcription video and safety',()=>{
- for(const name of ['Imágenes','Música','Audio y voz','Transcripción','Vídeo','Moderación'])
+ for(const name of ['Imágenes','Música','Audio','Transcripción','Vídeo','Moderación'])
   assert.ok(core.includes("title:'"+name+"'"),name);
  assert.match(core,/function renderCreativeModelCatalog\(\)/);
  assert.match(core,/if\(ready\)\{[\s\S]*?core-creative-use/);
