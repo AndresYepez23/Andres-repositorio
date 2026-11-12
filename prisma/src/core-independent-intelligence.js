@@ -326,15 +326,121 @@ const DATA_EN = [
 const GLOSSARY=new Map([...DATA.map(([k,definition,application],i)=>[fold(k),{definition,application,topicEn:DATA_EN[i][0],definitionEn:DATA_EN[i][1],applicationEn:DATA_EN[i][2]}]),...DATA_EN.map(([k,definition,application],i)=>[fold(k),{definition:DATA[i][1],application:DATA[i][2],topicEn:k,definitionEn:definition,applicationEn:application}])]);
 const N='[-+]?(?:\\d+(?:[.,]\\d+)?|[.,]\\d+)';
 const number=x=>Number(String(x).replace(',','.'));
-const format=x=>Number.isFinite(x)?new Intl.NumberFormat('es-CO',{maximumFractionDigits:6}).format(Number(x.toPrecision(12))):null;
+const english=()=>typeof window!=='undefined'&&window.prismaI18n?.language==='en';
+const format=x=>Number.isFinite(x)?new Intl.NumberFormat(english()?'en-US':'es-CO',{maximumFractionDigits:6}).format(Number(x.toPrecision(12))):null;
 export function solveOfflineArithmetic(text){
  const q=fold(text).replace(/^[¿?¡!\s]+|[¿?¡!\s]+$/g,'');
  if(q.length>150)return null;
  let m=q.match(new RegExp('^(?:cuanto es |calcula |calcular |resuelve )?('+N+')\\s*%\\s*(?:de|del)\\s*('+N+')$'));
- if(m)return '**'+format(number(m[1]))+' % de '+format(number(m[2]))+' = '+format(number(m[1])*number(m[2])/100)+'**. Fórmula: base × porcentaje / 100.';
+ if(m)return useEnglish?'**'+format(number(m[1]))+'% of '+format(number(m[2]))+' = '+format(number(m[1])*number(m[2])/100)+'**. Formula: base × percentage / 100.':'**'+format(number(m[1]))+' % de '+format(number(m[2]))+' = '+format(number(m[1])*number(m[2])/100)+'**. Fórmula: base × porcentaje / 100.';
  m=q.match(new RegExp('^(?:cuanto es |calcula |calcular |resuelve )?('+N+')\\s*([+*/×÷-])\\s*('+N+')$'));
- if(m){const a=number(m[1]),b=number(m[3]),op=m[2];if((op==='/'||op==='÷')&&b===0)return 'No se puede dividir entre cero.';return '**'+format(a)+' '+op+' '+format(b)+' = '+format(op==='+'?a+b:op==='-'?a-b:op==='*'||op==='×'?a*b:a/b)+'**.';}
- m=q.match(new RegExp('^(?:calcula |calcular )?(?:el )?(aumento|descuento) (?:del? )?('+N+')\\s*%\\s*(?:de|sobre)\\s*('+N+')$'));
+ if(m){const a=number(m[1]),b=number(m[3]),op=m[2];if((op==='/'||op==='÷')&&b===0)return useEnglish?'You cannot divide by zero.':'No se puede dividir entre cero.';return '**'+format(a)+' '+op+' '+format(b)+' = '+format(op==='+'?a+b:op==='-'?a-b:op==='*'||op==='×'?a*b:a/b)+'**.';}
+ m=q.match(new RegExp('^(?:calcula |calcular )?(?:el )?(aumento|descuento) (?:del? )?('+N+')\\s*%\\s*(?:de|sobre)\\s*('+N+')
+ if(m){const factor=m[1]==='aumento'?1:-1;return useEnglish?'Total after '+(factor>0?'increase':'discount')+': **'+format(number(m[3])*(1+factor*number(m[2])/100))+'**.':'Total tras '+m[1]+': **'+format(number(m[3])*(1+factor*number(m[2])/100))+'**.';}
+ return null;
+}
+export function getOfflineExtractiveSummary(text){
+  const q=fold(text);
+  const useEnglish=english();
+  if(!/^(?:resume|resumir|haz un resumen|sintetiza|extrae (?:las )?ideas principales|dame (?:las )?ideas principales|puntos clave de|summarize|summarise|make a summary|give me the key points|extract the main ideas)\b/.test(q))return null;
+  const source=String(text).match(/:\s*([\s\S]+)/)?.[1]?.trim()||'';
+  if(source.length<90||source.length>15000)return null;
+  const sentences=source.replace(/\r/g,'').split(/(?<=[.!?])\s+|\n+/).map(x=>x.trim()).filter(x=>x.length>25);
+  if(sentences.length<2)return null;
+  const freq=new Map();
+  for(const w of fold(source).match(/[\p{L}]{4,}/gu)||[])freq.set(w,(freq.get(w)||0)+1);
+  const ranked=sentences.map((sentence,i)=>{const words=[...new Set(fold(sentence).match(/[\p{L}]{4,}/gu)||[])];return {sentence,i,score:words.reduce((n,w)=>n+(freq.get(w)||0),0)/(2+Math.sqrt(words.length||1))+(i===0?.5:0)};});
+  const selected=ranked.sort((a,b)=>b.score-a.score).slice(0,Math.min(5,Math.ceil(sentences.length*.4))).sort((a,b)=>a.i-b.i);
+  return useEnglish?'**Local extractive summary** (original sentences, not generative interpretation):\n\n'+selected.map(s=>'- '+s.sentence).join('\n')+'\n\n*No information was sent to external providers. Review the selection before using it as a final summary.*':'**Resumen extractivo local** (frases originales, no interpretación generativa):\n\n'+selected.map(s=>'- '+s.sentence).join('\n')+'\n\n*No se ha enviado información a proveedores externos. Revisa la selección antes de usarla como resumen definitivo.*';
+}
+
+export function resolveIndependentCoreRequest(text,{allowKnowledge=true}={}){
+  const useEnglish=english();
+  const arithmetic=solveOfflineArithmetic(text);
+  if(arithmetic)return {kind:'calculation',text:arithmetic};
+  const expression=String(text).replace(/^(?:cuanto es|cuánto es|calcula|resuelve|what is|calculate|compute|solve)\s+/i,'').replace(/[¿?]/g,'').trim();
+  if(/[()+*/^]/.test(expression)){try{const n=evaluateCoreExpression(expression);if(n!==null)return {kind:'calculation',text:useEnglish?'**'+expression+' = '+format(n)+'**. Local calculation; decimals are approximate due to floating-point arithmetic.':'**'+expression+' = '+format(n)+'**. Cálculo local; decimales aproximados con aritmética de punto flotante.'};}catch(error){return {kind:'calculation',text:error.message};}}
+  const extraction=getOfflineExtractiveSummary(text);
+  if(extraction)return {kind:'extraction',text:extraction};
+  if(!allowKnowledge)return null;
+  const q=fold(text).replace(/[¿?¡!.,;:]/g,' ').replace(/\s+/g,' ').trim();
+  const m=q.match(/^(?:que es|que significa|define|explica(?:me)?|para que sirve|como funciona|en que consiste|what is|define|explain|how does|what is the use of)\s+(?:(?:un|una|el|la|los|las|a|an|the)\s+)?(.+)$/);
+  const whatDoes=q.match(/^what does (.+?) mean$/);
+  const howWork=q.match(/^how does (.+?) work$/);
+  const topic=(m?.[1]||whatDoes?.[1]||howWork?.[1]||'').replace(/\s+(?:en pocas palabras|de manera sencilla|por favor|in simple terms|in plain language|please)$/,'').trim();
+  const found=GLOSSARY.get(topic);
+  if(!found)return null;
+  const label=useEnglish?found.topicEn:topic.toUpperCase();
+  const definition=useEnglish?found.definitionEn:found.definition;
+  const application=useEnglish?found.applicationEn:found.application;
+  return {kind:'knowledge',text:'**'+label+'**: '+definition+(useEnglish?'\n\n**In practice:** ':'\n\n**En la práctica:** ')+application};
+}
+
+export const INDEPENDENT_CORE_KNOWLEDGE_COUNT=GLOSSARY.size;
+
+/**
+ * Deterministic conversational layer. No network inference, no Prisma Mini.
+ * Returns null when the request cannot be safely grounded in shipped knowledge.
+ * History is restricted to this active conversation by the caller.
+ */
+function knowledgeAnswer(topic, mode='both'){
+  const item=GLOSSARY.get(fold(topic));
+  if(!item)return null;
+  if(english()){
+   if(mode==='use')return '**'+item.topicEn+' — practical application:** '+item.applicationEn+'\n\n'+item.definitionEn;
+   if(mode==='definition')return '**'+item.topicEn+':** '+item.definitionEn;
+   return '**'+item.topicEn+'**: '+item.definitionEn+'\n\n**In practice:** '+item.applicationEn;
+  }
+  if(mode==='use')return '**'+topic+' — aplicación práctica:** '+item.application+'\\n\\n'+item.definition;
+  if(mode==='definition')return '**'+topic+':** '+item.definition;
+  return '**'+topic.toUpperCase()+'**: '+item.definition+'\\n\\n**En la práctica:** '+item.application;
+}
+function knownTopicIn(text){
+  const q=' '+fold(text).replace(/[^\p{L}\p{N}]+/gu,' ').trim()+' ';
+  return [...GLOSSARY.keys()].sort((a,b)=>b.length-a.length).find(key=>q.includes(' '+key+' '))||'';
+}
+
+export function resolveContextualCoreRequest(text,history=[]){
+ const q=fold(text).replace(/[¿?¡!.,;:]/g,' ').replace(/\s+/g,' ').trim();
+ if(!q||q.length>500||!Array.isArray(history))return null;
+ // Only unambiguous requests. No invented facts, no third-party API.
+ const explicitComparison=q.match(/^(?:cual es )?(?:la )?diferencia entre (.+?) y (.+?)(?: por favor)?$/);
+ if(explicitComparison){
+  const left=fold(explicitComparison[1]).replace(/^(?:la|el|una|un)\s+/,'');
+  const right=fold(explicitComparison[2]).replace(/^(?:la|el|una|un)\s+/,'');
+  const a=GLOSSARY.get(left),b=GLOSSARY.get(right);
+  if(a&&b&&left!==right)return {kind:'comparison',text:'**'+left+'**: '+a.definition+'\n\n**'+right+'**: '+b.definition+'\n\n**Diferencia práctica:** '+a.application+' '+b.application+'\n\n*Comparación basada en conocimientos internos de Prisma.*'};
+ }
+ const asksContinuation=/^(?:y\s+)?(?:para que sirve|como (?:se usa|funciona|lo uso|se aplica)|dame (?:un )?ejemplo|explicalo (?:mejor|mas facil)|puedes ampliarlo|y eso que significa|y en la practica|por que es importante)(?: (?:eso|en la practica|por favor))?$/.test(q);
+ if(asksContinuation){
+  const previous=history.slice(-8).reverse().find(m=>m?.role==='user'&&String(m.content||'').trim());
+  const topic=previous?knownTopicIn(previous.content):'';
+  const entry=GLOSSARY.get(topic);
+  if(entry){
+   const use=/sirve|uso|aplica|ejemplo|practica|importante/.test(q);
+   return {kind:'context',text:knowledgeAnswer(topic,use?'use':'both')+'\n\n*Continuación contextual resuelta sin modelos externos.*'};
+  }
+ }
+ // Exact topic identification, not arbitrary embedding-like association.
+ const explain=q.match(/^(?:explica(?:me)?|define|que es|para que sirve|como funciona)\s+(?:el|la|un|una)?\s*(.+)$/);
+ if(explain){
+  const topic=fold(explain[1]).replace(/\s+(?:con un ejemplo|en palabras sencillas|de forma sencilla|por favor)$/,'').trim();
+  if(GLOSSARY.has(topic))return {kind:'knowledge',text:knowledgeAnswer(topic,/para que sirve/.test(q)?'use':'both')};
+ }
+ // Two-stage arithmetic, each intermediate value shown for verification.
+ const twoStage=q.match(/^(?:tengo|parto de|empiezo con|calcula con|sobre)\s+([-+]?\d+(?:[.,]\d+)?)\s*(?:y|,)\s*(?:le\s+)?(?:aplica|haz|realiza|agrega|quita|aumenta|descuenta|suma|resta)\s+(?:un\s+)?(?:aumento|descuento|incremento|rebaja)\s+(?:del?\s+)?(\d+(?:[.,]\d+)?)\s*%\s*(?:y|,|luego|despues|después|y luego|y despues|y después)\s*(?:un\s+)?(?:aplica|haz|realiza|agrega|quita)?\s*(aumento|descuento|incremento|rebaja)\s+(?:del?\s+)?(\d+(?:[.,]\d+)?)\s*%$/);
+ if(twoStage){
+  const base=number(twoStage[1]),pctA=number(twoStage[2]),pctB=number(twoStage[4]);
+  if(![base,pctA,pctB].every(Number.isFinite)||base<0||pctA<0||pctB<0||pctA>1000||pctB>1000)return null;
+  const isDiscountA=/descuento|rebaja|quita|resta/.test(q.slice(0,q.indexOf(twoStage[3])));
+  const isDiscountB=/descuento|rebaja/.test(twoStage[3]);
+  const first=base*(1+(isDiscountA?-1:1)*pctA/100);
+  const final=first*(1+(isDiscountB?-1:1)*pctB/100);
+  return {kind:'plan',text:'**Cálculo local verificado en dos pasos**\n\n1. Base: '+format(base)+'. '+(isDiscountA?'Descuento':'Aumento')+' del '+format(pctA)+' % → **'+format(first)+'**.\n2. '+(isDiscountB?'Descuento':'Aumento')+' del '+format(pctB)+' % sobre '+format(first)+' → **'+format(final)+'**.\n\n**Resultado final: '+format(final)+'**. Los porcentajes se aplican sucesivamente, no se suman.'};
+ }
+ return null;
+}
+));
  if(m){const factor=m[1]==='aumento'?1:-1;return 'Total tras '+m[1]+': **'+format(number(m[3])*(1+factor*number(m[2])/100))+'**.';}
  return null;
 }
