@@ -1,7 +1,6 @@
-// Up to six protected API credentials per external provider.
-// Compact JSON pools keep Cloudflare binding usage practical; individual legacy
-// variables remain supported. Provider quotas are shared and never multiplied
-// by the number of keys. Secret values never leave the backend.
+// Protected credential pools for inference and web research providers.
+// Compact JSON pools reduce Cloudflare binding usage; legacy individual
+// variables remain supported. Keys never multiply provider quotas.
 import { getProviderHold, setProviderHold } from "./provider-health.js";
 
 export const CREDENTIAL_ROOTS = Object.freeze({
@@ -15,11 +14,13 @@ export const CREDENTIAL_ROOTS = Object.freeze({
   sensenova: "SENSENOVA_API_KEY",
   zai: "ZAI_API_KEY",
   aihubmix: "AIHUBMIX_API_KEY",
+  tavily: "TAVILY_API_KEY",
+  jina: "JINA_API_KEY",
 });
 
-// One encrypted Cloudflare secret per provider can contain a JSON array of up
-// to six keys. This is the recommended format on Workers Free, whose binding
-// count is lower than the 72 individual secrets needed for twelve providers.
+// One encrypted Cloudflare secret per provider can contain a JSON array.
+// Slot limits are provider-specific: Requesty has three, Tavily seven, Jina one,
+// and the model providers up to six. This is the recommended Workers Free format.
 export const CREDENTIAL_POOL_VARIABLES = Object.freeze({
   gemini: "GEMINI_API_KEYS_JSON",
   groq: "GROQ_API_KEYS_JSON",
@@ -31,12 +32,17 @@ export const CREDENTIAL_POOL_VARIABLES = Object.freeze({
   sensenova: "SENSENOVA_API_KEYS_JSON",
   zai: "ZAI_API_KEYS_JSON",
   aihubmix: "AIHUBMIX_API_KEYS_JSON",
+  tavily: "TAVILY_API_KEYS_JSON",
+  jina: "JINA_API_KEYS_JSON",
 });
 
 export const CREDENTIAL_SLOT_LIMITS = Object.freeze(
-  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [provider, provider === "requesty" ? 3 : 6]))
+  Object.fromEntries(Object.keys(CREDENTIAL_ROOTS).map(provider => [
+    provider,
+    provider === "requesty" ? 3 : provider === "tavily" ? 7 : provider === "jina" ? 1 : 6
+  ]))
 );
-export const MAX_CREDENTIAL_SLOTS = 6;
+export const MAX_CREDENTIAL_SLOTS = 7;
 
 export function maxCredentialSlots(provider) {
   return CREDENTIAL_SLOT_LIMITS[provider] || 0;
@@ -170,9 +176,10 @@ function retryHoldSeconds(status, headers) {
   return 60;
 }
 
-// Distribute healthy requests across configured credentials. A key-specific
-// auth/transient failure can try one alternate at most. Provider-wide 402/429
-// pauses the entire pool: keys are never rotated to evade billing or quotas.
+// Distribute healthy requests across configured credentials. HTTP 401 is
+// key-specific, so try every configured slot before declaring the pool invalid.
+// Provider-wide 402/429/5xx responses stop immediately: never rotate keys to
+// evade billing, quotas, rate limits, or upstream outages.
 export async function requestWithCredentialPool(env, provider, send, options = {}) {
   const slots = getCredentialSlots(env, provider);
   if (!slots.length) {
@@ -189,7 +196,7 @@ export async function requestWithCredentialPool(env, provider, send, options = {
   }
   // Keys are alternatives only for key-specific authentication failures.
   // Provider-wide limits/outages must not duplicate paid or quota-consuming calls.
-  const sweepAuthSlots = options.sweepAuthSlots === true;
+  const sweepAuthSlots = options.sweepAuthSlots !== false;
   const maxAttempts = Math.min(slots.length,sweepAuthSlots ? maxCredentialSlots(provider) : Math.min(2,Math.max(1,Number(options.maxAttempts)||2)));
   const startIndex = Number.isInteger(options.startIndex) ? ((options.startIndex % slots.length) + slots.length) % slots.length : Math.floor(Math.random() * slots.length);
   const retryable = new Set(options.retryStatuses || [401]);
