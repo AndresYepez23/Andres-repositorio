@@ -16,7 +16,7 @@
   <style>
     :root{color-scheme:dark;--bg:#0e121d;--panel:#161d2b;--line:rgba(178,202,233,.19);--text:#f0f4fb;--muted:#a4aec1;--accent:#91dbd5}
     *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,rgba(105,169,229,.13),transparent 33%),radial-gradient(circle at 4% 72%,rgba(149,110,211,.08),transparent 48%),var(--bg);color:var(--text);font:15px/1.75 system-ui,-apple-system,Segoe UI,sans-serif}
-    a{color:var(--accent)}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}nav a:hover{border-color:var(--accent);background:rgba(145,219,213,.08)}.shell{width:min(880px,calc(100% - 36px));margin:0 auto;padding:42px 0 70px}.back{display:inline-flex;gap:8px;align-items:center;text-decoration:none;font-size:13px;margin-bottom:26px}
+    a{color:var(--accent)}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.legal-language-options{text-align:right;margin:10px 0 20px}.legal-language-options a{display:inline-flex;padding:7px 12px;border:1px solid var(--line);border-radius:999px;text-decoration:none;font-size:12px;background:rgba(137,186,224,.06)}nav a:hover{border-color:var(--accent);background:rgba(145,219,213,.08)}.shell{width:min(880px,calc(100% - 36px));margin:0 auto;padding:42px 0 70px}.back{display:inline-flex;gap:8px;align-items:center;text-decoration:none;font-size:13px;margin-bottom:26px}
     header{padding:28px 30px;border:1px solid var(--line);border-radius:18px;background:radial-gradient(circle at 88% 20%,rgba(128,190,231,.15),transparent 55%),linear-gradient(130deg,#162438,#1d213b)}
     .eyebrow{font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700}h1{font-size:clamp(30px,5vw,44px);line-height:1.12;letter-spacing:-.045em;margin:10px 0}
     header p,.updated{color:var(--muted);font-size:13px}nav{display:flex;gap:9px;flex-wrap:wrap;margin:22px 0}nav a{padding:8px 12px;border:1px solid var(--line);border-radius:30px;text-decoration:none;font-size:12px;background:rgba(137,186,224,.06)}
@@ -32,9 +32,10 @@
   </style>
 </head>
 <body><main class="shell">
-  <a class="back" href="/en/">← Return to Prisma Space</a> <a class="back language-link" href="/privacy.html">Español</a>
+  <a class="back" href="/en/">← Return to Prisma Space</a>
   <header><div class="eyebrow">PRISMA SPACE · LEGAL INFORMATION</div><h1>Privacy and Terms of Use</h1><p>We explain what happens to your files, preferences, and requests when you use Prisma Space tools.</p><div class="updated">Last updated: November 9, 2026</div></header>
-  <nav aria-label="Secciones de esta página"><a href="#privacidad">Privacy</a><a href="#archivos">Files and Providers</a><a href="#condiciones">Terms of Use</a></nav>
+  <div class="legal-language-options"><a href="/privacy.html" hreflang="es" lang="es" aria-label="View this page in Spanish">View this page in Spanish</a></div>
+  <nav aria-label="Sections on this page"><a href="#privacidad">Privacy</a><a href="#archivos">Files and Providers</a><a href="#condiciones">Terms of Use</a></nav>
   <article id="privacidad"><h2>1. Privacy in Prisma Space</h2>
     <p>Prisma Space is designed to execute compatible operations directly in your browser. You do not need to create an account to explore the catalog or use tools that work locally.</p>
     <h3>Information stored on your device</h3>
