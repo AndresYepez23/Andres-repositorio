@@ -782,7 +782,8 @@ assert.doesNotMatch(chatSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded e
 assert.doesNotMatch(statusSource,/RADEON|QIANFAN|developer\.amd\.com/i,'Excluded endpoints must be absent from provider status');
 const modelCatalogSource = readFileSync(new URL('../functions/_lib/model-catalog.js', import.meta.url), 'utf8');
 for (const provider of ['kilo','requesty','sensenova','zai','aihubmix']) assert.match(modelCatalogSource, new RegExp(provider+':'));
-assert.equal(CHAT_MODELS.requesty.length,13);
+assert.equal(CHAT_MODELS.requesty.length,12,'Requesty chat catalog excludes the moderation-only Content Safety model');
+ assert.ok(!CHAT_MODELS.requesty.some(model=>/content.safety/i.test(model.id)),'Safety classifiers must not appear as conversational models');
 assert.equal(CHAT_MODELS.aihubmix.length,0,'AIHubMix catalogue is loaded from its live API, not a stale hard-coded list');
 assert.equal(CHAT_MODELS.amd,undefined,'AMD is removed from the model catalog');
 assert.ok(CHAT_MODELS.requesty.some(model=>model.id==='novita/ling-3.1-flash'));
