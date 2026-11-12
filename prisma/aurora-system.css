@@ -1020,3 +1020,67 @@ body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
   min-width:0;max-width:54%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  }
 }
+
+/* Restore the original single-line toolbar. The previous two-row grid was
+   the cause of the paperclip appearing above the other actions on iPhone. */
+@media(max-width:620px){
+ body.is-core-view .core-compose-surface{
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  align-items:center!important;gap:4px!important;
+  padding:5px 6px!important;min-height:54px!important;
+  width:100%;max-width:100%;box-sizing:border-box;
+ }
+ body.is-core-view .core-compose-surface .core-attach-button{
+  flex:0 0 32px!important;width:32px!important;min-width:32px!important;
+  height:38px!important;min-height:38px!important;
+  grid-column:auto!important;grid-row:auto!important;
+ }
+ body.is-core-view .core-compose-surface #core-input{
+  flex:1 1 0!important;width:0!important;min-width:0!important;
+  height:38px!important;min-height:38px!important;max-height:125px;
+  grid-column:auto!important;grid-row:auto!important;
+  padding:8px 3px!important;font-size:16px!important;
+  white-space:pre-wrap;overflow-wrap:break-word;
+ }
+ body.is-core-view .core-compose-surface .core-composer-footer{
+  display:flex!important;flex:0 0 auto!important;width:auto!important;
+  min-width:0!important;align-items:center!important;justify-content:flex-end!important;
+  grid-column:auto!important;grid-row:auto!important;
+  gap:3px!important;margin:0!important;padding:0!important;
+ }
+ body.is-core-view .core-compose-surface .core-composer-tools{
+  display:flex!important;flex:0 0 auto!important;gap:2px!important;
+ }
+ body.is-core-view .core-compose-surface .core-composer-tools>button,
+ body.is-core-view .core-compose-surface .core-model-settings>summary{
+  width:34px!important;min-width:34px!important;height:38px!important;min-height:38px!important;
+  padding:6px!important;
+ }
+ body.is-core-view .core-compose-surface #core-send{
+  flex:0 0 40px!important;width:40px!important;min-width:40px!important;
+  height:40px!important;min-height:40px!important;padding:7px!important;
+ }
+ body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
+  min-height:54px!important;
+ }
+}
+@media(max-width:375px){
+ body.is-core-view .core-compose-surface{gap:2px!important;padding:4px!important}
+ body.is-core-view .core-compose-surface .core-attach-button{flex-basis:28px!important;width:28px!important;min-width:28px!important}
+ body.is-core-view .core-compose-surface .core-composer-tools>button,
+ body.is-core-view .core-compose-surface .core-model-settings>summary{
+  width:30px!important;min-width:30px!important;padding:4px!important
+ }
+ body.is-core-view .core-compose-surface #core-send{flex-basis:36px!important;width:36px!important;min-width:36px!important}
+}
+
+
+body.is-core-view .core-creative-catalog{display:grid;gap:6px;min-width:0}
+body.is-core-view .core-creative-provider{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel-2)}
+body.is-core-view .core-creative-provider summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:650;color:var(--text)}
+body.is-core-view .core-creative-list{display:grid;gap:5px;padding:7px;border-top:1px solid var(--line)}
+body.is-core-view .core-creative-model{display:grid;gap:4px;padding:9px;border:1px solid var(--line);border-radius:9px;min-width:0}
+body.is-core-view .core-creative-model strong{font-size:11px;overflow-wrap:anywhere}
+body.is-core-view .core-creative-model small{font-size:10px;line-height:1.4}
+body.is-core-view .core-creative-state{color:var(--muted)}
+body.is-core-view .core-creative-model .core-image-activate{margin-top:3px}
