@@ -121,7 +121,7 @@ export function getCredentialStatus(env, provider) {
 export async function getCredentialFingerprint(provider, slot) {
   // Store only a short, non-reversible fingerprint. Never persist the secret.
   const bytes = new TextEncoder().encode(String(slot?.value || ""));
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const digest = await crypto.subtle.digest('SHA-256',bytes);
   return Array.from(new Uint8Array(digest).slice(0, 8), b => b.toString(16).padStart(2, "0")).join("");
 }
 
