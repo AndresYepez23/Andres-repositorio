@@ -165,6 +165,7 @@ assert.equal(authAttempts,2);
 const authSnapshot=await getCredentialHealthSnapshot(env2,['groq']);
 assert.equal(authSnapshot.groq.healthySlots,1);
 assert.equal(authSnapshot.groq.pausedSlots,1);
+assert.deepEqual(authSnapshot.groq.pausedSlotNumbers,[1],'Provider status must know exactly which key slots are on authentication cooldown');
 
 const db3=mockD1();
 const env3={PRISMA_RATE_DB:db3,GROQ_API_KEY:'groq-key-only'};
