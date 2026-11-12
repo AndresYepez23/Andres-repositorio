@@ -365,6 +365,26 @@ const credentialMetrics=await getCredentialMetricsSnapshot(env15,['groq']);
 assert.equal(credentialMetrics.groq[1].requestsToday,2,'Successful requests are attributed to the exact credential slot');
 assert.equal(credentialMetrics.groq[1].tokensToday,10,'Token usage is attributed to the exact credential slot');
 
+const dbHeaderMetrics=mockD1();
+const envHeaderMetrics={PRISMA_RATE_DB:dbHeaderMetrics,ZAI_API_KEY:'zai-rate-a',ZAI_API_KEY_2:'zai-rate-b'};
+const headerCalls=[];
+const firstHeaderResponse=await requestWithCredentialPool(envHeaderMetrics,'zai',async key=>{
+  headerCalls.push(key);
+  return new Response('ok',{status:200,headers:{
+    'X-RateLimit-Limit-Requests':'100',
+    'X-RateLimit-Remaining-Requests':'0',
+    'X-RateLimit-Reset-Requests':String(Math.floor(Date.now()/1000)+60)
+  }});
+},{sweepAuthSlots:true,sweepRateLimitSlots:true,startIndex:0});
+assert.equal(firstHeaderResponse.status,200);
+const secondHeaderResponse=await requestWithCredentialPool(envHeaderMetrics,'zai',async key=>{
+  headerCalls.push(key);
+  return new Response('ok',{status:200});
+},{sweepAuthSlots:true,sweepRateLimitSlots:true,startIndex:0});
+assert.equal(secondHeaderResponse.status,200);
+assert.deepEqual(headerCalls,['zai-rate-a','zai-rate-b'],
+  'A key with zero remaining requests is skipped until its provider-reported reset time');
+
 const dbRate=mockD1();
 const envRate={PRISMA_RATE_DB:dbRate,GROQ_API_KEY:'groq-org-a',GROQ_API_KEY_2:'groq-org-b',GROQ_API_KEY_3:'groq-org-c'};
 let sharedRateAttempts=0;
