@@ -385,6 +385,19 @@ assert.equal(secondHeaderResponse.status,200);
 assert.deepEqual(headerCalls,['zai-rate-a','zai-rate-b'],
   'A key with zero remaining requests is skipped until its provider-reported reset time');
 
+const dbOutage=mockD1();
+const envOutage={PRISMA_RATE_DB:dbOutage,ZAI_API_KEY:'zai-outage-a',ZAI_API_KEY_2:'zai-outage-b'};
+await assert.rejects(
+  requestWithCredentialPool(envOutage,'zai',async()=>{throw new Error('upstream network unavailable');},{sweepAuthSlots:true,sweepQuotaSlots:true,sweepRateLimitSlots:true,startIndex:0}),
+  error=>error.code==='PROVIDER_UNAVAILABLE'
+);
+let outageRetryAttempts=0;
+await assert.rejects(
+  requestWithCredentialPool(envOutage,'zai',async()=>{outageRetryAttempts++;return new Response('ok',{status:200});},{sweepAuthSlots:true,sweepQuotaSlots:true,sweepRateLimitSlots:true,startIndex:0}),
+  error=>error.code==='PROVIDER_COOLDOWN'
+);
+assert.equal(outageRetryAttempts,0,'Independent account rotation must never bypass a provider-wide network circuit breaker');
+
 const dbRate=mockD1();
 const envRate={PRISMA_RATE_DB:dbRate,GROQ_API_KEY:'groq-org-a',GROQ_API_KEY_2:'groq-org-b',GROQ_API_KEY_3:'groq-org-c'};
 let sharedRateAttempts=0;
