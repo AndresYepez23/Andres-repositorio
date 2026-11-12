@@ -83,6 +83,19 @@ export function buildConversationContext(history = [], query = '', options = {})
   // A short follow-up such as "¿y si...?" must still have the image/document
   // exchange available even when several questions have passed since upload.
   if(followup){
+    // Keep the most recent task anchor and its first answer even if many
+    // follow-up turns have pushed it outside the ordinary recent window.
+    const anchorIndex=entries.map((entry,index)=>({entry,index})).filter(({entry})=>{
+      if(entry.role!=='user')return false;
+      const text=fold(entry.content).trim();
+      if(text.length<48&&/^(?:hola|buenas|gracias|ok|listo|si|no|dale|perfecto|vale|de acuerdo)(?:\b|$)/.test(text))return false;
+      return !isCoreFollowUp(text);
+    }).at(-1)?.index??-1;
+    if(anchorIndex>=0){
+      selected.add(anchorIndex);
+      const anchorAnswer=entries.findIndex((entry,index)=>index>anchorIndex&&entry.role==='assistant');
+      if(anchorAnswer>=0)selected.add(anchorAnswer);
+    }
     const fileTurns=entries.map((entry,index)=>({entry,index}))
       .filter(({entry})=>entry.role==='user'&&entry.files.length)
       .slice(-2);
@@ -124,7 +137,7 @@ export function chooseCoreContextOptions(task='conversation',text=''){
  const revision=/\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\b/.test(q)||isCoreFollowUp(q);
  const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\b/.test(q)&&!isCoreFollowUp(q);
  if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
-  return {maxMessages:13,maxChars:14500,newTask:false};
+  return {maxMessages:15,maxChars:16000,newTask:false};
  if(newTask)return {maxMessages:4,maxChars:4500,newTask:true};
  if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500,newTask:false};
  if(['coding','reasoning'].includes(task))return {maxMessages:11,maxChars:11500,newTask:false};
