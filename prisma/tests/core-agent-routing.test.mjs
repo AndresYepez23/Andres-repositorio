@@ -510,7 +510,7 @@ assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra
 assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableAll})[0],'kilo');
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
 assert.equal(ROUTE_ORDER.general.includes('kilo'),true,'Kilo may be used as safe automatic fallback with vetted non-NVIDIA models');
-assert.equal(ROUTE_ORDER.general.includes('aihubmix'),true,'AIHubMix is a candidate but its trial must be gated by the runtime flag');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),true,'AIHubMix remains a reserve candidate when its live quota is available');
 assert.equal(CHAT_MODELS.baidu,undefined,'Excluded providers must not be registered');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
@@ -791,7 +791,7 @@ const srt=runLocalCreatorTool('subtitle-srt-local',{text:'Hola Prisma\nBienvenid
 assert.match(srt.text,/00:00:00,000 --> 00:00:03,000/);
 assert.equal(srt.filename,'prisma-subtitulos.srt');
 const autoRouteEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
-assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
+assert.match(autoRouteEngineSource,/remaining trial\/daily capacity/,'AIHubMix may use its remaining free trial quota as a late automatic fallback.');
 assert.match(autoRouteEngineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
 
 // Additional browser-native utilities and specialist routing.
