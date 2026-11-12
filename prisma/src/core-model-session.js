@@ -58,7 +58,8 @@ export function beginConversationModelTurn(input, now = Date.now()) {
     fallbackFrom: "",
     fallbackReason: "",
     lastUserAt: now,
-    selectedAt: now
+    selectedAt: now,
+    usedAt: 0
   };
 }
 
