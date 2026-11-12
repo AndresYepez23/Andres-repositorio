@@ -1,5 +1,3 @@
-import { checkLimits, refundFailedProviderUsage } from "../../_lib/limits.js";
-
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -40,13 +38,6 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "La consulta debe contener entre 4 y 1.000 caracteres." }, 400);
   }
 
-  const limitError = await checkLimits(env, request, "tavily");
-  if (limitError) return json({
-    error: limitError.error,
-    code: limitError.code,
-    retryAfter: limitError.retryAfter
-  }, limitError.status);
-
   let response;
   try {
     response = await fetch("https://api.tavily.com/search", {
@@ -66,7 +57,6 @@ export async function onRequestPost({ request, env }) {
       signal: AbortSignal.timeout(15000)
     });
   } catch (error) {
-    await refundFailedProviderUsage(env, "tavily");
     console.error("Tavily search network error", String(error?.message || error).slice(0, 180));
     return json({ error: "Tavily no respondió. Prisma puede continuar con sus motores habituales." }, 502);
   }
