@@ -1,10 +1,10 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { tavilyKeys } from "../research/search.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
-import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
+import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, getCredentialMetricsSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
-import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
+import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getProviderDailyCapacity, getProviderMinuteCapacity, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
   "Cache-Control": "no-store",
@@ -30,12 +30,39 @@ export async function onRequestGet({ env }) {
     [provider, getCredentialSlots(env, provider).length]
   ));
   const credentialHealth=await getCredentialHealthSnapshot(env,poolProviders);
+  const credentialMetrics=await getCredentialMetricsSnapshot(env,poolProviders);
+  const quotaHealth=Object.fromEntries(poolProviders.map(provider=>{
+    const slots=getCredentialSlots(env,provider);
+    const health=credentialHealth[provider]||{};
+    const pausedNumbers=new Set(health.pausedSlotNumbers||[]);
+    let metricRetryAt=null;
+    const nowSeconds=Math.floor(Date.now()/1000);
+    for(const slot of slots){
+      const metric=credentialMetrics[provider]?.[slot.number]||{};
+      const balancePaused=metric.balanceRemainingUsd!=null&&Number(metric.balanceLimitUsd)>0&&Number(metric.balanceRemainingUsd)<=0;
+      const requestsPaused=metric.remainingRequests!=null&&Number(metric.remainingRequests)<=0&&Number(metric.requestsResetAt)>nowSeconds;
+      const tokensPaused=metric.remainingTokens!=null&&Number(metric.remainingTokens)<=0&&Number(metric.tokensResetAt)>nowSeconds;
+      if(balancePaused||requestsPaused||tokensPaused){
+        pausedNumbers.add(slot.number);
+        const resetCandidates=[
+          balancePaused?(Number(metric.balanceResetAt)>nowSeconds?Number(metric.balanceResetAt):nowSeconds+21600):0,
+          requestsPaused?Number(metric.requestsResetAt)||0:0,
+          tokensPaused?Number(metric.tokensResetAt)||0:0
+        ].filter(Boolean);
+        const slotRetryAt=resetCandidates.length?Math.max(...resetCandidates):null;
+        if(slotRetryAt&&(!metricRetryAt||slotRetryAt<metricRetryAt))metricRetryAt=slotRetryAt;
+      }
+    }
+    const pausedSlots=pausedNumbers.size;
+    const retryAt=[Number(health.retryAt)||0,Number(metricRetryAt)||0].filter(Boolean).sort((a,b)=>a-b)[0]||null;
+    return [provider,{configuredSlots:slots.length,healthySlots:Math.max(0,slots.length-pausedSlots),pausedSlots,retryAt,pausedSlotNumbers:[...pausedNumbers]}];
+  }));
   const usageEntries = await Promise.all(poolProviders
     .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
-    .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider), getProviderMinuteLimit(provider))]));
+    .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyCapacity(env, provider), getProviderMinuteCapacity(env, provider))]));
   const usage = Object.fromEntries(usageEntries);
   if (limited && env.AI?.run) {
-    usage.cloudflare = await getProviderUsage(env, "cloudflare", getProviderDailyLimit(env, "cloudflare"));
+    usage.cloudflare = await getProviderUsage(env, "cloudflare", getProviderDailyCapacity(env, "cloudflare"), getProviderMinuteCapacity(env, "cloudflare"));
   }
   // Image generation has a distinct daily ceiling. A chat-capable provider
   // may have no image capacity even while its text models are available.
@@ -53,12 +80,12 @@ export async function onRequestGet({ env }) {
     const minute = usage[provider]?.minute;
     return (!daily || daily.remaining > 0) && (!minute || minute.remaining > 0);
   };
-  const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10) : null;
+  const aihubmixLifetime = limited && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1" ? await getProviderLifetimeUsage(env,"aihubmix",10*Math.max(1,configured.aihubmix)) : null;
   const kiloModels = await getKiloFreeModels(env);
   const aihubmixModels = configured.aihubmix > 0 ? await getAihubmixFreeModels(env) : [];
   const available = Object.fromEntries(poolProviders.map(provider => {
     const anonymousKilo=provider==="kilo"&&configured[provider]===0;
-    const healthyCredentials=anonymousKilo||Number(credentialHealth[provider]?.healthySlots||0)>0;
+    const healthyCredentials=anonymousKilo||Number(quotaHealth[provider]?.healthySlots||0)>0;
     return [provider, limited && (configured[provider] > 0 || provider === "kilo") && !holds[provider] &&
       (provider === "openrouter" || sharedReady) && healthyCredentials && dailyAvailable(provider) &&
       !(provider === "aihubmix" && aihubmixLifetime?.remaining === 0) &&
@@ -80,7 +107,7 @@ export async function onRequestGet({ env }) {
   const cloudflareReady = limited && sharedReady && Boolean(env.AI?.run) && !holds.cloudflare && dailyAvailable("cloudflare");
 
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
-    const hold=holds[provider],info=getCredentialStatus(env,provider),health=credentialHealth[provider]||{};
+    const hold=holds[provider],info=getCredentialStatus(env,provider),health=quotaHealth[provider]||{};
     return [provider,{...info,healthySlots:health.healthySlots??0,pausedSlots:health.pausedSlots??0,
       credentialRetryAt:health.retryAt??null,dailyUsage: usage[provider]?.daily || null, minuteUsage: usage[provider]?.minute || null,
       providerPaused:Boolean(hold),pauseState:hold?.state||null,pauseReason:hold?.reason||null,retryAt:hold?.valid_until||health.retryAt||null}];
@@ -92,12 +119,12 @@ export async function onRequestGet({ env }) {
     else if (credentialSlots[provider].poolConfigured && !credentialSlots[provider].poolValid) warnings[provider] = "El secreto " + credentialSlots[provider].poolVariable + " debe contener un arreglo JSON válido de hasta " + credentialSlots[provider].max + " claves de texto.";
     else if (provider === "kilo" && !configured[provider] && kiloModels.length) warnings[provider] = "Acceso gratuito anónimo activo; KILO_API_KEYS_JSON es opcional y admite hasta seis claves. Modelos gratuitos verificados en vivo.";
     else if (provider === "kilo" && !kiloModels.length) warnings[provider] = "No hay modelos de chat con precio cero disponibles en el catálogo Kilo en este momento.";
-    else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
+    else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotó el cupo de prueba de las cuentas configuradas (10 llamadas por cuenta). Una recarga mínima de USD 1 activa cuotas diarias.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
-    else if (configured[provider] > 0 && credentialHealth[provider]?.healthySlots===0)
-      warnings[provider] = "Todas las claves de "+provider+" están temporalmente pausadas tras respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
-    else if (configured[provider] > 0 && credentialHealth[provider]?.pausedSlots>0)
-      warnings[provider] = credentialHealth[provider].pausedSlots+" de "+configured[provider]+" claves de "+provider+" están temporalmente pausadas; las demás siguen disponibles.";
+    else if (configured[provider] > 0 && quotaHealth[provider]?.healthySlots===0)
+      warnings[provider] = "Todas las claves de "+provider+" están temporalmente no disponibles por autenticación (HTTP 401/403), saldo o límites del proveedor. Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
+    else if (configured[provider] > 0 && quotaHealth[provider]?.pausedSlots>0)
+      warnings[provider] = quotaHealth[provider].pausedSlots+" de "+configured[provider]+" claves de "+provider+" están temporalmente pausadas por saldo, cuotas o autenticación; las demás siguen disponibles.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
     else if (!limited) warnings[provider] = "El control de cuotas D1 no está disponible.";
     else if (!sharedReady && provider !== "openrouter") warnings[provider] = "Se agotó el presupuesto global de modelos principales; OpenRouter puede seguir disponible como respaldo.";
@@ -116,7 +143,7 @@ export async function onRequestGet({ env }) {
   modelCatalog.chat.aihubmix = aihubmixModels;
 
   const providerHealth=Object.fromEntries(poolProviders.map(provider => {
-    const h=credentialHealth[provider]||{};
+    const h=quotaHealth[provider]||{};
     const state=holds[provider]?.state||(configured[provider]>0&&h.healthySlots===0?"credentials_paused":usage[provider]?.daily?.remaining===0?"daily_limit":usage[provider]?.minute?.remaining===0?"minute_limit":provider==="kilo"&&available.kilo&&!configured[provider]?"anonymous":configured[provider]?"configured":"missing");
     const reason=holds[provider]?.reason||(configured[provider]>0&&h.healthySlots===0?warnings[provider]:usage[provider]?.daily?.remaining===0||usage[provider]?.minute?.remaining===0?warnings[provider]:null);
     return [provider,{configured:configured[provider],max:credentialSlots[provider].max,healthySlots:h.healthySlots??0,pausedSlots:h.pausedSlots??0,

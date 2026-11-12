@@ -22,7 +22,8 @@ export async function getAihubmixFreeModels(env, { force = false } = {}) {
       requestWithCredentialPool(env, "aihubmix", key =>
         fetch("https://aihubmix.com/v1/models", {
           headers: { Authorization: "Bearer " + key, Accept: "application/json" },
-        })
+        }),
+        { countRequest: false, sweepAuthSlots: true, sweepQuotaSlots: true, retryStatuses: [401,403] }
       ),
       fetch("https://aihubmix.com/call/free_quota_config", {
         headers: { Accept: "application/json" },

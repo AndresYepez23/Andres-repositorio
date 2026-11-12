@@ -113,7 +113,7 @@ const DEFAULT_MODELS = {
   aihubmix:{fast:"coding-glm-5.3-flash-free",balanced:"coding-glm-5.3-free",smart:"coding-kimi-k3-free"},
 };
 
-export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},now=Date.now()}={}) {
+export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},usage={},now=Date.now()}={}) {
   const order=[...new Set(preferred==="auto"?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])].filter(name=>available(name));
   if(preferred!=="auto")return order;
   return order.map((name,index)=>{
@@ -123,8 +123,17 @@ export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_O
     const successes=recent?Math.min(4,Math.max(0,Number(record.successes)||0)):0;
     const averageMs=recent?Math.max(0,Number(record.averageMs)||0):0;
     const latency=averageMs?Math.min(18,averageMs/1800):0;
-    const reliability=failures*6-Math.min(6,successes*1.5);
-    return {name,score:index*12+latency+reliability+(cooling?1000:0)+(name==='openrouter'?10000:0)};
+    const reliability=failures*6-Math.min(2,successes*0.5);
+    const daily=usage[name]?.daily||usage[name]||{};
+    const used=Math.max(0,Number(daily.used)||0),limit=Math.max(0,Number(daily.limit)||0);
+    // Weighted fair queueing: route order expresses task fit and provider priority;
+    // shared daily use plus this session's recent successes prevent one healthy
+    // provider from monopolizing every request while others stay idle.
+    const utilization=limit>0?Math.max(0,Math.min(1,used/limit)):0;
+    const priorityWeight=1/(1+index*0.35);
+    const loadPenalty=(used+successes*2)/priorityWeight;
+    const quotaPenalty=utilization*12;
+    return {name,score:loadPenalty+quotaPenalty+latency+reliability+index*0.05+(cooling?1000:0)+(name==='openrouter'?10000:0)};
   }).sort((a,b)=>a.score-b.score).map(item=>item.name);
 }
 

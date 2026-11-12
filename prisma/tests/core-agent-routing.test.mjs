@@ -434,7 +434,7 @@ const networkSense=await requestWithCredentialPool(senseKeys,'sensenova',async()
 assert.equal(networkSense.status,502);
 assert.equal(networkAttempts,1,'Provider-wide network outages must not retry through alternate credentials');
 const credentialPoolSource=readFileSync(new URL('../functions/_lib/credential-pool.js',import.meta.url),'utf8');
-assert.match(credentialPoolSource,/crypto\.subtle\.digest\('SHA-256',bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
+assert.match(credentialPoolSource,/crypto\.subtle\.digest\(['"]SHA-256['"],\s*bytes\)/,'Pauses should identify credentials by a nonreversible key fingerprint');
 assert.match(credentialPoolSource,/await credentialHealthKey\(provider, slot\)/,'A replaced secret must not inherit its prior slot cooldown');
 assert.match(credentialPoolSource,/Esta credencial de .* fue rechazada/,'Provider health should identify per-credential authentication errors');
 assert.match(credentialPoolSource,/response.status === 401 \|\| response.status === 403/,'Only explicitly retryable authentication statuses should put an individual credential on authentication cooldown');
@@ -455,8 +455,8 @@ const rejectedSenseKeys={
  }
 };
 const providerStatusSource=readFileSync(new URL('../functions/api/providers/status.js',import.meta.url),'utf8');
-assert.match(providerStatusSource,/credentialHealth\[provider\]\?\.healthySlots/,'Prisma must not route to a provider when all its keys are on auth cooldown');
-assert.match(providerStatusSource,/HTTP 401\/403/,'Provider panel must explain authentication rejection clearly');
+assert.match(providerStatusSource,/quotaHealth\[provider\]\?\.healthySlots/,'Prisma must not route to a provider whose keys are all paused by authentication, quota or balance');
+assert.match(providerStatusSource,/autenticación.*saldo o límites/,'Provider panel explains per-key authentication, balance and quota pauses');
 
 
 const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
@@ -464,7 +464,7 @@ assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"||provid
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.ai\/v1\/chat\/completions"/,'SenseNova international keys must use the international TokenPlan host');
 assert.doesNotMatch(compatibleChatSource,/token\.sensenova\.cn|token\.sensetime\.com/,'SenseNova must not regress to China-only or incompatible legacy endpoints');
 assert.match(compatibleChatSource,/zai:\{url:"https:\/\/api\.z\.ai\/api\/paas\/v4\/chat\/completions",model:"glm-4\.7-flash"\}/,'Z.AI must keep the general OpenAI-compatible endpoint and GLM-4.7-Flash model');
-assert.match(compatibleChatSource,/retryStatuses:provider==="requesty"\|\|provider==="zai"\?\[401,403\]:\[401\]/,'Z.AI and Requesty must rotate independent accounts after HTTP 403');
+assert.match(compatibleChatSource,/retryStatuses:.*(?:requesty|zai).*\[401,403\]/,'Z.AI and Requesty must rotate independent accounts after HTTP 403');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
 
 // Prisma Core independent intelligence must work without AI models or Mini.
@@ -497,6 +497,10 @@ const cooled=rankProviders({task:'planner',available:availableAll,now,health:{
  'groq:planner':{at:now,failures:3,coolingUntil:now+60000,averageMs:22000}
 }});
 assert.equal(cooled[0],'cloudflare','a cooled provider must move behind healthy alternatives');
+const sessionBalanced=rankProviders({task:'general',available:availableAll,now,health:{
+  'groq:general':{at:now,successes:1,averageMs:500}
+}});
+assert.equal(sessionBalanced[0],'cloudflare','Recent successful use rotates the next request to another compatible provider even before the shared usage cache refreshes');
 assert.equal(cooled.at(-1),'openrouter','OpenRouter stays the final independent reserve');
 assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
@@ -510,7 +514,7 @@ assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra
 assert.equal(rankProviders({preferred:'kilo',task:'general',available:availableAll})[0],'kilo');
 assert.equal(rankProviders({preferred:'aihubmix',task:'general',available:availableAll})[0],'aihubmix');
 assert.equal(ROUTE_ORDER.general.includes('kilo'),true,'Kilo may be used as safe automatic fallback with vetted non-NVIDIA models');
-assert.equal(ROUTE_ORDER.general.includes('aihubmix'),true,'AIHubMix is a candidate but its trial must be gated by the runtime flag');
+assert.equal(ROUTE_ORDER.general.includes('aihubmix'),true,'AIHubMix remains a reserve candidate when its live quota is available');
 assert.equal(CHAT_MODELS.baidu,undefined,'Excluded providers must not be registered');
 assert.deepEqual(rankProviders({task:'planner',available:name=>name==='groq'||name==='openrouter'}),['groq','openrouter']);
 
@@ -707,8 +711,8 @@ assert.match(swSource, /cache:"no-store"/);
 
 
 
-// The app-wide daily ceiling grows with active provider families, not raw key
-// count. Extra keys never multiply a project's actual provider quota.
+// The shared budget is bounded for the application; individually authorized
+// account pools receive separate per-credential accounting and upstream limits.
 const capacityEnv = {
  GEMINI_API_KEY:'g1',
  GROQ_API_KEY:'q1',
@@ -721,17 +725,17 @@ const capacityWithMoreKeys = {
  GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GROQ_API_KEY_2:'q2', GROQ_API_KEY_3:'q3', GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5',
 };
-assert.equal(getProviderDailyLimit(capacityEnv,'groq'),80);
+assert.equal(getProviderDailyLimit(capacityEnv,'groq'),5000);
 assert.equal(getSharedDailyBudget(capacityEnv),getSharedDailyBudget(capacityWithMoreKeys));
-assert.equal(getSharedDailyBudget(capacityEnv),200);
+assert.equal(getSharedDailyBudget(capacityEnv),5000);
 assert.equal(getVisitorDailyLimit(capacityEnv),90);
 assert.equal(getProviderDailyLimit({...capacityEnv,PRISMA_GROQ_DAILY_LIMIT:'18'},'groq'),18);
-assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),15);
+assert.equal(getProviderDailyLimit({AIHUBMIX_DAILY_QUOTA_ACTIVE:'1'},'aihubmix'),100);
 assert.equal(getProviderMinuteLimit('aihubmix'),10);
-assert.equal(getProviderMinuteLimit('requesty'),10);
-assert.equal(getProviderMinuteLimit('sensenova'),5);
-assert.equal(getProviderMinuteLimit('zai'),3);
-assert.equal(getProviderMinuteLimit('kilo'),3);
+assert.equal(getProviderMinuteLimit('requesty'),null);
+assert.equal(getProviderMinuteLimit('sensenova'),null);
+assert.equal(getProviderMinuteLimit('zai'),null);
+assert.equal(getProviderMinuteLimit('kilo'),null);
 assert.equal(getSharedDailyBudget({...capacityEnv,PRISMA_TOTAL_DAILY_LIMIT:'60'}),60);
 assert.equal(getVisitorDailyLimit({...capacityEnv,PRISMA_VISITOR_DAILY_LIMIT:'42'}),42);
 const statusSource = readFileSync(new URL('../functions/api/providers/status.js', import.meta.url), 'utf8');
@@ -791,7 +795,7 @@ const srt=runLocalCreatorTool('subtitle-srt-local',{text:'Hola Prisma\nBienvenid
 assert.match(srt.text,/00:00:00,000 --> 00:00:03,000/);
 assert.equal(srt.filename,'prisma-subtitulos.srt');
 const autoRouteEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
-assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'Automatic AIHubMix needs confirmed top-up.');
+assert.match(autoRouteEngineSource,/aihubmixDailyQuotaActive/,'AIHubMix automatic routing requires confirmed recurring quota; lifetime trial calls remain protected.');
 assert.match(autoRouteEngineSource,/startsWith\('nvidia\/'\)/,'NVIDIA trial endpoints must not be auto-selected.');
 
 // Additional browser-native utilities and specialist routing.

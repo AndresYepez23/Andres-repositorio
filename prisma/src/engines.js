@@ -796,8 +796,8 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   sessionStorage.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
  }catch{}
 }
-function orderModelsForTask(preferred,task,baseOrder,available,health={}){
- return rankProviders({preferred,task,baseOrder,available,health,now:Date.now()});
+function orderModelsForTask(preferred,task,baseOrder,available,health={},usage={}){
+ return rankProviders({preferred,task,baseOrder,available,health,usage,now:Date.now()});
 }
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
@@ -856,8 +856,9 @@ async function generateText(p,cb){
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
     preferred!=='auto'&&String(p.polliToken||'').trim());
   if(!p.centralProviders?.[provider])return false;
-  // Preserve AIHubMix's ten lifetime trial calls unless the owner confirms the
-  // provider's one-time top-up. Manual selection still allows deliberate tests.
+  // Trial lifetime calls are scarce and must not be spent automatically.
+  // Eligible AIHubMix accounts enter automatic routing only after the owner
+  // confirms daily quota activation; manual choice still permits testing.
   if(provider==='aihubmix'&&preferred==='auto')return Boolean(p.centralFeatures?.aihubmixDailyQuotaActive);
   // Some NVIDIA trial endpoints may log prompts: never send user text there
   // automatically. A user may select those manually after reading the warning.
@@ -865,7 +866,7 @@ async function generateText(p,cb){
    p.centralModelCatalog?.chat?.kilo?.some(model=>!String(model.id||'').toLowerCase().startsWith('nvidia/'))
   );
   return true;
- },routeMemory);
+ },routeMemory,p.centralProviderUsage||{});
  // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
  const ordered=rankedCandidates.filter(provider=>provider!=='openrouter');
  if(rankedCandidates.includes('openrouter'))ordered.push('openrouter');

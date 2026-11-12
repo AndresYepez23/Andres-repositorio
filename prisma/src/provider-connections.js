@@ -93,6 +93,7 @@ export async function getCentralProviderStatus({ force = false } = {}) {
     providers: { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false },
     models: {},
     modelCatalog: {chat:{},image:{},audio:{}},
+    usage: {},
     warnings: {},
     configured: {},
     credentialSlots: {},
