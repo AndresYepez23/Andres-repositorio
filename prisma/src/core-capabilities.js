@@ -81,7 +81,7 @@ const ENGLISH_WORDS = [
  [/\bpages\b/g,'paginas'],[/\bpage\b/g,'pagina'],
  [/\bbackgrounds\b/g,'fondos'],[/\bbackground\b/g,'fondo'],
  [/\bmetadata\b/g,'metadatos'],[/\bwatermark\b/g,'marca de agua'],
- [/\bwords\b/g,'palabras'],[/\bword\b/g,'palabra'],
+ [/\bwords\b/g,'palabras'],
  [/\blines\b/g,'lineas'],[/\bline\b/g,'linea'],
  [/\bemails\b/g,'correos'],[/\bemail\b/g,'correo'],
  [/\burls\b/g,'urls'],[/\burl\b/g,'url'],[/\blinks\b/g,'enlaces'],[/\blink\b/g,'enlace'],
