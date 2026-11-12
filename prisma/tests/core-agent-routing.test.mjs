@@ -464,6 +464,7 @@ assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"||provid
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.ai\/v1\/chat\/completions"/,'SenseNova international keys must use the international TokenPlan host');
 assert.doesNotMatch(compatibleChatSource,/token\.sensenova\.cn|token\.sensetime\.com/,'SenseNova must not regress to China-only or incompatible legacy endpoints');
 assert.match(compatibleChatSource,/zai:\{url:"https:\/\/api\.z\.ai\/api\/paas\/v4\/chat\/completions",model:"glm-4\.5-flash"\}/,'Z.AI defaults to the live-validated GLM-4.5 Flash model while smart tier can still select GLM-4.7');
+assert.match(compatibleChatSource,/env\.GEMINI_TEXT_MODEL \|\| "gemini-3\.5-flash-lite"/,'Gemini direct requests default to the live-validated Flash Lite model');
 assert.match(compatibleChatSource,/retryStatuses:.*(?:requesty|zai).*\[401,403\]/,'Z.AI and Requesty must rotate independent accounts after HTTP 403');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
 
