@@ -887,7 +887,9 @@ function setBusy(value){
   const sendLabel=$('#core-send-label');if(sendLabel)sendLabel.textContent=value?'Trabajando…':'Enviar';
   $('#core-composer').setAttribute('aria-busy',String(value));
   const cancelButton=$('#core-cancel');if(cancelButton){cancelButton.classList.toggle('hidden',!(value&&executionActive));cancelButton.disabled=false;}
-  if(value)setProgress(.02,'Preparando…');
+  // A conversational turn already has an inline thinking indicator. Keep the
+  // separate progress rail for real tool executions only, never for LLM latency.
+  if(value&&executionActive)setProgress(.02,'Preparando herramienta…');
   else $('#core-progress')?.classList.add('hidden');
 }
 const attachmentPreviewUrls=new Map();
