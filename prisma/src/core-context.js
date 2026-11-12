@@ -18,8 +18,8 @@ function keywords(value) {
 export function isCoreFollowUp(value=''){
  const q=fold(value).replace(/[¿?¡!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
  if(!q)return false;
- if(/^(?:y|pero|entonces|eso|esa|ese|esta|este|estos|estas|ahi|aqui|por que|como asi|y por que|y como|y eso|y esa|y esta|y este|y la otra|y los otros|la anterior|el anterior|el mismo|la misma)(?:\s|$)/.test(q))return true;
- return /\b(?:lo anterior|la respuesta anterior|lo que dijiste|de eso|de esa|de ese|de aquello|explicalo mejor|amplia eso|continua con eso|y las demas|y los demas|ese resultado|tu respuesta|lo ultimo|la misma idea|esos datos|esos archivos|esa foto|esa imagen|la imagen anterior|la foto anterior|ese documento|ese archivo|otra version|el mismo archivo|la misma foto|la misma imagen|a partir de eso|con esa imagen|con esa foto)\b/.test(q);
+ if(/^(?:y|pero|entonces|eso|esa|ese|esta|este|estos|estas|ahi|aqui|por que|como asi|que tal si|y por que|y como|y eso|y esa|y esta|y este|y la otra|y los otros|la anterior|el anterior|el mismo|la misma)(?:\s|$)/.test(q))return true;
+ return /\b(?:lo anterior|la respuesta anterior|lo que dijiste|de eso|de esa|de ese|de aquello|explicalo mejor|amplia eso|continua con eso|y las demas|y los demas|ese resultado|tu respuesta|lo ultimo|la misma idea|esos datos|esos archivos|esa foto|esa imagen|la imagen anterior|la foto anterior|ese documento|ese archivo|otra version|el mismo archivo|la misma foto|la misma imagen|a partir de eso|con esa imagen|con esa foto|mejorala|ampliala|cambiala|hazla|hazlo|puedes hacerla|puedes cambiarla|puedes mejorarlo|puedes ampliarlo)\b/.test(q);
 }
 
 export function isCoreNewTask(value=''){
