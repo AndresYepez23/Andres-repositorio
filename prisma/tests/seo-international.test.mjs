@@ -39,6 +39,13 @@ test('English catalogue has a one-to-one mapping to every Spanish tool page',()=
   assert.equal(mappedHubs.size,source.length);
   for(const item of source)assert.ok(mappedHubs.has(item.slug),key+' missing '+item.slug);
  }
+ for(const guide of hubs.guides){
+  assert.notEqual(guide.englishSlug,guide.sourceSlug,'guide slug must be English: '+guide.sourceSlug);
+  const visible=[guide.title,guide.h1,guide.description,guide.primaryQuery,guide.intro,guide.note,
+   ...(guide.sections||[]).flatMap(section=>[section.heading,...section.paragraphs]),
+   ...(guide.steps||[]).flatMap(step=>[step.title,step.body]),...(guide.faqs||[]).flat()].join(' ');
+  assert.ok(!/[áéíóú¿¡]/i.test(visible),'guide contains untranslated Spanish content: '+guide.sourceSlug);
+ }
 });
 
 test('all English tool landings are crawlable, canonical, translated and connected',async()=>{
@@ -111,6 +118,12 @@ test('English category, solution and guide hubs have content and working cross-l
 test('English app shell and legal page use English metadata and provide a Spanish route',async()=>{
  const app=await readOutput('en/index.html');
  assert.match(app,/<html lang="en"/);
+ assert.ok(app.includes('manifest.en.webmanifest'));
+ const manifest=JSON.parse(await readOutput('manifest.en.webmanifest'));
+ assert.equal(manifest.lang,'en');
+ assert.equal(manifest.start_url,'/en/?source=pwa');
+ assert.equal(manifest.id,'/en/');
+ assert.match(manifest.name,/Your AI workspace/);
  assert.match(app,/<meta name="prisma-default-language" content="en">/);
  assert.match(app,/<title>Prisma Space — Create, convert and explore<\/title>/);
  assert.match(app,/<link rel="canonical" href="https:\/\/prismaspace\.space\/en\/">/);
