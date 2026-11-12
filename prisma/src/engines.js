@@ -850,7 +850,7 @@ async function generateText(p,cb){
  const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
  const errors=[],attempted=[],failures=[];
- let lastLimitError=null;
+ let lastLimitError=null,lastProviderFailure='';
  const routeMemory=getRouteMemory();
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>{
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
@@ -874,8 +874,8 @@ async function generateText(p,cb){
   preferred,allowFallback:p.allowFallback===true,task
  });
  const startedAt=Date.now();
- const totalDeadline=task==='planner'?48000:task==='songwriting'?78000:65000;
- const individualDeadline=task==='planner'?11000:task==='songwriting'?22000:16000;
+ const totalDeadline=task==='planner'?65000:task==='songwriting'?78000:65000;
+ const individualDeadline=preferred==='sensenova'?48000:task==='planner'?11000:task==='songwriting'?22000:16000;
  const modelFor=provider=>{
   let catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(provider==='kilo'&&preferred==='auto')catalog=catalog.filter(model=>
@@ -908,8 +908,22 @@ async function generateText(p,cb){
    const fairSlice=Math.max(5500,Math.floor((remaining-reserve)/primarySlots));
    requestDeadline=Math.min(individualDeadline,remaining-reserve,fairSlice);
   }
+  if(provider==='sensenova'){
+   // The 6.8 Flash Lite preview can spend substantial time reasoning before
+   // producing content; short fallback slices systematically time it out.
+   // Keep time for a backup and skip when the window is not useful.
+   const reserve=preferred==='auto'&&candidates.includes('openrouter')&&p.centralProviders?.openrouter?14000:0;
+   const usable=remaining-reserve-1500;
+   const minViable=preferred==='auto'?12000:8000;
+   if(usable<minViable){
+    errors.push('SenseNova omitido: quedaba muy poco tiempo para una respuesta útil.');
+    continue;
+   }
+   const target=preferred==='auto'?(task==='reasoning'||task==='planner'?22000:16000):45000;
+   requestDeadline=Math.min(target,usable);
+  }
   attempted.push(provider);recordCoreMetric('ai-assistant','provider-attempt');
-  if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
+  if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+(lastProviderFailure||'El motor anterior no completó la solicitud')+'; probando '+providerNames[provider]+'…');
   else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
   const attemptStart=Date.now();
   try{
@@ -935,7 +949,8 @@ async function generateText(p,cb){
       model,
       messages:conversationMessages,
       temperature:.7,
-      maxOutputTokens:outputTokens
+      maxOutputTokens:outputTokens,
+      ...(provider==='sensenova'?{providerTimeoutMs:Math.max(3000,requestDeadline-1200)}:{})
      })
     },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:Number(data.status)||response.status,code:data.code||'',scope:data.scope||'',retryAfter:data.retryAfter||null});
@@ -958,6 +973,13 @@ async function generateText(p,cb){
     usage:normalizeInferenceUsage(usage),summary};
   }catch(error){
    reportModelAttempt(provider,task,false,Date.now()-attemptStart,error);recordCoreMetric('ai-assistant','provider-failed');
+   const status=Number(error?.status)||0;
+   const timedOut=error?.name==='AbortError'||error?.name==='TimeoutError'||error?.code==='PROVIDER_TIMEOUT';
+   lastProviderFailure=timedOut?providerNames[provider]+' agotó su tiempo de espera':
+    status===429?providerNames[provider]+' alcanzó un límite temporal':
+    status===402?providerNames[provider]+' agotó su crédito':
+    status===401||status===403?providerNames[provider]+' rechazó la autorización':
+    providerNames[provider]+' no completó la solicitud';
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);
