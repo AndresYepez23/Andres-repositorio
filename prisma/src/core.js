@@ -1320,7 +1320,6 @@ async function handleImageCreationRequest(text){
   centralProviders=available.providers||centralProviders;
   centralFeatures=available.features||centralFeatures;
   centralModelCatalog=available.modelCatalog||centralModelCatalog;
- centralProviderUsage=available.usage||centralProviderUsage;
   centralProviderUsage=available.usage||centralProviderUsage;
   await generateVisualRequest(description,credentials(),kind||'image');
  }catch(error){
@@ -1520,6 +1519,7 @@ async function interpretAttachedImageText(userText){
  centralProviders=available.providers||centralProviders;
  centralFeatures=available.features||centralFeatures;
  centralModelCatalog=available.modelCatalog||centralModelCatalog;
+ centralProviderUsage=available.usage||centralProviderUsage;
  if(!Object.values(centralProviders).some(Boolean)){
   addMessage('assistant','Reconocí el siguiente texto, pero ahora no tengo un motor de análisis disponible para contextualizarlo. No lo presentaré como un análisis:\n\n'+extracted.join('\n\n').slice(0,9000));
   status('Texto reconocido; análisis no disponible.','warning');
