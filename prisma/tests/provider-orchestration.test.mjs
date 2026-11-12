@@ -161,4 +161,29 @@ const zaiRecovered=await requestWithCredentialPool(env6,'zai',async(key)=>{
 assert.equal(zaiRecovered.status,200,'Z.AI checks all configured slots after key-specific authentication failures');
 assert.equal(zaiAttempts,6);
 
+
+const db7=mockD1();
+const env7={PRISMA_RATE_DB:db7,...Object.fromEntries(Array.from({length:6},(_,i)=>['ZAI_API_KEY'+(i===0?'':'_'+(i+1)),'independent-zai-account-'+(i+1)]))};
+let independentZaiAttempts=0;
+const independentZai=await requestWithCredentialPool(env7,'zai',async(key)=>{
+  independentZaiAttempts++;
+  return key==='independent-zai-account-6'
+    ? new Response('ok',{status:200})
+    : new Response(JSON.stringify({error:{code:'1308',message:'account rate limited'}}),{status:429});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+assert.equal(independentZai.status,200,'Z.AI must try the next independent account after a per-account 429');
+assert.equal(independentZaiAttempts,6,'All six Z.AI accounts are checked until one succeeds');
+assert.equal(await getProviderHold(env7,'zai'),null,'A rate limit on one independent account must not open a provider-wide circuit');
+
+const db8=mockD1();
+const env8={PRISMA_RATE_DB:db8,...Object.fromEntries(Array.from({length:6},(_,i)=>['ZAI_API_KEY'+(i===0?'':'_'+(i+1)),'limited-zai-account-'+(i+1)]))};
+let allLimitedAttempts=0;
+const allLimited=await requestWithCredentialPool(env8,'zai',async()=>{
+  allLimitedAttempts++;
+  return new Response(JSON.stringify({error:{code:'1308',message:'account rate limited'}}),{status:429});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+assert.equal(allLimited.status,429,'Return the last upstream limit if every independent account is limited');
+assert.equal(allLimitedAttempts,6,'A rate limit is isolated and recorded for each of the six independent accounts');
+assert.equal(await getProviderHold(env8,'zai'),null,'Exhausted independent accounts must not create a global provider hold');
+
 console.log('Provider orchestration regressions passed.');
