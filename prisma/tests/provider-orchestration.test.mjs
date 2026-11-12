@@ -99,6 +99,16 @@ const aihubmixCapacityEnv={
 };
 assert.equal(getProviderMinuteCapacity(aihubmixCapacityEnv,'aihubmix'),20,
   'AIHubMix minute capacity is allocated per configured account');
+const aihubmixPaidEnv={
+  AIHUBMIX_DAILY_QUOTA_ACTIVE:'1',
+  AIHUBMIX_API_KEY:'mix-a',
+  AIHUBMIX_API_KEY_2:'mix-b',
+  AIHUBMIX_API_KEY_3:'mix-c',
+  AIHUBMIX_API_KEY_4:'mix-d',
+  AIHUBMIX_API_KEY_5:'mix-e'
+};
+assert.equal(getProviderDailyCapacity(aihubmixPaidEnv,'aihubmix'),500,
+  'AIHubMix's verified 100-request daily quota is multiplied across five separately configured accounts');
 
 const now=Date.now();
 const healthyOrder=rankProviders({task:'general',available:()=>true,now});
@@ -326,6 +336,16 @@ const balancedOrder=rankProviders({
 });
 assert.equal(balancedOrder[0],'cloudflare',
   'The router distributes compatible tasks away from a provider whose shared pool is saturated');
+const secondBalancedOrder=rankProviders({
+  task:'general',
+  available:()=>true,
+  usage:{
+    groq:{daily:{used:1,limit:5000}},
+    cloudflare:{daily:{used:1,limit:5000}}
+  }
+});
+assert.equal(secondBalancedOrder[0],'gemini',
+  'Weighted fair routing cycles to the next compatible provider instead of permanently preferring the first one');
 
 const db15=mockD1();
 const env15={PRISMA_RATE_DB:db15,GROQ_API_KEY:'round-robin-a',GROQ_API_KEY_2:'round-robin-b',GROQ_API_KEY_3:'round-robin-c'};
@@ -342,6 +362,16 @@ assert.deepEqual(rotation,['round-robin-a','round-robin-b','round-robin-c','roun
 const credentialMetrics=await getCredentialMetricsSnapshot(env15,['groq']);
 assert.equal(credentialMetrics.groq[1].requestsToday,2,'Successful requests are attributed to the exact credential slot');
 assert.equal(credentialMetrics.groq[1].tokensToday,10,'Token usage is attributed to the exact credential slot');
+
+const dbRate=mockD1();
+const envRate={PRISMA_RATE_DB:dbRate,GROQ_API_KEY:'groq-org-a',GROQ_API_KEY_2:'groq-org-b',GROQ_API_KEY_3:'groq-org-c'};
+let sharedRateAttempts=0;
+const sharedRate=await requestWithCredentialPool(envRate,'groq',async()=>{
+  sharedRateAttempts++;
+  return new Response('organization rate limited',{status:429,headers:{'Retry-After':'60'}});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+assert.equal(sharedRate.status,429,'Shared organization rate limits remain provider-wide');
+assert.equal(sharedRateAttempts,1,'A shared 429 is not retried through every API key');
 
 const db16=mockD1();
 const env16={PRISMA_RATE_DB:db16,...Object.fromEntries(Array.from({length:6},(_,i)=>['SENSENOVA_API_KEY'+(i===0?'':'_'+(i+1)),'independent-sensenova-account-'+(i+1)]))};
