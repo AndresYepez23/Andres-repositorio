@@ -73,7 +73,8 @@ test('directory categories and sitemap expose exactly the current URLs',async()=
  const sitemap=await readFile(new URL('sitemap.xml',dist),'utf8');
  const robots=await readFile(new URL('robots.txt',dist),'utf8');
  const urls=[...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>decode(m[1]));
- assert.equal(urls.length,pages.length+3+categories.length+solutions.length+guides.length+3);assert.equal(new Set(urls).size,urls.length);
+ const spanishUrlCount=pages.length+3+categories.length+solutions.length+guides.length+3;
+  assert.equal(urls.length,spanishUrlCount*2,'the sitemap must contain Spanish and English URLs');assert.equal(new Set(urls).size,urls.length);
  for(const p of pages){
   assert.ok(listing.includes('href="/herramientas/'+p.slug+'/"'));assert.ok(urls.includes(SEO_BASE+'/herramientas/'+p.slug+'/'));
   const category=tools.find(t=>t.id===p.tool).category;
