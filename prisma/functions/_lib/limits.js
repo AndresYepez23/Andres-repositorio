@@ -1,7 +1,7 @@
 import { getOpenRouterLimits } from "./openrouter.js";
 import { getCredentialSlots } from "./credential-pool.js";
 
-// Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
+// Atomic D1 counters aggregate usage while credential health and rotation remain per-key.
 export const OPENROUTER_VISITOR_LIMITS=Object.freeze({perMinute:5,perDay:20});
 // Provider-specific inference is governed by each upstream account's own
 // quota headers, balances and 402/429 responses. These generous app-side
@@ -22,7 +22,7 @@ export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[p
 // scales with configured keys; upstream headers and per-key cooldowns remain
 // the source of truth for live account limits.
 const CREDENTIAL_SCOPED_PROVIDERS=new Set([
- "gemini","groq","huggingface","pollinations","requesty","sensenova","zai","aihubmix"
+ "gemini","groq","huggingface","pollinations","requesty","sensenova","zai","aihubmix","kilo"
 ]);
 export function getProviderDailyCapacity(env,provider){
  const base=getProviderDailyLimit(env,provider);
