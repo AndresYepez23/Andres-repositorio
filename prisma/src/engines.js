@@ -1,7 +1,7 @@
 import { validateImageParameters, verifyImageResult } from './image-contracts.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { recordCoreMetric } from './core-telemetry.js';
-import { rankProviders, selectTaskModel, adaptiveProviderDeadline, ROUTE_ORDER } from './provider-routing.js';
+import { rankProviders, selectTaskModel, adaptiveProviderDeadline, sensenovaRequestDeadline, ROUTE_ORDER } from './provider-routing.js';
 import { planPdfSplit, parsePdfPageSelection } from './pdf-split-options.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { extractWebsiteHtml } from './core-intent.js';
@@ -909,18 +909,17 @@ async function generateText(p,cb){
    requestDeadline=Math.min(individualDeadline,remaining-reserve,fairSlice);
   }
   if(provider==='sensenova'){
-   // The 6.8 Flash Lite preview can spend substantial time reasoning before
-   // producing content; short fallback slices systematically time it out.
-   // Keep time for a backup and skip when the window is not useful.
-   const reserve=preferred==='auto'&&candidates.includes('openrouter')&&p.centralProviders?.openrouter?14000:0;
-   const usable=remaining-reserve-1500;
-   const minViable=preferred==='auto'?12000:8000;
-   if(usable<minViable){
+   const viableDeadline=sensenovaRequestDeadline({
+    remainingMs:remaining,
+    automatic:preferred==='auto',
+    task,
+    hasOpenRouterBackup:candidates.includes('openrouter')&&Boolean(p.centralProviders?.openrouter)
+   });
+   if(viableDeadline===null){
     errors.push('SenseNova omitido: quedaba muy poco tiempo para una respuesta útil.');
     continue;
    }
-   const target=preferred==='auto'?(task==='reasoning'||task==='planner'?22000:16000):45000;
-   requestDeadline=Math.min(target,usable);
+   requestDeadline=viableDeadline;
   }
   attempted.push(provider);recordCoreMetric('ai-assistant','provider-attempt');
   if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+(lastProviderFailure||'El motor anterior no completó la solicitud')+'; probando '+providerNames[provider]+'…');
