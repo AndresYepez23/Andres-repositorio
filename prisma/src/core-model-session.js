@@ -19,7 +19,8 @@ export function normalizeConversationModelSelection(input = {}) {
     fallbackFrom: safeText(input?.fallbackFrom, 40),
     fallbackReason: safeText(input?.fallbackReason, 220),
     lastUserAt: Math.max(0, Number(input?.lastUserAt) || 0),
-    selectedAt: Math.max(0, Number(input?.selectedAt) || 0)
+    selectedAt: Math.max(0, Number(input?.selectedAt) || 0),
+    usedAt: Math.max(0, Number(input?.usedAt) || 0)
   };
 }
 
@@ -39,7 +40,8 @@ export function beginConversationModelTurn(input, now = Date.now()) {
       fallbackFrom: "",
       fallbackReason: "",
       lastUserAt: now,
-      selectedAt: now
+      selectedAt: now,
+      usedAt: 0
     };
   }
 
@@ -73,7 +75,8 @@ export function selectManualConversationModel(input, provider, model, now = Date
     source: "manual",
     fallbackFrom: "",
     fallbackReason: "",
-    selectedAt: now
+    selectedAt: now,
+    usedAt: 0
   };
 }
 
@@ -89,7 +92,8 @@ export function selectAutomaticConversationModel(input, now = Date.now()) {
     source: "auto",
     fallbackFrom: "",
     fallbackReason: "",
-    selectedAt: now
+    selectedAt: now,
+    usedAt: 0
   };
 }
 
@@ -106,7 +110,8 @@ export function pinConversationModel(input, result = {}, now = Date.now()) {
     source: fallbackFrom ? "fallback" : current.mode === "manual" ? "manual" : "auto",
     fallbackFrom,
     fallbackReason: safeText(result.fallbackReason, 220),
-    selectedAt: now
+    selectedAt: now,
+    usedAt: now
   };
 }
 
