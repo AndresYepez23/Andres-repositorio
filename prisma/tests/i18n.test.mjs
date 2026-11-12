@@ -75,7 +75,8 @@ test('Core and model prompts produce English responses when English is selected'
  assert.match(engines,/const tones=responseLanguage==='English'\?/);
  assert.doesNotMatch(engines,/const tones=responseLanguage==='en'\?/);
  assert.match(engines,/This is an original songwriting task/);
- assert.match(i18n,/Cambiar a inglés/);
+ assert.doesNotMatch(i18n,/prisma-language-toggle|installLanguageButton|updateLanguageButton/);
+ assert.match(i18n,/window\.prismaI18n = Object\.freeze\(/);
  assert.match(voice,/body\.append\('language',speechLanguage\(\)\)/);
  assert.match(voice,/session\.lang=speechLocale\(\)/);
  assert.match(core,/utterance\.lang=voice\?\.lang\|\|\(language==='en'\?'en-US':'es-ES'\)/);
@@ -98,4 +99,19 @@ test('app keeps legal/navigation links and PWA metadata in the selected language
  assert.match(i18n,/element\?\.tagName === 'META'/);
  assert.ok(index.includes('<meta name="prisma-default-language" content="auto">'));
  assert.ok(index.includes('<base href="/">'));
+});
+
+test('language selection is exclusive to General settings inside the app',async()=>{
+ const settings=await read('src/prisma-settings.js');
+ const i18n=await read('src/i18n.js');
+ const app=await read('index.html');
+ assert.match(settings,/id="settings-language"/);
+ assert.match(settings,/currentLanguage = window\.prismaI18n\?\.language/);
+ assert.match(settings,/option value="es"/);
+ assert.match(settings,/option value="en"/);
+ assert.match(settings,/window\.prismaI18n\?\.setLanguage\(next, \{ persist: true \}\)/);
+ assert.match(settings,/prisma:language-change/);
+ assert.doesNotMatch(settings,/settings-static-value">Español/);
+ assert.doesNotMatch(i18n,/prisma-language-toggle|installLanguageButton|updateLanguageButton/);
+ assert.doesNotMatch(app,/prisma-language-toggle/);
 });
