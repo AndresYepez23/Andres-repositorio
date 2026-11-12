@@ -972,8 +972,9 @@ async function generateText(p,cb){
    reportModelAttempt(provider,task,true,Date.now()-attemptStart);
    recordInferenceUsage(provider,usage);recordCoreMetric('ai-assistant','provider-success');
    const firstAttempt=attempted[0];
-   const firstPreferred=preferred==='auto'?baseOrder[0]:preferred;
-   const fallbackFrom=firstAttempt&&firstAttempt!==provider?firstAttempt:(preferred!=='auto'&&preferred!==provider?preferred:null);
+   const fallbackFrom=preferred!=='auto'
+    ?(preferred!==provider?preferred:null)
+    :(firstAttempt&&firstAttempt!==provider?firstAttempt:null);
    const summary='Respuesta generada con '+providerNames[provider]+' · modelo '+(model||'predeterminado')+(fallbackFrom?' · respaldo automático tras fallo de '+providerNames[fallbackFrom]:'.');
    return {text,provider,model:model||'predeterminado',fallbackFrom,
     fallbackReason:fallbackFrom?errors[0]||'El motor preferido no estuvo disponible.':'',
