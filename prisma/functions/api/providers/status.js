@@ -5,6 +5,8 @@ import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
 
+const RESEARCH_PROVIDERS = Object.freeze(["tavily", "jina"]);
+
 const headers = {
   "Cache-Control": "no-store",
   "Content-Type": "application/json; charset=utf-8",
@@ -15,7 +17,7 @@ export async function onRequestGet({ env }) {
   const limited = Boolean(env.PRISMA_RATE_DB?.prepare);
   const sharedUsage=limited?await getSharedDailyUsage(env):null;
   const sharedReady=!sharedUsage?.daily||sharedUsage.daily.remaining>0;
-  const poolProviders = Object.keys(CREDENTIAL_ROOTS);
+  const poolProviders = Object.keys(CREDENTIAL_ROOTS).filter(provider => !RESEARCH_PROVIDERS.includes(provider));
   const holds = {};
   if (limited) {
     const healthProviders=[...poolProviders,"cloudflare"];
@@ -29,6 +31,23 @@ export async function onRequestGet({ env }) {
     [provider, getCredentialSlots(env, provider).length]
   ));
   const credentialHealth=await getCredentialHealthSnapshot(env,poolProviders);
+  // Web research providers have their own provider-side quotas. Keep them
+  // outside Core's inference budget while still exposing safe aggregate health.
+  const researchConfigured=Object.fromEntries(RESEARCH_PROVIDERS.map(provider => [provider,getCredentialSlots(env,provider).length]));
+  const researchCredentialHealth=await getCredentialHealthSnapshot(env,RESEARCH_PROVIDERS);
+  const researchHolds=Object.fromEntries(await Promise.all(RESEARCH_PROVIDERS.map(async provider =>
+    [provider,limited?await getProviderHold(env,provider):null]
+  )));
+  const researchProviderHealth=Object.fromEntries(RESEARCH_PROVIDERS.map(provider => {
+    const info=getCredentialStatus(env,provider),health=researchCredentialHealth[provider]||{},hold=researchHolds[provider];
+    const state=hold?.state||(!info.poolValid?"invalid_pool":!researchConfigured[provider]?"missing":health.healthySlots===0?"credentials_paused":"configured");
+    const reason=hold?.reason||(!info.poolValid?"El secreto "+info.poolVariable+" no contiene un arreglo JSON válido.":!researchConfigured[provider]?"No hay credenciales configuradas.":health.healthySlots===0?"Todas las credenciales están temporalmente pausadas.":null);
+    return [provider,{...info,healthySlots:health.healthySlots??0,pausedSlots:health.pausedSlots??0,
+      available:Boolean(info.poolValid&&researchConfigured[provider]>0&&(health.healthySlots??0)>0&&!hold),
+      paused:Boolean(hold),state,reason,retryAt:hold?.valid_until||health.retryAt||null}];
+  }));
+  const researchWarnings=Object.fromEntries(Object.entries(researchProviderHealth).filter(([,value])=>!value.available).map(([provider,value])=>[provider,value.reason||"Proveedor de investigación no disponible."]));
+  const research={available:Object.values(researchProviderHealth).some(value=>value.available),providers:researchProviderHealth,warnings:researchWarnings};
   const usageEntries = await Promise.all(poolProviders
     .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
     .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyLimit(env, provider), getProviderMinuteLimit(provider))]));
@@ -94,7 +113,7 @@ export async function onRequestGet({ env }) {
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixLifetime?.remaining === 0 && env.AIHUBMIX_DAILY_QUOTA_ACTIVE !== "1") warnings[provider] = "Se agotaron las 10 llamadas totales de prueba. Una recarga única mínima de USD 1 activa cuotas diarias.";
     else if (provider === "aihubmix" && configured[provider] > 0 && aihubmixModels.length === 0) warnings[provider] = "No se pudo validar el catálogo gratuito de AIHubMix o no hay modelos de texto con peso de cuota 1.";
     else if (configured[provider] > 0 && credentialHealth[provider]?.healthySlots===0)
-      warnings[provider] = "Todas las claves de "+provider+" están temporalmente pausadas tras respuestas de autenticación (HTTP 401/403). Comprueba las claves y sus permisos; Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
+      warnings[provider] = "Todas las claves de "+provider+" están temporalmente pausadas tras respuestas de autenticación (HTTP 401). Comprueba las claves y sus permisos; Prisma cambiará de motor y volverá a comprobarlas automáticamente.";
     else if (configured[provider] > 0 && credentialHealth[provider]?.pausedSlots>0)
       warnings[provider] = credentialHealth[provider].pausedSlots+" de "+configured[provider]+" claves de "+provider+" están temporalmente pausadas; las demás siguen disponibles.";
     else if (!configured[provider]) warnings[provider] = "No hay credenciales configuradas.";
@@ -136,6 +155,7 @@ export async function onRequestGet({ env }) {
     // Secret values are never returned to the browser.
     credentialSlots,
     providerHealth,
+    research,
     providers: {
       pollinations: pollinationsReady,
       gemini: geminiReady,
@@ -187,6 +207,7 @@ export async function onRequestGet({ env }) {
       cloudflareAudio: cloudflareAudioReady,
       cloudflareAudioDaily: cloudflareAudioUsage?.daily||null,
       openrouterChat: openrouterReady,
+      webResearch: research.available,
     },
     models: {
       pollinations: "openai/gpt-5.4-nano",

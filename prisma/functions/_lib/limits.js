@@ -122,6 +122,48 @@ export async function getSharedDailyUsage(env){
  }
 }
 
+// Web research has a separate per-visitor abuse guard. It deliberately does
+// not consume the inference-provider pools or the shared chat daily budget.
+export const RESEARCH_VISITOR_LIMITS=Object.freeze({perMinute:20});
+export async function checkResearchLimits(env,request){
+ const db=env?.PRISMA_RATE_DB;
+ if(!db?.prepare)return {status:503,code:"LIMITS_UNAVAILABLE",error:"Prisma no puede comprobar los límites de investigación web."};
+ const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+ const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
+ const key=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("").slice(0,32);
+ const {minute,day}=windows();
+ const scopes=[
+  ["research-ip-minute:"+key,minute,RESEARCH_VISITOR_LIMITS.perMinute],
+  ["research-ip-day:"+key,day,getVisitorDailyLimit(env)]
+ ];
+ const denied=([scope,start,max])=>{
+  const isMinute=scope.includes("-minute:");
+  const reset=(start+(isMinute?1:1440))*60;
+  return {status:429,code:"GLOBAL_LIMIT",scope:scope.split(":")[0],
+   retryAfter:Math.max(1,reset-Math.floor(Date.now()/1000)),
+   error:isMinute?"Este visitante alcanzó el límite de investigaciones web por minuto. Espera un momento y vuelve a intentarlo.":"Este visitante alcanzó su límite diario de investigación web."};
+ };
+ const sql=String.raw`INSERT INTO ai_rate_limits(scope,window_start,request_count)
+ VALUES(?,?,1) ON CONFLICT(scope,window_start) DO UPDATE
+ SET request_count=request_count+1 WHERE request_count<? RETURNING request_count`;
+ try{
+  for(const record of scopes){
+   const [scope,start,max]=record;
+   const row=await db.prepare("SELECT request_count FROM ai_rate_limits WHERE scope=? AND window_start=?").bind(scope,start).first();
+   if(Number(row?.request_count||0)>=max)return denied(record);
+  }
+  for(const record of scopes){
+   const [scope,start,max]=record;
+   if(!await db.prepare(sql).bind(scope,start,max).first())return denied(record);
+  }
+  if(Math.random()<0.01)await db.prepare("DELETE FROM ai_rate_limits WHERE window_start<? AND scope NOT LIKE 'provider-lifetime:%'").bind(minute-4320).run().catch(()=>{});
+  return null;
+ }catch(error){
+  console.error("Prisma research D1 limiter",error?.message||error);
+  return {status:503,code:"LIMITS_UNAVAILABLE",error:"No fue posible validar los límites de investigación web."};
+ }
+}
+
 export async function checkLimits(env,request,provider){
  const db=env.PRISMA_RATE_DB;
  if(!db?.prepare)return {status:503,code:"LIMITS_UNAVAILABLE",error:"Prisma no puede comprobar sus límites de consumo."};

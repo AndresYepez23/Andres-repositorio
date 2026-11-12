@@ -96,7 +96,8 @@ export async function getCentralProviderStatus({ force = false } = {}) {
     warnings: {},
     configured: {},
     credentialSlots: {},
-    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,cloudflareAudio:false,openrouterChat:false}
+    research: {available:false,providers:{tavily:{configured:0,max:7,healthySlots:0,pausedSlots:0,available:false,state:"missing"},jina:{configured:0,max:1,healthySlots:0,pausedSlots:0,available:false,state:"missing"}},warnings:{}},
+    features: {pollinationsImages:false,cloudflareImages:false,huggingfaceImages:false,huggingfaceAudio:false,groqAudio:false,cloudflareAudio:false,openrouterChat:false,webResearch:false}
   };
   const work = (async () => {
     const controller = new AbortController();
@@ -117,6 +118,7 @@ export async function getCentralProviderStatus({ force = false } = {}) {
         warnings: data.warnings || {},
         configured: data.configured || {},
         credentialSlots: data.credentialSlots || {},
+        research: data.research || empty.research,
         features: { ...empty.features, ...(data.features || {}) }
       };
       cachedCentralStatus = ready;
