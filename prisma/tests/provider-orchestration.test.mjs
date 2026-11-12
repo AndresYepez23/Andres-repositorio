@@ -169,7 +169,8 @@ assert.match(statusSource,/webResearch/,'Web research availability is exposed sa
 const chatSource=fs.readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
 assert.match(chatSource,/function providerFailure/,'Backend preserves provider error metadata');
 assert.match(chatSource,/token\.sensetime\.com\/api\/v1\/chat\/completions/,'SenseNova uses the official TokenPlan API base URL');
-assert.match(chatSource,/gemini-3\.6-flash/,'Gemini has a stable intermediate fallback model');
+assert.match(chatSource,/gemini-3\.7-flash/,'Gemini has a recent stable intermediate fallback model');
+assert.match(chatSource,/gemini-3\.6-flash/,'Gemini has a second stable fallback model');
 assert.match(chatSource,/sweepAuthSlots:true/,'OpenAI-compatible providers can validate every configured key after HTTP 401');
 assert.match(chatSource,/setProviderHold\(env,"cloudflare"/,'Cloudflare failures open a shared circuit breaker');
 const researchSource=fs.readFileSync(new URL('../functions/api/research/search.js',import.meta.url),'utf8');
