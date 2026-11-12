@@ -399,6 +399,7 @@ export async function getCredentialHealthSnapshot(env, providers=Object.keys(CRE
       const key=await credentialHealthKey(name,slot),hold=holds.get(key);
       if(!hold)continue;
       pausedSlots++;
+      pausedSlotNumbers.push(slot.number);
       const until=Number(hold.valid_until)||0;
       if(until>0&&(!retryAt||until<retryAt))retryAt=until;
     }
