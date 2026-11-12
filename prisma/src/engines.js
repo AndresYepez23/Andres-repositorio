@@ -1,7 +1,7 @@
 import { validateImageParameters, verifyImageResult } from './image-contracts.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { recordCoreMetric } from './core-telemetry.js';
-import { rankProviders, selectTaskModel, adaptiveProviderDeadline, ROUTE_ORDER } from './provider-routing.js';
+import { rankProviders, selectTaskModel, adaptiveProviderDeadline, sensenovaRequestDeadline, ROUTE_ORDER } from './provider-routing.js';
 import { planPdfSplit, parsePdfPageSelection } from './pdf-split-options.js';
 import { selectInferenceCandidates, stopInferenceFallback, normalizeInferenceUsage, recordInferenceUsage } from './core-economy.js';
 import { extractWebsiteHtml } from './core-intent.js';
@@ -789,7 +789,7 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   const retryAfterMs=Math.max(30,Math.min(86400,Number(error?.retryAfter)||90))*1000;
   const delay=success?0:status===401?2*60000:status===403?60000:status===402?10*60000:status===429?retryAfterMs:
    error?.code==='CREDENTIALS_PAUSED'||error?.code==='PROVIDER_COOLDOWN'?Math.max(30,Math.min(3600,Number(error?.retryAfter)||60))*1000:
-   error?.name==='AbortError'?120000:[408,500,502,503,504].includes(status)?45000:60000;
+   error?.code==='PROVIDER_TIMEOUT'||error?.name==='AbortError'?120000:[408,500,502,503,504].includes(status)?45000:60000;
   all[key]={at:stamp,successes:success?Math.min(12,(previous.successes||0)+1):0,failures:success?0:Math.min(4,(previous.failures||0)+1),
    averageMs:Math.round(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed),coolingUntil:success?0:stamp+delay};
   for(const [name,entry] of Object.entries(all))if(stamp-Number(entry.at||0)>86400000)delete all[name];
@@ -850,7 +850,7 @@ async function generateText(p,cb){
  const baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general;
  const providerNames={pollinations:'Pollinations',huggingface:'Hugging Face',groq:'Groq',gemini:'Google Gemini',cloudflare:'Cloudflare Workers AI',openrouter:'OpenRouter',kilo:'Kilo Gateway',requesty:'Requesty',sensenova:'SenseNova',zai:'Z.AI / GLM',aihubmix:'AIHubMix'};
  const errors=[],attempted=[],failures=[];
- let lastLimitError=null;
+ let lastLimitError=null,lastProviderFailure='';
  const routeMemory=getRouteMemory();
  const rankedCandidates=orderModelsForTask(preferred,task,baseOrder,provider=>{
   if(provider==='pollinations')return Boolean(p.centralProviders?.pollinations||
@@ -874,8 +874,8 @@ async function generateText(p,cb){
   preferred,allowFallback:p.allowFallback===true,task
  });
  const startedAt=Date.now();
- const totalDeadline=task==='planner'?48000:task==='songwriting'?78000:65000;
- const individualDeadline=task==='planner'?11000:task==='songwriting'?22000:16000;
+ const totalDeadline=task==='planner'?65000:task==='songwriting'?78000:65000;
+ const individualDeadline=preferred==='sensenova'?48000:task==='planner'?11000:task==='songwriting'?22000:16000;
  const modelFor=provider=>{
   let catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(provider==='kilo'&&preferred==='auto')catalog=catalog.filter(model=>
@@ -908,8 +908,21 @@ async function generateText(p,cb){
    const fairSlice=Math.max(5500,Math.floor((remaining-reserve)/primarySlots));
    requestDeadline=Math.min(individualDeadline,remaining-reserve,fairSlice);
   }
+  if(provider==='sensenova'){
+   const viableDeadline=sensenovaRequestDeadline({
+    remainingMs:remaining,
+    automatic:preferred==='auto',
+    task,
+    hasOpenRouterBackup:candidates.includes('openrouter')&&Boolean(p.centralProviders?.openrouter)
+   });
+   if(viableDeadline===null){
+    errors.push('SenseNova omitido: quedaba muy poco tiempo para una respuesta útil.');
+    continue;
+   }
+   requestDeadline=viableDeadline;
+  }
   attempted.push(provider);recordCoreMetric('ai-assistant','provider-attempt');
-  if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+providerNames[attempted[0]]+' no respondió; probando '+providerNames[provider]+'…');
+  if(attempted.length>1)progress(cb,.2,'Respaldo automático: '+(lastProviderFailure||'El motor anterior no completó la solicitud')+'; probando '+providerNames[provider]+'…');
   else progress(cb,.18,'Conectando con '+providerNames[provider]+' mediante Prisma…');
   const attemptStart=Date.now();
   try{
@@ -935,7 +948,8 @@ async function generateText(p,cb){
       model,
       messages:conversationMessages,
       temperature:.7,
-      maxOutputTokens:outputTokens
+      maxOutputTokens:outputTokens,
+      ...(provider==='sensenova'?{providerTimeoutMs:Math.max(3000,requestDeadline-1200)}:{})
      })
     },requestDeadline);
     if(!response.ok)throw Object.assign(Error(data.error||providerNames[provider]+' respondió '+response.status+'.'),{status:Number(data.status)||response.status,code:data.code||'',scope:data.scope||'',retryAfter:data.retryAfter||null});
@@ -958,6 +972,13 @@ async function generateText(p,cb){
     usage:normalizeInferenceUsage(usage),summary};
   }catch(error){
    reportModelAttempt(provider,task,false,Date.now()-attemptStart,error);recordCoreMetric('ai-assistant','provider-failed');
+   const status=Number(error?.status)||0;
+   const timedOut=error?.name==='AbortError'||error?.name==='TimeoutError'||error?.code==='PROVIDER_TIMEOUT';
+   lastProviderFailure=timedOut?providerNames[provider]+' agotó su tiempo de espera':
+    status===429?providerNames[provider]+' alcanzó un límite temporal':
+    status===402?providerNames[provider]+' agotó su crédito':
+    status===401||status===403?providerNames[provider]+' rechazó la autorización':
+    providerNames[provider]+' no completó la solicitud';
    const code=error?.status?' HTTP '+error.status:'';
    const detail=error?.name==='AbortError'?'superó el tiempo de espera ('+Math.round(requestDeadline/1000)+' s)':(error?.message||'fallo de conexión');
    errors.push(providerNames[provider]+code+': '+detail);

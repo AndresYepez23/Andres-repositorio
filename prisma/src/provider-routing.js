@@ -145,6 +145,18 @@ export function adaptiveProviderDeadline({averageMs=0,baseMs=21000,minMs=12000,m
   return Math.max(minimum,Math.min(base,Math.round(observed*multiplier+overheadMs)));
 }
 
+// SenseNova 6.8 Flash Lite is a reasoning preview model: its first useful
+// answer can take longer than a normal 5-10s fallback slice. Give it a viable
+// deadline without spending the independent backup's reserved time.
+export function sensenovaRequestDeadline({remainingMs,automatic=true,task="general",hasOpenRouterBackup=false}={}) {
+  const remaining=Math.max(0,Number(remainingMs)||0);
+  const reserve=automatic&&hasOpenRouterBackup?14000:0;
+  const usable=remaining-reserve-1500;
+  if(usable<(automatic?12000:8000))return null;
+  const target=automatic?(task==="reasoning"||task==="planner"?22000:16000):45000;
+  return Math.max(0,Math.min(target,usable));
+}
+
 export function selectTaskModel(provider,task="general",tier="balanced",catalog=[]) {
   const selectedTier=["fast","balanced","smart"].includes(tier)?tier:"balanced";
   const desired=(MODEL_BY_TASK[task]?.[provider]||DEFAULT_MODELS[provider]||{})[selectedTier]||"";

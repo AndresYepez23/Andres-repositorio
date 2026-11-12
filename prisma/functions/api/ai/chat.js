@@ -77,6 +77,9 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
     response = await requestWithCredentialPool(env, provider, credential => fetch(endpoint, {
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+credential,...extraHeaders},
+      // Match SenseNova's upstream work to the browser's remaining deadline:
+      // do not leave costly reasoning running after the client abandons it.
+      ...(provider==="sensenova"?{signal:AbortSignal.timeout(clamp(payload.providerTimeoutMs,3000,60000,30000))}:{}),
       body:JSON.stringify({
         model,messages,temperature:0.65,
         max_tokens:clamp(payload.maxOutputTokens,provider==="sensenova"?2048:128,4096,provider==="sensenova"?2400:1200),
@@ -96,6 +99,9 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
       retryStatuses:["requesty","zai","aihubmix"].includes(provider)?[401,403]:[401]
     });
   } catch (error) {
+    if(provider==="sensenova"&&["TimeoutError","AbortError"].includes(String(error?.name))){
+      return json({error:"SenseNova agotó el tiempo de espera del modelo de razonamiento; Prisma puede utilizar otro motor.",provider,status:504,code:"PROVIDER_TIMEOUT",retryAfter:30},504);
+    }
     return providerFailure(error,provider,"No fue posible conectar con "+provider+".");
   }
   const data=await response.json().catch(()=>({}));
@@ -123,7 +129,7 @@ async function callOpenAICompatibleProvider(env, provider, endpoint, model, mess
     code:"PROVIDER_EMPTY_RESPONSE",
     model:String(data.model||model).slice(0,100),
     finishReason:String(choice?.finish_reason||"").slice(0,48)||null,
-    hasReasoningContent:Boolean(message.reasoning_content),
+    hasReasoningContent:Boolean(message.reasoning_content||message.reasoning),
     hasToolCalls:Array.isArray(message.tool_calls)&&message.tool_calls.length>0,
     upstreamRequestId:String(data.request_id||data.id||"").slice(0,120)||null
   },502);
