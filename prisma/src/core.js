@@ -378,7 +378,7 @@ const MODEL_PROVIDER_LABELS={
 const MODEL_PROVIDER_ORDER=['groq','zai','gemini','openrouter','sensenova','kilo','aihubmix','requesty','huggingface','cloudflare','pollinations'];
 function activeChatRecord(){return conversations.find(chat=>chat.id===activeConversationId)||null;}
 function imageProviderReady(provider){
- const flag={cloudflare:'cloudflareImages',pollinations:'pollinationsImages',huggingface:'huggingfaceImages',gemini:'geminiImages'}[provider];
+ const flag={cloudflare:'cloudflareImages',pollinations:'pollinationsImages',gemini:'geminiImages'}[provider];
  if(provider==='pollinations'&&readPollinationsToken())return true;
  return Boolean(flag&&centralFeatures?.[flag]===true);
 }
@@ -433,7 +433,7 @@ function renderChatModelOptions(){
  const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(p=>!MODEL_PROVIDER_ORDER.includes(p)).sort()];
  list.replaceChildren();let visible=0;
  for(const provider of providers){
-  if(!providerAvailability(provider,'chat').available)continue;
+  if(provider==='requesty'||provider==='huggingface'||!providerAvailability(provider,'chat').available)continue;
   const models=(Array.isArray(catalog[provider])?catalog[provider]:[]).filter(isCoreChatModel);
   if(!models.length)continue;
   visible+=models.length;
@@ -496,7 +496,7 @@ function renderImageModelControls(){
  const selectedProvider=String(saved.provider||'auto');
  for(const option of providerSelect.options){
   if(option.value==='auto'){
-   option.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
+   option.disabled=!['cloudflare','pollinations','gemini'].some(imageProviderReady);
    option.textContent=option.disabled?'Automático · sin motores disponibles':'Automático · respaldo disponible';
   }else{
    const availability=providerAvailability(option.value,'image');
@@ -520,7 +520,7 @@ function renderImageModelControls(){
  }
  modelSelect.value=String(saved.model||'');
  if(modelSelect.value!==String(saved.model||''))modelSelect.value='';
- const ready=provider==='auto'?['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
+ const ready=provider==='auto'?['cloudflare','pollinations','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
  modelSelect.disabled=provider==='auto'||!ready||!models.length;
  if(hint){
   const usage=centralImageUsage?.[provider]?.daily;
@@ -569,7 +569,7 @@ function renderModelPicker(){
   panel.querySelectorAll('[data-model-pane]').forEach(p=>p.classList.toggle('active',p.dataset.modelPane===activeModelTab));
  }
  const imageButton=$('#core-image-activate');
- if(imageButton)imageButton.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
+ if(imageButton)imageButton.disabled=!['cloudflare','pollinations','gemini'].some(imageProviderReady);
 }
 function renderComposerMode(){
  const image=activeChatRecord()?.creativeMode==='image';
@@ -580,7 +580,7 @@ function renderComposerMode(){
 }
 function setCoreCreativeMode(mode){
  const chat=activeChatRecord();if(!chat)return;
- if(mode==='image'&&!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady)){
+ if(mode==='image'&&!['cloudflare','pollinations','gemini'].some(imageProviderReady)){
   status('No hay un motor de imágenes disponible en este momento.','warning');return;
  }
  chat.creativeMode=mode==='image'?'image':'chat';
