@@ -246,6 +246,13 @@ function updateLanguageButton() {
 function applyAll() {
   root.lang = language;
   root.dataset.language = language;
+  // Keep the installable PWA language aligned with the actual UI, including
+  // first visits that enter at / and are routed to /en/ without a full reload.
+  const manifest = document.querySelector('link[rel="manifest"]');
+  if (manifest) {
+    const target = language === 'en' ? '/manifest.en.webmanifest' : '/manifest.webmanifest';
+    if (manifest.getAttribute('href') !== target) manifest.setAttribute('href', target);
+  }
   const locale = document.querySelector('meta[property="og:locale"]');
   if (locale) locale.content = language === 'en' ? 'en_US' : 'es_ES';
   const languageMeta = document.querySelector('meta[name="prisma-default-language"]');
