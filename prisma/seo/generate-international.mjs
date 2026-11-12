@@ -259,6 +259,7 @@ function injectSpanishPrivacyLink(html) {
 }
 function appEnglishHtml(html) {
   html=html.replace('<html lang="es"','<html lang="en"')
+    .replace('href="./manifest.webmanifest"','href="./manifest.en.webmanifest"')
     .replace('content="auto"','content="en"')
     .replace('content="es_ES"','content="en_US"')
     .replace('<title>Prisma Space — Crea, convierte y experimenta</title>','<title>Prisma Space — Create, convert and explore</title>')
@@ -309,6 +310,19 @@ export async function generateInternationalPages(output) {
   await writeFile(new URL('index.html',enDir),appEnglishHtml(appHtml),'utf8');
   const privacyHtml=await readFile(new URL('../privacy.en.html',import.meta.url),'utf8');
   await writeFile(new URL('privacy.html',enDir),privacyHtml,'utf8');
+  const englishManifest=JSON.parse(await readFile(new URL('../manifest.webmanifest',import.meta.url),'utf8'));
+  englishManifest.id='/en/';
+  englishManifest.name='Prisma Space · Your AI workspace';
+  englishManifest.short_name='Prisma Space';
+  englishManifest.description='Create, transform, and get things done with Prisma Core and digital tools.';
+  englishManifest.start_url='/en/?source=pwa';
+  englishManifest.scope='/';
+  englishManifest.lang='en';
+  englishManifest.shortcuts=[
+    {name:'Prisma Core',short_name:'Core',url:'/en/?view=core',description:'Chat with Prisma'},
+    {name:'Tools',url:'/en/?view=explore',description:'Explore tools'}
+  ];
+  await writeFile(new URL('manifest.en.webmanifest',output),JSON.stringify(englishManifest,null,2)+'\n','utf8');
   const toolsDir=new URL('en/tools/',output);
   await mkdir(toolsDir,{recursive:true});
   for(const page of englishPages) {
