@@ -53,7 +53,7 @@ let language = initialLanguage;
 let applying = false;
 
 const SKIP_TEXT = [
-  'script', 'style', 'code', 'pre', 'textarea', 'input', 'svg',
+  'script', 'style', 'title', 'code', 'pre', 'textarea', 'input', 'svg',
   '[contenteditable="true"]', '[data-no-translate]', '[data-user-content]',
   '.core-message-files',
   '.tool-output', '#tool-output',
@@ -206,6 +206,8 @@ function syncAppMetadata() {
   }
 }
 function translateAttribute(element, attribute) {
+  // Meta content is managed explicitly by applyAll/syncAppMetadata.
+  if (attribute === 'content' && element?.tagName === 'META') return;
   if (!element?.isConnected || element.closest(SKIP_ATTRIBUTES)) return;
   const current = element.getAttribute(attribute);
   if (current === null) return;
