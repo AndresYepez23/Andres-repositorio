@@ -37,7 +37,7 @@ export async function onRequestGet({ env }) {
     usage,
     account: account ? {
       isFreeTier: account.isFreeTier,
-      externalFreeDailyLimit: account.isFreeTier ? 50 : 1000,
+      externalFreeDailyLimit: Number(account.freeModelDaily?.limit) > 0 ? Number(account.freeModelDaily.limit) : account.isFreeTier ? 50 : 1000,
     } : null,
     hold: hold ? {
       state: hold.state,
