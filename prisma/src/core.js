@@ -2165,6 +2165,7 @@ async function executePlan(){
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
   const executed=[];let currentFiles=[...attachments],lastText='',successful=false,allResultFilesSaved=true;
+  const modelDrivenTextTools=new Set(['ai-assistant','music-lyrics','ai-youtube-kit','ai-prompt-lab','ai-study-notes','ai-code-helper','ai-webpage']);
   try{
     for(let index=0;index<steps.length;index++){
       if(cancelRequested)break;
@@ -2184,6 +2185,11 @@ async function executePlan(){
           lastText?'Material del paso anterior: '+lastText.slice(0,12000):''
         ].filter(Boolean).join('\n\n');
         params.provider='auto';params.reasoning='smart';params.tone='creative';params.length='long';params.task='songwriting';
+      }
+      // The model picker controls user-facing text generation only. Core's
+      // internal planner above remains automatic and continues to own tools.
+      if(modelDrivenTextTools.has(tool.id)){
+        Object.assign(params,conversationModelRequest(activeChatRecord()?.modelSelection));
       }
       // Pass the previous result to the next compatible text tool without
       // invoking another model. Explicit model-supplied text always wins.
@@ -2209,6 +2215,10 @@ async function executePlan(){
       const runner=textBatch?async(id,files,p,cb)=>runTool(id,[],{...p,text:await files[0].text()},cb):runTool;
       const result=await runToolBatch(batchTool,textBatch?currentFiles:inputFiles,params,runner,(progress,message)=>{const detail='Paso '+(index+1)+'/'+steps.length+' · '+(message||tool.name);status(detail);setProgress((index+Math.max(0,Math.min(1,Number(progress)||0)))/steps.length,detail);},()=>cancelRequested);
       validateAgentStepResult(tool.id,result);
+      if(modelDrivenTextTools.has(tool.id)&&result?.provider&&result?.model){
+        const chat=activeChatRecord();
+        if(chat){chat.modelSelection=pinConversationModel(chat.modelSelection,result,Date.now());renderModelPicker();}
+      }
       executed.push(...executionCards(tool.name,reason,result,index));setProgress((index+1)/steps.length,'Paso '+(index+1)+' de '+steps.length+' completado');
       if(result?.text)lastText=String(result.text);
       else if(result?.html)lastText=String(result.html);
