@@ -52,6 +52,8 @@ export async function getOpenRouterAccount(env) {
               : null,
           },
         };
+      } catch {
+        return null;
       } finally {
         clearTimeout(timeout);
       }
