@@ -199,6 +199,8 @@ const modelSessionSource=readFileSync(new URL('../src/core-model-session.js',imp
 const contextSource=readFileSync(new URL('../src/core-context.js',import.meta.url),'utf8');
 assert.match(coreSource,/beginConversationModelTurn\(activeChat\.modelSelection/,'Each chat turn must refresh or preserve its own model preference');
 assert.match(coreSource,/conversationModelRequest\(chat\?\.modelSelection\)/,'The selected chat model must reach inference without bypassing Core');
+const imageInterpretationSource=coreSource.slice(coreSource.indexOf('async function interpretAttachedImageText'),coreSource.indexOf('async function requestPlan'));
+assert.match(imageInterpretationSource,/conversationModelRequest\(chat\?\.modelSelection\)/,'Image interpretation must honor the current chat model preference');
 assert.match(coreSource,/pinConversationModel\(chat\.modelSelection,response/,'Successful responses and automatic fallbacks must pin the actual model to the chat');
 assert.match(modelSessionSource,/MODEL_SESSION_IDLE_MS = 30 \* 60 \* 1000/,'Automatic selection must be reconsidered after 30 minutes of inactivity');
 assert.match(engineCode,/localStorage/,'Provider performance and cooldown memory must survive page reloads without storing prompts');
