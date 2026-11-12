@@ -4,13 +4,13 @@ import { getCredentialSlots } from "./credential-pool.js";
 // Atomic usage counters in D1. Limits apply to ALL provider keys, including backups.
 export const OPENROUTER_VISITOR_LIMITS=Object.freeze({perMinute:5,perDay:20});
 export const LIMITS=Object.freeze({
- gemini:50,huggingface:10,groq:80,pollinations:10,cloudflare:30,
+ gemini:50,huggingface:10,groq:80,pollinations:10,cloudflare:30,tavily:20,
  kilo:20,requesty:25,sensenova:25,zai:25,aihubmix:10,
  "pollinations-image":2,"cloudflare-image":3,"huggingface-image":1,
  "groq-audio":3,"cloudflare-audio":3,"pollinations-audio":2,"gemini-image":2
 });
 
-const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,aihubmix:10});
+const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,aihubmix:10,tavily:3});
 export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[provider]||null;}
 
 // Internal budgets are per provider/project, not per API key. Multiple keys
