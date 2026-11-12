@@ -51,3 +51,40 @@ export async function getKiloFreeModels(env, { force = false } = {}) {
     return [];
   }
 }
+
+let cachedCreativeModels = [];
+let creativeCacheExpiresAt = 0;
+
+// Discovery only: never passes these models to the text-chat allowlist or
+// invokes paid/media endpoints. Pricing must explicitly be zero on both sides.
+export async function getKiloCreativeModels(env,{force=false}={}){
+ if(!force&&Date.now()<creativeCacheExpiresAt)return cachedCreativeModels;
+ try{
+  const slots=getCredentialSlots(env,"kilo");
+  const send=key=>fetch("https://ai-gateway.kilo.ai/api/v1/models",{
+   headers:key?{Authorization:"Bearer "+key}:{}
+  });
+  const response=slots.length
+   ?await requestWithCredentialPool(env,"kilo",key=>send(key),{countRequest:false,sweepAuthSlots:true,retryStatuses:[401,403]})
+   :await send("");
+  if(!response.ok)throw Error("Catalog HTTP "+response.status);
+  const payload=await response.json();
+  cachedCreativeModels=(Array.isArray(payload?.data)?payload.data:[])
+   .filter(model=>{
+    const id=String(model?.id||"");
+    const name=String(model?.name||"");
+    const outputs=model?.architecture?.output_modalities;
+    const special=/(lyria|music|image|video|audio|speech|transcrib|whisper|tts|embedding|rerank|moderation|guardrail|flux|diffusion)/i.test(id+" "+name)
+     ||Array.isArray(outputs)&&outputs.some(x=>["audio","video","image","embedding"].includes(String(x).toLowerCase()));
+    return id&&special&&model?.pricing?.prompt!=null&&model?.pricing?.completion!=null&&
+     Number(model.pricing.prompt)===0&&Number(model.pricing.completion)===0;
+   })
+   .map(model=>({id:String(model.id),name:String(model.name||model.id),
+    specialty:"Modelo especializado · precio de entrada y salida cero en el catálogo Kilo · ejecución pendiente"}));
+  creativeCacheExpiresAt=Date.now()+5*60_000;
+  return cachedCreativeModels;
+ }catch(error){
+  console.warn("Kilo creative catalogue unavailable",error?.message||error);
+  creativeCacheExpiresAt=Date.now()+30_000;cachedCreativeModels=[];return [];
+ }
+}

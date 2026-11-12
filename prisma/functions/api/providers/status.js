@@ -2,8 +2,8 @@ import { getProviderHold } from "../../_lib/provider-health.js";
 import { tavilyKeys } from "../research/search.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
 import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, getCredentialMetricsSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
-import { getKiloFreeModels } from "../../_lib/kilo-models.js";
-import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
+import { getKiloFreeModels, getKiloCreativeModels } from "../../_lib/kilo-models.js";
+import { getAihubmixFreeModels, getAihubmixCreativeModels } from "../../_lib/aihubmix-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getProviderDailyCapacity, getProviderMinuteCapacity, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
 
 const headers = {
@@ -141,6 +141,14 @@ export async function onRequestGet({ env }) {
   const modelCatalog = modelsForUI();
   modelCatalog.chat.kilo = kiloModels;
   modelCatalog.chat.aihubmix = aihubmixModels;
+  // Discovery-only specialist catalog. These are never added to the chat
+  // allowlist; display does not imply a compatible execution endpoint.
+  const [kiloCreative,aihubmixCreative]=await Promise.all([
+    getKiloCreativeModels(env),
+    configured.aihubmix>0?getAihubmixCreativeModels(env):Promise.resolve([])
+  ]);
+  modelCatalog.creative={kilo:kiloCreative,aihubmix:aihubmixCreative};
+
 
   const providerHealth=Object.fromEntries(poolProviders.map(provider => {
     const h=quotaHealth[provider]||{};

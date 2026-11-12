@@ -492,7 +492,10 @@ const CREATE_GROUPS=[
  {key:'image',title:'Imágenes',description:'Generación visual desde una descripción.'},
  {key:'audio',title:'Audio',description:'Transcripción y procesamiento de voz.'},
  {key:'music',title:'Música',description:'Modelos que producen pistas musicales reales.'},
- {key:'video',title:'Vídeo',description:'Modelos que producen clips reales.'}
+ {key:'video',title:'Vídeo',description:'Modelos que producen clips reales.'},
+ {key:'transcription',title:'Transcripción',description:'Convierte voz y grabaciones en texto.'},
+ {key:'embedding',title:'Búsqueda y vectores',description:'Modelos de representación y recuperación.'},
+ {key:'safety',title:'Moderación',description:'Modelos de clasificación y seguridad.'}
 ];
 const CREATE_IMAGE_PROVIDERS=['cloudflare','pollinations','gemini'];
 function renderImageModelControls(){
@@ -507,9 +510,25 @@ function renderImageModelControls(){
   const desc=document.createElement('small');desc.textContent=group.description;
   heading.append(title,desc);section.append(heading);
   const entries=[];
+  const specialized=(catalog.creative||{});
+  for(const [provider,models] of Object.entries(specialized)){
+   if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
+   for(const model of models){
+    if(!model?.id)continue;
+    const name=String(model.id)+' '+String(model.name||'');
+    const type=/lyria|musicgen|music-gen|ace.step|riffusion|suno/i.test(name)?'music':
+     /whisper|transcrib|speech.to.text/i.test(name)?'transcription':
+     /moderation|guardrail|content.safety/i.test(name)?'safety':
+     /embedding|rerank|vectorization/i.test(name)?'embedding':
+     /video|veo-|wan[0-9]|sora|kling/i.test(name)?'video':
+     /image|flux|diffusion|dall.e|recraft|ideogram|z.image/i.test(name)?'image':
+     /speech|voice|tts|audio/i.test(name)?'audio':'';
+    if(type===group.key)entries.push({provider,model});
+   }
+  }
   for(const [provider,models] of Object.entries(catalog[group.key]||{})){
    if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
-   for(const model of models)if(model?.id)entries.push({provider,model});
+   for(const model of models)if(model?.id&&!entries.some(x=>x.provider===provider&&x.model.id===model.id))entries.push({provider,model});
   }
   const list=document.createElement('div');list.className='core-create-options';
   for(const {provider,model} of entries){
