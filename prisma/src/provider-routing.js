@@ -1,17 +1,16 @@
-// Cost-aware, task-aware provider and model routing for Prisma Core.
-// Routing is sequential: one model is used on the healthy path; alternatives
-// are contacted only after a real failure. OpenRouter remains the final reserve.
-export const ROUTE_ORDER = Object.freeze({
-  planner: ["groq","cloudflare","sensenova","zai","gemini","requesty","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  quick: ["groq","cloudflare","requesty","sensenova","zai","gemini","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  conversation: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  general: ["groq","cloudflare","gemini","sensenova","zai","requesty","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  summary: ["cloudflare","groq","gemini","requesty","sensenova","zai","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  coding: ["cloudflare","groq","zai","requesty","sensenova","gemini","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  reasoning: ["gemini","sensenova","zai","requesty","cloudflare","groq","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  creative: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","kilo","aihubmix","openrouter"],
-  songwriting: ["groq","gemini","sensenova","zai","requesty","cloudflare","pollinations","huggingface","kilo","aihubmix","openrouter"],
-});
+// Task-aware model mapping with fast, reliable text providers first.
+// Automatic text routing uses stable priority bands: quick providers first,
+// then backups, then scarce Cloudflare AI, then slow SenseNova.
+// Explicit user-selected providers still run first.
+export const FAST_PROVIDER_ORDER=Object.freeze(["groq","gemini","openrouter","pollinations"]);
+export const MIDDLE_PROVIDER_ORDER=Object.freeze(["zai","kilo","aihubmix","requesty","huggingface"]);
+export const LATE_PROVIDER_ORDER=Object.freeze(["cloudflare","sensenova"]);
+export const ROUTE_ORDER=Object.freeze(
+ Object.fromEntries(
+  ["planner","quick","conversation","general","summary","coding","reasoning","creative","songwriting"]
+   .map(task=>[task,[...FAST_PROVIDER_ORDER,...MIDDLE_PROVIDER_ORDER,...LATE_PROVIDER_ORDER]])
+ )
+);
 
 const MODEL_BY_TASK = Object.freeze({
   planner: {
@@ -114,27 +113,34 @@ const DEFAULT_MODELS = {
 };
 
 export function rankProviders({preferred="auto",task="general",baseOrder=ROUTE_ORDER[task]||ROUTE_ORDER.general,available=()=>true,health={},usage={},now=Date.now()}={}) {
-  const order=[...new Set(preferred==="auto"?baseOrder:[preferred,...baseOrder.filter(name=>name!==preferred)])].filter(name=>available(name));
-  if(preferred!=="auto")return order;
-  return order.map((name,index)=>{
-    const record=health[name+":"+task]||{},recent=now-Number(record.at||0)<30*60*1000;
-    const cooling=recent&&Number(record.coolingUntil||0)>now;
-    const failures=recent?Math.min(4,Math.max(0,Number(record.failures)||0)):0;
-    const successes=recent?Math.min(4,Math.max(0,Number(record.successes)||0)):0;
-    const averageMs=recent?Math.max(0,Number(record.averageMs)||0):0;
-    const latency=averageMs?Math.min(18,averageMs/1800):0;
-    const reliability=failures*6-Math.min(2,successes*0.5);
-    const daily=usage[name]?.daily||usage[name]||{};
-    const used=Math.max(0,Number(daily.used)||0),limit=Math.max(0,Number(daily.limit)||0);
-    // Weighted fair queueing: route order expresses task fit and provider priority;
-    // shared daily use plus this session's recent successes prevent one healthy
-    // provider from monopolizing every request while others stay idle.
-    const utilization=limit>0?Math.max(0,Math.min(1,used/limit)):0;
-    const priorityWeight=1/(1+index*0.35);
-    const loadPenalty=(used+successes*2)/priorityWeight;
-    const quotaPenalty=utilization*12;
-    return {name,score:loadPenalty+quotaPenalty+latency+reliability+index*0.05+(cooling?1000:0)+(name==='openrouter'?10000:0)};
-  }).sort((a,b)=>a.score-b.score).map(item=>item.name);
+ const unique=[...new Set(baseOrder)].filter(name=>available(name));
+ if(preferred!=="auto")return [...new Set([preferred,...unique])].filter(name=>available(name));
+ const order=[...FAST_PROVIDER_ORDER,...MIDDLE_PROVIDER_ORDER,...LATE_PROVIDER_ORDER];
+ // Known providers always occupy their assigned priority band. This prevents
+ // absolute daily-use counters from pushing scarce Cloudflare to the front.
+ const all=[...new Set([...order.filter(x=>unique.includes(x)),...unique])];
+ const evaluate=name=>{
+  const record=health[name+":"+task]||{};
+  const recent=now-Number(record.at||0)<30*60*1000;
+  const cooling=recent&&Number(record.coolingUntil||0)>now;
+  const failures=recent?Math.min(4,Math.max(0,Number(record.failures)||0)):0;
+  const averageMs=recent?Math.max(0,Number(record.averageMs)||0):0;
+  const daily=usage[name]?.daily||usage[name]||{};
+  const used=Math.max(0,Number(daily.used)||0),limit=Math.max(0,Number(daily.limit)||0);
+  const utilization=limit>0?Math.min(1,used/limit):0;
+  const index=all.indexOf(name);
+  const latency=averageMs?Math.min(18,averageMs/1500):0;
+  // Ratios are comparable across quotas; absolute request counters are not.
+  return {name,index,cooling,score:index*8+latency+failures*5+utilization*12+(cooling?1000:0)};
+ };
+ const group=names=>names.filter(name=>all.includes(name)).map(evaluate)
+  .sort((a,b)=>a.score-b.score||a.index-b.index).map(x=>x.name);
+ const fast=group(FAST_PROVIDER_ORDER);
+ const mid=group(MIDDLE_PROVIDER_ORDER);
+ // Last two remain in the requested order regardless of load/latency.
+ const late=LATE_PROVIDER_ORDER.filter(name=>all.includes(name));
+ const extras=all.filter(name=>!order.includes(name));
+ return [...fast,...mid,...extras,...late];
 }
 
 export function adaptiveProviderDeadline({averageMs=0,baseMs=21000,minMs=12000,multiplier=2.5,overheadMs=3000}={}) {
