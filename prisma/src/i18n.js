@@ -11,10 +11,18 @@ const savedLanguage = (() => {
 })();
 const browserLanguages = Array.isArray(navigator.languages) && navigator.languages.length
   ? navigator.languages : [navigator.language || 'es'];
-const browserSpanish = browserLanguages.some(value => /^es(?:-|$)/i.test(value));
+// Browser language order is preference order. A secondary Spanish fallback
+// must not override a visitor whose primary language is English.
+const preferredBrowserLanguage = String(browserLanguages[0] || navigator.language || 'es');
+const browserSpanish = /^es(?:-|$)/i.test(preferredBrowserLanguage);
 const routeLanguage = /^\/en(?:\/|$)/i.test(location.pathname) ? 'en' : '';
 const initialLanguage = routeLanguage || savedLanguage ||
   (defaultMeta === 'en' ? 'en' : defaultMeta === 'es' ? 'es' : browserSpanish ? 'es' : 'en');
+// Put first-time English visitors on the real English URL, not a translated
+// Spanish canonical. Respect an explicit language preference already saved.
+if (location.pathname === '/' && initialLanguage === 'en') {
+  history.replaceState(history.state, '', '/en/' + location.search + location.hash);
+}
 
 const manualTranslations = {
   'Prisma Space — Crea, convierte y experimenta': 'Prisma Space — Create, Convert, and Experiment',
@@ -182,6 +190,17 @@ function applyAll() {
   root.dataset.language = language;
   const locale = document.querySelector('meta[property="og:locale"]');
   if (locale) locale.content = language === 'en' ? 'en_US' : 'es_ES';
+  const languageMeta = document.querySelector('meta[name="prisma-default-language"]');
+  if (languageMeta) languageMeta.content = language;
+  // The SPA switches / and /en/ without reloading. Keep its canonical and
+  // Open Graph URL aligned with the selected language after every switch.
+  if (location.pathname === '/' || /^\\/en\\/?$/i.test(location.pathname)) {
+    const appUrl = 'https://prismaspace.space' + (language === 'en' ? '/en/' : '/');
+    const canonical = document.querySelector('link[rel="canonical"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (canonical) canonical.href = appUrl;
+    if (ogUrl) ogUrl.content = appUrl;
+  }
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) translateTextNode(node);
