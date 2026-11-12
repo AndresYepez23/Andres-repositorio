@@ -1,10 +1,10 @@
-// Task-aware model mapping with fast, reliable text providers first.
-// Automatic text routing uses stable priority bands: quick providers first,
-// then backups, then scarce Cloudflare AI, then slow SenseNova.
-// Explicit user-selected providers still run first.
-export const FAST_PROVIDER_ORDER=Object.freeze(["groq","gemini","openrouter","pollinations"]);
-export const MIDDLE_PROVIDER_ORDER=Object.freeze(["zai","kilo","aihubmix","requesty","huggingface"]);
-export const LATE_PROVIDER_ORDER=Object.freeze(["cloudflare","sensenova"]);
+// Benchmark-informed model routing. The measured fast tier is ordered by
+// repeatable successful latency and stability, not by raw request counts.
+// Scarce Cloudflare stays penultimate; slower Pollinations remains the final
+// reserve. SenseNova is promoted because live tests showed ~3.2s responses.
+export const FAST_PROVIDER_ORDER=Object.freeze(["groq","zai","gemini","openrouter"]);
+export const MIDDLE_PROVIDER_ORDER=Object.freeze(["sensenova","kilo","aihubmix","requesty","huggingface"]);
+export const LATE_PROVIDER_ORDER=Object.freeze(["cloudflare","pollinations"]);
 export const ROUTE_ORDER=Object.freeze(
  Object.fromEntries(
   ["planner","quick","conversation","general","summary","coding","reasoning","creative","songwriting"]
