@@ -19,13 +19,16 @@ test('web research is activated only by explicit research/search wording',()=>{
   ]) assert.equal(isExplicitResearchRequest(query),false,query);
 });
 
-test('research sources keep only valid HTTP(S) URLs and bound external text',()=>{
+test('research sources keep valid URLs, source engine, publication dates and bounded text',()=>{
   const sources=formatResearchSources([
-    {title:'Fuente válida',url:'https://example.com/article',content:'Contenido',published_date:'2026-11-12'},
+    {title:'Fuente válida',url:'https://example.com/article',content:'Contenido',published_date:'2026-11-12',provider:'jina'},
     {title:'URL inválida',url:'javascript:alert(1)',content:'No debe pasar'},
-    {title:'Contenido extenso',url:'https://example.org',content:'x'.repeat(3000)}
+    {title:'Contenido extenso',url:'https://example.org',content:'x'.repeat(3000),publishedTime:'2026-11-11'}
   ]);
   assert.equal(sources.length,2);
   assert.equal(sources[0].url,'https://example.com/article');
+  assert.equal(sources[0].provider,'jina');
+  assert.equal(sources[0].publishedDate,'2026-11-12');
   assert.equal(sources[1].content.length,2200);
+  assert.equal(sources[1].publishedDate,'2026-11-11');
 });
