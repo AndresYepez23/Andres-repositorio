@@ -13,6 +13,23 @@ export const LIMITS=Object.freeze({
 const PROVIDER_MINUTE_LIMITS=Object.freeze({kilo:3,requesty:10,sensenova:5,zai:3,aihubmix:10});
 export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[provider]||null;}
 
+// These providers have separate credential/account pools. Internal capacity
+// scales with configured keys; upstream headers and per-key cooldowns remain
+// the source of truth for live account limits.
+const CREDENTIAL_SCOPED_PROVIDERS=new Set([
+ "gemini","groq","huggingface","pollinations","requesty","sensenova","zai","aihubmix"
+]);
+export function getProviderDailyCapacity(env,provider){
+ const base=getProviderDailyLimit(env,provider);
+ if(!CREDENTIAL_SCOPED_PROVIDERS.has(provider))return base;
+ return Math.min(5000,base*Math.max(1,getCredentialSlots(env,provider).length));
+}
+export function getProviderMinuteCapacity(env,provider){
+ const base=getProviderMinuteLimit(provider);
+ if(!base||!CREDENTIAL_SCOPED_PROVIDERS.has(provider))return base;
+ return Math.min(1000,base*Math.max(1,getCredentialSlots(env,provider).length));
+}
+
 // Internal budgets are per provider/project, not per API key. Multiple keys
 // in one account do not multiply the provider's real quota. An owner can tune
 // a safe app-side ceiling with PRISMA_<PROVIDER>_DAILY_LIMIT in Cloudflare.
@@ -20,17 +37,17 @@ export function getProviderDailyLimit(env,provider){
  const variable='PRISMA_'+String(provider||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')+'_DAILY_LIMIT';
  const configured=Number(env?.[variable]);
  if(Number.isFinite(configured)&&configured>0)return Math.max(1,Math.min(5000,Math.floor(configured)));
- if(provider==="aihubmix"&&env?.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1")return 15;
+ if(provider==="aihubmix"&&env?.AIHUBMIX_DAILY_QUOTA_ACTIVE==="1")return 100;
  return LIMITS[provider]||10;
 }
 export function getSharedDailyBudget(env){
  const pooled=['gemini','groq','huggingface','pollinations','requesty','sensenova','zai','aihubmix'];
- let budget=pooled.reduce((sum,provider)=>sum+(getCredentialSlots(env,provider).length?getProviderDailyLimit(env,provider):0),0);
- budget+=getProviderDailyLimit(env,'kilo');
- if(env?.AI?.run)budget+=getProviderDailyLimit(env,'cloudflare');
+ let budget=pooled.reduce((sum,provider)=>sum+(getCredentialSlots(env,provider).length?getProviderDailyCapacity(env,provider):0),0);
+ budget+=getProviderDailyCapacity(env,'kilo');
+ if(env?.AI?.run)budget+=getProviderDailyCapacity(env,'cloudflare');
  const configured=Number(env?.PRISMA_TOTAL_DAILY_LIMIT);
  if(Number.isFinite(configured)&&configured>0)budget=Math.min(budget,Math.floor(configured));
- return Math.max(1,Math.min(600,budget));
+ return Math.max(1,Math.min(5000,budget));
 }
 export function getVisitorDailyLimit(env){
  const configured=Number(env?.PRISMA_VISITOR_DAILY_LIMIT);
@@ -42,7 +59,7 @@ function windows(now=Date.now()){
  return {minute,day};
 }
 
-export async function getProviderUsage(env,provider,dailyLimit=getProviderDailyLimit(env,provider),perMinuteLimit=null){
+export async function getProviderUsage(env,provider,dailyLimit=getProviderDailyCapacity(env,provider),perMinuteLimit=getProviderMinuteCapacity(env,provider)){
  const db=env.PRISMA_RATE_DB;
  if(!db?.prepare)return {available:false,daily:null,minute:null};
  const {minute,day}=windows();
@@ -90,7 +107,7 @@ export async function refundFailedProviderUsage(env,provider){
  const {minute,day}=windows();
  const scopes=[
   ["provider-day:"+provider,day],
-  ...(PROVIDER_MINUTE_LIMITS[provider]?[["provider-minute:"+provider,minute]]:[]),
+  ...(getProviderMinuteCapacity(env,provider)?[["provider-minute:"+provider,minute]]:[]),
   ...(provider==="openrouter"?[["provider-minute:openrouter",minute]]:[["total-day",day]]),
   ...(provider==="aihubmix"&&env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1"?[["provider-lifetime:aihubmix",0]]:[])
  ];
@@ -130,7 +147,7 @@ export async function checkLimits(env,request,provider){
  const key=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("").slice(0,32);
  const {minute,day}=windows();
  const openrouterLimits=provider==="openrouter"?await getOpenRouterLimits(env):null;
- const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:provider==="cloudflare-audio"?Math.min(3,getProviderDailyLimit(env,provider)):getProviderDailyLimit(env,provider);
+ const providerDailyLimit=provider==="openrouter"?openrouterLimits.dailyLimit:provider==="cloudflare-audio"?Math.min(3,getProviderDailyLimit(env,provider)):getProviderDailyCapacity(env,provider);
  // Distinct per-visitor anti-abuse limits allow the backup to respond
  // even if this visitor has already used their daily/minute allowance
  // with Prisma's main providers. Neither allowance is unlimited.
@@ -140,8 +157,8 @@ export async function checkLimits(env,request,provider){
   [isBackup?"ip-day:openrouter:"+key:"ip-day:"+key,day,isBackup?OPENROUTER_VISITOR_LIMITS.perDay:getVisitorDailyLimit(env),isBackup?"PROVIDER_LIMIT":"GLOBAL_LIMIT"],
   ...(isBackup?[["provider-minute:openrouter",minute,openrouterLimits.perMinuteLimit,"PROVIDER_MINUTE_LIMIT"]]:[]),
   ["provider-day:"+provider,day,providerDailyLimit,"PROVIDER_LIMIT"],
-  ...(PROVIDER_MINUTE_LIMITS[provider] ? [["provider-minute:"+provider,minute,PROVIDER_MINUTE_LIMITS[provider],"PROVIDER_MINUTE_LIMIT"]] : []),
-  ...(provider==="aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1" ? [["provider-lifetime:aihubmix",0,10,"PROVIDER_LIMIT"]] : []),
+  ...(getProviderMinuteCapacity(env,provider) ? [["provider-minute:"+provider,minute,getProviderMinuteCapacity(env,provider),"PROVIDER_MINUTE_LIMIT"]] : []),
+  ...(provider==="aihubmix" && env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1" ? [["provider-lifetime:aihubmix",0,10*Math.max(1,getCredentialSlots(env,"aihubmix").length),"PROVIDER_LIMIT"]] : []),
   // OpenRouter is the independent paid/free safety net. It must remain usable
   // when the shared free quotas of the primary Prisma providers are exhausted.
   ...(provider==="openrouter"?[]:[["total-day",day,getSharedDailyBudget(env),"GLOBAL_LIMIT"]])
@@ -173,7 +190,7 @@ SET request_count=request_count+1 WHERE request_count<? RETURNING request_count`
    const [scope,start,max]=record;
    if(!await db.prepare(sql).bind(scope,start,max).first())return denied(record);
   }
-  if(Math.random()<0.01)await db.prepare("DELETE FROM ai_rate_limits WHERE window_start<? AND scope NOT LIKE 'provider-lifetime:%'").bind(minute-4320).run().catch(()=>{});
+  if(Math.random()<0.01)await db.prepare("DELETE FROM ai_rate_limits WHERE window_start<? AND scope NOT LIKE 'provider-lifetime:%' AND scope NOT LIKE 'credential-cursor:%' AND scope NOT LIKE 'credential:%:last-used' AND scope NOT LIKE 'credential:%:last-success' AND scope NOT LIKE 'credential:%:last-status' AND scope NOT LIKE 'credential:%:balance-%'").bind(minute-4320).run().catch(()=>{});
   return null;
  }catch(error){
   console.error("Prisma D1 limiter",error?.message||error);
