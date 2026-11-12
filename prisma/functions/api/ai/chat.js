@@ -425,7 +425,7 @@ async function executeChatRequest({ request, env }, markReserved) {
 
   const compatibleProviders={
     sensenova:{url:"https://token.sensenova.ai/v1/chat/completions",model:"sensenova-6.8-flash-lite"},
-    zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.7-flash"},
+    zai:{url:"https://api.z.ai/api/paas/v4/chat/completions",model:"glm-4.5-flash"},
     requesty:{url:"https://router.requesty.ai/v1/chat/completions",model:"novita/ling-3.1-flash"},
     aihubmix:{url:"https://aihubmix.com/v1/chat/completions",model:null},
   };
@@ -444,7 +444,7 @@ async function executeChatRequest({ request, env }, markReserved) {
     return json({ error: "Gemini todavía no está configurado. Añade GEMINI_API_KEYS_JSON o GEMINI_API_KEY como secreto de Cloudflare." }, 503);
   }
 
-  const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.8-flash");
+  const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.5-flash-lite");
   const allowedModels = new Set(["gemini-3.8-flash", "gemini-3.5-flash-lite"]);
   if (!allowedModels.has(model)) {
     return json({ error: "El modelo solicitado no está habilitado para el uso compartido de Prisma." }, 400);

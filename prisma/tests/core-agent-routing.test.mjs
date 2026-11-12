@@ -463,7 +463,8 @@ const compatibleChatSource=readFileSync(new URL('../functions/api/ai/chat.js',im
 assert.match(compatibleChatSource,/sweepAuthSlots:provider==="sensenova"||provider==="zai"/,'SenseNova must enable valid-key auth sweep');
 assert.match(compatibleChatSource,/sensenova:\{url:"https:\/\/token\.sensenova\.ai\/v1\/chat\/completions"/,'SenseNova international keys must use the international TokenPlan host');
 assert.doesNotMatch(compatibleChatSource,/token\.sensenova\.cn|token\.sensetime\.com/,'SenseNova must not regress to China-only or incompatible legacy endpoints');
-assert.match(compatibleChatSource,/zai:\{url:"https:\/\/api\.z\.ai\/api\/paas\/v4\/chat\/completions",model:"glm-4\.7-flash"\}/,'Z.AI must keep the general OpenAI-compatible endpoint and GLM-4.7-Flash model');
+assert.match(compatibleChatSource,/zai:\{url:"https:\/\/api\.z\.ai\/api\/paas\/v4\/chat\/completions",model:"glm-4\.5-flash"\}/,'Z.AI defaults to the live-validated GLM-4.5 Flash model while smart tier can still select GLM-4.7');
+assert.match(compatibleChatSource,/env\.GEMINI_TEXT_MODEL \|\| "gemini-3\.5-flash-lite"/,'Gemini direct requests default to the live-validated Flash Lite model');
 assert.match(compatibleChatSource,/retryStatuses:.*(?:requesty|zai).*\[401,403\]/,'Z.AI and Requesty must rotate independent accounts after HTTP 403');
 assert.match(compatibleChatSource,/provider==="sensenova"\?2048:128/,'SenseNova reasoning should have an adequate output token budget');
 
@@ -496,19 +497,23 @@ const now=Date.now();
 const cooled=rankProviders({task:'planner',available:availableAll,now,health:{
  'groq:planner':{at:now,failures:3,coolingUntil:now+60000,averageMs:22000}
 }});
-assert.equal(cooled[0],'gemini','a cooling Groq provider hands requests to the next fast provider');
+assert.equal(cooled[0],'zai','a cooling Groq provider hands requests to the next measured fast provider, Z.AI');
 const sessionBalanced=rankProviders({task:'general',available:availableAll,now,health:{
   'groq:general':{at:now,successes:1,averageMs:500}
 }});
 assert.equal(sessionBalanced[0],'groq','A single fast Groq response should not demote it beneath scarce Cloudflare');
-assert.deepEqual(cooled.slice(-2),['cloudflare','sensenova'],
-  'The automatic sequence always keeps Cloudflare penultimate and SenseNova last');
+assert.deepEqual(cooled.slice(-2),['cloudflare','pollinations'],
+  'The automatic sequence keeps scarce Cloudflare penultimate and slower Pollinations last');
+assert.ok(cooled.indexOf('sensenova')<cooled.indexOf('kilo'),
+  'Measured SenseNova latency promotes it ahead of Kilo');
 assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
 assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
 assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
 assert.equal(selectTaskModel('sensenova','general','balanced',[{id:'sensenova-6.8-flash-lite'}]),'sensenova-6.8-flash-lite');
 assert.equal(selectTaskModel('zai','reasoning','smart',[{id:'glm-4.7-flash'}]),'glm-4.7-flash');
+assert.equal(selectTaskModel('zai','general','balanced',[]),'glm-4.5-flash');
+assert.equal(selectTaskModel('gemini','general','balanced',[]),'gemini-3.5-flash-lite');
 assert.equal(selectTaskModel('requesty','coding','balanced',[{id:'novita/ling-3.1-flash'}]),'novita/ling-3.1-flash');
 assert.equal(selectTaskModel('requesty','general','fast',CHAT_MODELS.requesty),'novita/inclusionai/ling-3.0-tiny');
 assert.equal(selectTaskModel('kilo','quick','fast',[{id:'nvidia/nemotron-3-ultra:free'}]),'nvidia/nemotron-3-ultra:free');
@@ -857,7 +862,7 @@ assert.match(connectionsSource,/const count=Object\.values\(central\.providers\|
 
 
 // Core 4: bounded API budget, no hidden personal credits, and observable usage.
-const rankedEngines=['groq','gemini','openrouter','pollinations','zai','kilo','cloudflare','sensenova'];
+const rankedEngines=['groq','zai','gemini','openrouter','sensenova','kilo','aihubmix','requesty','huggingface','cloudflare','pollinations'];
 assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'conversation'}),rankedEngines,
  'Automatic routing must not discard healthy providers outside the old first-five cutoff');
 assert.deepEqual(selectInferenceCandidates(rankedEngines,{task:'reasoning'}),rankedEngines);

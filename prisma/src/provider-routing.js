@@ -1,10 +1,10 @@
-// Task-aware model mapping with fast, reliable text providers first.
-// Automatic text routing uses stable priority bands: quick providers first,
-// then backups, then scarce Cloudflare AI, then slow SenseNova.
-// Explicit user-selected providers still run first.
-export const FAST_PROVIDER_ORDER=Object.freeze(["groq","gemini","openrouter","pollinations"]);
-export const MIDDLE_PROVIDER_ORDER=Object.freeze(["zai","kilo","aihubmix","requesty","huggingface"]);
-export const LATE_PROVIDER_ORDER=Object.freeze(["cloudflare","sensenova"]);
+// Benchmark-informed model routing. The measured fast tier is ordered by
+// repeatable successful latency and stability, not by raw request counts.
+// Scarce Cloudflare stays penultimate; slower Pollinations remains the final
+// reserve. SenseNova is promoted because live tests showed ~3.2s responses.
+export const FAST_PROVIDER_ORDER=Object.freeze(["groq","zai","gemini","openrouter"]);
+export const MIDDLE_PROVIDER_ORDER=Object.freeze(["sensenova","kilo","aihubmix","requesty","huggingface"]);
+export const LATE_PROVIDER_ORDER=Object.freeze(["cloudflare","pollinations"]);
 export const ROUTE_ORDER=Object.freeze(
  Object.fromEntries(
   ["planner","quick","conversation","general","summary","coding","reasoning","creative","songwriting"]
@@ -21,7 +21,7 @@ const MODEL_BY_TASK = Object.freeze({
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-20b:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
@@ -33,7 +33,7 @@ const MODEL_BY_TASK = Object.freeze({
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-20b:cheapest",smart:"openai/gpt-oss-20b:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
@@ -45,55 +45,55 @@ const MODEL_BY_TASK = Object.freeze({
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-20b:cheapest",smart:"openai/gpt-oss-120b:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
   coding: {
     cloudflare: {fast:"@cf/qwen/qwen3.8-27b",balanced:"@cf/qwen/qwen3.8-27b",smart:"@cf/qwen/qwen3.8-27b"},
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
-    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.8-flash",smart:"gemini-3.8-flash"},
+    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.5-flash-lite",smart:"gemini-3.8-flash"},
     pollinations: {fast:"qwen/qwen3-coder-30b-a3b-instruct",balanced:"qwen/qwen3-coder-30b-a3b-instruct",smart:"qwen/qwen3-coder-30b-a3b-instruct"},
     huggingface: {fast:"Qwen/Qwen2.5-Coder-32B-Instruct:cheapest",balanced:"Qwen/Qwen2.5-Coder-32B-Instruct:cheapest",smart:"Qwen/Qwen2.5-Coder-32B-Instruct:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
   reasoning: {
-    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.8-flash",smart:"gemini-3.8-flash"},
+    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.5-flash-lite",smart:"gemini-3.8-flash"},
     cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/deepseek-ai/deepseek-v4.1-flash-1017",smart:"@cf/deepseek-ai/deepseek-v4.1-flash-1017"},
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
     pollinations: {fast:"openai/gpt-5.4-nano",balanced:"deepseek/deepseek-v4-flash",smart:"deepseek/deepseek-v4-flash"},
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"deepseek-ai/DeepSeek-R1:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
   creative: {
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
-    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.8-flash",smart:"gemini-3.8-flash"},
+    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.5-flash-lite",smart:"gemini-3.8-flash"},
     cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/meta/llama-3.3-70b-instruct-fp8-fast",smart:"@cf/meta/llama-3.3-70b-instruct-fp8-fast"},
     pollinations: {fast:"openai/gpt-5.4-nano",balanced:"openai/gpt-5.4-nano",smart:"openai/gpt-5.4-nano"},
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-120b:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
   songwriting: {
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
-    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.8-flash",smart:"gemini-3.8-flash"},
+    gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.5-flash-lite",smart:"gemini-3.8-flash"},
     cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/meta/llama-3.3-70b-instruct-fp8-fast",smart:"@cf/meta/llama-3.3-70b-instruct-fp8-fast"},
     pollinations: {fast:"openai/gpt-5.4-nano",balanced:"openai/gpt-5.4-nano",smart:"openai/gpt-5.4-nano"},
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-120b:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
     openrouter: {fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
     sensenova: {fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-    zai: {fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+    zai: {fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
     requesty: {fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
     kilo: {fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   },
@@ -106,7 +106,7 @@ const DEFAULT_MODELS = {
   huggingface:{fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-120b:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
   openrouter:{fast:"openrouter/free",balanced:"openrouter/free",smart:"openrouter/free"},
   sensenova:{fast:"sensenova-6.8-flash-lite",balanced:"sensenova-6.8-flash-lite",smart:"sensenova-6.8-flash-lite"},
-  zai:{fast:"glm-4.5-flash",balanced:"glm-4.7-flash",smart:"glm-4.7-flash"},
+  zai:{fast:"glm-4.5-flash",balanced:"glm-4.5-flash",smart:"glm-4.7-flash"},
   requesty:{fast:"novita/inclusionai/ling-3.0-tiny",balanced:"novita/ling-3.1-flash",smart:"novita/ling-3.1-flash"},
   kilo:{fast:"z-ai/glm-5:free",balanced:"minimax/minimax-m2.1:free",smart:"z-ai/glm-5:free"},
   aihubmix:{fast:"coding-glm-5.3-flash-free",balanced:"coding-glm-5.3-free",smart:"coding-kimi-k3-free"},

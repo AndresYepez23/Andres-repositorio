@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rankProviders, adaptiveProviderDeadline, sensenovaRequestDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
+import { rankProviders, adaptiveProviderDeadline, sensenovaRequestDeadline, selectTaskModel, ROUTE_ORDER } from '../src/provider-routing.js';
 import { getCredentialHealthSnapshot, getCredentialMetricsSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
 import { getProviderDailyCapacity, getProviderMinuteCapacity } from '../functions/_lib/limits.js';
@@ -122,10 +122,16 @@ assert.equal(getProviderDailyCapacity(aihubmixPaidEnv,'aihubmix'),500,
 const now=Date.now();
 const healthyOrder=rankProviders({task:'general',available:()=>true,now});
 assert.deepEqual(healthyOrder,ROUTE_ORDER.general,'Healthy providers preserve the task-specialized route');
-assert.deepEqual(healthyOrder.slice(0,4),['groq','gemini','openrouter','pollinations'],
-  'Healthy text requests start with fast providers, including OpenRouter in third position');
-assert.deepEqual(healthyOrder.slice(-2),['cloudflare','sensenova'],
-  'Scarce Cloudflare and slow SenseNova remain the last two automatic candidates');
+assert.deepEqual(healthyOrder.slice(0,4),['groq','zai','gemini','openrouter'],
+  'Live benchmarks prioritize Groq, fast GLM-4.5, Gemini Flash Lite, then OpenRouter');
+assert.deepEqual(healthyOrder.slice(-2),['cloudflare','pollinations'],
+  'Scarce Cloudflare remains penultimate and the slower Pollinations route is last');
+assert.ok(healthyOrder.indexOf('sensenova')<healthyOrder.indexOf('kilo'),
+  'SenseNova is promoted ahead of Kilo after its measured 3.2s successful response');
+assert.equal(selectTaskModel('zai','general','balanced',[]),'glm-4.5-flash',
+  'Balanced automatic Z.AI requests use the live-validated GLM-4.5 Flash model');
+assert.equal(selectTaskModel('gemini','general','balanced',[]),'gemini-3.5-flash-lite',
+  'Balanced automatic Gemini requests use the live-validated Flash Lite model');
 
 const latencyOrder=rankProviders({
   task:'general',
@@ -136,10 +142,12 @@ const latencyOrder=rankProviders({
     'cloudflare:general':{at:now,averageMs:900,failures:0,successes:4}
   }
 });
-assert.ok(latencyOrder.indexOf('gemini')<latencyOrder.indexOf('groq'),
-  'A significantly faster top-tier provider may overtake a slow top-tier provider');
-assert.ok(latencyOrder.indexOf('cloudflare')>latencyOrder.indexOf('pollinations'),
-  'A fast Cloudflare reply must not move a scarce provider into the high-priority group');
+assert.ok(latencyOrder.indexOf('zai')<latencyOrder.indexOf('groq'),
+  'A significantly faster measured top-tier provider may overtake a slow top-tier provider');
+assert.equal(latencyOrder.at(-2),'cloudflare',
+  'Cloudflare stays penultimate even when its measured latency is unusually low');
+assert.equal(latencyOrder.at(-1),'pollinations',
+  'Pollinations remains the final fallback while its observed latency is the highest');
 
 const coolingOrder=rankProviders({
   task:'general',
@@ -350,8 +358,8 @@ const balancedOrder=rankProviders({
     cloudflare:{daily:{used:0,limit:100}}
   }
 });
-assert.equal(balancedOrder[0],'gemini',
-  'The router moves overloaded Groq traffic to healthy fast alternatives, not Cloudflare');
+assert.equal(balancedOrder[0],'zai',
+  'When Groq reaches its quota, the next healthy measured fast provider is Z.AI');
 const secondBalancedOrder=rankProviders({
   task:'general',
   available:()=>true,
