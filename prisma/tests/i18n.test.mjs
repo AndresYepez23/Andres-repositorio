@@ -35,6 +35,11 @@ test('all Spanish registry names, categories and descriptions have English equiv
 
 test('English requests are normalized without losing negative instructions or confusing questions with actions',()=>{
  assert.match(normalizeIntent('Please remove the image background'),/quitar fondo/);
+ assert.match(normalizeIntent('Convierte este PDF a Word'),/pdf a word/);
+ assert.match(normalizeIntent('Gira solamente la página 2 90 grados y luego conviértelo a Word'),/a word/);
+ assert.match(normalizeIntent('Convert this PDF to Word'),/a word/);
+ assert.match(normalizeIntent('Please count words'),/cuenta palabras/);
+
  assert.match(normalizeIntent("Do not remove the background"),/no quites fondo/);
  assert.equal(isInformationalIntent('Can you compress this PDF?'),false);
  assert.equal(isInformationalIntent('How can I compress a PDF?'),true);
