@@ -495,97 +495,57 @@ const CREATE_GROUPS=[
  {key:'video',title:'Vídeo',description:'Modelos que producen clips reales.'}
 ];
 const CREATE_IMAGE_PROVIDERS=['cloudflare','pollinations','gemini'];
-const CREATIVE_GROUPS=[
- {kind:'image',title:'Imágenes',detail:'Generación y edición visual'},
- {kind:'music',title:'Música',detail:'Composición y generación musical'},
- {kind:'audio',title:'Audio y voz',detail:'Síntesis y procesamiento de audio'},
- {kind:'transcription',title:'Transcripción',detail:'Convertir audio en texto'},
- {kind:'video',title:'Vídeo',detail:'Generación de vídeo'},
- {kind:'embedding',title:'Búsqueda y vectores',detail:'Representaciones para búsqueda'},
- {kind:'safety',title:'Moderación',detail:'Clasificación y seguridad de contenido'}
-];
-function creativeModelKind(model,source){
- if(source==='image')return 'image';
- if(source==='audio')return /whisper|transcri/i.test(String(model?.id||'')+' '+String(model?.name||''))?'transcription':'audio';
- const id=String(model?.id||'')+' '+String(model?.name||'');
- if(/lyria|musicgen|music-gen|ace.step|riffusion|stable.audio|suno/i.test(id))return 'music';
- if(/whisper|transcrib|speech.to.text/i.test(id))return 'transcription';
- if(/moderation|guardrail|content.safety/i.test(id))return 'safety';
- if(/embedding|rerank|vectorization/i.test(id))return 'embedding';
- if(/video|veo-|wan[0-9]|sora|kling/i.test(id))return 'video';
- if(/image|flux|diffusion|dall.e|recraft|ideogram|z.image/i.test(id))return 'image';
- if(/speech|voice|tts|audio/i.test(id))return 'audio';
- return '';
-}
-function renderCreativeModelCatalog(){
- const root=$('#core-creative-groups');if(!root)return;
- const catalog=centralModelCatalog||{};
- const grouped=new Map(CREATIVE_GROUPS.map(group=>[group.kind,[]]));
- const seen=new Set();
- for(const source of ['image','audio','creative']){
-  for(const [provider,models] of Object.entries(catalog[source]||{})){
-   if(['huggingface','requesty'].includes(provider))continue;
-   for(const model of Array.isArray(models)?models:[]){
-    const kind=creativeModelKind(model,source);
-    if(!grouped.has(kind))continue;
-    const key=provider+'|'+String(model.id);
-    if(seen.has(key))continue;seen.add(key);
-    const ready=kind==='image'&&source==='image'&&imageProviderReady(provider);
-    grouped.get(kind).push({provider,model,kind,ready});
-   }
-  }
- }
+function renderImageModelControls(){
+ const root=$('#core-create-groups');if(!root)return;
  root.replaceChildren();
- for(const group of CREATIVE_GROUPS){
-  const items=grouped.get(group.kind)||[];
-  const section=document.createElement('details');section.className='core-creative-group';
-  if(group.kind==='image')section.open=true;
-  const heading=document.createElement('summary');heading.className='core-creative-group-heading';
-  const headingCopy=document.createElement('span');headingCopy.className='core-creative-heading-copy';
+ const catalog=centralModelCatalog||{};
+ const selected=activeChatRecord()?.imageSelection||{provider:'auto',model:''};
+ for(const group of CREATE_GROUPS){
+  const section=document.createElement('section');section.className='core-create-group';
+  const heading=document.createElement('div');heading.className='core-create-group-heading';
   const title=document.createElement('strong');title.textContent=group.title;
-  const detail=document.createElement('small');detail.textContent=group.detail;
-  headingCopy.append(title,detail);
-  const count=document.createElement('span');count.className='core-creative-count';count.textContent=String(items.length);
-  heading.append(headingCopy,count);section.append(heading);
-  const list=document.createElement('div');list.className='core-creative-model-list';
-  if(!items.length){
-   const empty=document.createElement('p');empty.className='core-model-empty';
-   empty.textContent='Sin modelos anunciados en los catálogos conectados.';
-   list.append(empty);
+  const desc=document.createElement('small');desc.textContent=group.description;
+  heading.append(title,desc);section.append(heading);
+  const entries=[];
+  for(const [provider,models] of Object.entries(catalog[group.key]||{})){
+   if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
+   for(const model of models)if(model?.id)entries.push({provider,model});
   }
-  for(const {provider,model,kind,ready} of items){
-   const row=document.createElement('div');row.className='core-creative-model';
-   const info=document.createElement('span');info.className='core-creative-model-copy';
+  const list=document.createElement('div');list.className='core-create-options';
+  for(const {provider,model} of entries){
+   const supported=group.key==='image'&&CREATE_IMAGE_PROVIDERS.includes(provider);
+   const availability=supported?providerAvailability(provider,'image'):{available:false,reason:group.key==='audio'?'Usar desde las herramientas de transcripción':'No conectado a generación'};
+   const ready=supported&&availability.available;
+   const chosen=ready&&activeChatRecord()?.creativeMode==='image'&&selected.provider===provider&&selected.model===model.id;
+   const row=document.createElement('button');row.type='button';row.className='core-create-option'+(chosen?' is-current':'');
+   row.disabled=!ready;row.setAttribute('aria-pressed',String(Boolean(chosen)));
+   const copy=document.createElement('span');copy.className='core-create-option-copy';
    const name=document.createElement('strong');name.textContent=model.name||model.id;
-   const purpose=document.createElement('small');
-   purpose.textContent=model.specialty||({
-    image:'Genera imágenes',music:'Genera música',audio:'Genera o procesa audio',
-    transcription:'Transcribe audio',video:'Genera vídeo',embedding:'Procesa vectores',safety:'Clasifica contenido'
-   }[kind]||'Herramienta especializada');
-   const providerLine=document.createElement('small');providerLine.className='core-creative-provider';
-   providerLine.textContent=(MODEL_PROVIDER_LABELS[provider]||provider)+' · '+(ready?'Disponible':'Sin integración activa');
-   info.append(name,purpose,providerLine);row.append(info);
-   if(ready){
-    const use=document.createElement('button');use.type='button';use.className='core-creative-use';
-    const saved=activeChatRecord()?.imageSelection||{};
-    const selected=activeChatRecord()?.creativeMode==='image'&&saved.provider===provider&&saved.model===model.id;
-    use.textContent=selected?'Elegido':'Elegir';
-    use.setAttribute('aria-pressed',String(selected));
-    use.addEventListener('click',()=>{
-     const chat=activeChatRecord();if(!chat)return;
-     chat.imageSelection={provider,model:model.id};
-     chat.creativeMode='image';chat.updated=Date.now();
-     persistChatHistory();renderModelPicker();renderComposerMode();
-     const picker=$('.core-model-settings');if(picker)picker.open=false;
-    });
-    row.append(use);
-   }
+   const providerLabel=document.createElement('small');providerLabel.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
+   const purpose=document.createElement('small');purpose.className='core-create-purpose';
+   purpose.textContent=String(model.specialty||({image:'Genera imágenes',audio:'Transcribe audio',music:'Genera música',video:'Genera vídeo'}[group.key]));
+   copy.append(name,providerLabel,purpose);
+   const state=document.createElement('span');state.className='core-create-option-state';
+   state.textContent=chosen?'Elegido':ready?'Elegir':supported?availability.reason:'Solo catálogo';
+   row.title=ready?'Crear imágenes con '+(model.name||model.id):availability.reason;
+   row.append(copy,state);
+   if(ready)row.addEventListener('click',()=>{
+    const chat=activeChatRecord();if(!chat)return;
+    chat.imageSelection={provider,model:model.id};chat.updated=Date.now();
+    persistChatHistory();setCoreCreativeMode('image');
+   });
    list.append(row);
+  }
+  if(!entries.length){
+   const empty=document.createElement('p');empty.className='core-create-empty';
+   empty.textContent=group.key==='music'?'Sin modelo musical verificado y conectado por ahora.':
+    group.key==='video'?'Sin modelo de vídeo verificado y conectado por ahora.':
+    'No hay modelos publicados en esta categoría.';
+   list.append(empty);
   }
   section.append(list);root.append(section);
  }
 }
-
 function renderModelPicker(){
  const details=$('.core-model-settings'),summary=details?.querySelector('summary');if(!details||!summary)return;
  const selection=normalizeConversationModelSelection(activeChatRecord()?.modelSelection);
@@ -614,7 +574,7 @@ function renderModelPicker(){
    ?'Último modelo: '+actual+'. Se adapta a la disponibilidad.'
    :'Prisma prioriza eficiencia, disponibilidad y estabilidad.';
  }
- renderChatModelOptions();renderCreativeModelCatalog();
+ renderChatModelOptions();renderImageModelControls();
  const panel=$('#core-model-panel');
  if(panel){
   panel.querySelectorAll('[data-model-tab]').forEach(b=>{
@@ -623,15 +583,14 @@ function renderModelPicker(){
   });
   panel.querySelectorAll('[data-model-pane]').forEach(p=>p.classList.toggle('active',p.dataset.modelPane===activeModelTab));
  }
-
+ const imageButton=$('#core-image-activate');
+ if(imageButton)imageButton.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
 }
 function renderComposerMode(){
- // The model selector explains capabilities; the chat composer stays neutral.
- const banner=$('#core-composer-mode'),input=$('#core-input');
- banner?.classList.add('hidden');
- if(input)input.placeholder='Escribe a Prisma…';
+ // Keep the composer visually identical in both modes.
+ $('#core-composer-mode')?.classList.add('hidden');
+ const input=$('#core-input');if(input)input.placeholder='Escribe a Prisma…';
 }
-
 function setCoreCreativeMode(mode){
  const chat=activeChatRecord();if(!chat)return;
  if(mode==='image'&&!CREATE_IMAGE_PROVIDERS.some(imageProviderReady)){
