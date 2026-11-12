@@ -233,16 +233,6 @@ function translateAttribute(element, attribute) {
   }
 }
 
-function updateLanguageButton() {
-  const button = document.getElementById('prisma-language-toggle');
-  if (!button) return;
-  button.textContent = language === 'en' ? 'ES' : 'EN';
-  const label = language === 'en' ? 'Switch to Spanish' : 'Cambiar a inglés';
-  button.setAttribute('aria-label', label);
-  button.title = label;
-  button.setAttribute('aria-pressed', language === 'en' ? 'true' : 'false');
-}
-
 function applyAll() {
   root.lang = language;
   root.dataset.language = language;
@@ -272,23 +262,6 @@ function applyAll() {
   root.querySelectorAll('*').forEach(element => ATTRIBUTES.forEach(attribute => translateAttribute(element, attribute)));
   translateInternalLinks(root);
   syncAppMetadata();
-  updateLanguageButton();
-}
-
-function installLanguageButton() {
-  if (document.getElementById('prisma-language-toggle')) return;
-  const host = document.querySelector('.topbar-actions') || document.querySelector('.topbar');
-  if (!host) return;
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.id = 'prisma-language-toggle';
-  button.className = 'icon-button prisma-language-toggle';
-  button.setAttribute('data-no-translate','');
-  button.addEventListener('click', () => {
-    setLanguage(language === 'en' ? 'es' : 'en', { persist: true });
-  });
-  host.append(button);
-  updateLanguageButton();
 }
 
 function setLanguage(next, { persist = true } = {}) {
@@ -305,12 +278,7 @@ function setLanguage(next, { persist = true } = {}) {
   document.dispatchEvent(new CustomEvent('prisma:language-change', { detail: { language } }));
 }
 
-const style = document.createElement('style');
-style.textContent = '.prisma-language-toggle{min-width:38px;padding-inline:9px;font-size:11px;font-weight:800;letter-spacing:.06em;line-height:1}';
-document.head.append(style);
-
 applyAll();
-installLanguageButton();
 
 const observer = new MutationObserver(records => {
   if (applying) return;
@@ -336,7 +304,6 @@ const observer = new MutationObserver(records => {
       });
     }
   }
-  installLanguageButton();
 });
 observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: [...ATTRIBUTES, 'href'] });
 
