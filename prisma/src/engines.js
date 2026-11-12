@@ -796,8 +796,8 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   sessionStorage.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
  }catch{}
 }
-function orderModelsForTask(preferred,task,baseOrder,available,health={}){
- return rankProviders({preferred,task,baseOrder,available,health,now:Date.now()});
+function orderModelsForTask(preferred,task,baseOrder,available,health={},usage={}){
+ return rankProviders({preferred,task,baseOrder,available,health,usage,now:Date.now()});
 }
 async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
@@ -865,7 +865,7 @@ async function generateText(p,cb){
    p.centralModelCatalog?.chat?.kilo?.some(model=>!String(model.id||'').toLowerCase().startsWith('nvidia/'))
   );
   return true;
- },routeMemory);
+ },routeMemory,p.centralProviderUsage||{});
  // Try configured providers sequentially; keep OpenRouter last as an independent reserve.
  const ordered=rankedCandidates.filter(provider=>provider!=='openrouter');
  if(rankedCandidates.includes('openrouter'))ordered.push('openrouter');
