@@ -1,7 +1,7 @@
 import { getProviderHold } from "../../_lib/provider-health.js";
 import { tavilyKeys } from "../research/search.js";
 import { modelsForUI } from "../../_lib/model-catalog.js";
-import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, getCredentialMetricsSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
+import { getCredentialSlots, getCredentialStatus, getCredentialHealthSnapshot, CREDENTIAL_ROOTS } from "../../_lib/credential-pool.js";
 import { getKiloFreeModels } from "../../_lib/kilo-models.js";
 import { getAihubmixFreeModels } from "../../_lib/aihubmix-models.js";
 import { getProviderUsage, getProviderLifetimeUsage, getProviderDailyLimit, getProviderMinuteLimit, getProviderDailyCapacity, getProviderMinuteCapacity, getSharedDailyBudget, getSharedDailyUsage, getVisitorDailyLimit } from "../../_lib/limits.js";
@@ -30,7 +30,6 @@ export async function onRequestGet({ env }) {
     [provider, getCredentialSlots(env, provider).length]
   ));
   const credentialHealth=await getCredentialHealthSnapshot(env,poolProviders);
-  const credentialMetrics=await getCredentialMetricsSnapshot(env,poolProviders);
   const usageEntries = await Promise.all(poolProviders
     .filter(provider => provider !== "openrouter" && (configured[provider] > 0 || provider === "kilo"))
     .map(async provider => [provider, await getProviderUsage(env, provider, getProviderDailyCapacity(env, provider), getProviderMinuteCapacity(env, provider))]));
@@ -82,9 +81,7 @@ export async function onRequestGet({ env }) {
 
   const credentialSlots = Object.fromEntries(poolProviders.map(provider => {
     const hold=holds[provider],info=getCredentialStatus(env,provider),health=credentialHealth[provider]||{};
-    const slotMetrics=credentialMetrics[provider]||{};
-    const slotsWithMetrics=info.slots.map(slot=>({...slot,usage:slotMetrics[slot.slot]||null}));
-    return [provider,{...info,slots:slotsWithMetrics,healthySlots:health.healthySlots??0,pausedSlots:health.pausedSlots??0,
+    return [provider,{...info,healthySlots:health.healthySlots??0,pausedSlots:health.pausedSlots??0,
       credentialRetryAt:health.retryAt??null,dailyUsage: usage[provider]?.daily || null, minuteUsage: usage[provider]?.minute || null,
       providerPaused:Boolean(hold),pauseState:hold?.state||null,pauseReason:hold?.reason||null,retryAt:hold?.valid_until||health.retryAt||null}];
   }));
@@ -125,8 +122,7 @@ export async function onRequestGet({ env }) {
     return [provider,{configured:configured[provider],max:credentialSlots[provider].max,healthySlots:h.healthySlots??0,pausedSlots:h.pausedSlots??0,
       available:available[provider],paused:Boolean(holds[provider]),state,reason,retryAt:holds[provider]?.valid_until||h.retryAt||null,
       dailyUsage:usage[provider]?.daily||null,minuteUsage:usage[provider]?.minute||null,
-      lifetimeUsage:provider==="aihubmix"&&env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1"?aihubmixLifetime:null,
-      credentialUsage:credentialSlots[provider]?.slots?.map(slot=>({slot:slot.slot,usage:slot.usage||null}))||[]}];
+      lifetimeUsage:provider==="aihubmix"&&env.AIHUBMIX_DAILY_QUOTA_ACTIVE!=="1"?aihubmixLifetime:null}];
   }));
   providerHealth.cloudflare={configured:env.AI?.run?1:0,max:1,healthySlots:cloudflareReady?1:0,paused:Boolean(holds.cloudflare),available:cloudflareReady,
     state:holds.cloudflare?.state||(usage.cloudflare?.daily?.remaining===0?"daily_limit":cloudflareReady?"configured":"missing"),
