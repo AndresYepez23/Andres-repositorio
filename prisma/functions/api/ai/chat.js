@@ -420,7 +420,7 @@ async function executeChatRequest({ request, env }, markReserved) {
   }
 
   const model = String(payload.model || env.GEMINI_TEXT_MODEL || "gemini-3.8-flash");
-  const allowedModels = new Set(["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"]);
+  const allowedModels = new Set(["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"]);
   if (!allowedModels.has(model)) {
     return json({ error: "El modelo solicitado no está habilitado para el uso compartido de Prisma." }, 400);
   }
@@ -448,7 +448,8 @@ async function executeChatRequest({ request, env }, markReserved) {
 
   let response, data, activeModel = model;
   const fallbackModels = model === "gemini-3.8-flash"
-    ? ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
+    ? ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"]
+    : model === "gemini-3.7-flash" ? ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
     : model === "gemini-3.6-flash" ? ["gemini-3.5-flash-lite"] : [];
   const askGeminiWithFallback = async key => {
     response = await askGemini(model, key);
