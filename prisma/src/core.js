@@ -535,6 +535,7 @@ function renderMessages({forceBottom=false,preserveScroll=true}={}){
     const bubble=document.createElement('article');bubble.className='core-message '+(message.role==='user'?'user':'assistant');
     const label=document.createElement('span');label.className='core-message-label';label.textContent=message.role==='user'?'TÚ':'PRISMA CORE';
     const body=document.createElement('div');body.className='core-message-body';
+    if(message.role==='user')body.setAttribute('data-user-content','');
     if(message.role==='assistant')body.innerHTML=renderMarkdownSafe(message.content);
     else body.textContent=message.content;
     bubble.append(label,body);
@@ -968,6 +969,7 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
   const NativeModel=globalThis.LanguageModel;
   if(!NativeModel||typeof NativeModel.create!=='function')return null;
   let session;
+  const responseLanguage=typeof window!=='undefined'&&window.prismaI18n?.language==='en'?'English':'Spanish';
   try{
     const availability=typeof NativeModel.availability==='function'?await NativeModel.availability(): 'available';
     if(availability==='unavailable'||availability==='after-download'||availability==='downloadable')return null;
@@ -977,6 +979,7 @@ async function requestNativeBrowserPlan(userText,attachmentContext=''){
       'Selecciona solo herramientas con modo local o browser y estado ready o beta del catálogo. No inventes herramientas ni parámetros.',
       'Planifica máximo 6 pasos. No envíes datos a servicios externos. No uses herramientas byok, online ni acciones irreversibles.',
       'Si el pedido no se puede resolver localmente, devuelve steps vacíos y explica honestamente la limitación.',
+       'Write the user-facing message and clarification question in '+responseLanguage+'.',
       'Para análisis de documentos, utiliza el texto adjunto y selecciona una operación local que pueda procesarlo.'
     ].join(' ')});
     const catalog=availableCatalog().filter(tool=>['local','browser'].includes(tool.mode));
