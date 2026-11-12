@@ -27,8 +27,9 @@ export const CHAT_MODELS = {
     {id:"@cf/deepseek-ai/deepseek-v4.1-flash-1017",name:"DeepSeek V4.1 Flash",specialty:"Razonamiento y análisis"}
   ],
   gemini: [
-    {id:"gemini-3.5-flash-lite",name:"Gemini Flash-Lite",specialty:"Respuestas breves"},
-    {id:"gemini-3.8-flash",name:"Gemini Flash",specialty:"Tareas complejas"}
+    {id:"gemini-3.8-flash",name:"Gemini 3.8 Flash",specialty:"Tareas complejas y razonamiento"},
+    {id:"gemini-3.6-flash",name:"Gemini 3.6 Flash",specialty:"Respaldo equilibrado"},
+    {id:"gemini-3.5-flash-lite",name:"Gemini 3.5 Flash-Lite",specialty:"Respaldo rápido y económico"}
   ],
   openrouter: [
     {id:"openrouter/free",name:"OpenRouter Free Router",specialty:"Respaldo automático · selecciona modelos gratuitos disponibles"}
