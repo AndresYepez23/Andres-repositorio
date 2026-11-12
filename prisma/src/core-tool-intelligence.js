@@ -80,6 +80,27 @@ const ALIASES = {
 };
 
 const ENGLISH_ALIASES = {
+ 'image-sepia':['sepia filter','vintage photo effect','make photo look old'],
+ 'image-pixelate':['pixelate image','mosaic effect','pixelate faces'],
+ 'image-social-kit':['social media image sizes','instagram post size','youtube thumbnail sizes','resize for social media'],
+ 'text-dedupe-words-local':['remove repeated words','deduplicate words','find repeated words'],
+ 'json-schema-validate':['validate json schema','check json structure'],
+ 'json-to-xml-local':['convert json to xml'],
+ 'xml-to-json-local':['convert xml to json'],
+ 'html-to-markdown-local':['convert html to markdown'],
+ 'csv-to-tsv-local':['convert csv to tsv'],
+ 'tsv-to-csv-local':['convert tsv to csv'],
+ 'github-discover':['find github repositories','search open source repositories'],
+ 'api-explorer':['test api endpoint','inspect api endpoint','send api request'],
+ 'pdf-compress':['compress pdf','reduce pdf file size'],
+ 'pdf-to-image':['convert pdf to images','export pdf pages as images'],
+ 'image-pdf':['convert images to pdf','images to pdf'],
+ 'image-watermark':['add watermark to image','watermark a photo'],
+ 'pdf-metadata-clean':['remove pdf metadata','clean pdf metadata'],
+ 'pdf-metadata':['view pdf metadata','inspect pdf properties'],
+ 'image-metadata':['view image metadata','exif data'],
+ 'image-strip-metadata':['remove image metadata','strip exif data','remove gps metadata'],
+
  'pdf-merge':['merge pdf','merge pdf files','combine pdfs','combine pdf files','join pdf documents'],
  'pdf-extract':['extract pdf pages','extract pages from pdf','keep selected pdf pages','save selected pdf pages'],
  'pdf-text':['extract text from pdf','pdf to text','read pdf text'],
