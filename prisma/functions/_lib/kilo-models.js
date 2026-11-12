@@ -13,7 +13,7 @@ export async function getKiloFreeModels(env, { force = false } = {}) {
       headers: key ? { Authorization: "Bearer " + key } : {},
     });
     const response = slots.length
-      ? await requestWithCredentialPool(env, "kilo", key => send(key))
+      ? await requestWithCredentialPool(env, "kilo", key => send(key), { countRequest: false, sweepAuthSlots: true, retryStatuses: [401,403] })
       : await send("");
     if (!response.ok) {
       cacheExpiresAt = Date.now() + 30_000;
