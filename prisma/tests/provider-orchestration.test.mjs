@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { rankProviders, adaptiveProviderDeadline, ROUTE_ORDER } from '../src/provider-routing.js';
-import { getCredentialHealthSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
+import { getCredentialHealthSnapshot, getCredentialMetricsSnapshot, requestWithCredentialPool } from '../functions/_lib/credential-pool.js';
 import { getProviderHold } from '../functions/_lib/provider-health.js';
 
 function mockD1() {
   const rows=new Map();
+  const counters=new Map();
+  const counterKey=(scope,windowStart)=>String(scope)+":"+String(windowStart);
   return {
-    rows,
+    rows,counters,
     prepare(sql) {
       let values=[];
       const statement={
@@ -17,6 +19,18 @@ function mockD1() {
             const row=rows.get(provider);
             return row&&row.valid_until>now?row:null;
           }
+          if(sql.includes('INSERT INTO ai_rate_limits')&&sql.includes('RETURNING request_count')){
+            const [scope,windowStart]=values;
+            const key=counterKey(scope,windowStart);
+            const next=(counters.get(key)||0)+1;
+            counters.set(key,next);
+            return {request_count:next};
+          }
+          if(sql.includes('SELECT request_count FROM ai_rate_limits WHERE scope=? AND window_start=?')){
+            const [scope,windowStart]=values;
+            const value=counters.get(counterKey(scope,windowStart));
+            return value==null?null:{request_count:value};
+          }
           return null;
         },
         async all(){
@@ -26,12 +40,32 @@ function mockD1() {
               .filter(([provider,row])=>provider.startsWith('credential-slot:v2:')&&row.valid_until>now)
               .map(([provider,row])=>({provider,...row}))};
           }
+          if(sql.includes('SELECT scope, window_start, request_count FROM ai_rate_limits WHERE scope LIKE')){
+            return {results:[...counters.entries()]
+              .filter(([key])=>key.startsWith('credential:'))
+              .map(([key,request_count])=>{
+                const split=key.lastIndexOf(":");
+                const scope=key.slice(0,split),window_start=Number(key.slice(split+1));
+                return {scope,window_start,request_count};
+              })};
+          }
           return {results:[]};
         },
         async run(){
           if(sql.includes('INSERT INTO ai_provider_health')){
             const [provider,state,reason,valid_until]=values;
             rows.set(provider,{state,reason,valid_until});
+          }
+          if(sql.includes('INSERT INTO ai_rate_limits')){
+            const [scope,windowStart,value]=values;
+            const key=counterKey(scope,windowStart);
+            const previous=counters.get(key)||0;
+            counters.set(key,sql.includes('request_count=ai_rate_limits.request_count+excluded.request_count')?previous+Number(value||0):Number(value||0));
+          }
+          if(sql.includes('UPDATE ai_rate_limits SET request_count=request_count-1')){
+            const [scope,windowStart]=values;
+            const key=counterKey(scope,windowStart);
+            counters.set(key,Math.max(0,(counters.get(key)||0)-1));
           }
           return {success:true};
         }
@@ -258,5 +292,63 @@ const zaiAllForbidden=await requestWithCredentialPool(env14,'zai',async()=>{
 assert.equal(zaiAllForbidden.status,403,'Return HTTP 403 when all independent Z.AI accounts reject the request');
 assert.equal(zaiAllForbiddenAttempts,6,'All six Z.AI accounts are checked independently after HTTP 403');
 assert.equal(await getProviderHold(env14,'zai'),null,'Six independent Z.AI permission rejections must not create a provider-wide hold');
+
+
+const balancedOrder=rankProviders({
+  task:'general',
+  available:()=>true,
+  usage:{
+    groq:{daily:{used:100,limit:100}},
+    cloudflare:{daily:{used:0,limit:100}}
+  }
+});
+assert.equal(balancedOrder[0],'cloudflare',
+  'The router distributes compatible tasks away from a provider whose shared pool is saturated');
+
+const db15=mockD1();
+const env15={PRISMA_RATE_DB:db15,GROQ_API_KEY:'round-robin-a',GROQ_API_KEY_2:'round-robin-b',GROQ_API_KEY_3:'round-robin-c'};
+const rotation=[];
+for(let i=0;i<6;i++){
+  const response=await requestWithCredentialPool(env15,'groq',async key=>{
+    rotation.push(key);
+    return new Response(JSON.stringify({usage:{prompt_tokens:2,completion_tokens:3,total_tokens:5}}),{status:200,headers:{'Content-Type':'application/json'}});
+  },{sweepAuthSlots:true});
+  assert.equal(response.status,200);
+}
+assert.deepEqual(rotation,['round-robin-a','round-robin-b','round-robin-c','round-robin-a','round-robin-b','round-robin-c'],
+  'Credential selection uses a persistent round-robin cursor instead of a random starting key');
+const credentialMetrics=await getCredentialMetricsSnapshot(env15,['groq']);
+assert.equal(credentialMetrics.groq[1].requestsToday,2,'Successful requests are attributed to the exact credential slot');
+assert.equal(credentialMetrics.groq[1].tokensToday,10,'Token usage is attributed to the exact credential slot');
+
+const db16=mockD1();
+const env16={PRISMA_RATE_DB:db16,...Object.fromEntries(Array.from({length:6},(_,i)=>['SENSENOVA_API_KEY'+(i===0?'':'_'+(i+1)),'independent-sensenova-account-'+(i+1)]))};
+let sensenovaAttempts=0;
+const sensenovaRecovered=await requestWithCredentialPool(env16,'sensenova',async key=>{
+  sensenovaAttempts++;
+  return key==='independent-sensenova-account-6'?new Response('ok',{status:200}):new Response('account quota exhausted',{status:429});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+assert.equal(sensenovaRecovered.status,200,'SenseNova rotates through independent accounts after per-account 429');
+assert.equal(sensenovaAttempts,6);
+
+const db17=mockD1();
+const env17={PRISMA_RATE_DB:db17,...Object.fromEntries(Array.from({length:5},(_,i)=>['AIHUBMIX_API_KEY'+(i===0?'':'_'+(i+1)),'independent-aihubmix-account-'+(i+1)]))};
+let aihubmixAttempts=0;
+const aihubmixRecovered=await requestWithCredentialPool(env17,'aihubmix',async key=>{
+  aihubmixAttempts++;
+  return key==='independent-aihubmix-account-5'?new Response('ok',{status:200}):new Response('account quota exhausted',{status:402});
+},{sweepAuthSlots:true,sweepQuotaSlots:true,startIndex:0});
+assert.equal(aihubmixRecovered.status,200,'AIHubMix rotates to the next account when one account has no remaining quota');
+assert.equal(aihubmixAttempts,5);
+
+const db18=mockD1();
+const env18={PRISMA_RATE_DB:db18,OPENROUTER_API_KEY:'openrouter-key-a',OPENROUTER_API_KEY_2:'openrouter-key-b'};
+let openrouterKeyAttempts=0;
+const openrouterKeyRecovered=await requestWithCredentialPool(env18,'openrouter',async key=>{
+  openrouterKeyAttempts++;
+  return key==='openrouter-key-b'?new Response('ok',{status:200}):new Response(JSON.stringify({error:{metadata:{limit_source:'openrouter_key_limit'}}}),{status:402,headers:{'Content-Type':'application/json'}});
+},{sweepAuthSlots:true,startIndex:0});
+assert.equal(openrouterKeyRecovered.status,200,'OpenRouter rotates only when a 402 explicitly identifies a per-key spend cap');
+assert.equal(openrouterKeyAttempts,2);
 
 console.log('Provider orchestration regressions passed.');
