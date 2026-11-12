@@ -968,55 +968,125 @@ body.is-core-view .core-model-pane.active{display:grid}
 }
 
 
-/* iOS / PWA composer: prevent the text field shrinking under the model,
-   voice and send controls. Keep identical geometry while busy or idle. */
-body.is-core-view .core-compose-surface{min-width:0;box-sizing:border-box}
+/* iOS / PWA composer: one compact horizontal row in idle, typing and busy
+   states. Only the editor's layout changes; model selection is untouched. */
+body.is-core-view .core-compose-surface{
+  min-width:0;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:row;
+  flex-wrap:nowrap;
+  align-items:center;
+}
 body.is-core-view .core-compose-surface #core-input{
- min-width:0;box-sizing:border-box;
+  flex:1 1 0%;
+  width:0;
+  min-width:0;
+  box-sizing:border-box;
+  overflow-y:auto;
+}
+body.is-core-view .core-compose-surface .core-composer-footer{
+  display:flex;
+  flex:0 0 auto;
+  width:auto;
+  min-width:0;
+  align-items:center;
 }
 body.is-core-view .core-progress.hidden{display:none!important}
-body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
- min-height:52px;
-}
 @media(max-width:620px){
- body.is-core-view .core-compose-surface{
-  display:grid!important;
-  grid-template-columns:32px minmax(0,1fr);
-  grid-template-rows:minmax(38px,auto) 37px;
-  column-gap:4px;
-  row-gap:1px;
-  align-items:center;
-  padding:5px 7px!important;
-  min-height:86px;
- }
- body.is-core-view .core-compose-surface .core-attach-button{
-  grid-column:1;grid-row:1;
-  width:32px;min-width:32px;height:36px;min-height:36px;
- }
- body.is-core-view .core-compose-surface #core-input{
-  grid-column:2;grid-row:1;
-  width:100%!important;min-width:0!important;
-  height:38px;min-height:38px;
-  padding:8px 7px!important;
-  font-size:16px;line-height:1.35;
- }
- body.is-core-view .core-compose-surface .core-composer-footer{
-  grid-column:1 / -1;grid-row:2;
-  display:flex;justify-content:flex-end;align-items:center;
-  width:100%;min-width:0;
-  gap:3px;margin:0!important;padding:0!important;
- }
- body.is-core-view .core-compose-surface .core-composer-tools{
-  display:flex;gap:3px;flex:0 0 auto;
- }
- body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
-  min-height:86px;
- }
- body.is-core-view .core-progress:not(.hidden){
-  padding:5px 9px;
-  min-height:24px;
- }
- body.is-core-view .core-progress:not(.hidden) small{
-  min-width:0;max-width:54%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
- }
+  body.is-core-view .core-compose-surface{
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center;
+    gap:2px;
+    min-height:50px;
+    padding:4px 5px!important;
+  }
+  body.is-core-view .core-compose-surface .core-attach-button{
+    flex:0 0 30px;
+    width:30px;
+    min-width:30px;
+    height:36px;
+    min-height:36px;
+    margin:0;
+  }
+  body.is-core-view .core-compose-surface #core-input{
+    flex:1 1 0%;
+    width:0!important;
+    min-width:0!important;
+    min-height:38px;
+    max-height:118px;
+    padding:8px 5px!important;
+    margin:0;
+    font-size:16px;
+    line-height:1.35;
+  }
+  body.is-core-view .core-compose-surface .core-composer-footer{
+    display:flex;
+    flex:0 0 auto;
+    justify-content:flex-end;
+    align-items:center;
+    width:auto!important;
+    min-width:0;
+    gap:1px;
+    margin:0!important;
+    padding:0!important;
+  }
+  body.is-core-view .core-compose-surface .core-composer-tools{
+    display:flex;
+    flex:0 0 auto;
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:0;
+  }
+  body.is-core-view .core-compose-surface .core-model-settings>summary,
+  body.is-core-view .core-compose-surface .core-voice-button{
+    flex:0 0 30px;
+    width:30px;
+    min-width:30px;
+    height:36px;
+    min-height:36px;
+    padding:0;
+  }
+  body.is-core-view .core-compose-surface #core-send{
+    flex:0 0 35px;
+    width:35px;
+    min-width:35px;
+    height:37px;
+    min-height:37px;
+    padding:0;
+  }
+  body.is-core-view .core-composer[aria-busy="true"] .core-compose-surface{
+    min-height:50px;
+  }
+  body.is-core-view .core-progress:not(.hidden){
+    padding:5px 9px;
+    min-height:24px;
+  }
+  body.is-core-view .core-progress:not(.hidden) small{
+    min-width:0;
+    max-width:54%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+}
+@media(max-width:355px){
+  body.is-core-view .core-compose-surface{
+    gap:1px;
+    padding:4px!important;
+  }
+  body.is-core-view .core-compose-surface .core-attach-button,
+  body.is-core-view .core-compose-surface .core-model-settings>summary,
+  body.is-core-view .core-compose-surface .core-voice-button{
+    flex-basis:28px;
+    width:28px;
+    min-width:28px;
+  }
+  body.is-core-view .core-compose-surface #core-send{
+    flex-basis:33px;
+    width:33px;
+    min-width:33px;
+  }
 }
