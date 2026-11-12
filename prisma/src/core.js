@@ -1733,7 +1733,7 @@ async function interpretAttachedImageText(userText){
   status('No se encontró texto legible para interpretar.','warning');
   return;
  }
- const available=await refreshCoreProviderStatus();
+ await refreshCoreProviderStatus();
  if(!Object.values(centralProviders).some(Boolean)){
   addMessage('assistant','Reconocí el siguiente texto, pero ahora no tengo un motor de análisis disponible para contextualizarlo. No lo presentaré como un análisis:\n\n'+extracted.join('\n\n').slice(0,9000));
   status('Texto reconocido; análisis no disponible.','warning');
