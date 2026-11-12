@@ -776,10 +776,21 @@ async function fetchJsonWithDeadline(url,options,deadlineMs){
 }
 // The best model depends on the task and recent reliability, not one fixed default.
 // Only provider names, aggregate latency and temporary error codes are stored; never prompts.
-const ROUTE_MEMORY_KEY='prisma-core-provider-route-v2';
+const ROUTE_MEMORY_KEY='prisma-core-provider-route-v3';
+function routeMemoryStorage(){
+ try{if(typeof localStorage!=='undefined')return localStorage;}catch{}
+ try{if(typeof sessionStorage!=='undefined')return sessionStorage;}catch{}
+ return null;
+}
 function getRouteMemory(){
  try{
-  const saved=JSON.parse(sessionStorage.getItem(ROUTE_MEMORY_KEY)||'{}');
+  const storage=routeMemoryStorage();if(!storage)return {};
+  let raw=storage.getItem(ROUTE_MEMORY_KEY);
+  if(!raw&&typeof sessionStorage!=='undefined'){
+   raw=sessionStorage.getItem('prisma-core-provider-route-v2');
+   if(raw)storage.setItem(ROUTE_MEMORY_KEY,raw);
+  }
+  const saved=JSON.parse(raw||'{}');
   return saved&&typeof saved==='object'?saved:{};
  }catch{return {};}
 }
@@ -793,7 +804,8 @@ function reportModelAttempt(provider,task,success,elapsed,error){
   all[key]={at:stamp,successes:success?Math.min(12,(previous.successes||0)+1):0,failures:success?0:Math.min(4,(previous.failures||0)+1),
    averageMs:Math.round(previous.averageMs?previous.averageMs*.65+elapsed*.35:elapsed),coolingUntil:success?0:stamp+delay};
   for(const [name,entry] of Object.entries(all))if(stamp-Number(entry.at||0)>86400000)delete all[name];
-  sessionStorage.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
+  const storage=routeMemoryStorage();
+  storage?.setItem(ROUTE_MEMORY_KEY,JSON.stringify(all));
  }catch{}
 }
 function orderModelsForTask(preferred,task,baseOrder,available,health={},usage={}){
