@@ -168,7 +168,11 @@ function durationSeconds(raw) {
   if (raw == null || raw === "") return null;
   const value = String(raw).trim();
   const numeric = Number(value);
-  if (Number.isFinite(numeric) && numeric >= 0) return numeric;
+  if (Number.isFinite(numeric) && numeric >= 0) {
+    if (numeric > 1e12) return Math.max(0, (numeric - Date.now()) / 1000);
+    if (numeric > 1e9) return Math.max(0, numeric - Date.now() / 1000);
+    return numeric;
+  }
   const absolute = Date.parse(value);
   if (Number.isFinite(absolute)) return Math.max(0, (absolute - Date.now()) / 1000);
   const parts = value.match(/(?:(\d+(?:\.\d+)?)h)?\s*(?:(\d+(?:\.\d+)?)m)?\s*(?:(\d+(?:\.\d+)?)s)?/i);
@@ -253,7 +257,7 @@ export async function recordCredentialMetrics(env, provider, slot, response, sup
   const tokenLimit = finiteHeader(headers, ["x-ratelimit-limit-tokens"]);
   const tokenRemaining = finiteHeader(headers, ["x-ratelimit-remaining-tokens"]);
   const rate = parseRateLimitHeader(headers);
-  const requestResetSeconds = durationSeconds(headers?.get?.("x-ratelimit-reset-requests")) ?? rate.reset ?? null;
+  const requestResetSeconds = durationSeconds(headers?.get?.("x-ratelimit-reset-requests")) ?? durationSeconds(rate.reset) ?? null;
   const tokenResetSeconds = durationSeconds(headers?.get?.("x-ratelimit-reset-tokens"));
   const requestResetMinute = requestResetSeconds == null ? null : currentMinuteWindow() + Math.max(1, Math.ceil(requestResetSeconds / 60));
   const tokenResetMinute = tokenResetSeconds == null ? null : currentMinuteWindow() + Math.max(1, Math.ceil(tokenResetSeconds / 60));
