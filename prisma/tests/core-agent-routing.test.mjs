@@ -360,26 +360,29 @@ assert.doesNotThrow(()=>validate(picture)({
  steps:webEditing.steps.map(step=>({tool_id:step.tool_id,params:step.params}))
 }));
 
-// Providers support up to six slots, except Requesty which is currently capped at three. Compact JSON pools
-// keep the binding count below Cloudflare's per-Worker environment limit.
+// Model providers support up to six slots; Groq and AIHubMix currently have five,
+// Requesty three, Tavily seven and Jina one. Compact JSON pools reduce bindings.
 const fakeKeys = {
  GEMINI_API_KEY:'g1', GEMINI_API_KEY_2:'g2', GEMINI_API_KEY_3:'g3',
  GEMINI_API_KEY_4:'g4', GEMINI_API_KEY_5:'g5', GEMINI_API_KEY_6:'g6',
  GROQ_API_KEY:'q1', GROQ_API_KEY_2:'q2', GROQ_API_KEY_3:'q3',
- GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5', GROQ_API_KEY_6:'q6',
+ GROQ_API_KEY_4:'q4', GROQ_API_KEY_5:'q5',
  OPENROUTER_API_KEY:'o1', OPENROUTER_API_KEY_2:'o2', OPENROUTER_API_KEY_3:'o3',
  OPENROUTER_API_KEY_4:'o4', OPENROUTER_API_KEY_5:'o5', OPENROUTER_API_KEY_6:'o6',
 };
 for (const provider of Object.keys(CREDENTIAL_ROOTS)) {
- assert.equal(maxCredentialSlots(provider),provider==='requesty'?3:6,provider+' credential slot cap');
+ assert.equal(maxCredentialSlots(provider),provider==='requesty'?3:provider==='tavily'?7:provider==='jina'?1:['groq','aihubmix'].includes(provider)?5:6,provider+' credential slot cap');
 }
 assert.equal(maxCredentialSlots('cloudflare'),0,'Workers AI uses a Cloudflare binding, not API keys');
 assert.equal(getCredentialSlots(fakeKeys,'gemini').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'gemini').max,6);
 assert.equal(getCredentialSlots(fakeKeys,'openrouter').length,6);
 assert.equal(getCredentialStatus(fakeKeys,'openrouter').slots.length,6);
-assert.equal(getCredentialSlots(fakeKeys,'groq').length,6);
-assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,6);
+assert.equal(getCredentialSlots(fakeKeys,'groq').length,5);
+assert.equal(getCredentialStatus(fakeKeys,'groq').slots.length,5);
+assert.equal(maxCredentialSlots('tavily'),7,'Tavily supports seven credentials');
+assert.equal(maxCredentialSlots('jina'),1,'Jina has one configured credential');
+assert.equal(maxCredentialSlots('aihubmix'),5,'AIHubMix currently has five configured credentials');
 
 const compactPools = Object.fromEntries(Object.entries(CREDENTIAL_POOL_VARIABLES).map(([provider,variable]) =>
  [variable,JSON.stringify(Array.from({length:maxCredentialSlots(provider)},(_,index)=>provider+'-key-'+(index+1)))]
@@ -401,7 +404,8 @@ assert.deepEqual(getCredentialSlots(duplicatePool,'zai').map(slot=>slot.number),
 const blankPool={ZAI_API_KEYS_JSON:'["first-key","","third-key"]'};
 assert.deepEqual(getCredentialSlots(blankPool,'zai').map(slot=>slot.number),[1,3],'blank JSON entries preserve the remaining slot positions');
 assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'{"not":"an array"}'},'requesty').poolValid,false);
-assert.equal(getCredentialStatus({ZAI_API_KEYS_JSON:JSON.stringify(Array.from({length:7},(_,i)=>'key-'+i))},'zai').poolValid,false,'JSON pools cannot exceed six credentials');
+assert.equal(getCredentialStatus({ZAI_API_KEYS_JSON:JSON.stringify(Array.from({length:7},(_,i)=>'key-'+i))},'zai').poolValid,false,'Z.AI JSON pools cannot exceed six credentials');
+assert.equal(getCredentialStatus({TAVILY_API_KEYS_JSON:JSON.stringify(Array.from({length:8},(_,i)=>'key-'+i))},'tavily').poolValid,false,'Tavily JSON pools cannot exceed seven credentials');
 assert.equal(maxCredentialSlots('requesty'),3,'Requesty is currently limited to three keys');
 assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3"]'},'requesty').count,3);
 assert.equal(getCredentialStatus({REQUESTY_API_KEYS_JSON:'["r1","r2","r3","r4"]'},'requesty').poolValid,false,'Requesty JSON cannot exceed three credentials');
