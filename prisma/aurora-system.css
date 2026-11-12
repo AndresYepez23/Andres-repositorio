@@ -751,7 +751,7 @@ body.is-core-view .core-model-group-heading strong{
 body.is-core-view .core-model-group-status{
   max-width:65%;font-size:8px;line-height:1.35;text-align:right;color:var(--muted);
 }
-body.is-core-view .core-model-group-status.is-ready{color:var(--good)}
+body.is-core-view .core-model-group-status.is-ready{color:var(--accent)}
 body.is-core-view .core-model-group-status.is-blocked{color:var(--subtle)}
 body.is-core-view .core-model-option{
   display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
