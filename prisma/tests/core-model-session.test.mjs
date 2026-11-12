@@ -75,6 +75,7 @@ test('follow-up questions retain an older image exchange beyond the recent messa
     ]).flat()
   ];
   assert.equal(isCoreFollowUp('¿Y si le hago otra pregunta sobre eso?'),true);
+  assert.equal(isCoreFollowUp('¿Qué tal si le hago otra pregunta?'),true);
   const context=buildConversationContext(history,'¿Y si le hago otra pregunta sobre eso?',{
     maxMessages:13,maxChars:14500
   });
