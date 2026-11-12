@@ -65,6 +65,11 @@ export async function getOpenRouterAccount(env) {
       spendLimitUsd: numericOrNull(data.limit),
       spendRemainingUsd: numericOrNull(data.limit_remaining),
       spendLimitReset: typeof data.limit_reset === "string" ? data.limit_reset : null,
+      freeModelDaily: data.free_model_daily_requests && typeof data.free_model_daily_requests === "object" ? {
+        used: numericOrNull(data.free_model_daily_requests.used),
+        limit: numericOrNull(data.free_model_daily_requests.limit),
+        remaining: numericOrNull(data.free_model_daily_requests.remaining),
+      } : null,
       keyBudgets: valid.map(item => item.keyBudget),
     };
     accountCache = account;
@@ -80,7 +85,10 @@ export async function getOpenRouterLimits(env) {
   // OpenRouter's free-model allowance is 50 requests/day by default, or
   // 1,000/day after at least $10 in credits have been purchased.
   // If account metadata is temporarily unavailable, fail closed at 50/day.
-  const accountDailyLimit = account?.isFreeTier === false ? 1000 : 50;
+  const reportedDailyLimit = numericOrNull(account?.freeModelDaily?.limit);
+  const accountDailyLimit = reportedDailyLimit != null && reportedDailyLimit > 0
+    ? Math.min(1000,reportedDailyLimit)
+    : account?.isFreeTier === false ? 1000 : 50;
   const requestedDaily = Number(env.OPENROUTER_DAILY_LIMIT);
   const dailyLimit = Number.isFinite(requestedDaily) && requestedDaily > 0
     ? Math.min(accountDailyLimit, Math.max(1, Math.min(1000, Math.floor(requestedDaily))))
