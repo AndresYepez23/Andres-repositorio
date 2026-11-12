@@ -57,6 +57,7 @@ test('Core and model prompts produce English responses when English is selected'
  const core=await read('src/core.js');
  const engines=await read('src/engines.js');
  const i18n=await read('src/i18n.js');
+ const voice=await read('src/prisma-voice.js');
  assert.match(core,/Output language: English/);
  assert.match(core,/window\.prismaI18n\?\.language==='en'/);
  assert.match(core,/pre\.setAttribute\('data-user-content',''\)/);
@@ -69,4 +70,8 @@ test('Core and model prompts produce English responses when English is selected'
  assert.match(engines,/const tones=responseLanguage==='English'\?/);
  assert.doesNotMatch(engines,/const tones=responseLanguage==='en'\?/);
  assert.match(engines,/This is an original songwriting task/);
+ assert.match(i18n,/Cambiar a inglés/);
+ assert.match(voice,/body\.append\('language',speechLanguage\(\)\)/);
+ assert.match(voice,/session\.lang=speechLocale\(\)/);
+ assert.match(core,/utterance\.lang=voice\?\.lang\|\|\(language==='en'\?'en-US':'es-ES'\)/);
 });
