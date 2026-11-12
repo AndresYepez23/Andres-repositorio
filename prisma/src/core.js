@@ -32,7 +32,7 @@ import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGen
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
 import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest } from './core-model-session.js';
-import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference, coreModelPurpose } from './core-model-experience.js';
+import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference } from './core-model-experience.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const STORAGE_KEY = 'prisma-core-workspace-v1';
@@ -378,7 +378,7 @@ const MODEL_PROVIDER_LABELS={
 const MODEL_PROVIDER_ORDER=['groq','zai','gemini','openrouter','sensenova','kilo','aihubmix','requesty','huggingface','cloudflare','pollinations'];
 function activeChatRecord(){return conversations.find(chat=>chat.id===activeConversationId)||null;}
 function imageProviderReady(provider){
- const flag={cloudflare:'cloudflareImages',pollinations:'pollinationsImages',gemini:'geminiImages'}[provider];
+ const flag={cloudflare:'cloudflareImages',pollinations:'pollinationsImages',huggingface:'huggingfaceImages',gemini:'geminiImages'}[provider];
  if(provider==='pollinations'&&readPollinationsToken())return true;
  return Boolean(flag&&centralFeatures?.[flag]===true);
 }
@@ -433,7 +433,7 @@ function renderChatModelOptions(){
  const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(p=>!MODEL_PROVIDER_ORDER.includes(p)).sort()];
  list.replaceChildren();let visible=0;
  for(const provider of providers){
-  if(provider==='requesty'||provider==='huggingface'||!providerAvailability(provider,'chat').available)continue;
+  if(!providerAvailability(provider,'chat').available)continue;
   const models=(Array.isArray(catalog[provider])?catalog[provider]:[]).filter(isCoreChatModel);
   if(!models.length)continue;
   visible+=models.length;
@@ -468,10 +468,9 @@ function renderChatModelOptions(){
     row.setAttribute('aria-pressed',String(selected));
     const info=document.createElement('span');info.className='core-model-option-copy';
     const name=document.createElement('strong');name.textContent=model.name||model.id;
-    const specialty=document.createElement('small');specialty.textContent=coreModelPurpose(model);
+    const specialty=document.createElement('small');specialty.textContent=model.specialty||meta.description;
     const kind=document.createElement('span');kind.className='core-model-capability';kind.textContent=meta.label;
     info.append(name,specialty,kind);
-    if(model.specialty){const note=document.createElement('small');note.className='core-model-catalog-note';note.textContent=model.specialty;info.append(note);}
     const action=document.createElement('span');action.className='core-model-option-state';
     action.textContent=selected?'Elegido':model.id===suggested?.id?'Sugerido':'Elegir';
     row.append(info,action);
@@ -489,57 +488,6 @@ function renderChatModelOptions(){
  }
  if(panel)panel.scrollTop=scrollTop;
 }
-function renderCreativeCatalog(){
- const root=$('#core-creative-catalog');if(!root)return;
- root.replaceChildren();
- const catalog=centralModelCatalog?.creative||{};
- const kindNames={music:'Música',video:'Vídeo',image:'Imágenes',audio:'Voz y audio',
-  transcription:'Transcripción',safety:'Seguridad',embedding:'Vectores',other:'Especializado'};
- const providers=Object.keys(catalog).filter(provider=>provider!=='huggingface'&&provider!=='requesty');
- for(const provider of providers){
-  const models=Array.isArray(catalog[provider])?catalog[provider]:[];
-  if(!models.length)continue;
-  const section=document.createElement('details');section.className='core-creative-provider';
-  const heading=document.createElement('summary');
-  heading.textContent=(MODEL_PROVIDER_LABELS[provider]||provider)+' · '+models.length+' modelos';
-  section.append(heading);
-  const list=document.createElement('div');list.className='core-creative-list';
-  for(const model of models){
-   const kind=model.kind||'other';
-   const item=document.createElement('div');item.className='core-creative-model';
-   const name=document.createElement('strong');name.textContent=model.name||model.id;
-   const type=document.createElement('small');type.textContent=coreModelPurpose(model);
-   const category=document.createElement('small');category.className='core-model-capability';
-   category.textContent=kindNames[kind]||'Especializado';
-   const note=document.createElement('small');note.className='core-model-catalog-note';
-   note.textContent=model.specialty||'Consulta los requisitos y la disponibilidad del proveedor';
-   const state=document.createElement('small');state.className='core-creative-state';
-   const isImage=kind==='image'&&['cloudflare','pollinations','gemini'].includes(provider)&&imageProviderReady(provider)&&
-    (centralModelCatalog?.image?.[provider]||[]).some(item=>item.id===model.id);
-   if(isImage){
-    const select=document.createElement('button');select.type='button';select.className='core-image-activate';
-    select.textContent='Usar para imágenes';
-    select.addEventListener('click',()=>{
-     const chat=activeChatRecord();if(!chat)return;
-     chat.imageSelection={provider,model:model.id};
-     persistChatHistory();renderModelPicker();setCoreCreativeMode('image');
-    });
-    item.append(name,category,type,note,select);
-   }else{
-    state.textContent=kind==='music'?'Catálogo visible · requiere integración de audio':
-     'Catálogo visible · ejecución especializada no habilitada';
-    item.append(name,category,type,note,state);
-   }
-   list.append(item);
-  }
-  section.append(list);root.append(section);
- }
- if(!root.childElementCount){
-  const empty=document.createElement('p');empty.className='core-model-footnote';
-  empty.textContent='Los modelos especializados aparecerán aquí cuando el proveedor los anuncie en su catálogo.';
-  root.append(empty);
- }
-}
 function renderImageModelControls(){
  const providerSelect=$('#core-image-provider'),modelSelect=$('#core-image-model'),hint=$('#core-image-model-hint');
  if(!providerSelect||!modelSelect)return;
@@ -548,7 +496,7 @@ function renderImageModelControls(){
  const selectedProvider=String(saved.provider||'auto');
  for(const option of providerSelect.options){
   if(option.value==='auto'){
-   option.disabled=!['cloudflare','pollinations','gemini'].some(imageProviderReady);
+   option.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
    option.textContent=option.disabled?'Automático · sin motores disponibles':'Automático · respaldo disponible';
   }else{
    const availability=providerAvailability(option.value,'image');
@@ -572,7 +520,7 @@ function renderImageModelControls(){
  }
  modelSelect.value=String(saved.model||'');
  if(modelSelect.value!==String(saved.model||''))modelSelect.value='';
- const ready=provider==='auto'?['cloudflare','pollinations','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
+ const ready=provider==='auto'?['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady):providerAvailability(provider,'image').available;
  modelSelect.disabled=provider==='auto'||!ready||!models.length;
  if(hint){
   const usage=centralImageUsage?.[provider]?.daily;
@@ -611,7 +559,7 @@ function renderModelPicker(){
    ?'Último modelo: '+actual+'. Se adapta a la disponibilidad.'
    :'Prisma prioriza eficiencia, disponibilidad y estabilidad.';
  }
- renderChatModelOptions();renderImageModelControls();renderCreativeCatalog();
+ renderChatModelOptions();renderImageModelControls();
  const panel=$('#core-model-panel');
  if(panel){
   panel.querySelectorAll('[data-model-tab]').forEach(b=>{
@@ -621,7 +569,7 @@ function renderModelPicker(){
   panel.querySelectorAll('[data-model-pane]').forEach(p=>p.classList.toggle('active',p.dataset.modelPane===activeModelTab));
  }
  const imageButton=$('#core-image-activate');
- if(imageButton)imageButton.disabled=!['cloudflare','pollinations','gemini'].some(imageProviderReady);
+ if(imageButton)imageButton.disabled=!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady);
 }
 function renderComposerMode(){
  const image=activeChatRecord()?.creativeMode==='image';
@@ -632,7 +580,7 @@ function renderComposerMode(){
 }
 function setCoreCreativeMode(mode){
  const chat=activeChatRecord();if(!chat)return;
- if(mode==='image'&&!['cloudflare','pollinations','gemini'].some(imageProviderReady)){
+ if(mode==='image'&&!['cloudflare','pollinations','huggingface','gemini'].some(imageProviderReady)){
   status('No hay un motor de imágenes disponible en este momento.','warning');return;
  }
  chat.creativeMode=mode==='image'?'image':'chat';
