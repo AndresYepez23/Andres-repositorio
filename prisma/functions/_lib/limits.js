@@ -22,7 +22,7 @@ export function getProviderMinuteLimit(provider){return PROVIDER_MINUTE_LIMITS[p
 // scales with configured keys; upstream headers and per-key cooldowns remain
 // the source of truth for live account limits.
 const CREDENTIAL_SCOPED_PROVIDERS=new Set([
- "gemini","groq","huggingface","pollinations","requesty","sensenova","zai","aihubmix","kilo"
+ "gemini","groq","huggingface","pollinations","requesty","sensenova","zai","aihubmix"
 ]);
 export function getProviderDailyCapacity(env,provider){
  const base=getProviderDailyLimit(env,provider);
@@ -35,9 +35,10 @@ export function getProviderMinuteCapacity(env,provider){
  return Math.min(1000,base*Math.max(1,getCredentialSlots(env,provider).length));
 }
 
-// Internal budgets are per provider/project, not per API key. Multiple keys
-// in one account do not multiply the provider's real quota. An owner can tune
-// a safe app-side ceiling with PRISMA_<PROVIDER>_DAILY_LIMIT in Cloudflare.
+// Base app-side ceilings scale across independent credential pools. Shared
+// provider/project quotas (OpenRouter free tier, Kilo free-model IP limits and
+// Cloudflare AI) stay shared and are never multiplied by API-key count. An
+// owner can tune ceilings with PRISMA_<PROVIDER>_DAILY_LIMIT in Cloudflare.
 export function getProviderDailyLimit(env,provider){
  const variable='PRISMA_'+String(provider||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')+'_DAILY_LIMIT';
  const configured=Number(env?.[variable]);
