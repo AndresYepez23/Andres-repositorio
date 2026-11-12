@@ -803,12 +803,16 @@ async function generateText(p,cb){
  const prompt=String(p.prompt||'').trim();
  if(prompt.length<2)throw Error('Escribe una instrucción para el asistente.');
  const responseLanguage=typeof window!=='undefined'&&window.prismaI18n?.language==='en'?'English':'Spanish';
- const tones=responseLanguage==='en'?{professional:'Use a professional and clear tone.',friendly:'Use a warm, natural, friendly tone.',creative:'Use a creative, original and expressive approach.',academic:'Use an academic, precise and well-structured tone.',concise:'Be direct and concise, without unnecessary explanations.'}:{professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
+ const tones=responseLanguage==='English'?{professional:'Use a professional and clear tone.',friendly:'Use a warm, natural, friendly tone.',creative:'Use a creative, original and expressive approach.',academic:'Use an academic, precise and well-structured tone.',concise:'Be direct and concise, without unnecessary explanations.'}:{professional:'Responde con tono profesional y claro.',friendly:'Responde con tono cercano, natural y amable.',creative:'Usa un enfoque creativo, original y expresivo.',academic:'Utiliza un tono académico, preciso y bien estructurado.',concise:'Sé directo y conciso, sin explicaciones innecesarias.'};
  const tier=p.reasoning||'balanced';
  const task=p.task||classifyTextTask(prompt,tier);
  const songInstruction=task==='songwriting'
-  ? 'La tarea es composición musical original. Si el usuario pide una canción, crea una letra completa, cantable y coherente con título, versos, pre-coro, coro, puente y cierre; añade una breve dirección musical y un prompt de producción. No respondas con una negativa genérica ante una petición creativa segura. No copies letras existentes ni imites exactamente a un artista. Si solicita un archivo de audio, aclara que este motor entrega texto y no ha renderizado música.'
-  : 'Ayuda a resolver la petición con precisión. Si el usuario solicita una acción que requiere una herramienta, no afirmes que la ejecutaste si no se ejecutó.';
+  ? responseLanguage==='English'
+    ? 'This is an original songwriting task. If the user asks for a song, write complete, singable, coherent original lyrics with a title, verses, pre-chorus, chorus, bridge, and ending; add brief musical direction and a production prompt. Do not issue a generic refusal for a safe creative request. Do not copy existing lyrics or imitate an artist exactly. If the user requests an audio file, clarify that this engine delivers text and has not rendered music.'
+    : 'La tarea es composición musical original. Si el usuario pide una canción, crea una letra completa, cantable y coherente con título, versos, pre-coro, coro, puente y cierre; añade una breve dirección musical y un prompt de producción. No respondas con una negativa genérica ante una petición creativa segura. No copies letras existentes ni imites exactamente a un artista. Si solicita un archivo de audio, aclara que este motor entrega texto y no ha renderizado música.'
+  : responseLanguage==='English'
+    ? 'Help solve the request accurately. If the user asks for an action that requires a tool, do not claim it was executed unless the tool actually ran.'
+    : 'Ayuda a resolver la petición con precisión. Si el usuario solicita una acción que requiere una herramienta, no afirmes que la ejecutaste si no se ejecutó.';
  const system=[
    'Eres Prisma Core, el asistente de Prisma Space, una plataforma multimodelo.',
    'Nunca afirmes que Prisma Core es GPT-4, GPT-6, ChatGPT, OpenAI, Gemini o Google. Eres el asistente de Prisma Space.',
