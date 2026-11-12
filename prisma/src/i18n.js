@@ -194,7 +194,7 @@ function applyAll() {
   if (languageMeta) languageMeta.content = language;
   // The SPA switches / and /en/ without reloading. Keep its canonical and
   // Open Graph URL aligned with the selected language after every switch.
-  if (location.pathname === '/' || /^\\/en\\/?$/i.test(location.pathname)) {
+  if (location.pathname === '/' || /^\/en\/?$/i.test(location.pathname)) {
     const appUrl = 'https://prismaspace.space' + (language === 'en' ? '/en/' : '/');
     const canonical = document.querySelector('link[rel="canonical"]');
     const ogUrl = document.querySelector('meta[property="og:url"]');
