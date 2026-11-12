@@ -5,7 +5,7 @@ import { tools, categories } from './registry.js';
 
 const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}./:+-]+/gu,' ').replace(/\s+/g,' ').trim();
 const words = value => normalize(value).split(' ').filter(part => part.length > 2);
-const STOP = new Set('para como quiero necesito puedes hacer hazme este esta estos estas archivo archivos todo todas todos sobre cual cuales entre desde hasta donde una unos unas las los del por que con sin mas menos muy algo alguien nuevo buenas gracias quiero necesito dame me de el la lo un una este esa y o en al es se a mi tu su ya'.split(' '));
+const STOP = new Set('para como quiero necesito puedes hacer hazme este esta estos estas archivo archivos todo todas todos sobre cual cuales entre desde hasta donde una unos unas las los del por que con sin mas menos muy algo alguien nuevo buenas gracias quiero necesito dame me de el la lo un una este esa y o en al es se a mi tu su ya the this that these those a an and or but with without for from into onto about what which who how why can could would should please do does did is are was were be been being my your our their me you we they it its as at by on to of in not all more less new help show list have has tool tools feature features file files image images photo photos video videos audio text document documents page pages pdf word spreadsheet data code background metadata color colors palette convert merge combine split extract remove delete clean compress resize crop rotate mute trim speed slow normalize volume waveform subtitles subtitle transcribe transcript speech qr scan inspect type format hash compare minify sort duplicate duplicates email emails link links url urls campaign trackable website web create generate make build write review plan action study guide flashcards decision matrix'.split(' '));
 const splitWords = text => [...new Set(words(text).filter(w => !STOP.has(w)))];
 const capable = tool => tool && ['ready','beta'].includes(tool.status);
 const local = tool => tool && ['local','browser'].includes(tool.mode);
@@ -78,6 +78,117 @@ const ALIASES = {
   'pdf-metadata':['metadatos del pdf','autor del pdf'],
   'pdf-metadata-clean':['quita metadatos pdf','borra autor pdf']
 };
+
+const ENGLISH_ALIASES = {
+ 'pdf-merge':['merge pdf','merge pdf files','combine pdfs','combine pdf files','join pdf documents'],
+ 'pdf-extract':['extract pdf pages','extract pages from pdf','keep selected pdf pages','save selected pdf pages'],
+ 'pdf-text':['extract text from pdf','pdf to text','read pdf text'],
+ 'pdf-split':['split pdf','split pdf into pages','separate pdf pages'],
+ 'pdf-remove-pages':['remove pages from pdf','delete pdf pages'],
+ 'pdf-page-numbers':['add page numbers to pdf','number pdf pages'],
+ 'pdf-rotate':['rotate pdf pages','fix pdf page orientation'],
+ 'pdf-compress':['compress pdf','reduce pdf file size'],
+ 'pdf-metadata-clean':['remove pdf metadata','clean pdf metadata'],
+ 'pdf-metadata':['view pdf metadata','inspect pdf properties'],
+ 'pdf-to-word':['pdf to word','convert pdf to docx'],
+ 'docx-pdf':['word to pdf','docx to pdf','convert word document to pdf'],
+ 'pdf-to-image':['convert pdf to images','export pdf pages as images'],
+ 'image-pdf':['convert images to pdf','images to pdf'],
+ 'image-bg':['remove image background','remove photo background','make background transparent'],
+ 'image-compress':['compress image','reduce image file size'],
+ 'image-resize':['resize image','change image dimensions'],
+ 'image-convert':['convert image format','convert png to jpg','convert webp image'],
+ 'image-crop':['crop image','crop photo'],
+ 'image-grayscale':['grayscale image','black and white photo'],
+ 'image-palette':['extract image colors','color palette from photo'],
+ 'image-metadata':['view image metadata','exif data'],
+ 'image-strip-metadata':['remove image metadata','strip exif data','remove gps metadata'],
+ 'image-flip':['flip image','mirror image'],
+ 'image-ocr':['extract text from image','ocr image','read text in photo'],
+ 'image-identify-local':['identify objects in image','what is in this picture'],
+ 'image-favicon':['create favicon','make pwa icons'],
+ 'image-watermark':['add watermark to image'],
+ 'video-trim':['trim video','cut video'],
+ 'video-speed':['speed up video','slow down video','change video speed'],
+ 'video-resize':['resize video','make video vertical','video for tiktok'],
+ 'video-rotate':['rotate video'],
+ 'video-mute':['mute video','remove audio from video'],
+ 'video-thumbnail':['extract video frame','create video thumbnail'],
+ 'video-gif':['convert video to gif','create gif from video'],
+ 'audio-trim':['trim audio','cut audio recording'],
+ 'audio-convert':['convert audio to mp3','audio to wav','audio to ogg'],
+ 'audio-normalize':['normalize audio volume','level audio volume'],
+ 'audio-waveform':['audio waveform','visualize audio waveform'],
+ 'ai-transcribe':['transcribe audio','audio to text','speech to text'],
+ 'text-redact-sensitive':['anonymize text','redact sensitive data','hide api keys','remove personal data'],
+ 'subtitle-srt-local':['create srt subtitles','generate subtitles','convert script to srt'],
+ 'word-count':['count words','word count','count characters'],
+ 'word-frequency':['most frequent words','word frequency'],
+ 'text-summary-local':['summarize text without ai','extractive summary'],
+ 'text-analyzer-local':['analyze text statistics','text statistics'],
+ 'text-extract-emails':['extract email addresses','find emails'],
+ 'text-extract-urls':['extract links','extract urls'],
+ 'text-remove-accents':['remove accents','remove diacritics'],
+ 'text-sort':['sort lines alphabetically','sort text'],
+ 'dedupe-lines':['remove duplicate lines','deduplicate lines'],
+ 'json-format':['format json','pretty print json','beautify json'],
+ 'json-minify':['minify json','compress json'],
+ 'json-compare-local':['compare json files','json differences'],
+ 'csv-json':['convert csv to json','csv to json'],
+ 'json-csv':['convert json to csv','json to csv'],
+ 'csv-profile-local':['audit csv data','check csv duplicates'],
+ 'table-file-convert':['convert excel to csv','convert spreadsheet'],
+ 'utm-builder':['create utm link','utm campaign url','trackable campaign link'],
+ 'qr':['create qr code','generate qr code'],
+ 'qr-scan':['scan qr code','read qr code'],
+ 'file-inspector':['inspect file type','identify file format'],
+ 'hash-file':['calculate file hash','sha256 checksum'],
+ 'ai-youtube-kit':['youtube title and description','write youtube shorts script'],
+ 'ai-code-helper':['fix code','write a function'],
+ 'music-lyrics':['write a song','compose a song'],
+ 'ai-voice':['text to speech','read aloud'],
+ 'ai-study-notes':['create study guide','study flashcards','exam questions'],
+ 'ai-compare-options':['compare options','decision matrix','pros and cons'],
+ 'ai-action-plan':['create action plan','project roadmap','step by step plan'],
+ 'ai-text-review':['review text','check contradictions','improve writing']
+};
+for (const [id,aliases] of Object.entries(ENGLISH_ALIASES)) ALIASES[id] = [...(ALIASES[id]||[]),...aliases];
+const ENGLISH_INTENT = [
+ ['extract text from pdf','extrae texto del pdf'],['pdf to text','pdf a texto'],['read pdf text','lee el texto del pdf'],
+ ['remove image background','quitar fondo'],['remove background','quitar fondo'],
+ ['remove image metadata','quita metadatos imagen'],['remove pdf metadata','quita metadatos pdf'],['strip exif data','limpia metadatos exif'],
+ ['delete pages from pdf','elimina paginas pdf'],['remove pages from pdf','elimina paginas pdf'],
+ ['split pdf into pages','divide pdf'],['split pdf','divide pdf'],['merge pdf files','une pdf'],['combine pdf files','combina documentos'],['merge pdf','une pdf'],['combine pdfs','combina documentos'],
+ ['compress pdf','comprime pdf'],['compress image','comprime imagen'],['reduce image file size','reduce peso imagen'],
+ ['resize image','redimensiona imagen'],['change image dimensions','redimensiona imagen'],['crop image','recorta imagen'],['crop photo','recorta foto'],
+ ['convert pdf to docx','pdf a word'],['pdf to word','pdf a word'],['word to pdf','word a pdf'],['convert images to pdf','convierte imagenes a pdf'],
+ ['rotate pdf pages','rota pdf'],['rotate pdf','rota pdf'],['grayscale image','escala de grises'],['black and white photo','blanco y negro'],
+ ['extract image colors','extrae colores'],['color palette from photo','paleta de la foto'],['flip image','voltear imagen'],['mirror image','espejo imagen'],
+ ['mute video','silenciar video'],['remove audio from video','quita audio del video'],['speed up video','acelera video'],['slow down video','ralentiza video'],
+ ['trim video','recorta video'],['convert video to gif','video a gif'],['create gif from video','crear gif'],
+ ['audio waveform','forma de onda'],['normalize audio volume','normaliza volumen'],['convert audio to mp3','convertir a mp3'],
+ ['transcribe audio','transcribe grabacion'],['audio to text','audio a texto'],['speech to text','voz a texto'],
+ ['anonymize text','anonimizar texto'],['redact sensitive data','ocultar datos sensibles'],['hide api keys','oculta claves api'],
+ ['create srt subtitles','crear subtitulos srt'],['generate subtitles','generar srt'],['count words','cuenta palabras'],
+ ['extract email addresses','extrae correos'],['extract links','extrae enlaces'],['extract urls','extrae enlaces'],
+ ['format json','formatea json'],['pretty print json','embellece json'],['minify json','minifica json'],
+ ['convert csv to json','convierte csv json'],['convert json to csv','convierte json csv'],['sort lines alphabetically','ordena lineas'],['remove duplicate lines','elimina duplicados'],
+ ['create utm link','enlace utm'],['utm campaign url','enlace utm'],['qr code','codigo qr'],['scan qr code','escanea qr'],['inspect file type','inspecciona archivo'],
+ ['calculate file hash','hash de archivo'],['sha256 checksum','hash sha256'],['text to speech','texto a voz'],['study guide','guia de estudio'],
+ ['study flashcards','tarjetas de estudio'],['decision matrix','matriz de decision'],['action plan','plan de accion'],['review text','revisa este escrito'],
+ ['image','imagen'],['photo','foto'],['video','video'],['file','archivo'],['document','documento'],['pages','paginas'],['page','pagina'],
+ ['metadata','metadatos'],['background','fondo'],['colors','colores'],['palette','paleta'],['subtitles','subtitulos'],['emails','correos'],
+ ['links','enlaces'],['duplicate lines','lineas duplicadas'],['campaign','campana'],['sensitive data','datos sensibles'],['api keys','claves api'],
+ ['extract','extrae'],['merge','une'],['combine','combina'],['split','divide'],['remove','elimina'],['delete','elimina'],
+ ['compress','comprime'],['resize','redimensiona'],['convert','convierte'],['rotate','rota'],['trim','recorta'],['mute','silencia'],
+ ['generate','genera'],['create','crea'],['format','formatea'],['minify','minifica'],['compare','compara'],['sort','ordena'],['scan','escanea'],['inspect','inspecciona']
+].sort((a,b)=>b[0].length-a[0].length);
+const normalizeIntent = value => {
+ let q=normalize(value);
+ for(const [english,spanish] of ENGLISH_INTENT) q=q.replaceAll(english,spanish);
+ return q;
+};
+
 const RELATED = [
  ['image-compress','image-resize','image-convert','image-crop','image-social-kit','image-favicon'],
  ['image-bg','image-watermark','image-strip-metadata','image-rounded','image-adjust','image-grayscale','image-sepia','image-pixelate','image-blur'],
@@ -196,7 +307,7 @@ const video=file=>fileKind(file)==='video';
 // This router executes only high-confidence operations; uncertain intent goes
 // to the multimodel planner instead of guessing parameters or silent mutations.
 export function planCoreOfflineAction(query,files=[],history=[]){
- const q=normalize(query),file=files[0];
+ const q=normalizeIntent(query),file=files[0];
  if(!q)return null;
  // A reference to an existing image is an editing request, not permission to
  // create a new one. Ask for the missing file before any provider/API call.
@@ -331,42 +442,74 @@ function capabilityGroups(){
  }).filter(Boolean);
 }
 export function coreCapabilityContext(){
- const list=coreToolCatalog(),localCount=list.filter(local).length;
- const groups=capabilityGroups();
- return [
-  'CAPACIDADES REALES DE PRISMA SPACE (fuente: registro de herramientas activo):',
-  'Hay '+list.length+' herramientas activas o beta; '+localCount+' funcionan localmente o en el navegador.',
-  ...groups.map(group=>group.name+': '+group.count+' herramientas. Ejemplo: '+group.examples[0]+'.'),
-  'También puedo conversar, explicar, resumir, comparar, razonar, redactar, crear contenido y ayudar con programación mediante los motores de IA conectados.',
-  'Las herramientas locales/navegador no necesitan cuota de inferencia; las capacidades remotas dependen de la conexión, el modelo y sus límites.',
-  'No afirmes que una herramienta está lista si no figura en este registro. No inventes funciones, motores activos, resultados ni ejecuciones.'
- ].join('\n').slice(0,1450);
-}
-export function describeCoreTools(query,files=[]){
- const list=coreToolCatalog();
- const localCount=list.filter(local).length;
- if(isBroadCapabilityQuestion(query)){
+  const list=coreToolCatalog(),localCount=list.filter(local).length;
   const groups=capabilityGroups();
+  const english=typeof window!=='undefined'&&window.prismaI18n?.language==='en';
+  const t=value=>english?(window.prismaI18n?.t(value)||value):value;
+  if(english)return [
+   'REAL PRISMA SPACE CAPABILITIES (source: active tool registry):',
+   'There are '+list.length+' active or beta tools; '+localCount+' run locally or in the browser.',
+   ...groups.map(group=>t(group.name)+': '+group.count+' tools. Example: '+t(group.examples[0])+'.'),
+   'I can also explain, summarize, compare, reason, write, create content, and help with programming using connected AI engines.',
+   'Local and browser tools do not use AI inference quota; remote capabilities depend on the connection, model, and its limits.',
+   'Do not claim a tool is ready unless it appears in this registry. Do not invent features, active engines, results, or completed actions.'
+  ].join('\n').slice(0,1450);
   return [
-   '**¡Puedo ayudarte con bastante más que una conversación!** Soy el asistente de Prisma Space y puedo elegir herramientas según el resultado que necesites.',
-   'Actualmente tengo **'+list.length+' herramientas activas**, de las cuales **'+localCount+' funcionan localmente o en tu navegador**, sin consumir cuota de inferencia.',
-   '**Mis áreas principales**',
-   ...groups.map(group=>'- **'+group.name+'** ('+group.count+(group.count===1?' herramienta':' herramientas')+'): '+group.examples.join(' y ')+'.'),
-   '**También puedo** explicar temas, resumir y analizar información, comparar opciones, razonar, programar, redactar, crear guiones y ayudarte a planificar.',
-   'Puedes pedirme directamente el resultado que buscas o adjuntar un archivo. Yo selecciono y encadeno las herramientas compatibles; te pediré autorización cuando una operación utilice servicios externos.'
-  ].join('\n\n');
- }
- const search=searchCoreTools(query,files,12).filter(tool=>tool.rank>3);
- if(!search.length)return 'Prisma Core tiene '+list.length+' herramientas activas (ready o beta), de las cuales '+localCount+' son locales o funcionan en el navegador. Puedo buscar por tipo de archivo o resultado deseado. ¿Qué quieres crear o transformar?';
- const selected=search.slice(0,7);
- return 'Prisma Core conoce '+list.length+' herramientas disponibles, incluyendo '+localCount+' locales o de navegador. Para esta tarea, las más relacionadas son:\n'+selected.map(item=>'- '+item.name+' ('+(local(item)?'sin cuota de IA':'requiere proveedor')+')').join('\n')+'\nPuedes pedirme el resultado final, adjuntar archivos y dejar que seleccione las operaciones. No es necesario indicar el nombre de cada herramienta.';
+   'CAPACIDADES REALES DE PRISMA SPACE (fuente: registro de herramientas activo):',
+   'Hay '+list.length+' herramientas activas o beta; '+localCount+' funcionan localmente o en el navegador.',
+   ...groups.map(group=>group.name+': '+group.count+' herramientas. Ejemplo: '+group.examples[0]+'.'),
+   'También puedo conversar, explicar, resumir, comparar, razonar, redactar, crear contenido y ayudar con programación mediante los motores de IA conectados.',
+   'Las herramientas locales/navegador no necesitan cuota de inferencia; las capacidades remotas dependen de la conexión, el modelo y sus límites.',
+   'No afirmes que una herramienta está lista si no figura en este registro. No inventes funciones, motores activos, resultados ni ejecuciones.'
+  ].join('\n').slice(0,1450);
 }
+
+export function describeCoreTools(query,files=[]){
+  const list=coreToolCatalog();
+  const localCount=list.filter(local).length;
+  const english=typeof window!=='undefined'&&window.prismaI18n?.language==='en';
+  const t=value=>english?(window.prismaI18n?.t(value)||value):value;
+  if(isBroadCapabilityQuestion(query)){
+   const groups=capabilityGroups();
+   if(english)return [
+    '**I can help with much more than a conversation.** I am the Prisma Space assistant, and I can choose tools based on the result you need.',
+    'I currently have **'+list.length+' active tools**, including **'+localCount+' that run locally or in your browser**, without using AI inference quota.',
+    '**Main areas**',
+    ...groups.map(group=>'- **'+t(group.name)+'** ('+group.count+' tools): '+group.examples.map(t).join(' and ')+'.'),
+    '**I can also** explain topics, summarize and analyze information, compare options, reason, code, write, create scripts, and help you plan.',
+    'Tell me the result you want or attach a file. I will select and chain compatible tools, and ask for authorization when an operation uses external services.'
+   ].join('\n\n');
+   return [
+    '**¡Puedo ayudarte con bastante más que una conversación!** Soy el asistente de Prisma Space y puedo elegir herramientas según el resultado que necesites.',
+    'Actualmente tengo **'+list.length+' herramientas activas**, de las cuales **'+localCount+' funcionan localmente o en tu navegador**, sin consumir cuota de inferencia.',
+    '**Mis áreas principales**',
+    ...groups.map(group=>'- **'+group.name+'** ('+group.count+(group.count===1?' herramienta':' herramientas')+'): '+group.examples.join(' y ')+'.'),
+    '**También puedo** explicar temas, resumir y analizar información, comparar opciones, razonar, programar, redactar, crear guiones y ayudarte a planificar.',
+    'Puedes pedirme directamente el resultado que buscas o adjuntar un archivo. Yo selecciono y encadeno las herramientas compatibles; te pediré autorización cuando una operación utilice servicios externos.'
+   ].join('\n\n');
+  }
+  const search=searchCoreTools(query,files,12).filter(tool=>tool.rank>3);
+  if(!search.length)return english?'Prisma Core has '+list.length+' active tools (ready or beta), including '+localCount+' local or browser-based tools. I can search by file type or desired result. What would you like to create or transform?':'Prisma Core tiene '+list.length+' herramientas activas (ready o beta), de las cuales '+localCount+' son locales o funcionan en el navegador. Puedo buscar por tipo de archivo o resultado deseado. ¿Qué quieres crear o transformar?';
+  const selected=search.slice(0,7);
+  return english?'Prisma Core has '+list.length+' available tools, including '+localCount+' local or browser-based tools. The most relevant options for this task are:\n'+selected.map(item=>'- '+t(item.name)+' ('+(local(item)?'no AI quota required':'provider required')+')').join('\n')+'\nTell me the result you want, attach files, and let me choose compatible operations. You do not need to know each tool name.':'Prisma Core conoce '+list.length+' herramientas disponibles, incluyendo '+localCount+' locales o de navegador. Para esta tarea, las más relacionadas son:\n'+selected.map(item=>'- '+item.name+' ('+(local(item)?'sin cuota de IA':'requiere proveedor')+')').join('\n')+'\nPuedes pedirme el resultado final, adjuntar archivos y dejar que seleccione las operaciones. No es necesario indicar el nombre de cada herramienta.';
+}
+
 function isBroadCapabilityQuestion(query){
- const q=normalize(query);
- const specific=/\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|hojas de calculo|csv|json|codigo|programacion|web|miniaturas?|youtube|redes sociales)\b/.test(q);
- const general=/(?:que|cuales|cuantas).{0,35}(?:habilidades|capacidades|puedes hacer|sabes hacer|puedo pedirte)|(?:que sabes hacer|que puedes hacer|en que puedes ayudarme|como me puedes ayudar|para que sirves|cual es tu repertorio|muestrame todo lo que puedes hacer)/.test(q);
- return general&&!specific;
+  const q=normalize(query);
+  const specific=/\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|hojas de calculo|csv|json|codigo|programacion|web|miniaturas?|youtube|redes sociales)\b/.test(q);
+  const spanish=/(?:que|cuales|cuantas).{0,35}(?:habilidades|capacidades|puedes hacer|sabes hacer|puedo pedirte)|(?:que sabes hacer|que puedes hacer|en que puedes ayudarme|como me puedes ayudar|para que sirves|cual es tu repertorio|muestrame todo lo que puedes hacer)/.test(q);
+  const english=/(?:what can you do|what are your capabilities|what tools do you have|show me all (?:your )?tools|what can i ask you|how can you help me|what are you able to do|show me your features)/.test(q);
+  return (spanish||english)&&!specific;
 }
+
+export function isToolDiscoveryQuestion(query){
+  const q=normalize(query);
+  const specificCapability=/(?:que|cuales|cuantas).{0,40}(?:habilidades|capacidades|puedes hacer|sabes hacer).{0,55}\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|csv|json|codigo|programacion|web)\b/.test(q);
+  const generalTools=/(?:que|cuales|cuantas|dime|muestrame|recomienda).{0,45}(?:herramientas|funciones|utilidades|capacidades)|(?:herramientas|funciones|utilidades).{0,35}(?:tienes|hay|recomiendas|puedo usar)|(?:que puedo hacer con|que herramientas usarias para)/.test(q);
+  const englishTools=/(?:what tools|which tools|tools for|what can i do with|what features|show me tools|recommend a tool|do you have a tool)/.test(q);
+  return isBroadCapabilityQuestion(q)||specificCapability||englishTools||generalTools&&!/(?:crea|convierte|transforma|ejecuta|procesa|genera).{0,30}(?:archivo|imagen|pdf|video)/.test(q);
+}
+
 export function isToolDiscoveryQuestion(query){
  const q=normalize(query);
  const specificCapability=/(?:que|cuales|cuantas).{0,40}(?:habilidades|capacidades|puedes hacer|sabes hacer).{0,55}\b(pdf|documentos?|imagenes?|fotos?|videos?|audio|excel|csv|json|codigo|programacion|web)\b/.test(q);
