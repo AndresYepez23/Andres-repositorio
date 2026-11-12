@@ -62,7 +62,9 @@ test('Core and model prompts produce English responses when English is selected'
  assert.match(core,/pre\.setAttribute\('data-user-content',''\)/);
  assert.match(core,/label\.setAttribute\('data-user-content',''\)/);
  assert.doesNotMatch(i18n,/\.core-message-results/);
+ assert.doesNotMatch(i18n,/\.core-message-engine/);
  assert.match(i18n,/\.core-message-files/);
+ assert.ok(core.includes("```text\\n'+recognized+'\\n```"));
  assert.match(engines,/responseLanguage=typeof window!=='undefined'&&window\.prismaI18n\?\.language==='en'\?'English':'Spanish'/);
  assert.match(engines,/const tones=responseLanguage==='English'\?/);
  assert.doesNotMatch(engines,/const tones=responseLanguage==='en'\?/);
