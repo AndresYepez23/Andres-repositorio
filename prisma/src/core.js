@@ -493,7 +493,6 @@ const CREATE_GROUPS=[
  {key:'audio',title:'Audio',description:'Transcripción y procesamiento de voz.'},
  {key:'music',title:'Música',description:'Modelos que producen pistas musicales reales.'},
  {key:'video',title:'Vídeo',description:'Modelos que producen clips reales.'},
- {key:'transcription',title:'Transcripción',description:'Convierte voz y grabaciones en texto.'},
  {key:'embedding',title:'Búsqueda y vectores',description:'Modelos de representación y recuperación.'},
  {key:'safety',title:'Moderación',description:'Modelos de clasificación y seguridad.'}
 ];
@@ -530,6 +529,9 @@ function renderImageModelControls(){
    if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
    for(const model of models)if(model?.id&&!entries.some(x=>x.provider===provider&&x.model.id===model.id))entries.push({provider,model});
   }
+  // Hide categories without any discovered models. Whisper is already grouped
+  // under Audio; do not show a second empty Transcripción section.
+  if(!entries.length)continue;
   const list=document.createElement('div');list.className='core-create-options';
   for(const {provider,model} of entries){
    const isTranscription=group.key==='audio'&&['groq','cloudflare'].includes(provider)&&/whisper/i.test(String(model.id));
@@ -555,13 +557,6 @@ function renderImageModelControls(){
     else{chat.imageSelection={provider,model:model.id};chat.updated=Date.now();persistChatHistory();setCoreCreativeMode('image');}
    });
    list.append(row);
-  }
-  if(!entries.length){
-   const empty=document.createElement('p');empty.className='core-create-empty';
-   empty.textContent=group.key==='music'?'Sin modelo musical verificado y conectado por ahora.':
-    group.key==='video'?'Sin modelo de vídeo verificado y conectado por ahora.':
-    'No hay modelos publicados en esta categoría.';
-   list.append(empty);
   }
   section.append(list);root.append(section);
  }
