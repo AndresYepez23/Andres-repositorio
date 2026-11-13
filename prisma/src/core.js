@@ -555,11 +555,24 @@ function renderImageModelControls(){
    state.textContent=chosen?'Elegido':ready?'Elegir':supported?availability.reason:'Solo catálogo';
    row.title=ready?(tts?'Convertir texto a voz con ':isTranscription?'Transcribir audio con ':'Crear imágenes con ')+(model.name||model.id):availability.reason;
    row.append(copy,state);
-   if(ready)row.addEventListener('click',()=>{
+   if(ready)row.addEventListener('click',event=>{
+    // Prevent the click from reaching the <details> summary or outer handlers.
+    event.preventDefault();event.stopPropagation();
+    const picker=$('.core-model-settings');
+    const panel=$('#core-model-panel');
+    const previousScroll=panel?.scrollTop||0;
     const chat=activeChatRecord();if(!chat)return;
     if(tts){chat.creativeMode='tts';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();status('Texto a voz elegido. Escribe el texto o adjunta un documento.','success');}
     else if(isTranscription){chat.transcriptionSelection={provider,model:model.id};chat.creativeMode='transcription';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();status('Modelo de transcripción elegido. Adjunta un archivo de audio para transcribirlo.','success');}
     else{chat.imageSelection={provider,model:model.id};chat.updated=Date.now();persistChatHistory();setCoreCreativeMode('image',{keepPickerOpen:true});}
+    // A click target removed synchronously by renderModelPicker can retarget
+    // the final click on touch devices and close the parent <details>.
+    // Restore its open state after the browser finishes dispatching the click.
+    requestAnimationFrame(()=>{
+      if(!picker?.isConnected)return;
+      picker.open=true;
+      if(panel)panel.scrollTop=previousScroll;
+    });
    });
    list.append(row);
   }
