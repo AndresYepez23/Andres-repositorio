@@ -45,10 +45,10 @@ test('the server-only evaluation option can request actual neural planning for a
  assert.equal(calls,1);assert.equal(r.source,'queen');assert.equal(r.plan.execution.executed,false);
 });
 
-test('staging Wrangler activates Queen only in Preview, with independent D1 bindings in both scopes',()=>{
+test('staging Wrangler activates Queen only in the isolated Production environment, keeping Preview disabled',()=>{
  const config=readFileSync(new URL('../wrangler.staging.toml',import.meta.url),'utf8');
  const root=config.split('[vars]')[1].split('[env.preview.vars]')[0];const preview=config.split('[env.preview.vars]')[1];
- assert.match(root,/QUEEN_ENABLED = "0"/);assert.match(preview,/QUEEN_ENABLED = "1"/);
+ assert.match(root,/QUEEN_ENABLED = "1"/);assert.match(preview,/QUEEN_ENABLED = "0"/);
  assert.match(preview,/\[\[env.preview.d1_databases\]\]/);assert.ok(preview.includes(STAGING_DATABASE));
 });
 

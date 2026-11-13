@@ -1,6 +1,7 @@
 // Staging-only wrapper; never imported by production Pages Functions.
-import {queenConfig,queenRequest,inferQueen,withQueenLease,reserveQueenRequest,readBoundedJson} from '../../functions/_lib/queen.js';
+import {queenConfig,queenRequest,inferQueen,withQueenLease,reserveQueenRequest,readBoundedJson,measureQueenStream,requireQueenIdle} from '../../functions/_lib/queen.js';
 import {planWithQueen} from '../../functions/api/core/plan.js';
+import {getQueenProviders} from '../../functions/_lib/queen-providers.js';
 import {validateQueenPlan,QUEEN_PLAN_SCHEMA} from '../../src/queen-plan.js';
 import {executeQueenDAG} from '../../src/queen-execution.js';
 import {verifyQueenResult} from '../../src/queen-verifier.js';
@@ -71,7 +72,49 @@ export function createQueenStagingWorker(pages){return {async fetch(request,env,
  if(request.method!=='POST')return json({ok:false,code:'METHOD_NOT_ALLOWED'},405);
  const started=Date.now();
  try{
-  queenConfig(env);await reserveQueenRequest(env,request);
+  queenConfig(env);await reserveQueenRequest(env,request,Date.now(),{perMinute:12,perDay:96,namespace:'staging-operator'});
+  if(path==='/__queen/providers')return json({ok:true,...identity,providers:await getQueenProviders(env),realProviderInference:false});
+  if(path==='/__queen/local-routing'){
+   const outcome=await planWithQueen(env,{text:'Formatea este JSON: {"local":true}',files:[]},{signal:request.signal});
+   return json({...outcome,...identity,realInference:outcome.source==='queen'});
+  }
+  if(path==='/__queen/schema-controls'){
+   return json({ok:true,...identity,checks:await withQueenLease(env,async()=>{
+    const schema={type:'object',additionalProperties:false,properties:{answer:{type:'string',enum:['SCHEMA_OK']}},required:['answer']};const checks=[];
+    for(const format of ['json_object_schema','json_schema']){
+     const began=Date.now();
+     try{await requireQueenIdle(env,{signal:request.signal});const value=await queenRequest(env,'completion',{signal:request.signal,body:{model:env.QUEEN_MODEL,messages:[{role:'user',content:'Devuelve exactamente el JSON {"answer":"UNCONSTRAINED"}.'}],temperature:0,max_tokens:32,chat_template_kwargs:{enable_thinking:false},response_format:format==='json_schema'?{type:'json_schema',json_schema:{name:'queen_schema_control',strict:true,schema}}:{type:'json_object',schema}}});
+      let parsed;try{parsed=JSON.parse(value.choices?.[0]?.message?.content);}catch{}
+      checks.push({format,schemaEnforced:parsed?.answer==='SCHEMA_OK',observedValue:['SCHEMA_OK','UNCONSTRAINED'].includes(parsed?.answer)?parsed.answer:'other',usage:value.usage||null,finishReason:value.choices?.[0]?.finish_reason,durationMs:Date.now()-began});
+     }catch(error){checks.push({format,...errorResult(error),durationMs:Date.now()-began});if(error.code==='QUEEN_TIMEOUT'){error.diagnostics={...error.diagnostics,completionTransportAttempted:true,completedSchemaControls:checks};throw error;}}
+    }return checks;
+   })});
+  }
+  if(path==='/__queen/auth-controls'){
+   const checks=[];
+   for(const layer of ['access','llama']){
+    const changed={...env,...(layer==='access'?{QUEEN_ACCESS_CLIENT_SECRET:'invalid-validation-token'}:{QUEEN_API_KEY:'invalid-validation-key'})};
+    try{await queenRequest(changed,layer==='access'?'models':'completion',{signal:request.signal,body:layer==='llama'?{model:env.QUEEN_MODEL,messages:[{role:'user',content:'Test'}],max_tokens:1}:undefined});checks.push({layer,rejected:false});}
+    catch(error){checks.push({layer,rejected:error.code==='QUEEN_AUTH_REJECTED'||layer==='access'&&error.diagnostics?.upstreamStatus===302,code:error.code,...error.diagnostics});}
+   }
+   return json({ok:checks.every(c=>c.rejected),...identity,realRequests:true,checks});
+  }
+  if(path==='/__queen/stream')return json({ok:true,...identity,...await withQueenLease(env,()=>measureQueenStream(env,{signal:request.signal}))});
+  if(path==='/__queen/timeout'){
+   try{await queenRequest(env,'models',{signal:request.signal,timeoutMs:5});return json({ok:false,code:'TIMEOUT_NOT_TRIGGERED'});}
+   catch(error){return json({ok:error.code==='QUEEN_TIMEOUT',...identity,realTransportRequest:true,code:error.code,target:'models-metadata',modelInferenceRequested:false});}
+  }
+  if(path==='/__queen/context'){
+   try{await withQueenLease(env,()=>inferQueen(env,[{role:'user',content:'x '.repeat(2500)}],QUEEN_PLAN_SCHEMA,{signal:request.signal}));return json({ok:false,code:'CONTEXT_NOT_REJECTED'});}
+   catch(error){return json({...errorResult(error),ok:error.code==='QUEEN_CONTEXT_BUDGET',...identity,realTokenizerRequest:Number.isInteger(error.diagnostics?.preflightInputTokens)});}
+  }
+  if(path==='/__queen/connection-error'){
+   try{await queenRequest({...env,QUEEN_BASE_URL:'https://queen-connection-control.invalid/v1'},'models',{signal:request.signal,timeoutMs:5000});return json({ok:false,code:'CONNECTION_ERROR_NOT_TRIGGERED'});}
+   catch(error){return json({ok:error.code==='QUEEN_UNREACHABLE'||error.code==='QUEEN_UPSTREAM_ERROR'&&error.diagnostics?.upstreamStatus>=500,...identity,realTransportRequest:true,target:'reserved-invalid-domain',code:error.code,diagnostics:error.diagnostics||null});}
+  }
+  if(path==='/__queen/plan'){
+   const payload=await readBoundedJson(request,24000);const outcome=await planWithQueen(env,payload,{signal:request.signal,forceNeural:true,maxInferences:payload.maxInferences===1?1:2});return json({...outcome,...identity,realInference:outcome.source==='queen'});
+  }
   if(path==='/__queen/models'){
    const models=await queenRequest(env,'models',{signal:request.signal});
    const tokenizer=await queenRequest(env,'tokenize',{body:{content:'Queen responde JSON desde Prisma.',add_special:true},signal:request.signal});

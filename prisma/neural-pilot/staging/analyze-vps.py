@@ -14,8 +14,13 @@ def memory(value):
 cpu=[number(r.get('container',{}).get('CPUPerc')) for r in rows];cpu=[x for x in cpu if x is not None]
 ram=[memory(r.get('container',{}).get('MemUsage','').split('/')[0]) for r in rows];ram=[x for x in ram if x is not None]
 available=[r['hostMemory']['MemAvailableBytes'] for r in rows if 'MemAvailableBytes' in r.get('hostMemory',{})]
+host_cpu=[r['hostCpuPercent'] for r in rows if isinstance(r.get('hostCpuPercent'),(int,float))]
+restarts=[r.get('stability',{}).get('restartCount') for r in rows];restarts=[n for n in restarts if isinstance(n,int)]
+starts={r.get('stability',{}).get('StartedAt') for r in rows if r.get('stability',{}).get('StartedAt')}
 print(json.dumps({'samples':len(rows),'first':rows[0]['at'] if rows else None,'last':rows[-1]['at'] if rows else None,
  'hostVcpus':rows[0].get('hostVcpus') if rows else None,'dockerCpuPercentOfOneCore':{'mean':statistics.mean(cpu) if cpu else None,'max':max(cpu) if cpu else None},
+ 'hostCpuPercent':{'mean':statistics.mean(host_cpu) if host_cpu else None,'max':max(host_cpu) if host_cpu else None},
+ 'restartCountIncrease':max(restarts)-min(restarts) if restarts else None,
  'containerRamBytes':{'mean':round(statistics.mean(ram)) if ram else None,'max':max(ram) if ram else None},'minimumHostAvailableRamBytes':min(available) if available else None,
- 'oomKilledObserved':any(r.get('stability',{}).get('OOMKilled') is True for r in rows),'containerRestartsObserved':any(r.get('stability',{}).get('Restarting') is True for r in rows),
- 'monitorErrors':sum('containerError' in r for r in rows),'hardwareOrModelChanged':False},indent=2))
+ 'oomKilledObserved':any(r.get('stability',{}).get('OOMKilled') is True for r in rows),'containerRestartsObserved':len(starts)>1 or (bool(restarts) and max(restarts)>min(restarts)) or any(r.get('stability',{}).get('Restarting') is True for r in rows),
+ 'monitorErrors':sum('containerError' in r or 'stabilityError' in r for r in rows),'hardwareOrModelChanged':False},indent=2))

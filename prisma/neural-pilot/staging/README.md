@@ -1,47 +1,26 @@
-# Queen: staging aislado y validación desde el backend
+# Queen: validación real en el proyecto aislado
 
-Base de trabajo: PR #125, commit `3d3da5e19ec40f32d3b4f96f0aff51380dc3e634`.
+PR #125, rama `feature/prisma-neural-genixnode-qwen35-pilot`. El historial anterior, incluido el informe que tenía las inferencias bloqueadas, se conserva en `prisma/docs/queen-staging-2026-11-13.json`.
 
-## Recursos reales
+## Aislamiento vigente
 
-| Recurso | Identificador | Uso |
-| --- | --- | --- |
-| Pages existente | `prismaspace` | Sin cambios de configuración |
-| D1 existente | `e02104b5-0861-475a-a60f-7658439d4fe0` | No se aplicaron migraciones; continúa compartida por el Preview original y producción |
-| Pages aislado | `prisma-queen-staging` | Backend privado de pruebas, rama Preview `queen-validation` |
-| D1 aislada | `980bad8f-0356-48b9-87bc-56bcf363f69a` | `prisma-queen-staging`, sin datos de producción |
+| Recurso | Uso |
+| --- | --- |
+| `prismaspace` | Proyecto principal; no cambiar configuración, desplegar ni migrar su D1 |
+| D1 `e02104b5-0861-475a-a60f-7658439d4fe0` | Base principal compartida por los entornos originales; no aplicar migraciones |
+| `prisma-queen-staging`, entorno **Production** | Validación privada autorizada por el usuario; `QUEEN_ENABLED=1` |
+| D1 `980bad8f-0356-48b9-87bc-56bcf363f69a` | Base independiente de staging, sin datos de producción |
+| Preview del proyecto aislado | `QUEEN_ENABLED=0`; no necesita duplicar los secretos |
 
-No usar la vista previa original del PR para las pruebas neuronales. El dominio de la rama aislada es `https://queen-validation.prisma-queen-staging.pages.dev`; exige la clave de operación y no publica una interfaz de usuario.
+Los tres secretos de Queen están configurados como secretos de **Production de prisma-queen-staging**. Su presencia se comprueba sin devolver sus valores. Las solicitudes reales a `/v1/models`, `/tokenize` y completions confirmaron las dos capas de autenticación. No copiar secretos del proyecto principal.
 
-`wrangler.staging.toml` declara explícitamente los UUID de la D1 nueva tanto en el ámbito raíz como en Preview. `QUEEN_ENABLED` vale `0` en el ámbito raíz y `1` en Preview. El entorno Production del nuevo proyecto también permanece desactivado. `prisma/wrangler.toml` no se modifica.
+El proyecto aislado es Direct Upload. Cloudflare no permite convertir un proyecto Direct Upload existente a integración Git. Se configuró su `production_branch` con la rama del PR; los paquetes se construyen desde esa rama y se suben con su SHA y `commit_dirty`. Eso registra procedencia, **no constituye una conexión Git automática**. No se recreó el proyecto ni se movieron secretos. Referencia: https://developers.cloudflare.com/pages/get-started/direct-upload/.
 
-Se comprobó el esquema previo mediante una consulta de solo lectura a `sqlite_schema`. Únicamente en la base nueva se aplicaron, en orden:
+`wrangler.staging.toml` declara la D1 independiente en el ámbito raíz y en Preview. `prisma/wrangler.toml` permanece intacto. El wrapper consulta `queen_staging_identity` mediante el binding real antes de cualquier prueba; rechaza un UUID o marcador incorrecto. La base nueva ya contiene el esquema previo vacío y las migraciones 0002, 0003 y 0004; no volver a aplicarlas durante la evaluación.
 
-1. El marcador `queen_staging_identity`, con el UUID y el entorno staging.
-2. `0000_prisma_schema.sql`: tablas previas de límites y salud de proveedores, vacías.
-3. Las migraciones existentes `0002_core_metrics.sql` y `0003_prisma_welcome_emails.sql`.
-4. La migración existente `0004_queen_control.sql`.
+## Protección y construcción
 
-El wrapper verifica el marcador mediante el binding real antes de cualquier prueba. Un nombre correcto de proyecto o de variable no basta. La comprobación posterior de producción devolvió cero tablas `queen_%`.
-
-## Protección y secretos pendientes
-
-Todas las rutas del paquete requieren `X-Queen-Staging-Key`. El backend compara su SHA-256 con `QUEEN_STAGING_KEY_SHA256`, almacenado como secreto. La clave de operación se conserva únicamente en un archivo local privado y no se imprime ni se versiona. Sin autorización, el despliegue devuelve HTTP 404 antes de acceder a D1.
-
-Ya existe `QUEEN_ACCESS_CLIENT_ID` como secreto de Preview. Su autenticación aún no está validada. Faltan:
-
-```text
-QUEEN_ACCESS_CLIENT_SECRET
-QUEEN_API_KEY
-```
-
-Introducirlos directamente en **Cloudflare → Workers & Pages → prisma-queen-staging → Settings → Variables and Secrets → Preview → Add → Secret/Encrypt**. No introducirlos en `prismaspace`, en el entorno Production ni en el chat.
-
-Después de guardarlos hay que crear otra versión **Preview del proyecto aislado** para que la instancia reciba los nuevos secretos. Cambiar las variables no actualiza el snapshot de una versión ya desplegada. Conservar la rama `queen-validation`, la D1 aislada y la clave de operación. Ningún paso requiere modificar el túnel, reinstalar Qwen ni desplegar producción.
-
-## Construcción reproducible
-
-El builder comprueba el proyecto y el UUID antes de compilar. No despliega ni ejecuta SQL. Utiliza Wrangler 4.161.0 y su esbuild, instalados fuera del repositorio:
+Todas las rutas del paquete exigen `X-Queen-Staging-Key`, comparada con `QUEEN_STAGING_KEY_SHA256`. Sin autorización responden 404 antes de acceder a D1. La clave de operación se lee desde un archivo privado y nunca se registra. Las credenciales de Queen permanecen en el backend. El paquete privado no ofrece una interfaz pública.
 
 ```sh
 QUEEN_TEST_TOOLING=/ruta/a/tooling \
@@ -49,73 +28,60 @@ QUEEN_STAGING_BUILD_OUTPUT=work/queen-staging-build \
 node prisma/neural-pilot/staging/build.cjs
 ```
 
-Ejecuta Pages Functions con `--config wrangler.staging.toml`. El paquete resultante es `work/queen-staging-build/worker.js`. Subirlo exclusivamente como `_worker.js` al proyecto `prisma-queen-staging`, rama Preview `queen-validation`, comprobando antes y después el binding remoto. El despliegue realizado utiliza la API de Pages del conector Cloudflare; no requiere copiar una API key administrativa al workspace.
+Wrangler 4.161.0 y esbuild están en tooling, fuera del repositorio. El builder compila usando `--config wrangler.staging.toml` y verifica el UUID. No despliega ni ejecuta SQL. Subir `worker.js` como `_worker.js` **solo a prisma-queen-staging**, con la rama del PR y el SHA real. Los paquetes experimentales llevan `commit_dirty=true`; la evidencia distingue esas versiones de un paquete construido desde un commit limpio. Staging necesita `nodejs_compat` por los polyfills de Wrangler.
 
-El empaquetado detectó imports de `node:stream` y `node:events` en los polyfills de Wrangler. Se corrigió declarando `nodejs_compat` únicamente para staging y comprobando el paquete en workerd. No es un fallo observado de Qwen.
+Al actualizar el PR, usar un mensaje de commit que empiece por **`[CF-Pages-Skip]`**. El proyecto principal tiene previews automáticos para todas las ramas: este prefijo documentado evita que el push genere un despliegue allí, sin cambiar su configuración. Los checks de GitHub continúan disponibles. Referencia: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/#skipping-a-build-via-a-commit-message.
 
-## Pruebas sin credenciales del modelo
-
-```sh
-node --test prisma/tests/queen-staging.test.mjs prisma/tests/queen.test.mjs
-QUEEN_STAGING_OPERATOR_KEY_FILE=/ruta/privada/operator-key \
-node prisma/neural-pilot/staging/evaluate.mjs \
-  --base=https://queen-validation.prisma-queen-staging.pages.dev \
-  --output=work/queen-staging-readiness.json
-```
-
-El informe no sobrescribe resultados anteriores. La prueba remota ejecuta realmente las herramientas existentes `json-format → json-minify`, conserva los datos y comprueba un archivo JSON exportado por el harness. El plan de esa prueba es un fixture determinista, y el informe lo identifica con `realInference: false`.
-
-También se prueban los validadores reales con fixtures adversariales: herramienta inventada, ciclo, pregunta con acciones, parámetros inventados y JSON corrupto. La descarga `/__queen/artifact` devuelve el archivo generado y su SHA-256. Los tiempos de cliente incluyen red y backend; un `durationMs: 0` del trabajo síncrono puede reflejar la resolución del reloj de Workers y no acredita latencia cero.
-
-## Primera inferencia real y ocho casos
-
-Con ambos secretos presentes en una nueva versión Preview:
+## Evaluación neuronal real
 
 ```sh
+node --test prisma/tests/queen*.test.mjs
 QUEEN_STAGING_OPERATOR_KEY_FILE=/ruta/privada/operator-key \
 node prisma/neural-pilot/staging/evaluate.mjs --live \
-  --base=https://queen-validation.prisma-queen-staging.pages.dev \
-  --output=work/queen-staging-live.json
+  --base=https://VERSION.prisma-queen-staging.pages.dev \
+  --output=work/queen-live.json
 ```
 
-Orden del runner:
+El runner acepta únicamente hosts HTTPS del proyecto aislado y no sobrescribe informes anteriores. Para recuperar una ejecución parcial de la misma versión inmutable, dentro de una hora, añadir `--resume-from=work/informe-parcial.json` y elegir otro archivo de salida. Conserva los resultados ya obtenidos, verifica de nuevo el binding y reutiliza un smoke real previamente verificado. Un error de readiness se conserva aunque una repetición posterior pase.
 
-1. Verificar autorización, entorno y UUID de la base real.
-2. Comprobar `/v1/models` y `/tokenize` desde el backend mediante el adaptador existente y ambas capas de autenticación.
-3. Consultar solo valores numéricos de `/props` y `/slots` cuando estén disponibles. No registrar prompts, plantillas ni cuerpos privados.
-4. Generar un plan JSON mínimo con Qwen, validarlo, ejecutar una herramienta existente y verificar su resultado y artefacto. Este smoke debe pasar antes de la evaluación.
-5. Ejecutar los ocho IDs de `queen-cases.json` con el planificador existente y una opción interna que fuerza la inferencia para la evaluación. Esa opción no se acepta desde el payload público del producto.
-6. Registrar por caso plan, resultado esperado, latencia, tokens, intentos y comprobaciones de thinking. Calcular selección correcta entre respuestas validadas y la tasa de resolución del conjunto, indicando los denominadores.
-7. Evaluar una composición JSON con plan neuronal y un control de salida truncada a ocho tokens. El límite normal de generación sigue en 256; no se aumenta contexto ni concurrencia.
+Los ocho casos utilizan solicitudes reales al modelo. La opción interna `forceNeural` evita que el benchmark omita Qwen en casos que el planificador local ya resuelve. El producto conserva ese atajo local. La metodología final es **híbrida**: hechos del planificador existente, gramática del catálogo, inferencia Qwen y validación independiente. Las expectativas del benchmark nunca se insertan en el prompt ni se usan para construir la gramática. La tasa mide resolución de estos ocho casos, no precisión general de Qwen sin restricciones.
 
-Si faltan secretos, los ocho casos quedan `blocked` con latencia, tokens y porcentaje en `null`, sin solicitudes al modelo. No se contabilizan como fallos de Qwen. Los errores del upstream solo devuelven estado HTTP y categorías fijas; nunca sus mensajes completos ni cabeceras.
+Se registran planes, intención, herramientas, DAG, tokens devueltos por llama.cpp, latencias, reparaciones y thinking. Los fallos conservan la información disponible de las inferencias anteriores. Tokens desconocidos quedan sin medir; el runner no estima consumo de una solicitud cuyo resultado se perdió. Los informes históricos conservan sus contadores originales; la evidencia nueva explica cualquier cobertura incompleta de aquellas métricas.
 
-## RAM, CPU y estabilidad del VPS
+Los endpoints privados adicionales cubren auth negativa por capa, streaming SSE con TTFT, truncación, timeout controlado, fallo de conexión contra un dominio reservado `.invalid`, presupuesto de contexto, disponibilidad de proveedores y atajo local. Un error inducido de transporte no acredita una caída del servidor. El streaming se mide como capacidad de transporte; el planificador del producto sigue solicitando JSON completo sin streaming.
 
-Este workspace no dispone de acceso SSH al VPS. Por ello no se atribuyen a GenixNode las mediciones del entorno de desarrollo ni de Cloudflare. `/slots` y los timings de completions tampoco miden RAM física o CPU.
+## Composición, archivos y recuperación
 
-Se prepararon dos scripts sin dependencias externas ni cambios de infraestructura. Ejecutar el primero **en el VPS**, durante la evaluación real:
+`browser-operations.cjs` genera PDFs reales con contenido conocido y ejecuta los motores existentes en Chromium. Con `QUEEN_STAGING_URL`, solicita planes auténticos al backend aislado; sin esa variable utiliza planes deterministas identificados como controles. El puente de Playwright remite las solicitudes reales con la clave en Node, sin entregarla al navegador. No simula respuestas de Queen.
+
+La cadena usa `pdf-to-image → image-ocr`, un traspaso de representación ZIP/PNG acotado en el coordinador, y luego las herramientas de texto/datos existentes hasta `json-xlsx`. No se modifican los motores, el registro ni los campos de las herramientas. El adaptador acepta únicamente el ZIP PNG del productor esperado: CRC, tamaño expandido, nombres, número de páginas y píxeles están limitados. El OCR no reconstruye tablas arbitrarias. La prueba usa un escaneo sencillo de una página con texto CSV; comprueba las celdas concretas del Excel, además de firmas, estructura y hashes. Las limitaciones de verificación genérica siguen visibles.
+
+La prueba PDF/Word comprueba que el DOCX contenga la página solicitada y excluya las demás. La recuperación daña intencionadamente un parámetro después de un plan real, provoca un fallo real del motor y solicita una corrección a Queen dentro de dos inferencias. Ese daño es una inyección de fallo identificada, no una respuesta simulada. La prueba de archivos nuevos comprueba el rechazo de una reutilización con contenido distinto y la ejecución de una tarea nueva. La identidad incluye SHA-256 de los archivos, no solo nombre y tamaño.
+
+## Medición directa en GenixNode
+
+No hay una identidad SSH disponible en este workspace. No se presentan las métricas de Cloudflare, Chromium o la máquina de desarrollo como RAM/CPU del VPS. `/props`, `/slots`, los tokens y los timings son observaciones reales del servidor llama.cpp, pero no miden su RAM física.
+
+Desde una máquina que tenga acceso SSH al VPS, sustituir `USUARIO@HOST_GENIXNODE` por la conexión existente:
 
 ```sh
-python3 monitor-vps.py --container prisma-neural-qwen \
-  --samples 60 --interval 5 --output queen-vps-metrics.jsonl
-python3 analyze-vps.py queen-vps-metrics.jsonl
+scp prisma/neural-pilot/staging/monitor-vps.py \
+    prisma/neural-pilot/staging/analyze-vps.py \
+    USUARIO@HOST_GENIXNODE:/tmp/
+ssh USUARIO@HOST_GENIXNODE
+# Estos comandos siguientes se ejecutan DENTRO del VPS:
+docker ps --format '{{.Names}}'
+python3 /tmp/monitor-vps.py --container prisma-neural-qwen \
+  --samples 120 --interval 5 --output /tmp/queen-vps-validation.jsonl
+python3 /tmp/analyze-vps.py /tmp/queen-vps-validation.jsonl
 ```
 
-Leen `/proc`, `docker stats` y solo el estado del contenedor: RAM disponible, CPU, uso de memoria, OOM, reinicios y timestamps. No leen variables de entorno, claves, prompts ni configuración de Docker. No reinician servicios ni cambian límites. El analizador informa las muestras reales; no estima resultados ausentes.
+Si Docker requiere privilegios en esa instalación, ejecutar el monitor con `sudo python3`. Confirmar el nombre mostrado por `docker ps`; sustituir `prisma-neural-qwen` si es diferente. Iniciar el monitor antes del benchmark real y mantener una solicitud neuronal a la vez. Elegir otro nombre de salida en repeticiones para conservar las muestras.
 
-No se realizaron ajustes del modelo o hardware sin medición. La primera inferencia, los ocho casos neuronales, la precisión, los timings y el consumo del VPS permanecen pendientes de las credenciales y de las mediciones correspondientes.
+Los scripts leen `/proc` y estadísticas/estado de Docker; no leen variables de entorno, claves ni prompts. No reinician servicios ni alteran límites. No se justifica cambiar RAM, CPU, contexto, hilos o concurrencia sin esas mediciones y una comparación posterior. Se mantienen 2048 tokens de contexto, una inferencia concurrente y 256 tokens máximos de salida.
 
-## Evidencia registrada el 13/11/2026
+## Estado de cierre
 
-- Código de staging: `bb38210d4fd687894dcef05ae0730001455d5b22`.
-- Versión Preview comprobada: `30c48f54-9dd9-4aed-b099-a673834d885a`, estado `success`, commit sin cambios locales.
-- Health autorizado HTTP 200 y acceso sin clave HTTP 404.
-- Identidad de la D1 real comprobada contra `980bad8f-0356-48b9-87bc-56bcf363f69a`.
-- Cadena real de herramientas ejecutada y verificada, con plan determinista de prueba.
-- Archivo descargado: JSON de 25 bytes, datos originales conservados, SHA-256 `ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c`.
-- 192 pruebas Node y compilación aprobadas.
-- Cero inferencias neuronales realizadas; los ocho casos están bloqueados por los dos secretos indicados, con porcentajes y tokens en `null`.
-- RAM y CPU del VPS sin medir; no se modificó el modelo, su concurrencia, contexto ni hardware.
+Leer [QUEEN-CONTINUITY.md](../../docs/QUEEN-CONTINUITY.md) antes de continuar. Se preservaron 210 pruebas aprobadas, siete rondas reales y los fallos operativos. El 8/8 de decisiones no acredita la cadena neuronal completa. La generación posterior se bloqueó incluso con ocho tokens tras una pausa; faltan mediciones directas del VPS. La gramática compacta y las correcciones posteriores requieren repetir validación neuronal cuando se recupere generación.
 
-Informe detallado: `prisma/docs/queen-staging-2026-11-13.json`. Este informe distingue los fixtures de planificación de la ejecución real de herramientas.
+La clave local del operador no se publica. Para otra cuenta están `create-operator-key.py` y `request.mjs`; su rotación e incorporación a un nuevo snapshot aislado se explican en continuidad. El endpoint de perfil histórico pesado se retiró. Los timeouts de inferencia incierta conservan cinco minutos de pausa y staging observa el slot antes de volver a inferir.

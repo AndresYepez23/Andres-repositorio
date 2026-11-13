@@ -1,0 +1,13 @@
+{
+  "route": "stream",
+  "httpStatus": 503,
+  "clientDurationMs": 55633,
+  "body": {
+    "ok": false,
+    "code": "QUEEN_TIMEOUT",
+    "diagnostics": null,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "durationMs": 55277
+  }
+}

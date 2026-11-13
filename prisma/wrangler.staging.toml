@@ -10,16 +10,16 @@ database_name = "prisma-queen-staging"
 database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
 preview_database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
 
-# A deployment to this project's unused production branch stays disabled.
+# Production of this isolated project is the authorized validation environment.
 [vars]
-QUEEN_ENABLED = "0"
+QUEEN_ENABLED = "1"
 QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
 QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
 QUEEN_STAGE = "staging"
 QUEEN_STAGING_DATABASE_ID = "980bad8f-0356-48b9-87bc-56bcf363f69a"
 
 [env.preview.vars]
-QUEEN_ENABLED = "1"
+QUEEN_ENABLED = "0"
 QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
 QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
 QUEEN_STAGE = "staging"

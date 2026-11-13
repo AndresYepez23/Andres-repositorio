@@ -55,7 +55,7 @@ export function validateQueenPlan(raw,{files=[],objective='',taskId=crypto.rando
   visiting.delete(id);visited.add(id);sorted.push(step);
  }
  for(const id of index.keys())visit(id);
- return {taskId,objective:String(objective).slice(0,4000),intent:raw.intent,message:raw.message,
+ return {taskId,objective:String(objective).slice(0,4000),intent:raw.intent,message:raw.intent==='execute'?'Plan preparado para '+sorted.length+' operación(es); los resultados se comprobarán después de ejecutar.':raw.message,
   steps:sorted,constraints:['catalog-only','existing-permissions','verify-before-success'],status:'validated',
   needs_clarification:raw.intent==='clarify',question:raw.intent==='clarify'?raw.message:'',execution:{executed:false,verified:false}};
 }

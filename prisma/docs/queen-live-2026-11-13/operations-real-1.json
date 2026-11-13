@@ -1,0 +1,301 @@
+{
+  "generatedAt": "2026-11-13T13:27:17.949Z",
+  "realBrowserEngines": true,
+  "realInference": true,
+  "fixtures": {
+    "digital": {
+      "name": "queen-three-pages.pdf",
+      "type": "application/pdf",
+      "size": 1308
+    },
+    "scan": {
+      "name": "queen-scan.csv.pdf",
+      "type": "application/pdf",
+      "size": 22153
+    }
+  },
+  "rows": [
+    {
+      "id": "digital-pdf-word",
+      "ok": false,
+      "realInference": true,
+      "neural": {
+        "ok": true,
+        "source": "queen",
+        "plan": {
+          "taskId": "02beda33-194c-4154-ad1a-aab3798d20d1",
+          "objective": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+          "intent": "execute",
+          "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar.",
+          "steps": [
+            {
+              "id": "s1",
+              "tool_id": "pdf-extract",
+              "params": {
+                "pages": "2"
+              },
+              "dependsOn": [],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            },
+            {
+              "id": "s2",
+              "tool_id": "pdf-to-word",
+              "params": {},
+              "dependsOn": [
+                "s1"
+              ],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            }
+          ],
+          "constraints": [
+            "catalog-only",
+            "existing-permissions",
+            "verify-before-success"
+          ],
+          "status": "validated",
+          "needs_clarification": false,
+          "question": "",
+          "execution": {
+            "executed": false,
+            "verified": false
+          }
+        },
+        "decision": {
+          "schemaValid": true,
+          "catalogValid": true,
+          "parametersValid": true,
+          "semanticConfidence": null,
+          "calibration": "requires-authenticated-evaluation",
+          "requiresApproval": false
+        },
+        "delegate": null,
+        "metrics": {
+          "inputTokens": 628,
+          "outputTokens": 144,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 616,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 628,
+            "observedOutputTokens": 144,
+            "generationTokensPerSecond": 5.841548368163464,
+            "promptTokensPerSecond": 25.341282245308328
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "pdf-extract",
+                "pdf-to-word"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "pages": "string"
+                  },
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 628,
+                "outputTokens": 144,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 616,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 628,
+                "observedOutputTokens": 144,
+                "generationTokensPerSecond": 5.841548368163464,
+                "promptTokensPerSecond": 25.341282245308328
+              }
+            }
+          ],
+          "durationMs": 28481
+        },
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "realInference": true
+      },
+      "error": "DOCX_CONTENT_MISMATCH",
+      "durationMs": 31593
+    },
+    {
+      "id": "scan-ocr",
+      "ok": false,
+      "realInference": true,
+      "neural": {
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": {
+          "preflightInputTokens": 642,
+          "contextLimit": 2048,
+          "maxOutputTokens": 256,
+          "completionTransportAttempted": true,
+          "durationMs": 55001,
+          "completedInputTokens": 0,
+          "completedOutputTokens": 0,
+          "completedInferences": 0,
+          "inferencesAttempted": 1,
+          "trace": []
+        },
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 55941
+      },
+      "error": "QUEEN_TIMEOUT",
+      "durationMs": 56111
+    },
+    {
+      "id": "ocr-excel",
+      "ok": false,
+      "realInference": false,
+      "error": "BLOCKED_BY_OCR_FAILURE"
+    },
+    {
+      "id": "specialist-delegation",
+      "ok": false,
+      "realInference": true,
+      "neural": {
+        "ok": false,
+        "code": "QUEEN_PLAN_REJECTED",
+        "diagnostics": {
+          "inputTokens": 1085,
+          "outputTokens": 65,
+          "inferences": 2,
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [],
+              "steps": [],
+              "usage": {
+                "inputTokens": 539,
+                "outputTokens": 24,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 527,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 539,
+                "observedOutputTokens": 24,
+                "generationTokensPerSecond": 1.3069482825790386,
+                "promptTokensPerSecond": 30.858861073292946
+              },
+              "validationError": "EMPTY_EXECUTION"
+            },
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [],
+              "steps": [],
+              "usage": {
+                "inputTokens": 546,
+                "outputTokens": 41,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 534,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 546,
+                "observedOutputTokens": 41,
+                "generationTokensPerSecond": 1.2988979889681995,
+                "promptTokensPerSecond": 24.464532543944415
+              },
+              "validationError": "EMPTY_EXECUTION"
+            }
+          ]
+        },
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 72009
+      },
+      "error": "QUEEN_PLAN_REJECTED",
+      "durationMs": 73295
+    },
+    {
+      "id": "real-parameter-recovery",
+      "ok": false,
+      "realInference": true,
+      "initial": {
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": {
+          "preflightInputTokens": 543,
+          "contextLimit": 2048,
+          "maxOutputTokens": 256,
+          "completionTransportAttempted": true,
+          "durationMs": 55000,
+          "completedInputTokens": 0,
+          "completedOutputTokens": 0,
+          "completedInferences": 0,
+          "inferencesAttempted": 1,
+          "trace": []
+        },
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 56049
+      },
+      "correction": null,
+      "engineCalls": 0,
+      "error": "QUEEN_TIMEOUT",
+      "durationMs": 56197
+    },
+    {
+      "id": "changed-files",
+      "ok": true,
+      "realInference": false,
+      "planSource": "deterministic control",
+      "sameTaskChangedInputRejected": true,
+      "newTaskExecuted": true,
+      "actualEngineCalls": 2,
+      "outputSha256": [
+        "f4447bbcf6e9fefca1071a24a3b68d4340b5e473c29f15c0d84f1664e7e0d2da",
+        "40ca82a624ec67ceb21c87d3c01800c717a174bf179678ad2c1287dd19f12546"
+      ],
+      "durationMs": 98
+    }
+  ],
+  "base": "https://a27c015c.prisma-queen-staging.pages.dev",
+  "failures": []
+}

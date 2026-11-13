@@ -1,0 +1,28 @@
+{
+  "route": "grammar-profile",
+  "httpStatus": 200,
+  "clientDurationMs": 110685,
+  "body": {
+    "ok": true,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "realInference": true,
+    "changesHardware": false,
+    "measurements": [
+      {
+        "variant": "historical-tool-parameter-variants",
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": null,
+        "durationMs": 55000
+      },
+      {
+        "variant": "compact-structure",
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": null,
+        "durationMs": 55000
+      }
+    ]
+  }
+}

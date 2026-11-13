@@ -1,0 +1,29 @@
+{
+  "route": "auth-controls",
+  "httpStatus": 200,
+  "clientDurationMs": 789,
+  "body": {
+    "ok": true,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "realRequests": true,
+    "checks": [
+      {
+        "layer": "access",
+        "rejected": true,
+        "code": "QUEEN_AUTH_REJECTED",
+        "route": "models",
+        "upstreamStatus": 401,
+        "category": "upstream"
+      },
+      {
+        "layer": "llama",
+        "rejected": true,
+        "code": "QUEEN_AUTH_REJECTED",
+        "route": "completion",
+        "upstreamStatus": 401,
+        "category": "upstream"
+      }
+    ]
+  }
+}

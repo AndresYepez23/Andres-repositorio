@@ -1,0 +1,322 @@
+{
+  "realBrowserEngines": true,
+  "realInference": false,
+  "fixtures": {
+    "digital": {
+      "name": "queen-three-pages.pdf",
+      "type": "application/pdf",
+      "size": 1308
+    },
+    "scan": {
+      "name": "queen-scan.csv.pdf",
+      "type": "application/pdf",
+      "size": 22153
+    }
+  },
+  "rows": [
+    {
+      "id": "digital-pdf-word",
+      "ok": true,
+      "realInference": false,
+      "neural": null,
+      "execution": {
+        "status": "verification-pending",
+        "verified": false,
+        "ledger": [
+          {
+            "id": "s1",
+            "status": "verified",
+            "attempts": 1
+          },
+          {
+            "id": "s2",
+            "status": "verification-pending",
+            "attempts": 1
+          }
+        ],
+        "results": [
+          {
+            "tool": "pdf-extract",
+            "verification": {
+              "status": "verified",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 869,
+                  "sha256": "0ac65d089e9c57e0b963732667786d489092fa71558419c292a12e262ecb89d1",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "parsed-pdf",
+                    "requested-page-count"
+                  ],
+                  "pages": 1
+                }
+              ],
+              "unverified": []
+            }
+          },
+          {
+            "tool": "pdf-to-word",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 7648,
+                  "sha256": "f2dd16b886fbd93d7fecca7de6c1d10249bb12772bc8cda4bd9c3483b0d1fa9a",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "archive-crc",
+                    "archive-structure"
+                  ],
+                  "entries": 20
+                }
+              ],
+              "unverified": [
+                "document-content-correspondence"
+              ]
+            }
+          }
+        ]
+      },
+      "evidence": {
+        "docxContentMatchesRequestedPage": true,
+        "absentOtherPages": true
+      },
+      "artifacts": [
+        {
+          "step": "s1",
+          "filename": "queen-three-pages-paginas-seleccionadas.pdf",
+          "type": "application/pdf",
+          "file": "digital-pdf-word-queen-three-pages-paginas-seleccionadas.pdf",
+          "bytes": 869,
+          "sha256": "0ac65d089e9c57e0b963732667786d489092fa71558419c292a12e262ecb89d1"
+        },
+        {
+          "step": "s2",
+          "filename": "queen-three-pages-paginas-seleccionadas.docx",
+          "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "file": "digital-pdf-word-queen-three-pages-paginas-seleccionadas.docx",
+          "bytes": 7648,
+          "sha256": "f2dd16b886fbd93d7fecca7de6c1d10249bb12772bc8cda4bd9c3483b0d1fa9a"
+        }
+      ],
+      "durationMs": 1208
+    },
+    {
+      "id": "scan-ocr",
+      "ok": true,
+      "realInference": false,
+      "neural": null,
+      "execution": {
+        "status": "verification-pending",
+        "verified": false,
+        "ledger": [
+          {
+            "id": "s1",
+            "status": "verification-pending",
+            "attempts": 1
+          },
+          {
+            "id": "s2",
+            "status": "verification-pending",
+            "attempts": 1
+          }
+        ],
+        "results": [
+          {
+            "tool": "pdf-to-image",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 30267,
+                  "sha256": "2ce831f1bd7c334a970f077636e08c2412e4c769eb16292dce1f1e2e7f79cfaf",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "archive-crc",
+                    "archive-structure"
+                  ],
+                  "entries": 1
+                }
+              ],
+              "unverified": [
+                "archive-member-correspondence"
+              ]
+            }
+          },
+          {
+            "tool": "image-ocr",
+            "text": "producto, cantidad, precio\nPrisma, 2,15\nQueen, 3,20\n",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "nonempty-text",
+                  "passed": true
+                }
+              ],
+              "unverified": [
+                "text-correspondence"
+              ]
+            }
+          }
+        ]
+      },
+      "evidence": {
+        "ocrText": "producto, cantidad, precio\nPrisma, 2,15\nQueen, 3,20\n"
+      },
+      "artifacts": [
+        {
+          "step": "s1",
+          "filename": "prisma-paginas-png.zip",
+          "type": "application/zip",
+          "file": "scan-ocr-prisma-paginas-png.zip",
+          "bytes": 30267,
+          "sha256": "2ce831f1bd7c334a970f077636e08c2412e4c769eb16292dce1f1e2e7f79cfaf"
+        }
+      ],
+      "durationMs": 1732
+    },
+    {
+      "id": "ocr-excel",
+      "ok": true,
+      "realInference": false,
+      "neural": null,
+      "execution": {
+        "status": "verification-pending",
+        "verified": false,
+        "ledger": [
+          {
+            "id": "s1",
+            "status": "verification-pending",
+            "attempts": 1
+          },
+          {
+            "id": "s2",
+            "status": "verification-pending",
+            "attempts": 1
+          },
+          {
+            "id": "s3",
+            "status": "verification-pending",
+            "attempts": 1
+          }
+        ],
+        "results": [
+          {
+            "tool": "text-replace",
+            "text": "producto,cantidad,precio\nPrisma,2,15\nQueen,3,20\n",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "nonempty-text",
+                  "passed": true
+                }
+              ],
+              "unverified": [
+                "text-correspondence"
+              ]
+            }
+          },
+          {
+            "tool": "csv-json",
+            "text": "[\n  {\n    \"producto\": \"Prisma\",\n    \"cantidad\": \"2\",\n    \"precio\": \"15\"\n  },\n  {\n    \"producto\": \"Queen\",\n    \"cantidad\": \"3\",\n    \"precio\": \"20\"\n  }\n]",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "parsed-json",
+                  "passed": true
+                },
+                {
+                  "check": "nonempty-text",
+                  "passed": true
+                }
+              ],
+              "unverified": [
+                "text-correspondence"
+              ]
+            }
+          },
+          {
+            "tool": "json-xlsx",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 16135,
+                  "sha256": "64ddbd189c5c48bbd67dd45c4c7aa38466de476b556be0ed39fcfa6f60845549",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "archive-crc",
+                    "archive-structure"
+                  ],
+                  "entries": 10
+                }
+              ],
+              "unverified": [
+                "document-content-correspondence"
+              ]
+            }
+          }
+        ]
+      },
+      "evidence": {
+        "exactCells": true,
+        "rows": [
+          [
+            "producto",
+            "cantidad",
+            "precio"
+          ],
+          [
+            "Prisma",
+            "2",
+            "15"
+          ],
+          [
+            "Queen",
+            "3",
+            "20"
+          ]
+        ]
+      },
+      "artifacts": [
+        {
+          "step": "s3",
+          "filename": "prisma-datos.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "file": "ocr-excel-prisma-datos.xlsx",
+          "bytes": 16135,
+          "sha256": "64ddbd189c5c48bbd67dd45c4c7aa38466de476b556be0ed39fcfa6f60845549"
+        }
+      ],
+      "durationMs": 233
+    }
+  ],
+  "failures": []
+}

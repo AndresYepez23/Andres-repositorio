@@ -1,0 +1,42 @@
+{
+  "route": "schema-controls",
+  "httpStatus": 200,
+  "clientDurationMs": 6565,
+  "body": {
+    "ok": true,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "checks": [
+      {
+        "format": "json_object_schema",
+        "schemaEnforced": true,
+        "observedValue": "SCHEMA_OK",
+        "usage": {
+          "completion_tokens": 11,
+          "prompt_tokens": 26,
+          "total_tokens": 37,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "finishReason": "stop",
+        "durationMs": 3531
+      },
+      {
+        "format": "json_schema",
+        "schemaEnforced": true,
+        "observedValue": "SCHEMA_OK",
+        "usage": {
+          "completion_tokens": 11,
+          "prompt_tokens": 26,
+          "total_tokens": 37,
+          "prompt_tokens_details": {
+            "cached_tokens": 22
+          }
+        },
+        "finishReason": "stop",
+        "durationMs": 2404
+      }
+    ]
+  }
+}

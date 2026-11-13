@@ -89,11 +89,22 @@ test('D1 lease serializes concurrent requests across independent callers and rel
 test('missing migration or database refuses inference without isolate-local locks',async()=>{
  await assert.rejects(withQueenLease({},async()=>{}),/CONTROL_UNAVAILABLE/);
 });
+test('a real completion timeout leaves a five-minute staging cooldown instead of immediately queuing another request',async()=>{
+ const e=env();e.QUEEN_STAGE='staging';
+ await assert.rejects(withQueenLease(e,async()=>{throw Object.assign(Error('QUEEN_TIMEOUT'),{code:'QUEEN_TIMEOUT',diagnostics:{completionTransportAttempted:true}});}),error=>error.diagnostics.cooldownUntil>Date.now()+290000);
+ await assert.rejects(withQueenLease(e,async()=>{}),/QUEEN_BUSY/);
+});
 test('public planner rate limits are enforced by SQLite without storing raw IPs',async()=>{
  const e=env(),r=new Request('https://app/api/core/plan',{headers:{'CF-Connecting-IP':'192.0.2.10'}}),now=Date.UTC(2026,10,13,5,13);
  for(let i=0;i<5;i++)await reserveQueenRequest(e,r,now);
  await assert.rejects(reserveQueenRequest(e,r,now),/RATE_LIMIT/);
  assert.ok(!JSON.stringify(e.PRISMA_RATE_DB.db.prepare('SELECT * FROM queen_request_limits').all()).includes('192.0.2.10'));
+});
+test('protected staging evaluations cannot consume the public planner request budget',async()=>{
+ const e=env(),r=new Request('https://stage/api/core/plan'),now=Date.UTC(2026,10,13,5,13);
+ for(let i=0;i<6;i++)await reserveQueenRequest(e,r,now,{perMinute:12,perDay:96,namespace:'staging-operator'});
+ for(let i=0;i<5;i++)await reserveQueenRequest(e,r,now);
+ await assert.rejects(reserveQueenRequest(e,r,now),/RATE_LIMIT/);
 });
 test('Queen planner keeps unambiguous local operations off the VPS',async()=>{
  let calls=0;const r=await planWithQueen({}, {text:'Formatea JSON: {"a":1}',files:[]},{...dependencies,infer:async()=>{calls++;}});assert.equal(r.source,'prisma-core-local');assert.equal(calls,0);

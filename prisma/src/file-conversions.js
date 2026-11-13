@@ -36,6 +36,7 @@ function getTarget(text){
  for(const e of expressions){const m=q.match(e);if(m)return FORMATS[m[1]]||'';}
  return '';
 }
+export {getTarget as requestedConversionFormat};
 function hasConversionIntent(text){
  const q=norm(text);
  return /(?:convierte|convertir|conversion|conviertelo|conviertela|convirt|transforma|transformar|pasalo|pasala|pasame|pasa|pasar|exporta|exportar|guarda|guardalo|guardar|cambiar.*formato|de pdf a|de word a|de imagen a|a formato)/.test(q);

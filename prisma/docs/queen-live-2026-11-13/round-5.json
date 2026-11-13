@@ -1,0 +1,235 @@
+{
+  "date": "2026-11-13T13:01:51.949Z",
+  "base": "https://ea3c170f.prisma-queen-staging.pages.dev",
+  "mode": "live",
+  "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "primaryProductionModified": false,
+  "isolatedPagesEnvironment": "production",
+  "modelCompletionsObserved": 0,
+  "modelRequestsWithUnknownOutcome": 0,
+  "realVpsRamCpuMeasurement": false,
+  "rows": [],
+  "controls": [],
+  "status": "stopped",
+  "methodology": "Real Qwen output constrained by live catalog grammar and existing deterministic safety gates; case expected labels never enter the model prompt.",
+  "health": {
+    "httpStatus": 200,
+    "clientDurationMs": 550,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "queenEnabled": true,
+      "missingSecrets": [],
+      "sourceCommit": "a9c6fc9ebb7e69fb7196cc6f954622c4f43e8aef"
+    }
+  },
+  "localTools": {
+    "httpStatus": 200,
+    "clientDurationMs": 400,
+    "body": {
+      "ok": true,
+      "realInference": false,
+      "planSource": "deterministic-test-fixture",
+      "executed": true,
+      "verified": true,
+      "toolIds": [
+        "json-format",
+        "json-minify"
+      ],
+      "text": "{\"prisma\":true,\"valor\":7}",
+      "durationMs": 0,
+      "artifact": {
+        "status": "verified",
+        "evidence": [
+          {
+            "check": "artifact",
+            "passed": true,
+            "bytes": 25,
+            "sha256": "ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c",
+            "checks": [
+              "exists",
+              "nonempty",
+              "sha256",
+              "parsed-json",
+              "parsed-json"
+            ]
+          }
+        ],
+        "unverified": []
+      },
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging"
+    }
+  },
+  "guards": {
+    "httpStatus": 200,
+    "clientDurationMs": 145,
+    "body": {
+      "ok": true,
+      "realInference": false,
+      "planSource": "adversarial-test-fixtures",
+      "checks": [
+        {
+          "id": "unknown-tool",
+          "rejected": true
+        },
+        {
+          "id": "cycle",
+          "rejected": true
+        },
+        {
+          "id": "question-with-actions",
+          "rejected": true
+        },
+        {
+          "id": "invalid-parameters",
+          "rejected": true
+        }
+      ],
+      "corruptJsonRejected": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging"
+    }
+  },
+  "models": {
+    "httpStatus": 404,
+    "clientDurationMs": 566,
+    "body": {
+      "code": "STAGING_NON_JSON_RESPONSE"
+    }
+  },
+  "server": {
+    "httpStatus": 200,
+    "clientDurationMs": 1516,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "observations": {
+        "props": {
+          "available": true,
+          "totalSlots": 1,
+          "contextTokens": 2048
+        },
+        "slots": {
+          "available": true,
+          "slots": [
+            {
+              "id": 0,
+              "contextTokens": 2048,
+              "isProcessing": false
+            }
+          ]
+        }
+      },
+      "physicalRamCpuMeasured": false,
+      "note": "API slot/context state does not measure physical VPS RAM or CPU."
+    }
+  },
+  "smoke": {
+    "httpStatus": 200,
+    "clientDurationMs": 15048,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "realInference": true,
+      "plan": {
+        "taskId": "a7ddc038-7737-4329-b14f-aa2f916a553e",
+        "objective": "Formatea {\"prisma\":true}",
+        "intent": "execute",
+        "message": "Plan preparado para 1 operación(es); los resultados se comprobarán después de ejecutar.",
+        "steps": [
+          {
+            "id": "s1",
+            "tool_id": "json-format",
+            "params": {
+              "text": "{\"prisma\":true}"
+            },
+            "dependsOn": [],
+            "inputs": [],
+            "status": "planned"
+          }
+        ],
+        "constraints": [
+          "catalog-only",
+          "existing-permissions",
+          "verify-before-success"
+        ],
+        "status": "validated",
+        "needs_clarification": false,
+        "question": "",
+        "execution": {
+          "executed": false,
+          "verified": false
+        }
+      },
+      "metrics": {
+        "inputTokens": 76,
+        "outputTokens": 91,
+        "externalCostUsd": 0,
+        "durationMs": 14802,
+        "finishReason": "stop",
+        "preflightInputTokens": 64,
+        "contextLimit": 2048,
+        "maxOutputTokens": 256,
+        "reasoningContentPresent": false,
+        "thinkingTagsPresent": false,
+        "observedInputTokens": 76,
+        "observedOutputTokens": 91,
+        "generationTokensPerSecond": 6.729102771343593,
+        "promptTokensPerSecond": 15.141936729417377
+      },
+      "execution": {
+        "status": "verified",
+        "executed": true,
+        "verified": true,
+        "results": [
+          {
+            "tool": "json-format",
+            "text": "{\n  \"prisma\": true\n}",
+            "verification": {
+              "status": "verified",
+              "evidence": [
+                {
+                  "check": "parsed-json",
+                  "passed": true
+                },
+                {
+                  "check": "input-data-preserved",
+                  "passed": true
+                },
+                {
+                  "check": "nonempty-text",
+                  "passed": true
+                }
+              ],
+              "unverified": []
+            }
+          }
+        ]
+      },
+      "artifact": {
+        "status": "verified",
+        "evidence": [
+          {
+            "check": "artifact",
+            "passed": true,
+            "bytes": 20,
+            "sha256": "61a7b00c2d484940ed1fe38e9337a8434dc3fc393cc0c794b362f364b5bf984b",
+            "checks": [
+              "exists",
+              "nonempty",
+              "sha256",
+              "parsed-json",
+              "parsed-json"
+            ]
+          }
+        ],
+        "unverified": []
+      }
+    }
+  },
+  "error": "REAL_SMOKE_REQUIRED"
+}

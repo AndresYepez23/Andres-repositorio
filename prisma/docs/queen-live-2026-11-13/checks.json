@@ -1,0 +1,23 @@
+{
+  "nodeTests": {
+    "command": "node --test prisma/tests/*.test.mjs",
+    "passed": 210,
+    "failed": 0,
+    "historicalBaseline": 192,
+    "log": "local-tests.txt"
+  },
+  "staticBuild": {
+    "command": "node prisma/build.mjs",
+    "passed": true,
+    "embeddedTests": 130
+  },
+  "stagingBuild": {
+    "command": "node prisma/neural-pilot/staging/build.cjs",
+    "passed": true,
+    "wrangler": "4.161.0",
+    "workerBytes": 747763,
+    "workerSha256": "dccd715b8d2f4ba100d28df611e664c5efe4295676e5d8b4fe103bae7a2eb779"
+  },
+  "pythonMonitorScripts": "python3 -m py_compile completed; not executed as VPS measurements",
+  "notes": "Unit fixtures and deterministic control plans are not counted as real neural inferences."
+}
