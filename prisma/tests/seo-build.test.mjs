@@ -52,6 +52,9 @@ test('rendered pages have one H1, unique metadata, valid JSON-LD and real CTA',a
   assert.match(html,/<ol class="seo-steps">/);
   assert.ok((html.match(/<details>/g)||[]).length>=2);
   assert.ok(!/\b(?:undefined|NaN)\b/.test(html),p.slug);
+  const tool=tools.find(item=>item.id===p.tool);
+  if(['local','browser'].includes(tool.mode)) assert.ok(html.includes('PROCESAMIENTO LOCAL'),p.slug);
+  else { assert.ok(html.includes('SERVICIO CONECTADO'),p.slug); assert.ok(!html.includes('GRATIS'),p.slug+' must not be advertised as universally free'); }
   const title=html.match(/<title>(.*?)<\/title>/)[1],description=html.match(/<meta name="description" content="(.*?)">/)[1];
   assert.ok(!titles.has(title));titles.add(title);assert.ok(!descriptions.has(description));descriptions.add(description);
   const canonical=decode(html.match(/rel="canonical" href="([^"]+)"/)[1]);

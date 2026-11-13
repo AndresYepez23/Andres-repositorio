@@ -73,6 +73,9 @@ test('all English tool landings are crawlable, canonical, translated and connect
   assert.equal(schema[0].url,canonical);
   assert.ok(html.includes('href="/en/tools/"'));
   assert.ok(html.includes('class="seo-cta"'));
+  const mode=toolMode.get(page.tool);
+  assert.ok(mode,'missing mode for '+page.tool);
+  if(!['local','browser'].includes(mode)) { assert.ok(html.includes('CONNECTED SERVICE'),page.englishSlug); assert.ok(!html.includes('>FREE<'),page.englishSlug); }
   assert.ok(html.includes('class="seo-steps"'));
   assert.ok((html.match(/<details>/g)||[]).length>=2);
   assert.ok(urls.includes(canonical),'English tool page missing from sitemap');
