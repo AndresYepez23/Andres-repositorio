@@ -1,5 +1,7 @@
 # Captura única de residencia y límites de Queen
 
+**Captura ya recibida:** [comparación y diagnóstico actualizados](../../docs/queen-genix-residency-2026-11-13.md). No repetir este bloque. Se conserva como referencia de procedencia; la nueva evidencia pasiva está archivada y no sustituye una medición sincronizada bajo carga futura autorizada.
+
 Continuación de `25a9c9e`, sin nuevas sondas ni lotes. El entorno Codex no tiene identidad SSH configurada: la única intervención manual pendiente es ejecutar **este bloque completo dentro de la SSH de GenixNode** y adjuntar el `.tar.gz` indicado al final. No hace falta seleccionar PID ni ejecutar bloques adicionales.
 
 El lector usa solo Python estándar y el Docker ya instalado. Realiza dos snapshots pasivos, separados por cinco segundos, con plazo total de 45 segundos. No envía solicitudes a Qwen ni activa carga; puede observar actividad de fondo ya existente. No instala paquetes, reinicia, vacía cachés, toca páginas del modelo o cambia ningún ajuste del servidor. Solo crea scripts/resultados privados en `/tmp`; la configuración temporal vacía pertenece al cliente Docker de lectura, no modifica el daemon ni su configuración existente.

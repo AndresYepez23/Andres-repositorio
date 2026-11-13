@@ -1,0 +1,246 @@
+{
+  "integrity": {
+    "preservedRawHashesMatch": true,
+    "readerExitCode": 0,
+    "readerMatchesPublishedCheckpoint": "2fd9008fc21f6716ef49b85e70b6dd4ee7ae2824",
+    "readerSha256": "d5fca69ce2b5059cb006625757520304b0024cbc23411eaa795ed41824b96c33"
+  },
+  "memory": {
+    "candidate": {
+      "deviceHex": "fd:01",
+      "identityConfirmedAsGguf": false,
+      "inode": 281476,
+      "mappedBytes": 1269878784,
+      "residentBytes": 240099328,
+      "residentPercent": 18.90726351405836,
+      "unrepresentedByMappedRssBytes": 1029779456
+    },
+    "cgroupAnonBytes": 3130195968,
+    "cgroupCurrentBytes": 3401248768,
+    "cgroupFileBytes": 259551232,
+    "cgroupKernelBytes": 11501568,
+    "computeBufferBytes": null,
+    "conditionalBudget": {
+      "assumptions": [
+        "retain all current anonymous memory",
+        "entire candidate mapping required resident"
+      ],
+      "currentAnonPlusEntireCandidateBytes": 4399894528,
+      "excessOverPhysicalRamBytesBeforeOsAndOthers": 293609472,
+      "notARequiredUpgradeSize": true
+    },
+    "hostTotalBytes": 4106285056,
+    "kvBytes": null,
+    "minimumHostAvailableBytes": 457752576,
+    "namedGgufMappings": 0,
+    "processAnonBytes": 3130015744,
+    "processAnonShareOfHostAnonPercent": 95.12620189315288,
+    "processFileRssBytes": 243429376,
+    "processRssBytes": 3373445120,
+    "requestCacheBytes": null,
+    "swapTotalBytes": 0
+  },
+  "missing": [
+    "Anonymous allocation breakdown: KV/recurrent state/compute/request cache/retained heap",
+    "Definite identity and actual hot working set of opaque model-cache mapping",
+    "During an explicitly authorized future workload: synchronized refault/reclaim, residency, faults, PSI, cgroup I/O, disk latency/queue",
+    "Provider storage limits/QoS and uncollected local io.weight/io.latency/io.cost policies"
+  ],
+  "newInferenceRequests": 0,
+  "newVpsReads": 0,
+  "passiveDeltas": {
+    "doNotSumDiskAndPartition": "vda / vda1 represent the same underlying I/O",
+    "hostPsiIoUs": {
+      "full": 568,
+      "some": 631
+    },
+    "hostPsiMemoryUs": {
+      "full": 0,
+      "some": 0
+    },
+    "hostVm": {
+      "pgfault": 199,
+      "pgmajfault": 0,
+      "pgscan_direct": 0,
+      "pgscan_kswapd": 0,
+      "pgsteal_direct": 0,
+      "pgsteal_kswapd": 0,
+      "pswpin": 0,
+      "pswpout": 0,
+      "workingset_activate_file": 18,
+      "workingset_refault_file": 25,
+      "workingset_restore_file": 18
+    },
+    "physicalDisk253:0": {
+      "averageQueueDepthApprox": 0.0005816379637842215,
+      "busyPercentApprox": 0.03877586425228143,
+      "counterDeltas": {
+        "ioMs": 2,
+        "readMs": 0,
+        "reads": 0,
+        "readsMerged": 0,
+        "sectorsRead": 0,
+        "sectorsWritten": 96,
+        "weightedIoMs": 3,
+        "writeMs": 2,
+        "writes": 2,
+        "writesMerged": 10
+      },
+      "name": "vda",
+      "readAwaitMs": null,
+      "readBytesPerSecond": 0.0
+    },
+    "qwenCpu": {
+      "burst_usec": 0,
+      "core_sched.force_idle_usec": 0,
+      "nr_bursts": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "system_usec": 20,
+      "throttled_usec": 0,
+      "usage_usec": 577,
+      "user_usec": 557
+    },
+    "qwenIo": {
+      "253:0": {
+        "dbytes": 0,
+        "dios": 0,
+        "rbytes": 0,
+        "rios": 0,
+        "wbytes": 0,
+        "wios": 0
+      }
+    },
+    "qwenMemoryCounters": {
+      "pgmajfault": 0,
+      "pgscan": 0,
+      "pgsteal": 0,
+      "workingset_refault_file": 0
+    },
+    "qwenMemoryEvents": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "qwenProcessFaults": {
+      "majorFaults": 0,
+      "minorFaults": 0
+    },
+    "qwenPsiIoUs": {
+      "full": 0,
+      "some": 0
+    },
+    "qwenPsiMemoryUs": {
+      "full": 0,
+      "some": 0
+    }
+  },
+  "passiveWindow": {
+    "containerStartedAt": "2026-11-13T09:39:40.870000354Z",
+    "firstUtc": "2026-11-13T18:38:17.301077+00:00",
+    "identityStable": true,
+    "lastUtc": "2026-11-13T18:38:22.458919+00:00",
+    "secondsBetweenSampleStarts": 5.157847641996341
+  },
+  "priorActiveEvidence": {
+    "firstUtc": "2026-11-13T16:58:58.264869+00:00",
+    "generationMs": 55060,
+    "highIoWaitDurationSeconds": 60,
+    "highIoWaitReadGiB": 5.791635513305664,
+    "highIoWaitStats": {
+      "b": {
+        "max": 3,
+        "mean": 2.25,
+        "min": 0
+      },
+      "bi": {
+        "max": 103143,
+        "mean": 101216.16666666667,
+        "min": 89323
+      },
+      "id": {
+        "max": 15,
+        "mean": 2,
+        "min": 0
+      },
+      "st": {
+        "max": 1,
+        "mean": 0.08333333333333333,
+        "min": 0
+      },
+      "sy": {
+        "max": 17,
+        "mean": 14.833333333333334,
+        "min": 12
+      },
+      "us": {
+        "max": 26,
+        "mean": 10.333333333333334,
+        "min": 7
+      },
+      "wa": {
+        "max": 81,
+        "mean": 72.66666666666667,
+        "min": 56
+      }
+    },
+    "lastUtc": "2026-11-13T17:11:28.387732+00:00",
+    "synchronizedReclaimOrResidencyCountersAvailable": false
+  },
+  "qwenCumulativeHistory": {
+    "io": {
+      "253:0": {
+        "dbytes": 0,
+        "dios": 0,
+        "rbytes": 109034700800,
+        "rios": 657950,
+        "wbytes": 4096,
+        "wios": 1
+      }
+    },
+    "pgmajfault": 83210,
+    "pgscan": 54820431,
+    "pgsteal": 26556371,
+    "processMajorFaults": 80166,
+    "scope": "Cumulative counters; no attribution to the historical 60-second episode",
+    "workingset_refault_file": 26241301
+  },
+  "source": "Two real user-supplied captures, compared offline; no new VPS requests",
+  "visibleControlsBothSnapshots": [
+    [
+      {
+        "cpu.max": "200000 100000",
+        "io.max": "",
+        "levelFromLeaf": 0,
+        "memory.high": "max",
+        "memory.max": "max"
+      },
+      {
+        "cpu.max": "max 100000",
+        "io.max": "",
+        "levelFromLeaf": 1,
+        "memory.high": "max",
+        "memory.max": "max"
+      }
+    ],
+    [
+      {
+        "cpu.max": "200000 100000",
+        "io.max": "",
+        "levelFromLeaf": 0,
+        "memory.high": "max",
+        "memory.max": "max"
+      },
+      {
+        "cpu.max": "max 100000",
+        "io.max": "",
+        "levelFromLeaf": 1,
+        "memory.high": "max",
+        "memory.max": "max"
+      }
+    ]
+  ]
+}

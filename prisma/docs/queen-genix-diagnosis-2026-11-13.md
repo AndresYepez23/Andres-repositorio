@@ -1,5 +1,11 @@
 # Queen: diagnóstico real de GenixNode, 13/11/2026
 
+## Actualización posterior: residencia pasiva ya analizada
+
+Leer primero [la comparación nueva](queen-genix-residency-2026-11-13.md) y sus [datos reproducibles](queen-residency-evidence-2026-11-13/). El cgroup de Qwen tiene un historial de 26,241,301 refaults de archivo y 83,210 fallos mayores. En cinco segundos pasivos no aumentan esos contadores ni las lecturas. No hay límite memory.max/high observado ni techo io.max, pero falta atribuir el anónimo y sincronizar el mecanismo con demanda; no se descarta presión durante el intento anterior por inactividad actual.
+
+La suma condicional de anónimo actual más todo el candidato de pesos supera la RAM física en 280.01 MiB, antes de otros usos. Fortalece la línea de memoria; no fija una ampliación exacta ni demuestra que todos esos bytes deban conservarse. No se ejecutó inferencia ni cambio del servidor. El texto siguiente se conserva como diagnóstico del paquete anterior.
+
 **La generación está limitada por esperas de E/S durante este intento. La causa más probable es lectura repetida de los pesos del modelo por falta de residencia en RAM, compatible con presión de memoria y reclaim/refault de páginas de archivo.** La espera de E/S está demostrada; el mecanismo exacto de memoria aún no. No hay evidencia para culpar a Cloudflare ni para afirmar que basta aumentar el timeout.
 
 Este informe analiza exclusivamente `queen-evidence.tar.gz`, entregado por el usuario. No se ejecutaron sus scripts, ninguna inferencia nueva, solicitudes al VPS, lotes, reinicios ni cambios de parámetros. Los tres scripts adjuntos coinciden byte a byte con el checkpoint publicado `66731248dcefd464aa7bb5817f366c452fc61449`. Se conservan las correcciones locales posteriores de lectores en `2b8fc198dd0ef3287c4ef2d995d4577decca0ae3`.

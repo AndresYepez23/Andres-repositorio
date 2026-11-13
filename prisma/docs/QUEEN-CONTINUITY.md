@@ -1,5 +1,19 @@
 # QUEEN — continuidad técnica y cierre de sesión
 
+## Evidencia pasiva de residencia recibida y comparada — 13/11/2026
+
+**Estado más reciente:** ya se recibió `queen-residency-evidence.tar.gz`; no volver a solicitar ni ejecutar el bloque pasivo anterior. [Diagnóstico actualizado](queen-genix-residency-2026-11-13.md), [evidencia y reproducción](queen-residency-evidence-2026-11-13/). Lector idéntico al publicado en `2fd9008`, hash d5fca69c…, exit 0, identidad estable; código adjunto no ejecutado por Codex. Separación pasiva 5.157847642 s. Se continuó desde árbol limpio `2fd9008fc21f6716ef49b85e70b6dd4ee7ae2824`.
+
+- Anónimo de Qwen 2.91505 GiB; RSS 3.14177 GiB; disponible mínimo host 436.55 MiB. Candidato opaco de modelo 1.18267 GiB virtuales, 228.98 MiB RSS (18.9073%), sin identidad GGUF confirmada. RSS no representa toda la caché de archivo.
+- **Presupuesto condicional:** conservar todo el anónimo actual y todo ese candidato residente suma 4,399,894,528 B, supera la RAM física por 280.01 MiB antes de kernel/otros. No es un tamaño de ampliación calculado ni prueba de que todo el anónimo sea imprescindible/todo el mapeo sea necesario.
+- Sin memory.max/high explícitos en contenedor y padre, eventos high/max/oom cero; io.max vacío y sin Bps/IOPS Docker. No hay un límite de memoria visible que levantar. Faltan otras políticas IO y restricciones del proveedor para descartar toda QoS.
+- **Nuevo respaldo histórico de reclaim:** cgroup Qwen acumula 26,241,301 refaults de archivo, pgscan 54,820,431, pgsteal 26,556,371, pgmajfault 83,210 y rbytes 109,034,700,800. Son acumulados sin fechas, no deltas del episodio de 60 s. Refuerzan presión/relectura histórica pero no cierran su cronología causal.
+- En la ventana pasiva Qwen no incrementa lecturas/refault/scan/steal/fallos/PSI memoria-IO. Host VM sí muestra 25 refaults y mínima PSI IO; dos writes 48KiB, sin lecturas. No sumar vda y vda1 ni interpretar readAwait=null como latencia 0.
+
+**Lo que falta está acotado:** atribución numérica del anónimo a KV/estado recurrente/compute/cachés/heap, identidad/conjunto de trabajo del candidato, y deltas sincronizados de residencia/refault/reclaim/fallos/PSI/rbytes junto con await/cola del dispositivo durante trabajo futuro explícitamente autorizado. Añadir políticas/condiciones del volumen ya existentes. Otra foto en reposo no resuelve la brecha temporal. No generar para obtenerla sin autorización; no reiniciar, cambiar flags ni comprar/ampliar RAM sin presentar intervención y riesgos.
+
+Se actualizaron análisis, evidencia y documentación; no runtime ni lector ni pruebas nuevas. Cero SSH, lecturas nuevas de VPS, inferencias, reinicios, cambios de parámetros o despliegues aislados. PR #125 draft, infraestructura aislada y producción/main/D1 principal conservados. El registro final del PR identifica el checkpoint publicado y la gestión de su Preview automático. Los 8+11 casos y cadenas neuronales siguen pendientes; no se convierten estas capturas en pruebas de generación.
+
 ## Captura única de residencia preparada desde `25a9c9e` — 13/11/2026
 
 Se leyeron los dos documentos solicitados y se continuó exactamente el checkpoint publicado, con árbol inicial limpio. No se encontró una identidad SSH disponible en la configuración declarada del entorno actual; no se abrieron ni leyeron claves, entornos o credenciales. **Única intervención manual pendiente:** ejecutar el bloque consolidado de [VPS-RESIDENCY.md](../neural-pilot/staging/VPS-RESIDENCY.md) dentro de la SSH de GenixNode y adjuntar `queen-residency-evidence.tar.gz`. El PR conserva la versión fijada al commit. No repetir monitor/sonda anterior ni pedir más bloques de diagnóstico generales.
