@@ -507,7 +507,7 @@ function renderImageModelControls(){
   const entries=[];
   const specialized=(catalog.creative||{});
   for(const [provider,models] of Object.entries(specialized)){
-   if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
+   if(['huggingface','requesty'].includes(provider)||(group.key==='image'&&provider==='gemini')||!Array.isArray(models))continue;
    for(const model of models){
     if(!model?.id)continue;
     const name=String(model.id)+' '+String(model.name||'');
@@ -522,7 +522,7 @@ function renderImageModelControls(){
    }
   }
   for(const [provider,models] of Object.entries(catalog[group.key]||{})){
-   if(['huggingface','requesty'].includes(provider)||!Array.isArray(models))continue;
+   if(['huggingface','requesty'].includes(provider)||(group.key==='image'&&provider==='gemini')||!Array.isArray(models))continue;
    for(const model of models)if(model?.id&&!entries.some(x=>x.provider===provider&&x.model.id===model.id))entries.push({provider,model});
   }
   if(group.key==='audio'){
