@@ -105,3 +105,17 @@ python3 analyze-vps.py queen-vps-metrics.jsonl
 Leen `/proc`, `docker stats` y solo el estado del contenedor: RAM disponible, CPU, uso de memoria, OOM, reinicios y timestamps. No leen variables de entorno, claves, prompts ni configuración de Docker. No reinician servicios ni cambian límites. El analizador informa las muestras reales; no estima resultados ausentes.
 
 No se realizaron ajustes del modelo o hardware sin medición. La primera inferencia, los ocho casos neuronales, la precisión, los timings y el consumo del VPS permanecen pendientes de las credenciales y de las mediciones correspondientes.
+
+## Evidencia registrada el 13/11/2026
+
+- Código de staging: `bb38210d4fd687894dcef05ae0730001455d5b22`.
+- Versión Preview comprobada: `30c48f54-9dd9-4aed-b099-a673834d885a`, estado `success`, commit sin cambios locales.
+- Health autorizado HTTP 200 y acceso sin clave HTTP 404.
+- Identidad de la D1 real comprobada contra `980bad8f-0356-48b9-87bc-56bcf363f69a`.
+- Cadena real de herramientas ejecutada y verificada, con plan determinista de prueba.
+- Archivo descargado: JSON de 25 bytes, datos originales conservados, SHA-256 `ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c`.
+- 192 pruebas Node y compilación aprobadas.
+- Cero inferencias neuronales realizadas; los ocho casos están bloqueados por los dos secretos indicados, con porcentajes y tokens en `null`.
+- RAM y CPU del VPS sin medir; no se modificó el modelo, su concurrencia, contexto ni hardware.
+
+Informe detallado: `prisma/docs/queen-staging-2026-11-13.json`. Este informe distingue los fixtures de planificación de la ejecución real de herramientas.

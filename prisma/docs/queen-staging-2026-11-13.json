@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-13T11:50:59.473Z",
-  "base": "https://f5d54b96.prisma-queen-staging.pages.dev",
+  "date": "2026-11-13T11:52:48.316Z",
+  "base": "https://30c48f54.prisma-queen-staging.pages.dev",
   "mode": "credentials-independent",
   "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
   "productionModified": false,
@@ -117,7 +117,7 @@
   "status": "waiting-for-secrets",
   "health": {
     "httpStatus": 200,
-    "clientDurationMs": 305,
+    "clientDurationMs": 347,
     "body": {
       "ok": true,
       "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
@@ -127,12 +127,12 @@
         "QUEEN_ACCESS_CLIENT_SECRET",
         "QUEEN_API_KEY"
       ],
-      "sourceCommit": "3d3da5e19ec40f32d3b4f96f0aff51380dc3e634"
+      "sourceCommit": "bb38210d4fd687894dcef05ae0730001455d5b22"
     }
   },
   "localTools": {
     "httpStatus": 200,
-    "clientDurationMs": 381,
+    "clientDurationMs": 185,
     "body": {
       "ok": true,
       "realInference": false,
@@ -170,7 +170,7 @@
   },
   "guards": {
     "httpStatus": 200,
-    "clientDurationMs": 270,
+    "clientDurationMs": 187,
     "body": {
       "ok": true,
       "realInference": false,
@@ -224,7 +224,9 @@
     "wranglerPreviewQueenEnabled": true,
     "actualBindingIdentityVerified": true,
     "unauthorizedHttpStatus": 404,
-    "previewDeploymentId": "f5d54b96-764f-4df7-9d89-76a90be3c2d1"
+    "previewDeploymentId": "30c48f54-9dd9-4aed-b099-a673834d885a",
+    "previewDeploymentStatus": "success",
+    "deploymentCommitDirty": false
   },
   "migrations": {
     "target": "980bad8f-0356-48b9-87bc-56bcf363f69a",
@@ -272,5 +274,6 @@
   "credentialsMissing": [
     "QUEEN_ACCESS_CLIENT_SECRET",
     "QUEEN_API_KEY"
-  ]
+  ],
+  "validatedSourceCommit": "bb38210d4fd687894dcef05ae0730001455d5b22"
 }
