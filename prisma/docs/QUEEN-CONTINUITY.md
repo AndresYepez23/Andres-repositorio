@@ -2,6 +2,8 @@
 
 ## Continuación en el workspace nuevo — 13/11/2026
 
+**Mediciones manuales del VPS:** [guía de transferencia y ejecución](../neural-pilot/staging/VPS-MEASUREMENTS.md). Los scripts originales `monitor-vps.py` y `analyze-vps.py` ya estaban publicados en `686d6d4`; no se instalaron automáticamente en GenixNode. Se añade una sonda manual `probe-qwen.py`, máximo una completion de ocho tokens/55 s, con credencial existente solo en memoria del VPS y contadores de cola únicamente si `/metrics` ya está habilitado. No es un despliegue ni una medición realizada desde Codex. El usuario tiene SSH manual y ejecutará allí los lectores; las métricas siguen pendientes hasta recibir sus resultados.
+
 **Leer este bloque antes del cierre histórico de abajo.** Se recuperó exactamente `ed94e25b9f38645a484c740f9f2e3ac3063f3a4f`, PR #125 abierto y draft, sin cambios locales previos. Informe nuevo: [queen-resume-2026-11-13.md](queen-resume-2026-11-13.md), [evidencias](queen-resume-2026-11-13/).
 
 - **Bloqueo actual comprobado:** una única nueva prueba de ocho tokens volvió a terminar en `QUEEN_TIMEOUT`, 55 000 ms de inferencia, 57 614 ms cliente, preflight real 64 tokens; [solicitud exacta](queen-resume-2026-11-13/short-generation.json). No se recibió completion ni se estiman sus tokens. No se lanzaron otros lotes después del fallo.
