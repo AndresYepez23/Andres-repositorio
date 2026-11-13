@@ -152,6 +152,8 @@ test('English app shell and legal page use English metadata and provide a Spanis
  const spanishLegal=await readOutput('privacy.html');
  assert.ok(spanishLegal.includes('Google AdSense'));
  assert.ok(spanishLegal.includes('Supabase Auth'));
+ for (const page of [about,spanishAbout,legal,spanishLegal]) assert.ok(page.includes('proyectosmetas25@gmail.com'));
+ for (const page of [about,spanishAbout,legal,spanishLegal]) assert.ok(page.includes('mailto:proyectosmetas25@gmail.com'));
 });
 
 test('bilingual sitemap exposes paired alternates for every published page',async()=>{
