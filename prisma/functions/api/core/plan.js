@@ -142,6 +142,13 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
     if(compound&&!/\boriginal\b/i.test(extractPayload(text).instruction))for(const step of plan.steps.filter(s=>queenToolCatalog().find(c=>c.id===s.tool_id)?.inputs.file)){
      for(const dep of step.dependsOn)if(!OBSERVERS.has(plan.steps.find(s=>s.id===dep)?.tool_id)&&!step.inputs.includes('step:'+dep))throw Error('DEPENDENCY_INPUT_REQUIRED:'+step.id+':'+dep);
     }
+    if(compound&&files.length===1&&!/\boriginal\b/i.test(extractPayload(text).instruction)){
+     let previousTransform=null;
+     for(const step of plan.steps.filter(s=>queenToolCatalog().find(c=>c.id===s.tool_id)?.inputs.file)){
+      if(previousTransform&&!step.inputs.includes('step:'+previousTransform.id))throw Error('SEQUENTIAL_INPUT_REQUIRED:'+step.id+':'+previousTransform.id);
+      if(!OBSERVERS.has(step.tool_id))previousTransform=step;
+     }
+    }
     let literal;try{literal={value:JSON.parse(extractPayload(text).text)};}catch{}
     if(literal)for(const step of plan.steps.filter(s=>['json-format','json-minify'].includes(s.tool_id)&&!s.inputs.some(r=>r.startsWith('step:')))){
      let supplied;try{supplied=JSON.parse(step.params.text);}catch{throw Error('INVALID_LITERAL_JSON');}

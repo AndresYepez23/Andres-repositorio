@@ -181,3 +181,7 @@ test('a prose response cut at the grammar boundary is rejected instead of counte
 test('a delegation label cannot hide a request for options of an unavailable capability',async()=>{
  await assert.rejects(planWithQueen(env(),{text:'Genera una imagen de una isla lejana',files:[]},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'delegate',message:'Necesito una descripción y el estilo deseado.',steps:[]})}),error=>error.diagnostics.trace[0].validationError==='UNAVAILABLE_CAPABILITY_OPTIONS');
 });
+
+test('an explicit sequential file task cannot become two independent original-file operations',async()=>{
+ await assert.rejects(planWithQueen(env(),{text:'Extrae la quinta página del PDF y después conviértela a Word',files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'execute',message:'Prepararé los resultados.',steps:[step('s1','pdf-extract',{pages:'5'},['file:0']),step('s2','pdf-to-word',{},['file:0'])]})}),error=>error.diagnostics.trace[0].validationError==='SEQUENTIAL_INPUT_REQUIRED:s2:s1');
+});
