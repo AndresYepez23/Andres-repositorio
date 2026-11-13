@@ -1,0 +1,276 @@
+{
+  "date": "2026-11-13T11:50:59.473Z",
+  "base": "https://f5d54b96.prisma-queen-staging.pages.dev",
+  "mode": "credentials-independent",
+  "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "productionModified": false,
+  "modelCompletionsObserved": 0,
+  "modelRequestsWithUnknownOutcome": 0,
+  "realVpsRamCpuMeasurement": false,
+  "rows": [
+    {
+      "id": "question-not-permission",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "negation",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "missing-parameter",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "multi-step-pdf",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "json-payload",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "cancel",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "specialist-image",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    },
+    {
+      "id": "unsupported-pdf-ocr-chain",
+      "status": "blocked",
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "realInference": false,
+      "latencyMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "passed": null
+    }
+  ],
+  "controls": [],
+  "status": "waiting-for-secrets",
+  "health": {
+    "httpStatus": 200,
+    "clientDurationMs": 305,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "queenEnabled": true,
+      "missingSecrets": [
+        "QUEEN_ACCESS_CLIENT_SECRET",
+        "QUEEN_API_KEY"
+      ],
+      "sourceCommit": "3d3da5e19ec40f32d3b4f96f0aff51380dc3e634"
+    }
+  },
+  "localTools": {
+    "httpStatus": 200,
+    "clientDurationMs": 381,
+    "body": {
+      "ok": true,
+      "realInference": false,
+      "planSource": "deterministic-test-fixture",
+      "executed": true,
+      "verified": true,
+      "toolIds": [
+        "json-format",
+        "json-minify"
+      ],
+      "text": "{\"prisma\":true,\"valor\":7}",
+      "durationMs": 0,
+      "artifact": {
+        "status": "verified",
+        "evidence": [
+          {
+            "check": "artifact",
+            "passed": true,
+            "bytes": 25,
+            "sha256": "ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c",
+            "checks": [
+              "exists",
+              "nonempty",
+              "sha256",
+              "parsed-json",
+              "parsed-json"
+            ]
+          }
+        ],
+        "unverified": []
+      },
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging"
+    }
+  },
+  "guards": {
+    "httpStatus": 200,
+    "clientDurationMs": 270,
+    "body": {
+      "ok": true,
+      "realInference": false,
+      "planSource": "adversarial-test-fixtures",
+      "checks": [
+        {
+          "id": "unknown-tool",
+          "rejected": true
+        },
+        {
+          "id": "cycle",
+          "rejected": true
+        },
+        {
+          "id": "question-with-actions",
+          "rejected": true
+        },
+        {
+          "id": "invalid-parameters",
+          "rejected": true
+        }
+      ],
+      "corruptJsonRejected": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging"
+    }
+  },
+  "selection": {
+    "requestedCases": 8,
+    "validatedNeuralResponses": 0,
+    "attemptedCases": 0,
+    "correct": null,
+    "correctAmongValidatedPercent": null,
+    "endToEndPassPercent": null,
+    "note": "Blocked/not-requested cases are never counted as failures of Qwen. Selection does not prove artifact verification."
+  },
+  "baselineCommit": "3d3da5e19ec40f32d3b4f96f0aff51380dc3e634",
+  "production": {
+    "project": "prismaspace",
+    "d1": "e02104b5-0861-475a-a60f-7658439d4fe0",
+    "originalPreviewStillShared": true,
+    "queenEnabled": false,
+    "queenTables": [],
+    "migrationsApplied": false
+  },
+  "isolation": {
+    "project": "prisma-queen-staging",
+    "projectId": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "wranglerRootQueenEnabled": false,
+    "wranglerPreviewQueenEnabled": true,
+    "actualBindingIdentityVerified": true,
+    "unauthorizedHttpStatus": 404,
+    "previewDeploymentId": "f5d54b96-764f-4df7-9d89-76a90be3c2d1"
+  },
+  "migrations": {
+    "target": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "previousSchemaTables": 2,
+    "applied": [
+      "0000_prisma_schema.sql",
+      "0002_core_metrics.sql",
+      "0003_prisma_welcome_emails.sql",
+      "0004_queen_control.sql"
+    ],
+    "productionTouched": false
+  },
+  "actualArtifact": {
+    "downloaded": true,
+    "format": "json",
+    "bytes": 25,
+    "originalValuesPreserved": true,
+    "sha256": "ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c"
+  },
+  "regressions": {
+    "passed": 192,
+    "failed": 0,
+    "staticBuild": "passed",
+    "isolatedPagesBundle": "passed"
+  },
+  "observedErrors": [
+    {
+      "scope": "staging-packaging",
+      "issue": "Node builtin imports required nodejs_compat",
+      "resolution": "Flag enabled only in staging; local workerd package and remote backend passed"
+    }
+  ],
+  "vps": {
+    "sshAccessAvailable": false,
+    "ramBytes": null,
+    "cpuPercent": null,
+    "hardwareChanges": false,
+    "monitorPrepared": true
+  },
+  "reportedTokenTotals": {
+    "inputTokens": null,
+    "outputTokens": null,
+    "complete": false
+  },
+  "credentialsMissing": [
+    "QUEEN_ACCESS_CLIENT_SECRET",
+    "QUEEN_API_KEY"
+  ]
+}

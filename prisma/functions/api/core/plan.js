@@ -20,7 +20,7 @@ export function queenMessages({text,files,context,contracts,providers,repair='',
   'ESPECIALISTAS DISPONIBLES:'+JSON.stringify(compactProviders)
  ].join('\n')},{role:'user',content:JSON.stringify({current:text,files:files.map((f,i)=>({ref:'file:'+i,...f})),context,...(repair?{validationError:repair}:{})})}];
 }
-export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=getQueenProviders,signal}={}){
+export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=getQueenProviders,signal,forceNeural=false}={}){
  const text=String(payload?.text||'').trim();
  if(text.length<2||text.length>4000||!Array.isArray(payload?.files)||payload.files.length>20)throw new QueenError('INVALID_REQUEST',400);
  const files=payload.files.map(safeFile);if(files.some(f=>!Number.isFinite(f.size)||f.size>QUEEN_LIMITS.maxBytes))throw new QueenError('FILE_BUDGET',413);
@@ -28,7 +28,7 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
  // Existing deterministic routing is also used by Developer. Ambiguity and
  // composite requests can reach Queen without trusting heuristic confidence.
  const steps=deterministic.planner?.steps||[];
- if(!payload.repair&&deterministic.planner?.type==='ready'&&steps.length===1&&['local','browser'].includes(steps[0].mode)){
+ if(!forceNeural&&!payload.repair&&deterministic.planner?.type==='ready'&&steps.length===1&&['local','browser'].includes(steps[0].mode)){
   await recordQueenMetric(env,'local');return {ok:true,source:'prisma-core-local',fallback:true,execution:{executed:false,verified:false}};
  }
  queenConfig(env);
@@ -69,7 +69,7 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
     const usage={inputTokens,outputTokens,externalCostUsd:0};
     await recordQueenMetric(env,plan.intent==='execute'?'planned':plan.intent==='clarify'?'clarify':'delegated',{durationMs:Date.now()-start,...usage});
     return {ok:true,source:'queen',plan,decision:queenDecisionEvidence(plan),delegate,
-     metrics:{...usage,inferences:attempt+1,repairs,retrievals,durationMs:Date.now()-start}};
+     metrics:{...usage,inferences:attempt+1,repairs,retrievals,diagnostics:result.diagnostics||null,durationMs:Date.now()-start}};
    }catch(error){
     if(payload.repair||attempt>=QUEEN_LIMITS.repairs)throw new QueenError('QUEEN_PLAN_REJECTED',422);
     repair=String(error.message).replace(/[^A-Za-z0-9:_-]/g,'').slice(0,100);

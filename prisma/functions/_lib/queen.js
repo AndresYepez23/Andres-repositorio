@@ -1,7 +1,7 @@
 // Server-only. Never import this module from src/ or the static build.
 import {QUEEN_LIMITS} from '../../src/queen-plan.js';
 export class QueenError extends Error{
- constructor(code,status=503){super(code);this.code=code;this.status=status;}
+ constructor(code,status=503,diagnostics=null){super(code);this.code=code;this.status=status;if(diagnostics)this.diagnostics=diagnostics;}
 }
 export function queenConfig(env){
  if(env.QUEEN_ENABLED!=='1')throw new QueenError('QUEEN_DISABLED');
@@ -21,7 +21,7 @@ export async function readBoundedJson(response,maxBytes=32768){
 }
 export async function queenRequest(env,path,{body,signal,fetchImpl=fetch,timeoutMs=55000}={}){
  const config=queenConfig(env);
- const routes={'models':config.base+'/models','completion':config.base+'/chat/completions','tokenize':config.origin+'/tokenize'};
+ const routes={'models':config.base+'/models','completion':config.base+'/chat/completions','tokenize':config.origin+'/tokenize','props':config.origin+'/props','slots':config.origin+'/slots'};
  if(!routes[path])throw new QueenError('QUEEN_ROUTE_NOT_ALLOWED');
  const controller=new AbortController();
  const abort=()=>controller.abort();if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true});
@@ -31,15 +31,22 @@ export async function queenRequest(env,path,{body,signal,fetchImpl=fetch,timeout
    headers:{'Content-Type':'application/json','Accept':'application/json','Authorization':'Bearer '+env.QUEEN_API_KEY,
     'CF-Access-Client-Id':env.QUEEN_ACCESS_CLIENT_ID,'CF-Access-Client-Secret':env.QUEEN_ACCESS_CLIENT_SECRET},
    ...(body?{body:JSON.stringify(body)}:{})});
-  if(!response.ok){await response.body?.cancel().catch(()=>{});
-   throw new QueenError(response.status===401||response.status===403?'QUEEN_AUTH_REJECTED':response.status===429||response.status===503?'QUEEN_BUSY':'QUEEN_UPSTREAM_ERROR');}
+  if(!response.ok){
+   let category='upstream';
+   if(/application\/json/i.test(response.headers.get('content-type')||'')){
+    try{const data=await readBoundedJson(response,8192);const message=String(data?.error?.message||data?.error||'');
+     category=/context|n_ctx|too (?:long|large)|exceed.*tokens/i.test(message)?'context':/schema|grammar|response_format/i.test(message)?'schema':/model/i.test(message)?'model':'upstream';
+    }catch{/* Only fixed categories can leave the server. */}
+   }else await response.body?.cancel().catch(()=>{});
+   throw new QueenError(response.status===401||response.status===403?'QUEEN_AUTH_REJECTED':response.status===429||response.status===503?'QUEEN_BUSY':'QUEEN_UPSTREAM_ERROR',503,{route:path,upstreamStatus:response.status,category});}
   if(!/application\/json/i.test(response.headers.get('content-type')||'')){await response.body?.cancel().catch(()=>{});throw new QueenError('QUEEN_INVALID_RESPONSE');}
   return await readBoundedJson(response);
  }catch(error){if(error instanceof QueenError)throw error;throw new QueenError(controller.signal.aborted?'QUEEN_TIMEOUT':'QUEEN_UNREACHABLE');}
  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
 }
-export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,remainingMs=55000,compactMessages=null}={}){
+export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,remainingMs=55000,compactMessages=null,maxOutputTokens=QUEEN_LIMITS.maxOutputTokens}={}){
  const config=queenConfig(env),started=Date.now();
+ maxOutputTokens=Math.max(1,Math.min(QUEEN_LIMITS.maxOutputTokens,Math.floor(Number(maxOutputTokens)||QUEEN_LIMITS.maxOutputTokens)));
  // llama.cpp's own tokenizer, authenticated through the same helper as inference.
  // Include framing reserve. Server context enforcement remains the final guard.
  let inputTokens;
@@ -49,22 +56,23 @@ export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,rem
    const tokens=await queenRequest(env,'tokenize',{body:{content,add_special:true},fetchImpl,signal,timeoutMs:Math.min(5000,remainingMs-(Date.now()-started))});
    inputTokens=tokens.tokens?.length;
    if(!Number.isInteger(inputTokens))throw new QueenError('QUEEN_INVALID_RESPONSE');
-   if(inputTokens+QUEEN_LIMITS.maxOutputTokens+128<=QUEEN_LIMITS.contextTokens)break;
+   if(inputTokens+maxOutputTokens+128<=QUEEN_LIMITS.contextTokens)break;
   }
   if(preflight===1||!compactMessages)throw new QueenError('QUEEN_CONTEXT_BUDGET',422);
   messages=compactMessages();
  }
  const result=await queenRequest(env,'completion',{fetchImpl,signal,timeoutMs:Math.max(1,remainingMs-(Date.now()-started)),body:{
-  model:config.model,messages,temperature:0,max_tokens:QUEEN_LIMITS.maxOutputTokens,stream:false,cache_prompt:true,
+  model:config.model,messages,temperature:0,max_tokens:maxOutputTokens,stream:false,cache_prompt:true,
   chat_template_kwargs:{enable_thinking:false},response_format:{type:'json_object',schema}
  }});
  const choice=result.choices?.[0];
- if(choice?.finish_reason==='length')throw new QueenError('QUEEN_TRUNCATED_PLAN',422);
+ const diagnostics={finishReason:['stop','length','tool_calls','content_filter','function_call'].includes(choice?.finish_reason)?choice.finish_reason:null,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,reasoningContentPresent:Boolean(choice?.message?.reasoning_content||choice?.message?.reasoning),thinkingTagsPresent:/<think>/i.test(String(choice?.message?.content||'')),observedInputTokens:Number.isFinite(result.usage?.prompt_tokens)?result.usage.prompt_tokens:null,observedOutputTokens:Number.isFinite(result.usage?.completion_tokens)?result.usage.completion_tokens:null,generationTokensPerSecond:Number(result.timings?.predicted_per_second)||null,promptTokensPerSecond:Number(result.timings?.prompt_per_second)||null};
+ if(choice?.finish_reason==='length')throw new QueenError('QUEEN_TRUNCATED_PLAN',422,diagnostics);
  const text=choice?.message?.content;if(typeof text!=='string'||text.length>16000)throw new QueenError('QUEEN_INVALID_PLAN',422);
- let plan;try{plan=JSON.parse(text);}catch{throw new QueenError('QUEEN_INVALID_PLAN',422);}
+ let plan;try{plan=JSON.parse(text);}catch{throw new QueenError('QUEEN_INVALID_PLAN',422,diagnostics);}
  const finite=n=>Number.isFinite(Number(n))&&Number(n)>=0?Number(n):null;
  return {plan,usage:{inputTokens:finite(result.usage?.prompt_tokens)??inputTokens,
-  outputTokens:finite(result.usage?.completion_tokens),externalCostUsd:0},durationMs:Date.now()-started};
+  outputTokens:finite(result.usage?.completion_tokens),externalCostUsd:0},durationMs:Date.now()-started,diagnostics};
 }
 export async function withQueenLease(env,operation){
  const db=env.PRISMA_RATE_DB;if(!db?.prepare)throw new QueenError('QUEEN_CONTROL_UNAVAILABLE');
