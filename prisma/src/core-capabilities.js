@@ -179,6 +179,25 @@ export function isInformationalIntent(raw){
   /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
 }
 
+// Explicit prohibitions constrain both operation selection and explanations.
+// Match only instruction text: quoted JSON/text payloads cannot remove tools.
+export function excludedCapabilityIds(raw,files=[]){
+ const instruction=normalizeIntent(extractPayload(raw).instruction);
+ const image=files.length?files.every(f=>fileKind(f)==='image'):/\b(?:imagen|imagenes|foto|fotografia)\b/.test(instruction);
+ if(!image)return [];
+ const negative='(?:\\bno\\s+(?:(?:quiero|necesito)\\s+(?:que\\s+)?)?|\\bni\\s+|\\bsin\\s+)';
+ const excluded=new Set();
+ const effects=[
+  ['recort\\w*',['image-crop','image-social-kit']],
+  ['(?:redimension\\w*|cambi\\w*\\s+(?:(?:el|la|las|de)\\s+)?(?:tamano|dimensiones))',['image-resize','image-crop','image-social-kit','image-favicon','image-collage']],
+  ['comprim\\w*',['image-compress']],
+  ['(?:gir|rot)\\w*',['image-rotate']],
+  ['(?:quit|borr|elimin)\\w*\\s+(?:los\\s+)?(?:metadatos|exif|gps)',['image-strip-metadata']]
+ ];
+ for(const [action,ids] of effects)if(new RegExp(negative+action+'\\b').test(instruction))for(const id of ids)if(tools.some(t=>t.id===id))excluded.add(id);
+ return [...excluded];
+}
+
 function positiveClauses(original) {
  const parts=original.split(/[,;]|\bpero\b|\s+y\s+(?=(?:no|solo|solamente|unicamente)\b)/).map(v=>v.trim()).filter(Boolean);
  let negated=0;

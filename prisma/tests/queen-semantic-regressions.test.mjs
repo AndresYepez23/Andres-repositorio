@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {planCapabilityRequest,isInformationalIntent} from '../src/core-capabilities.js';
+import {planCapabilityRequest,isInformationalIntent,excludedCapabilityIds} from '../src/core-capabilities.js';
 import {planWithQueen,queenMessages} from '../functions/api/core/plan.js';
 import {queenToolCatalog} from '../src/queen-contracts.js';
 
@@ -122,4 +122,62 @@ test('the message instruction permits an actual answer rather than five future-t
  const messages=queenMessages({text:'Consulta del catálogo',files:[],context:{},contracts:queenToolCatalog().filter(c=>c.id==='pdf-rotate'),providers:[],localAnalysis:{status:'informational',requestKind:'information'}});
  assert.ok(messages[0].content.includes('do not repeat the question'));
  assert.ok(!messages[0].content.includes('at most 5 Spanish words'));
+});
+
+test('the file-plan grammar requires source references and all known operation slots',async()=>{
+ await assert.rejects(planWithQueen(env(),{text:'Extrae la tercera página del PDF y después conviértela a Word',files:pdf},{
+  forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
+   const execute=(schema.oneOf||[schema]).find(s=>s.properties.intent.enum.includes('execute'));
+   assert.equal(execute.properties.steps.minItems,2);
+   assert.equal(execute.properties.steps.items.properties.inputs.minItems,1);
+   return result({intent:'execute',message:'Seleccionaré la página.',steps:[step('s1','pdf-extract',{pages:'3'},[])]});
+  }
+ }),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='MISSING_INPUT');
+});
+
+test('a model cannot silently omit conversion even when its first extraction is valid',async()=>{
+ await assert.rejects(planWithQueen(env(),{text:'Extrae la cuarta página del PDF y después conviértela a Word',files:pdf},{
+  forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'execute',message:'Seleccionaré la página.',steps:[step('s1','pdf-extract',{pages:'4'},['file:0'])]})
+ }),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='MISSING_REQUIRED_OPERATION:pdf-to-word');
+});
+
+test('explicit prohibitions filter both direct and indirect resizing tools from alternatives',async()=>{
+ const files=[{name:'image.png',type:'image/png',size:100}];
+ const text='No recortes ni cambies el tamaño de la imagen. Solo quiero conocer otras alternativas.';
+ const excluded=excludedCapabilityIds(text,files);
+ for(const id of ['image-crop','image-resize','image-social-kit','image-favicon','image-collage'])assert.ok(excluded.includes(id));
+ assert.ok(!excluded.includes('image-compress'));
+ const response=await planWithQueen(env(),{text,files},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,messages)=>{
+  const catalog=JSON.parse(messages[0].content.split('\n').find(s=>s.startsWith('CATALOGO:')).slice(9));
+  assert.ok(catalog.length>0);
+  assert.ok(catalog.every(c=>!excluded.includes(c.id)));
+  assert.ok(JSON.parse(messages[1].content).localAnalysis.excludedOperations.includes('image-crop'));
+  return result({intent:'question',message:'Puedes aplicar escala de grises, comprimir o cambiar el formato.',steps:[]});
+ }});
+ assert.equal(response.plan.steps.length,0);
+ assert.equal(excludedCapabilityIds('Formatea JSON: {"nota":"no recortes ni cambies tamaño"}',[]).length,0);
+ assert.deepEqual(excludedCapabilityIds('Recorta la imagen sin comprimirla',files),['image-compress']);
+});
+
+test('an affirmative explanation cannot turn an explicitly forbidden action into the goal',async()=>{
+ await assert.rejects(planWithQueen(env(),{text:'No recortes la imagen. Solo quiero saber qué otras opciones existen.',files:[{name:'a.png',type:'image/png',size:100}]},{
+  forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'question',message:'Estas son alternativas para recortar una imagen.',steps:[]})
+ }),error=>error.diagnostics.trace[0].validationError==='EXCLUDED_OPERATION_PROPOSED');
+});
+
+test('an unavailable requested specialist cannot ask for style as if generation were ready',async()=>{
+ await assert.rejects(planWithQueen(env(),{text:'Genera una imagen de un río entre montañas',files:[]},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
+  assert.deepEqual(intents(schema),['delegate']);
+  return result({intent:'clarify',message:'Indica el estilo que prefieres.',steps:[]});
+ }}),error=>error.diagnostics.trace[0].validationError==='INTENT_CONFLICT');
+});
+
+test('a prose response cut at the grammar boundary is rejected instead of counted as quality',async()=>{
+ const message='Necesito las columnas que deseas obtener para preparar el resultado. '.padEnd(160,'x');
+ assert.equal(message.length,160);
+ await assert.rejects(planWithQueen(env(),{text:'Organiza datos escaneados de este PDF en Excel',files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'clarify',message,steps:[]})}),error=>error.diagnostics.trace[0].validationError==='INCOMPLETE_MESSAGE');
+});
+
+test('a delegation label cannot hide a request for options of an unavailable capability',async()=>{
+ await assert.rejects(planWithQueen(env(),{text:'Genera una imagen de una isla lejana',files:[]},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'delegate',message:'Necesito una descripción y el estilo deseado.',steps:[]})}),error=>error.diagnostics.trace[0].validationError==='UNAVAILABLE_CAPABILITY_OPTIONS');
 });
