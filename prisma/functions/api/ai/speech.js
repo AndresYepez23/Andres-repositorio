@@ -37,7 +37,7 @@ export async function onRequestPost({request,env}){
    headers:{"Authorization":"Bearer "+credential,"Content-Type":"application/json","Accept":"audio/*"},
    body:JSON.stringify({model,input,voice,response_format:format}),
    signal:AbortSignal.timeout(45000)
-  }));
+  }),{sweepQuotaSlots:true,sweepAuthSlots:true,sweepRateLimitSlots:true});
  }catch{return error("El motor de voz no respondió. Comprueba tu conexión o utiliza otro motor disponible.",502);}
  if(!res.ok){
   if(res.status===402&&getCredentialSlots(env,"pollinations").length<=1)await setProviderHold(env,"pollinations-audio","quota_exhausted","Pollinations no tiene saldo autorizado para generar voz.",3600);

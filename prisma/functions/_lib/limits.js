@@ -26,6 +26,7 @@ const CREDENTIAL_SCOPED_PROVIDERS=new Set([
 ]);
 export function getProviderDailyCapacity(env,provider){
  const base=getProviderDailyLimit(env,provider);
+ if(provider==="pollinations-audio")return Math.min(12,base*Math.max(1,getCredentialSlots(env,"pollinations").length));
  if(!CREDENTIAL_SCOPED_PROVIDERS.has(provider))return base;
  return Math.min(5000,base*Math.max(1,getCredentialSlots(env,provider).length));
 }
