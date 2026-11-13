@@ -14,7 +14,7 @@ test('compact grammar bounds live tool IDs and the application still rejects unt
  const schema=queenCatalogSchema(contracts,[{name:'input.pdf'}],['execute','clarify']);
  const variants=schema.oneOf||[schema];const execute=variants.find(v=>v.properties.intent.enum.includes('execute'));
  assert.equal(execute.properties.steps.minItems,1);
- assert.deepEqual(execute.properties.steps.items.properties.tool_id.enum,contracts.map(c=>c.id));
+ for(const variant of execute.properties.steps.items.oneOf)assert.deepEqual(variant.properties.tool_id.enum,contracts.map(c=>c.id));
  assert.equal(variants.find(v=>v.properties.intent.enum.includes('clarify')).properties.steps.maxItems,0);
  assert.throws(()=>validateQueenPlan({intent:'execute',message:'bad',steps:[{id:'s1',tool_id:'pdf-extract',params:{pages:'2'},inputs:[],dependsOn:[]}]}),/MISSING_INPUT/);
  assert.throws(()=>validateQueenPlan({intent:'execute',message:'bad',steps:[{id:'s1',tool_id:'pdf-to-word',params:{invented:true},inputs:['file:0'],dependsOn:[]}]},{files:[{name:'x.pdf',type:'application/pdf'}]}),/UNKNOWN_PARAMETER/);

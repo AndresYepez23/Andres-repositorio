@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {planCapabilityRequest,isInformationalIntent,excludedCapabilityIds} from '../src/core-capabilities.js';
 import {planWithQueen,queenMessages} from '../functions/api/core/plan.js';
 import {queenToolCatalog} from '../src/queen-contracts.js';
+import {queenCatalogSchema} from '../src/queen-schema.js';
 
 const env=()=>({QUEEN_ENABLED:'1',QUEEN_API_KEY:'test-key',QUEEN_ACCESS_CLIENT_ID:'test-id',QUEEN_ACCESS_CLIENT_SECRET:'test-secret',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}});
 const pdf=[{name:'report.pdf',type:'application/pdf',size:100}];
@@ -129,7 +130,7 @@ test('the file-plan grammar requires source references and all known operation s
   forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
    const execute=(schema.oneOf||[schema]).find(s=>s.properties.intent.enum.includes('execute'));
    assert.equal(execute.properties.steps.minItems,2);
-   assert.equal(execute.properties.steps.items.properties.inputs.minItems,1);
+   for(const variant of execute.properties.steps.items.oneOf)assert.equal(variant.properties.inputs.minItems,1);
    return result({intent:'execute',message:'Seleccionaré la página.',steps:[step('s1','pdf-extract',{pages:'3'},[])]});
   }
  }),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='MISSING_INPUT');
@@ -184,4 +185,32 @@ test('a delegation label cannot hide a request for options of an unavailable cap
 
 test('an explicit sequential file task cannot become two independent original-file operations',async()=>{
  await assert.rejects(planWithQueen(env(),{text:'Extrae la quinta página del PDF y después conviértela a Word',files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>result({intent:'execute',message:'Prepararé los resultados.',steps:[step('s1','pdf-extract',{pages:'5'},['file:0']),step('s2','pdf-to-word',{},['file:0'])]})}),error=>error.diagnostics.trace[0].validationError==='SEQUENTIAL_INPUT_REQUIRED:s2:s1');
+});
+
+test('each step grammar permits only original files and preceding IDs, never own or future references',()=>{
+ const contracts=queenToolCatalog().filter(c=>['pdf-extract','pdf-to-word'].includes(c.id));
+ const schema=queenCatalogSchema(contracts,pdf,['execute'],{requiredToolIds:['pdf-extract','pdf-to-word']});
+ assert.equal(schema.properties.steps.minItems,2);
+ const variants=schema.properties.steps.items.oneOf;
+ assert.equal(variants.length,8);
+ for(let i=0;i<variants.length;i++){
+  const properties=variants[i].properties;
+  assert.deepEqual(properties.id.enum,['s'+(i+1)]);
+  assert.deepEqual(properties.inputs.items.enum,['file:0',...Array.from({length:i},(_,n)=>'step:s'+(n+1))]);
+  assert.equal(properties.inputs.minItems,1);
+  assert.equal(properties.dependsOn.maxItems,i);
+  if(i)assert.deepEqual(properties.dependsOn.items.enum,Array.from({length:i},(_,n)=>'s'+(n+1)));
+  else assert.equal(properties.dependsOn.items.enum,undefined);
+ }
+});
+
+test('literal-text grammar keeps first inputs and dependencies empty without an invalid empty enum',()=>{
+ const contracts=queenToolCatalog().filter(c=>c.id==='json-format');
+ const schema=queenCatalogSchema(contracts,[],['execute']);
+ const first=schema.properties.steps.items.oneOf[0].properties;
+ assert.equal(first.inputs.minItems,0);assert.equal(first.inputs.maxItems,0);
+ assert.equal(first.inputs.items.enum,undefined);
+ assert.equal(first.dependsOn.maxItems,0);assert.equal(first.dependsOn.items.enum,undefined);
+ const serialized=JSON.stringify(schema);
+ assert.equal(serialized.includes('"enum":[]'),false);
 });
