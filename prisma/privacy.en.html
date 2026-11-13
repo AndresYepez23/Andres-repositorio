@@ -5,10 +5,10 @@
   <link rel="alternate" hreflang="es" href="https://prismaspace.space/privacy.html">
   <link rel="alternate" hreflang="en" href="https://prismaspace.space/en/privacy.html">
   <link rel="alternate" hreflang="x-default" href="https://prismaspace.space/privacy.html">
-  <meta property="og:locale" content="en_US"><meta property="og:title" content="Privacy and Terms | Prisma Space"><meta property="og:description" content="Learn how Prisma Space processes files, uses external providers, and protects your preferences."><meta property="og:url" content="https://prismaspace.space/en/privacy.html">
+  <meta property="og:locale" content="en_US"><meta property="og:title" content="Privacy and Terms | Prisma Space"><meta property="og:description" content="Learn how Prisma Space processes accounts, conversations, files, external providers, and advertising technologies."><meta property="og:url" content="https://prismaspace.space/en/privacy.html">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="/">
   <meta name="theme-color" content="#0e121d"><meta name="robots" content="index,follow"><meta name="prisma-default-language" content="en">
-  <meta name="description" content="Learn how Prisma Space processes files, uses external providers, and protects your preferences.">
+  <meta name="description" content="Learn how Prisma Space processes accounts, conversations, files, external providers, and advertising technologies.">
   <title>Privacy and Terms | Prisma Space</title><link rel="icon" href="./assets/prisma-mark.svg" type="image/svg+xml">
   <script>
     (()=>{try{const theme=localStorage.getItem('prisma-theme');if(theme==='light'||theme==='dark'){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='light'?'#f3f7fc':'#0e121d';}}catch{}})();
@@ -33,31 +33,61 @@
 </head>
 <body><main class="shell">
   <a class="back" href="/en/">← Return to Prisma Space</a>
-  <header><div class="eyebrow">PRISMA SPACE · LEGAL INFORMATION</div><h1>Privacy and Terms of Use</h1><p>We explain what happens to your files, preferences, and requests when you use Prisma Space tools.</p><div class="updated">Last updated: November 9, 2026</div></header>
+  <header><div class="eyebrow">PRISMA SPACE · LEGAL INFORMATION</div><h1>Privacy, Cookies and Terms of Use</h1><p>Learn what information Prisma Space processes and how accounts, conversations, files, providers, and advertising are handled.</p><div class="updated">Last updated: November 13, 2026</div></header>
   <div class="legal-language-options"><a href="/privacy.html" hreflang="es" lang="es" aria-label="View this page in Spanish">View this page in Spanish</a></div>
-  <nav aria-label="Sections on this page"><a href="#privacidad">Privacy</a><a href="#archivos">Files and Providers</a><a href="#condiciones">Terms of Use</a></nav>
-  <article id="privacidad"><h2>1. Privacy in Prisma Space</h2>
-    <p>Prisma Space is designed to execute compatible operations directly in your browser. You do not need to create an account to explore the catalog or use tools that work locally.</p>
+  <nav aria-label="Sections on this page"><a href="#privacidad">Data and Accounts</a><a href="#archivos">Files and Providers</a><a href="#publicidad">Cookies and Ads</a><a href="#condiciones">Terms</a></nav>
+  <article id="privacidad"><h2>1. Data, Accounts and Storage</h2>
+    <p>You can browse Prisma Space and use compatible tools without creating an account. Some features require an external connection or an account to save preferences and synchronize conversations.</p>
+    <h3>Account information</h3>
+    <p>When you create an account or sign in, authentication is handled by Supabase Auth. Depending on the sign-in method, this may involve your email address, account identifier, and basic information supplied by the sign-in provider, such as Google. Prisma Space does not store passwords in plain text. Your Prisma profile may store a display name, theme, and synchronization setting.</p>
+    <h3>Optional conversation synchronization</h3>
+    <p>Conversation history stays on your device by default. If you sign in and explicitly confirm that you want synchronization, the text of your conversations and related metadata —such as title, order, date, and pinned status— are stored in your Supabase account so they can be restored on other devices. Attachments, File objects, and downloadable files are not synchronized with conversation history. You can delete conversations from the history or turn synchronization off.</p>
     <h3>Information stored on your device</h3>
-    <ul><li>Favorites, recent tools, theme preference, and Prisma Core conversation: stored in local browser storage. Attached files are not stored in the history.</li><li>The public App Key of Pollinations Connect, if you decide to configure it: stored locally to avoid having to enter it each time.</li><li>The temporary authorization token of Pollinations: stored in browser session storage and deleted when you end or close that session, or when you disconnect.</li><li>Personal tokens of Hugging Face, Google Gemini, and Groq: stored in browser session storage while you maintain the connection and deleted when you disconnect or end the session. Not stored in Prisma Core history.</li></ul>
-    <p>Prisma Space does not currently offer cloud-synced profiles. Favorites and history are not shared between devices.</p>
-    <h3>Analytics and Cookies</h3><p>The application does not integrate advertising cookies. Prisma records aggregated counters per tool and day: requests, results, failures, duration, and file count, as well as inference attempt counts. These events do not include messages, names, or file content, credentials, or account identifiers. Browser Do Not Track signals are respected. Client-sent counters are indicative and do not identify unique users. The hosting provider may process technical data from requests to operate and protect the service, in accordance with their own terms.</p>
+    <ul>
+      <li>Favorites, recently used tools, theme preferences, and local history: browser storage (localStorage and IndexedDB).</li>
+      <li>Personal Hugging Face, Google Gemini, and Groq keys: browser session storage (sessionStorage); removed when disconnected or when the session ends.</li>
+      <li>The public Pollinations Connect App Key, if you choose to configure it, may be kept locally. Temporary authorization tokens are stored in session storage.</li>
+      <li>The PWA may cache static resources to improve loading or offline behavior. Private API responses and authentication keys are not stored in that cache.</li>
+    </ul>
+    <h3>Transactional emails</h3>
+    <p>After a new account is confirmed, Prisma Space may send a non-promotional welcome email to the verified address. Delivery is handled by Resend, and its technical status is recorded to prevent duplicates.</p>
   </article>
-  <article id="archivos"><h2>2. Files, Processing, and External Providers</h2>
-    <h3>PWA Installation</h3><p>Prisma Space installation as an application is optional. The service worker stores static files to improve startup and some offline functions. It does not cache private API responses, message content, or authentication keys.</p>
-    <h3>Optional Accounts and Synchronization</h3><p>Prisma can be used without registering. The account system in the independent Prisma Space project will be enabled when its infrastructure is verified. If you decide to register and explicitly authorize synchronization, the selected history text will be stored to recover it from other devices. Attached files or downloadable results will not be automatically uploaded. Closing the session deletes the synchronized local copy on that device; remote deletion is managed under the authenticated account.</p>
-    <h3>Voice Entry</h3><p>Voice dictation may use browser recognition or Groq transcription through the Prisma server when the browser does not support it. In the latter case, the audio recording is sent to the provider only after pressing the microphone. The current spoken conversation works in turns, not as continuous audio calls.</p>
-    <h3>Local Processing</h3><p>When a tool indicates that it works locally or in the browser, the file is processed on your device, and Prisma Space does not receive it on a server of its own. Performance depends on the browser, memory, and equipment you use.</p>
-    <h3>Prisma Core and External Processing</h3><p>Prisma Core sends the text of your message and the recent conversation context to the connected text model to prepare a plan. Only basic metadata of attached files (name, type, and size) are shared with the model; the content is not automatically attached for visual analysis. Afterward, selected tools process files according to their mode: local ones keep them on the device, and external ones transmit necessary data to the corresponding provider. Prisma requests authorization before executing the plan.</p><p>Other functions need to communicate with third-party services. In those cases, the necessary data to complete the operation is sent to the selected provider:</p>
-    <ul><li>Pollinations Connect: may receive text prompts, generation requests, text-to-speech, or audio files for transcription, depending on the tool used.</li><li>Hugging Face Inference Providers: receives prompts, images, or other necessary data according to the model and tool authorized with your token.</li><li>Groq and Google Gemini: may receive the text of your requests and work context when you choose them as text or multimodal engines.</li><li>Frankfurter API: receives the necessary currency codes to consult reference rates.</li><li>Processing libraries and fonts: some dependencies are downloaded from CDN services such as esm.sh, unpkg, cdnjs, and Google Fonts.</li></ul>
-    <p>The treatment made by these providers is also governed by their own policies, conditions, limits, and availability. Prisma Space does not control their systems and cannot guarantee their practices.</p>
-    <div class="note"><strong>Recommendation:</strong> do not load medical, financial, employment, personal, or confidential information into tools that send content to external providers, unless you have reviewed their conditions and have authorization to do so.</div>
-    <h3>Deletion and control</h3><p>You can delete favorites, history, theme, and the App Key local from your personal space menu. You can also disconnect Pollinations from the AI Laboratory. Deleting local data does not remove records that an external provider has already received.</p>
+  <article id="archivos"><h2>2. Files, AI and External Providers</h2>
+    <h3>Local and external processing</h3>
+    <p>Tools identified as local process files on your device. Some features run in the browser and may download required libraries or models. When you choose a connected tool or authorize an external operation, the information needed to complete it is sent to the relevant provider.</p>
+    <h3>Prisma Core</h3>
+    <p>To prepare a response, Prisma Core sends your message text and recent conversation context to the selected or available text model. Attachments are not automatically sent to the model that plans the task: the planner may receive basic metadata such as file name, type, and size. If you then authorize a tool that must analyze or transform file content through an external service, the necessary content is sent to that provider. Local operations keep the file on your device.</p>
+    <h3>Providers that may be involved</h3>
+    <p>Depending on the tool, selected model, and availability, text, image, audio, or video processing may involve Google Gemini, Hugging Face, Groq, Pollinations, OpenRouter, Kilo, Requesty, SenseNova, Z.AI/Zhipu, AIHubMix, or Cloudflare Workers AI. Web research queries may be sent to Tavily or Jina AI. Currency conversion may query Frankfurter. These services are not all involved in every request.</p>
+    <p>These providers receive only the information needed for the feature you request, which may include prompts, context, images, audio, or documents when the operation requires them. Each provider has its own terms, retention practices, and privacy policy; review them before submitting confidential information.</p>
+    <h3>Infrastructure and dependencies</h3>
+    <p>Hosting, server functions, usage limits, and some abuse protection use Cloudflare. Authentication and optional synchronization use Supabase. Transactional email uses Resend. Some libraries, models, resources, or fonts may be downloaded from CDNs such as esm.sh, unpkg, cdnjs, and Google Fonts; those services may receive technical connection data, such as your IP address and browser information, when requested.</p>
+    <div class="note"><strong>Recommendation:</strong> avoid entering medical, financial, employment, personal, or confidential information into external services unless you have reviewed their terms and are authorized to share it.</div>
   </article>
-  <article id="condiciones"><h2>3. Terms of use</h2>
-    <ul><li>Use Prisma Space in a lawful manner and respect the intellectual property, privacy, and copyright of third parties.</li><li>You must have the necessary rights or permissions over the files, texts, images, and audio you process.</li><li>Results generated by AI may contain errors, biases, or inaccurate content. Review them before publishing, distributing, or using them to make decisions.</li><li>Tools marked as Beta may change, have limits, present errors, or become unavailable.</li><li>External services may apply their own prices, fees, policies, and restrictions. Check those conditions before authorizing consumption.</li><li>Do not use the platform to create, distribute, or process illicit, damaging, or rights-violating content.</li></ul>
-    <h3>Availability and responsibility</h3><p>Prisma Space is offered as a set of evolving digital utilities. It is not guaranteed that all tools will be available without interruption or that results will be suitable for a specific purpose. Keep a copy of your original files and verify the results before relying on them.</p>
-    <h3>Updates</h3><p>These terms may be updated when new tools, integrations, or processing modalities are incorporated. The update date will be displayed at the beginning of this page.</p>
+  <article id="publicidad"><h2>3. Cookies, Advertising and Google AdSense</h2>
+    <p>Prisma Space does not currently display ads and has not activated Google AdSense advertising integration. The application uses local and session browser storage to remember preferences, sessions, and connections; these mechanisms are not, by themselves, advertising cookies.</p>
+    <p>If Google AdSense is activated, Google and its advertising partners may use cookies, web beacons, IP addresses, or other browser or device identifiers to serve ads, limit their frequency, measure performance, and, depending on configuration and applicable consent, personalize ads based on previous visits to this or other websites.</p>
+    <p>External vendors and advertising networks involved in ad delivery may place and read cookies in your browser or use similar technologies. If networks other than Google are added, this policy will be updated to identify them and link to their privacy choices.</p>
+    <p>You can manage Google ad personalization through <a href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer">Google Ads Settings</a> or review opt-out options for some vendors at <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer">aboutads.info</a>. You can also read <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">how Google uses data when you use partner sites or apps</a>.</p>
+    <p>Where ads are served to users in the European Economic Area, the United Kingdom, or Switzerland, Prisma Space will configure a Google-certified consent management platform when required for compliance with rules on personalized advertising.</p>
   </article>
-  <footer>Prisma Space · Digital tools with intention. <a href="/en/">Back to the workspace</a></footer>
+  <article id="seguridad"><h2>4. Metrics, Security and Retention</h2>
+    <p>When application telemetry is enabled, Prisma records aggregate counters by day and tool, such as event type, duration, and file count. These events do not include prompts, messages, file names, document content, credentials, or account identifiers.</p>
+    <p>To enforce usage limits and prevent abuse, the server may use the IP address received from Cloudflare infrastructure and store a hash-derived fingerprint in its counters instead of the untransformed IP address. Cloudflare may also process IP addresses, headers, and technical metadata to provide and protect hosting, under its own terms.</p>
+    <p>Local data remains on your device until you delete it or clear browser data. Personal keys saved in sessionStorage are removed when the session ends or when you disconnect them. Synchronized conversation data remains in your account until you delete the conversations or the relevant account is handled. External providers apply their own retention periods.</p>
+    <p>For privacy inquiries, requests about your personal data, or private support, email <a href="mailto:proyectosmetas25@gmail.com">proyectosmetas25@gmail.com</a>. You can also visit <a href="/en/about.html#soporte">About Prisma Space and Support</a>. Do not post passwords, tokens, conversations, or documents in public reports.</p>
+  </article>
+  <article id="condiciones"><h2>5. Terms of Use</h2>
+    <ul>
+      <li>Use Prisma Space lawfully and respect other people's copyright, privacy, and intellectual property rights.</li>
+      <li>You must have the rights or permissions needed for the files, text, images, and audio you process.</li>
+      <li>AI-generated results may contain errors, bias, or incomplete information. Review them before publishing, distributing, or relying on them for decisions.</li>
+      <li>Tools marked Beta may change, have limits, contain errors, or become unavailable.</li>
+      <li>External providers may apply their own quotas, restrictions, or prices. Check their terms before authorizing usage.</li>
+      <li>Keep a copy of your original files and verify results before relying on them. Prisma Space does not guarantee uninterrupted availability or fitness for a particular purpose.</li>
+    </ul>
+    <h3>Updates</h3>
+    <p>This policy and these terms may be updated when features, providers, data practices, or advertising options change. The review date appears at the top of this page.</p>
+  </article>
+  <footer>Prisma Space · Digital tools with purpose. <a href="/en/about.html">About Prisma Space</a> · <a href="/en/">Return to workspace</a></footer>
 </main></body></html>

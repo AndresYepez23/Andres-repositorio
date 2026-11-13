@@ -8,6 +8,8 @@ const dist=new URL('../dist/',import.meta.url);
 const readSource=path=>readFile(new URL(path,root),'utf8');
 const readOutput=path=>readFile(new URL(path,dist),'utf8');
 const sourcePages=JSON.parse(await readSource('seo/pages.json')).pages;
+const registrySource=await readSource('src/registry.js');
+const toolMode=new Map([...registrySource.matchAll(/\{\s*id:\s*'([^']+)'[^}]*mode:\s*'([^']+)'/g)].map(match=>[match[1],match[2]]));
 const pages=JSON.parse(await readSource('seo/pages.en.json')).pages;
 const sourceCategories=JSON.parse(await readSource('seo/content-categories.json')).categories;
 const sourceSolutions=JSON.parse(await readSource('seo/content-solutions.json')).solutions;
@@ -71,6 +73,9 @@ test('all English tool landings are crawlable, canonical, translated and connect
   assert.equal(schema[0].url,canonical);
   assert.ok(html.includes('href="/en/tools/"'));
   assert.ok(html.includes('class="seo-cta"'));
+  const mode=toolMode.get(page.tool);
+  assert.ok(mode,'missing mode for '+page.tool);
+  if(!['local','browser'].includes(mode)) { assert.ok(html.includes('CONNECTED SERVICE'),page.englishSlug); assert.ok(!html.includes('>FREE<'),page.englishSlug); }
   assert.ok(html.includes('class="seo-steps"'));
   assert.ok((html.match(/<details>/g)||[]).length>=2);
   assert.ok(urls.includes(canonical),'English tool page missing from sitemap');
@@ -135,10 +140,24 @@ test('English app shell and legal page use English metadata and provide a Spanis
  assert.ok(legal.includes('href="/privacy.html"'));
  assert.ok(urls.includes(SEO_BASE+'/en/'));
  assert.ok(urls.includes(SEO_BASE+'/en/privacy.html'));
+ const about=await readOutput('en/about.html');
+ const spanishAbout=await readOutput('acerca.html');
+ assert.match(about,/<html lang="en"/);
+ assert.ok(about.includes('About Prisma Space'));
+ assert.ok(spanishAbout.includes('Acerca de Prisma Space'));
+ assert.ok(urls.includes(SEO_BASE+'/acerca.html'));
+ assert.ok(urls.includes(SEO_BASE+'/en/about.html'));
+ assert.ok(legal.includes('Google AdSense'));
+ assert.ok(legal.includes('Supabase Auth'));
+ const spanishLegal=await readOutput('privacy.html');
+ assert.ok(spanishLegal.includes('Google AdSense'));
+ assert.ok(spanishLegal.includes('Supabase Auth'));
+ for (const page of [about,spanishAbout,legal,spanishLegal]) assert.ok(page.includes('proyectosmetas25@gmail.com'));
+ for (const page of [about,spanishAbout,legal,spanishLegal]) assert.ok(page.includes('mailto:proyectosmetas25@gmail.com'));
 });
 
 test('bilingual sitemap exposes paired alternates for every published page',async()=>{
- const spanishCount=sourcePages.length+3+sourceCategories.length+sourceSolutions.length+sourceGuides.length+3;
+ const spanishCount=sourcePages.length+4+sourceCategories.length+sourceSolutions.length+sourceGuides.length+3;
  assert.equal(urls.length,spanishCount*2);
  assert.equal(new Set(urls).size,urls.length);
  assert.match(sitemap,/xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml"/);

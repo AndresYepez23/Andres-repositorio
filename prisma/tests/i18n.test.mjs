@@ -90,7 +90,8 @@ test('app keeps legal/navigation links and PWA metadata in the selected language
   ['/categorias/','/en/categories/'],
   ['/soluciones/','/en/solutions/'],
   ['/guias/','/en/guides/'],
-  ['/privacy.html','/en/privacy.html']
+  ['/privacy.html','/en/privacy.html'],
+   ['/acerca.html','/en/about.html']
  ]) assert.ok(i18n.includes("['"+es+"', '"+en+"']"),'Missing locale link mapping '+es);
  assert.match(i18n,/translateInternalLinks\(root\)/);
  assert.match(i18n,/translateInternalLinks\(added\)/);

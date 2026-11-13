@@ -52,6 +52,9 @@ test('rendered pages have one H1, unique metadata, valid JSON-LD and real CTA',a
   assert.match(html,/<ol class="seo-steps">/);
   assert.ok((html.match(/<details>/g)||[]).length>=2);
   assert.ok(!/\b(?:undefined|NaN)\b/.test(html),p.slug);
+  const tool=tools.find(item=>item.id===p.tool);
+  if(['local','browser'].includes(tool.mode)) assert.ok(html.includes('PROCESAMIENTO LOCAL'),p.slug);
+  else { assert.ok(html.includes('SERVICIO CONECTADO'),p.slug); assert.ok(!html.includes('GRATIS'),p.slug+' must not be advertised as universally free'); }
   const title=html.match(/<title>(.*?)<\/title>/)[1],description=html.match(/<meta name="description" content="(.*?)">/)[1];
   assert.ok(!titles.has(title));titles.add(title);assert.ok(!descriptions.has(description));descriptions.add(description);
   const canonical=decode(html.match(/rel="canonical" href="([^"]+)"/)[1]);
@@ -68,23 +71,35 @@ test('rendered pages have one H1, unique metadata, valid JSON-LD and real CTA',a
  }
  for(const [slug,count] of incoming)assert.ok(count>0,slug+' has no contextual incoming link');
 });
+test('homepage metrics match the available tool registry',async()=>{
+ const index=await read('index.html');
+ const active=tools.filter(tool=>['ready','beta'].includes(tool.status));
+ const local=active.filter(tool=>['local','browser'].includes(tool.mode));
+ assert.equal(Number(index.match(/id="metric-tools">(\d+)/)?.[1]),active.length);
+ assert.equal(Number(index.match(/id="metric-local">(\d+)/)?.[1]),local.length);
+});
+
 test('directory categories and sitemap expose exactly the current URLs',async()=>{
  const listing=await readFile(new URL('herramientas/index.html',dist),'utf8');
  const sitemap=await readFile(new URL('sitemap.xml',dist),'utf8');
  const robots=await readFile(new URL('robots.txt',dist),'utf8');
  const urls=[...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>decode(m[1]));
- const spanishUrlCount=pages.length+3+categories.length+solutions.length+guides.length+3;
+ const spanishUrlCount=pages.length+4+categories.length+solutions.length+guides.length+3;
   assert.equal(urls.length,spanishUrlCount*2,'the sitemap must contain Spanish and English URLs');assert.equal(new Set(urls).size,urls.length);
  for(const p of pages){
   assert.ok(listing.includes('href="/herramientas/'+p.slug+'/"'));assert.ok(urls.includes(SEO_BASE+'/herramientas/'+p.slug+'/'));
   const category=tools.find(t=>t.id===p.tool).category;
   assert.ok(listing.includes('id="'+category+'"'));assert.ok(listing.includes('href="#'+category+'"'));
  }
- assert.ok(listing.includes('Explora '+pages.length+' herramientas'));
+ assert.ok(listing.includes('Explora '+pages.length+' fichas'));
  assert.ok(listing.includes('href="/categorias/"'));
  assert.ok(listing.includes('href="/soluciones/"'));
  assert.ok(listing.includes('href="/guias/"'));
  assert.ok(robots.includes('Sitemap: '+SEO_BASE+'/sitemap.xml'));
+ const about=await readFile(new URL('acerca.html',dist),'utf8');
+ assert.ok(about.includes('Acerca de Prisma Space'));
+ assert.ok(urls.includes(SEO_BASE+'/acerca.html'));
+ assert.ok(!listing.includes('Herramientas online gratuitas'));
  for(const item of categories)assert.ok(urls.includes(SEO_BASE+'/categorias/'+item.slug+'/'));
  for(const item of solutions)assert.ok(urls.includes(SEO_BASE+'/soluciones/'+item.slug+'/'));
  for(const item of guides)assert.ok(urls.includes(SEO_BASE+'/guias/'+item.slug+'/'));
