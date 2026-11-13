@@ -11,22 +11,26 @@ if [[ "$(dpkg --print-architecture)" != "amd64" ]]; then
   exit 1
 fi
 
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg
+SUDO=""
+if [[ "${EUID}" -ne 0 ]]; then
+  SUDO="sudo"
+fi
 
-sudo install -m 0755 -d /etc/apt/keyrings
+${SUDO} apt-get update
+${SUDO} apt-get install -y ca-certificates curl gnupg
+
+${SUDO} install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-  | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+  | ${SUDO} gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+${SUDO} chmod a+r /etc/apt/keyrings/docker.gpg
 
-. /etc/os-release
 CODENAME="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
 echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${CODENAME} stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+  | ${SUDO} tee /etc/apt/sources.list.d/docker.list >/dev/null
 
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo systemctl enable --now docker
+${SUDO} apt-get update
+${SUDO} apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+${SUDO} systemctl enable --now docker
 
-sudo docker version
-sudo docker compose version
+${SUDO} docker version
+${SUDO} docker compose version
