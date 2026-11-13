@@ -79,7 +79,7 @@ function header(esUrl) {
 }
 function footer() {
   return [
-    '<footer class="seo-footer"><div><a href="/en/">Prisma Space</a><span>Digital tools with purpose.</span></div><nav aria-label="Footer links"><a href="/en/tools/">Tools</a><a href="/en/categories/">Categories</a><a href="/en/solutions/">Solutions</a><a href="/en/guides/">Guides</a><a href="/en/privacy.html#privacidad">Privacy and terms</a></nav></footer>',
+    '<footer class="seo-footer"><div><a href="/en/">Prisma Space</a><span>Digital tools with purpose.</span></div><nav aria-label="Footer links"><a href="/en/tools/">Tools</a><a href="/en/categories/">Categories</a><a href="/en/solutions/">Solutions</a><a href="/en/guides/">Guides</a><a href="/en/about.html">About</a><a href="/en/privacy.html#privacidad">Privacy and terms</a></nav></footer>',
     '<script>(function(){ const button = document.getElementById("seo-theme"); if(!button) return; button.addEventListener("click", function(){ const next = document.documentElement.dataset.theme === "light" ? "dark" : "light"; document.documentElement.dataset.theme = next; try {localStorage.setItem("prisma-theme", next);}catch{} const meta=document.querySelector("meta[name=theme-color]");if(meta)meta.content=next==="light"?"#f3f7fc":"#0e121d"; }); })();</script>'
   ].join('\n');
 }
@@ -145,7 +145,7 @@ function toolLanding(page,pages,toolMap) {
     '<p class="seo-privacy"><span aria-hidden="true">◇</span> '+esc(page.privacyNote || (['local','browser'].includes(tool.mode)?'Processed in your browser · No registration required':'Review the tool usage conditions'))+'</p></div>',
     '<div class="seo-preview" aria-hidden="true"><div class="seo-preview-orb"></div><div class="seo-preview-label">PRISMA SPACE / '+esc(page.englishSlug.toUpperCase().replaceAll('-',' '))+'</div>',
     '<div class="seo-preview-content"><div class="seo-preview-symbol"><img src="/assets/prisma-mark.svg" width="46" height="46" alt=""></div><strong>'+esc(t(tool.name))+'</strong><span>'+(tool.status==='beta'?'Beta feature':'Ready to use')+'</span></div>',
-    '<div class="seo-preview-foot"><span>One task, one solution</span><span>FREE</span></div></div></section>',
+    '<div class="seo-preview-foot"><span>One task, one solution</span><span>' + (['local','browser'].includes(tool.mode) ? 'LOCAL PROCESSING' : 'CONNECTED SERVICE') + '</span></div></div></section>',
     '<div class="seo-content-grid" id="how-it-works">',
     '<section class="seo-panel"><div class="seo-section-label">WHAT YOU CAN DO</div><h2>'+esc(page.h1)+': what you need to know</h2><p>'+esc(page.intro)+'</p><p>'+esc(page.details)+'</p></section>',
     '<section class="seo-panel"><div class="seo-section-label">STEP BY STEP</div><h2>How to use this tool</h2><ol class="seo-steps">'+steps+'</ol><a class="seo-inline-link" href="'+esc(toolUrl(page))+'">Open '+esc(t(tool.name))+' ↗</a></section>',
@@ -159,8 +159,8 @@ function toolLanding(page,pages,toolMap) {
 }
 function directory(pages,toolMap) {
   const url=BASE+'/en/tools/';
-  const title='Free online tools for everyday tasks | Prisma Space';
-  const description='Explore Prisma Space tools for PDF files, images, video, audio, AI, study, data, and productivity. Open each tool directly in your browser.';
+  const title='Online tool guides for everyday tasks | Prisma Space';
+  const description='Browse practical Prisma Space tool pages for PDF files, images, video, audio, AI, study, data, and productivity. Check each operation’s steps and requirements.';
   const categories=[...new Set(pages.map(page=>toolMap.get(page.tool)?.category).filter(Boolean))]
     .sort((a,b)=>(categoryMap.get(a)?.order||99)-(categoryMap.get(b)?.order||99));
   const tags=categories.map(id=>'<a href="#'+esc(id)+'">'+esc(categoryMap.get(id)?.name||id)+' ↓</a>').join('');
@@ -171,10 +171,10 @@ function directory(pages,toolMap) {
     }).join('\n');
     return '<section class="seo-category" id="'+esc(id)+'"><div class="seo-section-label">BROWSE BY CATEGORY</div><h2>'+esc(categoryMap.get(id)?.name||id)+'</h2><div class="seo-directory-grid">'+links+'</div></section>';
   }).join('\n');
-  const body='<main class="seo-main"><nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/en/">Home</a><span>/</span><span aria-current="page">Free online tools</span></nav>'+
-    '<section class="seo-directory-hero"><div class="seo-eyebrow"><i></i>FREE · PRISMA SPACE</div><h1>Free online tools to get things done</h1><p>Convert documents, edit images, process video and audio, create content, and complete study tasks with Prisma Space. Explore '+pages.length+' tools and operations, then open the one you need in one click.</p><div class="seo-tags">'+tags+'</div></section>'+
+  const body='<main class="seo-main"><nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/en/">Home</a><span>/</span><span aria-current="page">Online tool directory</span></nav>'+
+    '<section class="seo-directory-hero"><div class="seo-eyebrow"><i></i>TOOL DIRECTORY · PRISMA SPACE</div><h1>Online tools for everyday digital tasks</h1><p>Convert documents, edit images, process video and audio, create content, and complete study tasks with Prisma Space. Explore '+pages.length+' practical tool pages that explain specific tasks, then open the corresponding tool in one click.</p><div class="seo-tags">'+tags+'</div></section>'+
     sections+
-    '<aside class="seo-note"><span class="seo-note-icon">i</span><div><strong>Availability and privacy</strong><p>Beta features may have limitations. Tools that are still in preparation are not promoted here. Review each tool usage and privacy notes before processing files.</p></div></aside></main>';
+    '<aside class="seo-note"><span class="seo-note-icon">i</span><div><strong>Availability and privacy</strong><p>This directory brings together task-specific tool pages; the interactive catalogue may also include additional features and format variants. Check whether each operation runs locally or uses a connected provider. Beta features may have limitations.</p></div></aside></main>';
   return markup(title,description,url,{'@context':'https://schema.org','@type':'CollectionPage',name:title,description,url,inLanguage:'en'},body,BASE+'/herramientas/');
 }
 function categoryPage(category,pages,toolMap,solutionLookup,guideLookup) {
@@ -306,6 +306,8 @@ export async function generateInternationalPages(output) {
   await writeFile(new URL('index.html',enDir),appEnglishHtml(appHtml),'utf8');
   const privacyHtml=await readFile(new URL('../privacy.en.html',import.meta.url),'utf8');
   await writeFile(new URL('privacy.html',enDir),privacyHtml,'utf8');
+  const aboutHtml=await readFile(new URL('../about.en.html',import.meta.url),'utf8');
+  await writeFile(new URL('about.html',enDir),aboutHtml,'utf8');
   const englishManifest=JSON.parse(await readFile(new URL('../manifest.webmanifest',import.meta.url),'utf8'));
   englishManifest.id='/en/';
   englishManifest.name='Prisma Space · Your AI workspace';
@@ -358,7 +360,8 @@ export async function generateInternationalPages(output) {
     [BASE+'/categorias/',BASE+'/en/categories/'],
     [BASE+'/soluciones/',BASE+'/en/solutions/'],
     [BASE+'/guias/',BASE+'/en/guides/'],
-    [BASE+'/privacy.html',BASE+'/en/privacy.html']
+    [BASE+'/privacy.html',BASE+'/en/privacy.html'],
+    [BASE+'/acerca.html',BASE+'/en/about.html']
   ]);
   for(const page of englishPages) englishUrlBySpanish.set(BASE+'/herramientas/'+page.sourceSlug+'/',BASE+'/en/tools/'+page.englishSlug+'/');
   for(const item of hubs.categories) englishUrlBySpanish.set(BASE+'/categorias/'+item.sourceSlug+'/',BASE+'/en/categories/'+item.englishSlug+'/');

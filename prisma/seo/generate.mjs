@@ -51,7 +51,7 @@ function header() {
 }
 function footer() {
   return [
-    '<footer class="seo-footer"><div><a href="/">Prisma Space</a><span>Herramientas con intención.</span></div><nav aria-label="Enlaces del pie de página"><a href="/herramientas/">Herramientas</a><a href="/categorias/">Categorías</a><a href="/soluciones/">Soluciones</a><a href="/guias/">Guías</a><a href="/privacy.html#privacidad">Privacidad y uso</a></nav></footer>',
+    '<footer class="seo-footer"><div><a href="/">Prisma Space</a><span>Herramientas con intención.</span></div><nav aria-label="Enlaces del pie de página"><a href="/herramientas/">Herramientas</a><a href="/categorias/">Categorías</a><a href="/soluciones/">Soluciones</a><a href="/guias/">Guías</a><a href="/acerca.html">Acerca de</a><a href="/privacy.html#privacidad">Privacidad y uso</a></nav></footer>',
     '<script>(function(){ const button = document.getElementById("seo-theme"); if(!button) return; button.addEventListener("click", function(){ const next = document.documentElement.dataset.theme === "light" ? "dark" : "light"; document.documentElement.dataset.theme = next; try {localStorage.setItem("prisma-theme", next);}catch{} const meta=document.querySelector("meta[name=theme-color]");if(meta)meta.content=next==="light"?"#f3f7fc":"#0e121d"; }); })();</script>'
   ].join('\n');
 }
@@ -87,38 +87,38 @@ function landing(page, pages, toolMap) {
     '<div class="seo-eyebrow"><i></i>' + esc(categoryFor(tool).name) + ' · ' + (['local','browser'].includes(tool.mode)?'Procesamiento local':'Servicio conectado') + ' · ' + (beta ? 'Beta' : 'Disponible') + '</div>',
     '<h1>' + esc(page.h1) + '</h1>',
     '<p class="seo-lead">' + esc(page.description) + '</p>',
-    '<div class="seo-actions"><a class="seo-cta" href="' + esc(toolUrl(page)) + '">Abrir herramienta gratis <span aria-hidden="true">↗</span></a><a class="seo-subtle" href="#como-funciona">Cómo funciona ↓</a></div>',
+    '<div class="seo-actions"><a class="seo-cta" href="' + esc(toolUrl(page)) + '">Abrir herramienta <span aria-hidden="true">↗</span></a><a class="seo-subtle" href="#como-funciona">Cómo funciona ↓</a></div>',
     '<p class="seo-privacy"><span aria-hidden="true">◇</span> ' + esc(page.privacyNote || (['local','browser'].includes(tool.mode) ? 'Procesamiento en el navegador · Sin registro' : 'Consulta las condiciones de uso de la herramienta')) + '</p></div>',
     '<div class="seo-preview" aria-hidden="true"><div class="seo-preview-orb"></div><div class="seo-preview-label">PRISMA SPACE / ' + esc(page.slug.toUpperCase().replaceAll('-', ' ')) + '</div>',
     '<div class="seo-preview-content"><div class="seo-preview-symbol"><img src="/assets/prisma-mark.svg" width="46" height="46" alt=""></div><strong>' + esc(tool.name) + '</strong><span>' + (beta ? 'Función en beta' : 'Lista para usar') + '</span></div>',
-    '<div class="seo-preview-foot"><span>Una tarea, una solución</span><span>GRATIS</span></div></div></section>',
+    '<div class="seo-preview-foot"><span>Una tarea, una solución</span><span>' + (['local','browser'].includes(tool.mode) ? 'PROCESAMIENTO LOCAL' : 'SERVICIO CONECTADO') + '</span></div></div></section>',
     '<div class="seo-content-grid" id="como-funciona">',
     '<section class="seo-panel"><div class="seo-section-label">QUÉ PUEDES HACER</div><h2>' + esc(page.h1) + ': lo que necesitas saber</h2><p>' + esc(page.intro) + '</p><p>' + esc(page.details) + '</p></section>',
     '<section class="seo-panel"><div class="seo-section-label">PASO A PASO</div><h2>Cómo utilizar esta herramienta</h2><ol class="seo-steps">' + steps + '</ol><a class="seo-inline-link" href="' + esc(toolUrl(page)) + '">Abrir ' + esc(tool.name) + ' ↗</a></section>',
     '</div>',
     '<aside class="seo-note"><span class="seo-note-icon">i</span><div><strong>Antes de empezar</strong><p>' + esc(page.tip) + '</p>' + (beta ? '<small>Esta función figura como beta en el catálogo de Prisma Space.</small>' : '') + '</div></aside>',
     '<section class="seo-faq" aria-labelledby="faq-title"><div class="seo-section-label">PREGUNTAS FRECUENTES</div><h2 id="faq-title">Dudas habituales</h2>' + faqs + '</section>',
-    '<section class="seo-related" aria-labelledby="related-title"><div class="seo-related-heading"><div><div class="seo-section-label">TAMBIÉN TE PUEDE SERVIR</div><h2 id="related-title">Más herramientas gratuitas</h2></div><a href="/herramientas/">Ver todas ↗</a></div><div class="seo-related-grid">' + relatedCards(page,pages,toolMap) + '</div></section>',
+    '<section class="seo-related" aria-labelledby="related-title"><div class="seo-related-heading"><div><div class="seo-section-label">TAMBIÉN TE PUEDE SERVIR</div><h2 id="related-title">Herramientas relacionadas</h2></div><a href="/herramientas/">Ver todas ↗</a></div><div class="seo-related-grid">' + relatedCards(page,pages,toolMap) + '</div></section>',
     '</main>'
   ].join('\n');
   return markup(page.title+' | Prisma Space',page.description,url,schema,body);
 }
 function directory(pages,toolMap) {
   const url=BASE+'/herramientas/';
-  const title=pages.length+' herramientas y operaciones online | Prisma Space';
-  const description='Explora '+pages.length+' herramientas y operaciones de Prisma Space para PDF, imágenes, vídeo, audio, IA, estudio y productividad. Abre cada función desde el navegador.';
+  const title=pages.length+' fichas de herramientas online | Prisma Space';
+  const description='Explora '+pages.length+' fichas prácticas de Prisma Space para tareas con PDF, imágenes, vídeo, audio, IA, estudio y productividad. Consulta los pasos y requisitos de cada operación.';
   const categories=[...new Set(pages.map(p=>toolMap.get(p.tool).category))].sort((a,b)=>categoryFor({category:a}).order-categoryFor({category:b}).order);
   const tags=categories.map(c=>'<a href="#'+esc(c)+'">'+esc(categoryFor({category:c}).name)+' ↓</a>').join('');
   const sections=categories.map(c=>{
-    const links=pages.filter(p=>toolMap.get(p.tool).category===c).map(p=>'<a class="seo-directory-card" href="/herramientas/'+esc(p.slug)+'/"><strong>'+esc(p.h1)+'</strong><span>'+esc(p.description)+'</span><small>'+(toolMap.get(p.tool).status==='beta'?'En beta · ':'')+'Abrir gratis ↗</small></a>').join('\n');
+    const links=pages.filter(p=>toolMap.get(p.tool).category===c).map(p=>'<a class="seo-directory-card" href="/herramientas/'+esc(p.slug)+'/"><strong>'+esc(p.h1)+'</strong><span>'+esc(p.description)+'</span><small>'+(toolMap.get(p.tool).status==='beta'?'En beta · ':'')+'Abrir herramienta ↗</small></a>').join('\n');
     return '<section class="seo-category" id="'+esc(c)+'"><div class="seo-section-label">EXPLORA POR CATEGORÍA</div><h2>'+esc(categoryFor({category:c}).name)+'</h2><div class="seo-directory-grid">'+links+'</div></section>';
   }).join('\n');
   const body=[
-    '<main class="seo-main"><nav class="seo-breadcrumb" aria-label="Ruta de navegación"><a href="/">Inicio</a><span>/</span><span aria-current="page">Herramientas gratuitas</span></nav>',
-    '<section class="seo-directory-hero"><div class="seo-eyebrow"><i></i>GRATIS · PRISMA SPACE</div><h1>Herramientas online gratuitas para resolver tareas al instante</h1>',
-    '<p>Convierte documentos, edita imágenes, procesa vídeo y audio, crea contenido y resuelve tareas de estudio desde Prisma Space. Explora '+pages.length+' herramientas y operaciones y abre la que necesitas en un clic.</p><div class="seo-tags">'+tags+'</div></section>',
+    '<main class="seo-main"><nav class="seo-breadcrumb" aria-label="Ruta de navegación"><a href="/">Inicio</a><span>/</span><span aria-current="page">Directorio de herramientas</span></nav>',
+    '<section class="seo-directory-hero"><div class="seo-eyebrow"><i></i>DIRECTORIO · PRISMA SPACE</div><h1>Herramientas online para resolver tareas digitales</h1>',
+    '<p>Convierte documentos, edita imágenes, procesa vídeo y audio, crea contenido y resuelve tareas de estudio desde Prisma Space. Explora '+pages.length+' fichas prácticas que explican operaciones concretas y abre la herramienta correspondiente en un clic.</p><div class="seo-tags">'+tags+'</div></section>',
     sections,
-    '<aside class="seo-note"><span class="seo-note-icon">i</span><div><strong>Disponibilidad y privacidad</strong><p>Las funciones beta pueden tener limitaciones. No se promocionan aquí herramientas todavía en preparación. Revisa las indicaciones de privacidad y funcionamiento de cada operación.</p></div></aside>',
+    '<aside class="seo-note"><span class="seo-note-icon">i</span><div><strong>Disponibilidad y privacidad</strong><p>Este directorio reúne fichas SEO de operaciones concretas; el catálogo interactivo puede incluir funciones y variantes adicionales. Comprueba si cada operación se procesa localmente o depende de un proveedor conectado. Las funciones Beta pueden tener limitaciones.</p></div></aside>',
     '</main>'
   ].join('\n');
   return markup(title,description,url,{ '@context':'https://schema.org', '@type':'CollectionPage', name:title, description, url, inLanguage:'es' },body);
@@ -158,7 +158,7 @@ export async function generateSeoPages(output) {
   await mkdir(listing,{recursive:true});
   await writeFile(new URL('index.html',listing),directory(pages,toolMap),'utf8');
   const contentUrls=await generateContentHubs(output,{base:BASE,pages});
-  const urls=[BASE+'/', BASE+'/herramientas/', ...pages.map(page=>urlFor(page.slug)), BASE+'/privacy.html', ...contentUrls];
+  const urls=[BASE+'/', BASE+'/herramientas/', ...pages.map(page=>urlFor(page.slug)), BASE+'/privacy.html', BASE+'/acerca.html', ...contentUrls];
   const sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(url=>'  <url><loc>'+esc(url)+'</loc></url>').join('\n')+'\n</urlset>\n';
   await writeFile(new URL('sitemap.xml',output),sitemap,'utf8');
   await writeFile(new URL('robots.txt',output),'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /functions/\nSitemap: '+BASE+'/sitemap.xml\n','utf8');

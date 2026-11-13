@@ -8,6 +8,8 @@ const dist=new URL('../dist/',import.meta.url);
 const readSource=path=>readFile(new URL(path,root),'utf8');
 const readOutput=path=>readFile(new URL(path,dist),'utf8');
 const sourcePages=JSON.parse(await readSource('seo/pages.json')).pages;
+const registrySource=await readSource('src/registry.js');
+const toolMode=new Map([...registrySource.matchAll(/\{\s*id:\s*'([^']+)'[^}]*mode:\s*'([^']+)'/g)].map(match=>[match[1],match[2]]));
 const pages=JSON.parse(await readSource('seo/pages.en.json')).pages;
 const sourceCategories=JSON.parse(await readSource('seo/content-categories.json')).categories;
 const sourceSolutions=JSON.parse(await readSource('seo/content-solutions.json')).solutions;
@@ -138,7 +140,7 @@ test('English app shell and legal page use English metadata and provide a Spanis
 });
 
 test('bilingual sitemap exposes paired alternates for every published page',async()=>{
- const spanishCount=sourcePages.length+3+sourceCategories.length+sourceSolutions.length+sourceGuides.length+3;
+ const spanishCount=sourcePages.length+4+sourceCategories.length+sourceSolutions.length+sourceGuides.length+3;
  assert.equal(urls.length,spanishCount*2);
  assert.equal(new Set(urls).size,urls.length);
  assert.match(sitemap,/xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml"/);

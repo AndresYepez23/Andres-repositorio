@@ -157,7 +157,8 @@ const localizedPaths = new Map([
   ['/categorias/', '/en/categories/'],
   ['/soluciones/', '/en/solutions/'],
   ['/guias/', '/en/guides/'],
-  ['/privacy.html', '/en/privacy.html']
+  ['/privacy.html', '/en/privacy.html'],
+  ['/acerca.html', '/en/about.html']
 ]);
 const spanishPaths = new Map([...localizedPaths].map(([es, en]) => [en, es]));
 

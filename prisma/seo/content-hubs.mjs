@@ -43,7 +43,7 @@ function shell(title, description, url, schema, main) {
     '<nav class="seo-nav" aria-label="Navegación principal"><a href="/categorias/">Categorías</a><a href="/guias/">Guías</a><a href="/soluciones/">Soluciones</a><a href="/herramientas/">Herramientas</a><button id="seo-theme" type="button" aria-label="Cambiar tema">◐ <span>Tema</span></button></nav>',
     '</div></header>',
     main,
-    '<footer class="seo-footer"><div><a href="/">Prisma Space</a><span>Herramientas con intención.</span></div><nav aria-label="Enlaces del pie de página"><a href="/herramientas/">Herramientas</a><a href="/categorias/">Categorías</a><a href="/soluciones/">Soluciones</a><a href="/guias/">Guías</a><a href="/privacy.html#privacidad">Privacidad y uso</a></nav></footer>',
+    '<footer class="seo-footer"><div><a href="/">Prisma Space</a><span>Herramientas con intención.</span></div><nav aria-label="Enlaces del pie de página"><a href="/herramientas/">Herramientas</a><a href="/categorias/">Categorías</a><a href="/soluciones/">Soluciones</a><a href="/guias/">Guías</a><a href="/acerca.html">Acerca de</a><a href="/privacy.html#privacidad">Privacidad y uso</a></nav></footer>',
     '<script>(function(){ const button = document.getElementById("seo-theme"); if(!button) return; button.addEventListener("click", function(){ const next = document.documentElement.dataset.theme === "light" ? "dark" : "light"; document.documentElement.dataset.theme = next; try {localStorage.setItem("prisma-theme", next);}catch{} const meta=document.querySelector("meta[name=theme-color]");if(meta)meta.content=next==="light"?"#f3f7fc":"#0e121d"; }); })();</script>',
     '</body>',
     '</html>',

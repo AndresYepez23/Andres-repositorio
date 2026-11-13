@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <link rel="canonical" href="https://prismaspace.space/acerca.html">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0e121d"><meta name="robots" content="index,follow">
+  <meta name="description" content="Conoce qué es Prisma Space, cómo funcionan sus herramientas, qué significan sus estados y dónde reportar problemas.">
+  <title>Acerca de Prisma Space · Proyecto, herramientas y soporte</title>
+  <link rel="icon" href="./assets/prisma-mark.svg" type="image/svg+xml">
+  <script>
+    (()=>{try{const theme=localStorage.getItem('prisma-theme');if(theme==='light'||theme==='dark'){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='light'?'#f3f7fc':'#0e121d';}}catch{}})();
+  </script>
+  <style>
+    :root{color-scheme:dark;--bg:#0e121d;--panel:#161d2b;--line:rgba(178,202,233,.19);--text:#f0f4fb;--muted:#a4aec1;--accent:#91dbd5}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,rgba(105,169,229,.13),transparent 33%),radial-gradient(circle at 4% 72%,rgba(149,110,211,.08),transparent 48%),var(--bg);color:var(--text);font:15px/1.75 system-ui,-apple-system,Segoe UI,sans-serif}
+    a{color:var(--accent)}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.legal-language-options{text-align:right;margin:10px 0 20px}.legal-language-options a{display:inline-flex;padding:7px 12px;border:1px solid var(--line);border-radius:999px;text-decoration:none;font-size:12px;background:rgba(137,186,224,.06)}nav a:hover{border-color:var(--accent);background:rgba(145,219,213,.08)}.shell{width:min(880px,calc(100% - 36px));margin:0 auto;padding:42px 0 70px}.back{display:inline-flex;gap:8px;align-items:center;text-decoration:none;font-size:13px;margin-bottom:26px}
+    header{padding:28px 30px;border:1px solid var(--line);border-radius:18px;background:radial-gradient(circle at 88% 20%,rgba(128,190,231,.15),transparent 55%),linear-gradient(130deg,#162438,#1d213b)}
+    .eyebrow{font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700}h1{font-size:clamp(30px,5vw,44px);line-height:1.12;letter-spacing:-.045em;margin:10px 0}
+    header p,.updated{color:var(--muted);font-size:13px}nav{display:flex;gap:9px;flex-wrap:wrap;margin:22px 0}nav a{padding:8px 12px;border:1px solid var(--line);border-radius:30px;text-decoration:none;font-size:12px;background:rgba(137,186,224,.06)}
+    article{padding:24px 26px;margin:13px 0;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,#161e2d,#1a2133)};scroll-margin-top:20px}
+    h2{font-size:20px;letter-spacing:-.025em;margin:0 0 12px}h3{font-size:14px;margin:20px 0 6px}p,li{color:var(--muted);font-size:13px}ul{padding-left:21px}li{margin:6px 0}
+    .note{padding:13px 15px;border-left:2px solid var(--accent);background:rgba(154,219,210,.06);border-radius:0 9px 9px 0}footer{padding-top:20px;color:var(--muted);font-size:11px;text-align:center}
+    :root[data-theme="light"]{color-scheme:light;--bg:#f3f7fc;--panel:#fff;--line:rgba(49,81,111,.18);--text:#1c293d;--muted:#53637b;--accent:#237b78}
+    :root[data-theme="light"] header{background:radial-gradient(ellipse at 85% 15%,rgba(117,179,221,.16),transparent 70%),linear-gradient(135deg,#ffffff,#eaf3fc)}
+    :root[data-theme="light"] article{background:linear-gradient(145deg,#fff,#f2f7fb)}
+    :root[data-theme="light"] nav a{background:#fff}
+    :root[data-theme="light"] .note{background:rgba(93,174,177,.09)}
+    @media(max-width:600px){.shell{padding-top:22px}.shell header{padding:22px 19px}article{padding:20px 18px}}
+  </style>
+</head>
+<body><main class="shell">
+  <a class="back" href="./">← Volver a Prisma Space</a>
+  <header><div class="eyebrow">PRISMA SPACE · EL PROYECTO</div><h1>Acerca de Prisma Space</h1><p>Un espacio digital que reúne herramientas web, flujos de trabajo e inteligencia artificial para ayudar a resolver tareas cotidianas desde el navegador.</p></header>
+  <div class="legal-language-options"><a href="/en/about.html" hreflang="en" lang="en" aria-label="Ver esta página en inglés">Ver esta página en inglés</a></div>
+  <nav aria-label="Secciones de esta página"><a href="#proyecto">El proyecto</a><a href="#herramientas">Cómo funcionan las herramientas</a><a href="#criterios">Calidad y limitaciones</a><a href="#soporte">Soporte</a></nav>
+  <article id="proyecto"><h2>1. Qué es Prisma Space</h2>
+    <p>Prisma Space es una plataforma web independiente que combina utilidades para documentos, imágenes, audio, vídeo, texto, datos, estudio y creación con Prisma Core, un asistente que ayuda a interpretar solicitudes y coordinar herramientas compatibles.</p>
+    <p>El objetivo es que una persona pueda pasar de una tarea concreta a una herramienta adecuada sin tener que recorrer servicios inconexos. El catálogo y las páginas informativas se organizan por función, categoría y flujo de trabajo.</p>
+  </article>
+  <article id="herramientas"><h2>2. Cómo funcionan las herramientas</h2>
+    <ul>
+      <li><strong>Procesamiento local:</strong> la operación se realiza en el dispositivo y el archivo no necesita enviarse a un servidor de Prisma.</li>
+      <li><strong>Procesamiento en el navegador:</strong> la función se ejecuta en el navegador y puede descargar bibliotecas o modelos para realizar la tarea.</li>
+      <li><strong>Servicio conectado:</strong> la función necesita comunicarse con un proveedor externo. La información necesaria se transmite cuando eliges y autorizas esa operación.</li>
+    </ul>
+    <p>Las páginas de cada herramienta describen su finalidad, los pasos principales, los formatos compatibles y las limitaciones conocidas. Las funciones que aún están en desarrollo se identifican como Beta o no se presentan como disponibles.</p>
+  </article>
+  <article id="criterios"><h2>3. Calidad, privacidad y limitaciones</h2>
+    <p>Las instrucciones y páginas informativas buscan explicar qué hace cada herramienta y qué no hace. No todas las funciones tienen el mismo nivel de disponibilidad: algunas son locales, otras dependen de modelos o proveedores externos y algunas permanecen en Beta.</p>
+    <p>Los resultados de inteligencia artificial pueden ser incorrectos o incompletos. Comprueba los documentos, imágenes, textos y demás resultados antes de utilizarlos. Conserva siempre una copia del archivo original cuando el resultado sea importante.</p>
+    <p>Consulta la <a href="/privacy.html">política de privacidad y condiciones de uso</a> antes de procesar información personal o confidencial. Las funciones conectadas pueden estar sujetas a condiciones y límites de terceros.</p>
+  </article>
+  <article id="soporte"><h2>4. Soporte y reportes</h2>
+    <p>Para reportar un error técnico, describir los pasos para reproducirlo o sugerir una mejora, puedes utilizar el <a href="https://github.com/AndresYepez23/PRISMA/issues/new" target="_blank" rel="noopener noreferrer">canal público de incidencias del proyecto en GitHub</a>.</p>
+    <div class="note"><strong>Protege tu información:</strong> los reportes de GitHub pueden ser públicos. No incluyas contraseñas, claves API, tokens, direcciones de correo, conversaciones privadas ni archivos personales. Si necesitas realizar una solicitud relacionada con tus datos, abre un reporte sin información sensible y solicita un canal privado para continuar.</div>
+    <p>Prisma Space no utiliza los reportes públicos para solicitar credenciales ni archivos privados.</p>
+  </article>
+  <footer>Prisma Space · Herramientas digitales con intención. <a href="/privacy.html">Privacidad y condiciones</a> · <a href="./">Volver al espacio de trabajo</a></footer>
+</main></body></html>
