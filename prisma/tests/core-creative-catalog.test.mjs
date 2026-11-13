@@ -17,10 +17,12 @@ test('Crear replaces image-only picker without modifying composer controls',()=>
  for(const id of ['core-file-button','core-input','core-send','core-dictate','core-talk'])
   assert.ok(html.includes('id="'+id+'"'),id+' remains');
 });
-test('specialist groups include images, music, audio, transcription, video and safety',()=>{
- for(const name of ['Imágenes','Música','Audio','Transcripción','Vídeo','Moderación'])
+test('specialist groups include images, music, audio, video and safety',()=>{
+ for(const name of ['Imágenes','Música','Audio','Vídeo','Moderación'])
   assert.ok(core.includes("title:'"+name+"'"),name);
  assert.match(core,/function renderImageModelControls\(\)/);
+ assert.match(core,/if\(!entries\.length\)continue;/);
+ assert.doesNotMatch(core,/key:'transcription',title:'Transcripción'/);
  assert.match(core,/if\(ready\)row\.addEventListener/);
  assert.match(core,/\$\('#core-composer-mode'\)\?\.classList\.add\('hidden'\)/);
  assert.match(core,/input\.placeholder='Escribe a Prisma…'/);
