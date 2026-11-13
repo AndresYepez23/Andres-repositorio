@@ -1,5 +1,23 @@
 # QUEEN — continuidad técnica y cierre de sesión
 
+## Continuación de mediciones desde `6673124` — 13/11/2026
+
+Se recuperó por fast-forward el checkpoint `66731248dcefd464aa7bb5817f366c452fc61449`, sin rebase, cambios en main ni repetición de aprovisionamiento. El usuario compartió el procedimiento SSH; **no se recibieron sus archivos de medición** en este workspace. No hay identidad SSH, agente ni VPN configurados en el entorno actual. No se ejecutó ningún lector ni sonda contra GenixNode y no se hicieron nuevas solicitudes a Qwen.
+
+Se corrigieron tres impedimentos concretos del procedimiento:
+
+- Descargas con errores que podían permitir continuar: la [guía](../neural-pilot/staging/VPS-MEASUREMENTS.md) ahora usa guardas explícitas por comando, archivos `.part`, manifiesto `VPS-SCRIPTS.sha256` de los tres lectores y compilación antes de marcar `scripts.verified`. No confiar solo en `set -e` dentro de una condición de Bash.
+- Capturas parciales: `analyze-vps.py` conserva muestras válidas y reporta filas inválidas, número esperado, salida del monitor y cobertura por señal. `capture.complete` no significa generación sana ni ausencia de OOM histórico. También resume swap usado/libre; la actividad requiere `vmstat`. Los recuentos de reinicio booleanos, negativos o desconocidos no acreditan estabilidad completa.
+- Sonda que podía quedarse leyendo metadatos: cada lectura tiene plazo de pared; el plazo global es 100 s, **la generación sigue limitada a 55 s y ocho tokens, una sola solicitud, sin reintentos**. Los temporizadores anidados no renuevan el plazo. No se imprime la clave ni el texto generado.
+
+**Validación nueva: 19 pruebas Python offline aprobadas**, incluidos fallos de descarga, checksum, respuestas que gotean y preservación del plazo; [evidencia](queen-vps-readers-2026-11-13/checks.json). No son mediciones ni inferencias reales. Se integró ese test en CI para cuando se publique; la línea base Node publicada sigue siendo 236, no se repitió porque su código no cambió.
+
+**Publicación pendiente:** el conector Cloudflare devuelve repetidamente la solicitud de autenticación en vez de ejecutar la lectura, incluso para listar cuentas. Se conserva el checkpoint local; no se hace push que pueda crear un Preview automático principal sin poder retirarlo. Reconectar Cloudflare y comprobar acceso antes del push. No son los tres secretos de Queen y no se cambiaron. El PR remoto conocido sigue draft en `6673124`; este bloque no debe interpretarse como código ya publicado o aplicado al VPS.
+
+**Siguiente paso:** recibir `summary.json`, `host.jsonl`, `qwen-probe.json`, `vmstat.txt`, `kernel-oom.txt` y su archivo de errores; si existen, `pressure.txt`, `uptime.txt` y `monitor-exit-code.txt`. Si el usuario ya ejecutó los lectores del commit `6673124`, analizar esos archivos tal cual: **no repetir la inferencia solo por actualizar scripts**. Si no se ejecutaron, usar la versión publicada adecuada sin mezclar opciones nuevas con scripts antiguos. Tras interpretar datos reales, decidir la corrección del servicio y las pruebas operativas pendientes.
+
+El último despliegue conocido sigue siendo `16436df0`, snapshot limpio de `ed94e25`; ni las correcciones de presupuesto posteriores ni estos lectores han creado otro despliegue. No se tocaron Prisma Developer, plugin de ChatGPT, motores, herramientas, proveedores, proyectos ajenos, D1 ni configuración de producción.
+
 ## Continuación en el workspace nuevo — 13/11/2026
 
 **Mediciones manuales del VPS:** [guía de transferencia y ejecución](../neural-pilot/staging/VPS-MEASUREMENTS.md). Los scripts originales `monitor-vps.py` y `analyze-vps.py` ya estaban publicados en `686d6d4`; no se instalaron automáticamente en GenixNode. Se añade una sonda manual `probe-qwen.py`, máximo una completion de ocho tokens/55 s, con credencial existente solo en memoria del VPS y contadores de cola únicamente si `/metrics` ya está habilitado. No es un despliegue ni una medición realizada desde Codex. El usuario tiene SSH manual y ejecutará allí los lectores; las métricas siguen pendientes hasta recibir sus resultados.

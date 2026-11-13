@@ -31,3 +31,5 @@ jobs:
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
+      - name: Check Queen VPS readers offline
+        run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v
