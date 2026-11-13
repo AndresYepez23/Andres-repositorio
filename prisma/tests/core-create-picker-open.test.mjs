@@ -10,3 +10,12 @@ test('Crear selections keep model picker open until user dismisses it',()=>{
  assert.match(core,/if\(picker&&!keepPickerOpen\)picker\.open=false/);
  assert.match(core,/if\(!keepPickerOpen\)\$\('#core-input'\)\?\.focus\(\)/);
 });
+
+test('touch and click propagation cannot dismiss Crear during model selection',()=>{
+ const create=core.slice(core.indexOf('function renderImageModelControls()'),core.indexOf('function renderModelPicker()'));
+ assert.match(create,/row\.addEventListener\('click',event=>/);
+ assert.match(create,/event\.preventDefault\(\);event\.stopPropagation\(\)/);
+ assert.match(create,/requestAnimationFrame\(\(\)=>\{/);
+ assert.match(create,/picker\.open=true/);
+ assert.match(create,/panel\.scrollTop=previousScroll/);
+});
