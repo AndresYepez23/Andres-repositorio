@@ -1,0 +1,138 @@
+{
+  "sourceCheckpoint": "732bce69297a092008b68f1a0439592cb90173ed",
+  "initialLocalCheckpoint": "66731248dcefd464aa7bb5817f366c452fc61449",
+  "initialWorkingTreeClean": true,
+  "recoveryMethod": "git fetch and ancestry-checked fast-forward; no reset/rebase",
+  "pr": {
+    "url": "https://github.com/AndresYepez23/PRISMA/pull/125",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "sourceHead": "732bce69297a092008b68f1a0439592cb90173ed"
+  },
+  "sourceCi": {
+    "name": "Prisma Core checks",
+    "runId": 43487676034,
+    "number": 539,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/AndresYepez23/PRISMA/actions/runs/43487676034",
+    "otherChecks": [
+      {
+        "name": "Redirect rules - herenciadivina01",
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://app.netlify.com/projects/herenciadivina01/deploys/6af75dbb2a0ffe283bd3e424"
+      },
+      {
+        "name": "Header rules - herenciadivina01",
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://app.netlify.com/projects/herenciadivina01/deploys/6af75dbb2a0ffe283bd3e424"
+      },
+      {
+        "name": "Pages changed - herenciadivina01",
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://app.netlify.com/projects/herenciadivina01/deploys/6af75dbb2a0ffe283bd3e424"
+      },
+      {
+        "name": "core-regressions",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/AndresYepez23/PRISMA/actions/runs/43487676034/job/132100332998"
+      }
+    ]
+  },
+  "resources": {
+    "prismaspace": {
+      "id": "c89b887d-199c-4a60-b9b5-58f743cc69dd",
+      "productionBranch": "main",
+      "canonicalId": "67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08",
+      "canonicalEnvironment": "production",
+      "canonicalTrigger": {
+        "type": "github:push",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
+          "commit_message": "Publish Google AdSense ads.txt\n\nAdd the supplied AdSense publisher record to the Cloudflare Pages output and guard it with a build regression test.",
+          "commit_dirty": false
+        }
+      }
+    },
+    "prisma-queen-staging": {
+      "id": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+      "productionBranch": "feature/prisma-neural-genixnode-qwen35-pilot",
+      "canonicalId": "16436df0-3d50-4e89-9165-b875be731d3f",
+      "canonicalEnvironment": "production",
+      "canonicalTrigger": {
+        "type": "ad_hoc",
+        "metadata": {
+          "branch": "feature/prisma-neural-genixnode-qwen35-pilot",
+          "commit_hash": "ed94e25b9f38645a484c740f9f2e3ac3063f3a4f",
+          "commit_message": "Queen: preserved clean continuity snapshot and restored private operator access",
+          "commit_dirty": false
+        }
+      },
+      "productionD1": {
+        "PRISMA_RATE_DB": {
+          "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+        }
+      },
+      "secretPresence": {
+        "QUEEN_ACCESS_CLIENT_ID": {
+          "present": true,
+          "type": "secret_text"
+        },
+        "QUEEN_ACCESS_CLIENT_SECRET": {
+          "present": true,
+          "type": "secret_text"
+        },
+        "QUEEN_API_KEY": {
+          "present": true,
+          "type": "secret_text"
+        },
+        "QUEEN_STAGING_KEY_SHA256": {
+          "present": true,
+          "type": "secret_text"
+        }
+      }
+    }
+  },
+  "transferScope": {
+    "documentationOnly": true,
+    "newInferences": 0,
+    "newVpsReads": 0,
+    "sshUsed": false,
+    "serverChanges": false,
+    "sqlWrites": false,
+    "historicalBatteriesRerunLocally": false,
+    "newHardwareHypothesesApplied": false,
+    "isolatedDeploymentsCreated": 0,
+    "productionDeploymentsCreated": 0
+  },
+  "portability": {
+    "codeChangesPendingBeforeTransfer": 0,
+    "previouslyUnpublished2b8fc19NowRecovered": true,
+    "relevantEvidenceInRepository": true,
+    "privateValuesExcluded": [
+      "operator key",
+      "OAuth/API tokens",
+      "SSH identity",
+      "env files"
+    ],
+    "privateRecoveryDocumented": true
+  },
+  "publication": {
+    "transferCommit": "Resolve from git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md and PR125; exact SHA recorded after push in PR/final delivery",
+    "newCommitCi": "Recorded in PR after publication",
+    "ownPreviewCleanup": "Recorded in PR with exact SHA and guarded canonical checks after push",
+    "automaticPrimaryPreview": "Push may create a queued own-branch Preview despite skip prefix; guarded cleanup and exact event recorded in PR, never production/canonical or other work"
+  },
+  "documentChecks": {
+    "relativeLinksChecked": 97,
+    "missingLinks": [],
+    "historicalContinuityBodyPreserved": true,
+    "projectRuntimeOrVpsTestsExecutedLocally": false
+  }
+}

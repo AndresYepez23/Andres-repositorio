@@ -1,4 +1,39 @@
-# QUEEN — continuidad técnica y cierre de sesión
+# QUEEN — continuidad vigente y registro histórico
+
+## Transferencia completa a otra cuenta de Codex — 13/11/2026
+
+**Entrada principal: [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md).** Esta transferencia conserva el desarrollo y la misión de finalización; no declara Queen terminada ni abandona el proyecto. [Índice](QUEEN-INDEX.md), [prompt portátil](QUEEN-RESUME-PROMPT.md).
+
+### Estado real recuperado y publicación
+
+- Repositorio `AndresYepez23/PRISMA`, rama `feature/prisma-neural-genixnode-qwen35-pilot`, PR [#125](https://github.com/AndresYepez23/PRISMA/pull/125) **open, draft=true, merged=false**.
+- El workspace estaba limpio en `6673124`; la rama remota ya estaba en **`732bce69297a092008b68f1a0439592cb90173ed`** y se recuperó por fast-forward, incluyendo todos los avances intermedios. El antiguo commit local `2b8fc19` ya está publicado y conservado, no hay que rescatarlo otra vez. No hubo reset/rebase ni cambios en main.
+- Este checkpoint solo añade/actualiza documentación de transferencia e índice/README. Su SHA se obtiene con `git log -1 --format='%H %s' -- prisma/docs/QUEEN-HANDOFF.md`; la entrega y el PR lo registran de forma exacta tras el push. No se inventa un hash propio dentro del archivo.
+- CI del estado importado: [Prisma Core checks #539, success](https://github.com/AndresYepez23/PRISMA/actions/runs/43487676034), SHA732bce6. Tres checks automáticos Netlify de herenciadivina01 fallan y quedan fuera de esta misión. El PR registra CI y cualquier incidente de Preview del nuevo checkpoint documental; no afirmar todos los checks verdes.
+- Último despliegue aislado **verificado por metadatos durante la transferencia**: `16436df0-3d50-4e89-9165-b875be731d3f`, snapshot **ed94e25 limpio**, Production de `prisma-queen-staging`. No representa el HEAD corregido. No se desplegó ni se ejecutó SQL durante esta operación.
+
+### Hallazgos y misión que no deben perderse
+
+- Las capturas físicas y de residencia **ya fueron recibidas**. No volver a pedir ni ejecutar el bloque pasivo, monitor o sonda histórica. Informes vigentes: [residencia](queen-genix-residency-2026-11-13.md) y [episodio de E/S](queen-genix-diagnosis-2026-11-13.md); originales, hashes y análisis en sus directorios enlazados por el índice.
+- RAM física3.82428GiB; anónimoQwen2.91505GiB; RSS3.14177GiB; disponible mínimo pasivo436.55MiB; mapa candidato1.18267GiB con RSS/PSS228.98MiB e identidad GGUF no confirmada. No se observó memory.max/high finito que levantar. Contadores históricos:26,241,301 refaults,83,210 fallos mayores,54,820,431 pgscan,26,556,371 pgsteal; no son deltas del timeout.
+- El intento local histórico venció a55,060ms; el episodio de E/S muestra iowait56–81% y ~5.792GiB leídos del host. El reposo pasivo posterior tiene deltasQwen0. **Los acumulados históricos no demuestran por sí solos causalidad/cronología.** Se conservan supuestos, cobertura y datos desconocidos en el handoff, sin confundir RSS del mapa con caché completa o calcular una ampliación mínima ficticia.
+- **Primero después del traslado:** preparar intervención concreta para recuperar Qwen conservando modelo/calidad, con configuración, recursos/consumo estimados, coste si procede, riesgos, reversión y criterio de comprobación. Pedir aprobación expresa antes de tocar GenixNode; no otra captura pasiva ni recrear el timeout por rutina. No se aplicó intervención ni se demostró mejora.
+- Tras recuperación y prueba autorizadas: snapshot limpio solo en staging aislado, 19 casos preparados (8+11) y cadenas neuronales PDF→Word, escaneo→OCR→extracción→Excel, JSON, reparación, delegación y calidad/seguridad/estabilidad/autonomía. El 8/8 histórico de intención y los controles deterministas no equivalen a finalización.
+- Pruebas conservadas en checkpoints anteriores:236Node,130embebidas del build,19Pythonoffline de lectores y6Pythondirigidas posteriores, con alcance separado. No se reejecutaron manualmente baterías, benchmarks o reproductores para esta transferencia; se revisan documentos/enlaces y estado remoto. El CI automático del nuevo commit se registra aparte en el PR.
+
+### Restricciones y acceso al migrar
+
+Mantener modelo `unsloth/Qwen3.5-2B-GGUF:Q4_K_M`, contexto2048, salida256, concurrencia1, inferencia55s, tarea120s, ocho pasos/dos inferencias Queen; sin checkpoints artificiales ni reducir calidad por una cifra de latencia. Ninguna inferencia adicional durante la transferencia. Ningún reinicio, ajuste, reinstalación o cambio de modelo/VPS sin aprobación correspondiente. No fusionar PR, escribir main, desplegar/configurar prismaspace ni escribir/migrar D1principal `e02104b5-0861-475a-a60f-7658439d4fe0`. No trabajar en Developer/plugin. Conservar motores, proveedores, pruebas y evidencia fallida.
+
+Production de `prisma-queen-staging`, D1aislada `980bad8f-0356-48b9-87bc-56bcf363f69a`, mantiene los tres secretos Queen y el digest del operador; presencia comprobada por metadata, sin valores. No pedir duplicarlos en Preview ni repetir migraciones/aprovisionamiento. La clave local del operador permanece en `/workspace/work/queen-operator/operator-key`,0600, excluida de Git; OAuth/SSH/tokens tampoco se transfieren al clonar. Recuperar por canal privado autorizado o seguir el procedimiento aislado del handoff en su momento, sin rotación durante este traslado y sin solicitar secretos por chat.
+
+Comprobar conexiones GitHub/Cloudflare de la nueva cuenta y los IDs exactos, no suponer permisos heredados. Antes/después de push controlar solo el Preview automático propio rama/SHA, nunca canonical/producción/trabajo ajeno. El prefijo no garantiza omisión. No se cambió configuración principal; canonical observado `67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08`/main4b24fe6. El usuario conserva SSH manual; no se utilizó SSH en esta operación.
+
+**Todo lo que sigue es registro histórico conservado. Sus instrucciones de captura, inferencia, publicación pendiente o «leer primero» no son órdenes vigentes. Usar el handoff y el bloque de arriba para decidir el siguiente paso.**
+
+<details>
+<summary>Historial completo de las continuaciones anteriores; no ejecutar sus bloques sin revisar el estado vigente</summary>
+
 
 ## Evidencia pasiva de residencia recibida y comparada — 13/11/2026
 
@@ -317,3 +352,5 @@ El primer push de este cierre contiene implementación, evidencias y este docume
 - Cloudflare creó automáticamente el Preview **encolado** `dc237372-9a3a-4da4-b0a0-205bdcec9c14` para el push `6da757b`, pese al prefijo. Se verificó que era exclusivamente Preview de esta rama/SHA y que no era canonical, y se retiró antes de comenzar el build. No se cambió configuración del proyecto, main ni su D1. Esta limpieza es la única mutación correctiva sobre un objeto Preview principal durante el cierre; no ocultarla ni afirmar que el webhook no ocurrió.
 
 Si ocurre otra vez en la continuidad: consultar proyecto y despliegue; comprobar `environment=preview`, rama Queen, SHA del propio push e ID diferente del canonical; solo entonces cancelar/retirar **ese Preview automático**, nunca el canonical, un despliegue main o trabajo de otra rama. El prefijo no sustituye esa comprobación.
+
+</details>
