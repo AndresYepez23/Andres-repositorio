@@ -1,5 +1,17 @@
 # QUEEN — continuidad técnica y cierre de sesión
 
+## Captura única de residencia preparada desde `25a9c9e` — 13/11/2026
+
+Se leyeron los dos documentos solicitados y se continuó exactamente el checkpoint publicado, con árbol inicial limpio. No se encontró una identidad SSH disponible en la configuración declarada del entorno actual; no se abrieron ni leyeron claves, entornos o credenciales. **Única intervención manual pendiente:** ejecutar el bloque consolidado de [VPS-RESIDENCY.md](../neural-pilot/staging/VPS-RESIDENCY.md) dentro de la SSH de GenixNode y adjuntar `queen-residency-evidence.tar.gz`. El PR conserva la versión fijada al commit. No repetir monitor/sonda anterior ni pedir más bloques de diagnóstico generales.
+
+El lector `inspect-vps-residency.py` reúne dos observaciones pasivas separadas por cinco segundos (plazo global 45 s): PID real de llama-server, smaps/RSS/PSS anon-file/GGUF y candidatos de grandes mapas con nombres opacos, límites Docker filtrados y cgroups v1/v2 con ancestros/montajes reales, memory.high/max, eventos/refault/fallos, io.max/estadísticas y dispositivos. Solo guarda metadata; no lee contenidos de archivos mapeados, env, cmdline, claves o logs. Docker usa socket local y configuración temporal vacía para evitar credenciales/contextos heredados. Conserva campos parciales ante error y no presenta lecturas ausentes como ilimitadas o cero.
+
+Seis comprobaciones offline dirigidas del nuevo lector aprobadas; ayudan a que una única captura sea útil y segura. No se repitieron las 236 pruebas Node ni las 19 Python previas manualmente, ni se añadió evaluación neuronal/offline de Queen. Los tests nuevos se incorporan al descubrimiento Python existente de CI. [Evidencia](queen-residency-reader-2026-11-13/checks.json).
+
+**Límite de interpretación:** estas lecturas no separan KV/compute/cache dentro de la memoria anónima. Esos campos son desconocidos, no cero. Un GGUF no visible por nombre puede estar mapeado con un hash de caché o cargado sin mmap; se conservan los grandes mapas de archivo sin rutas para no perder esa información. Las observaciones pasivas y los contadores acumulados no se atribuyen retrospectivamente al timeout histórico.
+
+**Puerta de aprobación explícita del usuario:** no tocar el VPS hasta presentar intervención y riesgos y recibir su aprobación. Cuando lleguen los datos, elegir la corrección mínima basada en memoria/limitación/almacenamiento, manteniendo Qwen3.5-2B y contexto. Solo después de aplicar una corrección aprobada se autoriza una generación controlada, con TTFT/tokens/s/recursos, distinta de la sonda anterior. Luego pruebas operativas, 8+11 casos y snapshot limpio de staging. No ejecutar lotes mientras siga bloqueado. Preparar incorporación a producción sin fusionar o desplegar main/prismaspace/D1 principal. No hubo solicitudes a Qwen, SSH, cambio de parámetros, reinstalación, rotación de secretos ni nuevo despliegue aislado en esta continuación.
+
 ## Evidencia real de GenixNode recibida — 13/11/2026
 
 **Leer este bloque primero.** El usuario entregó `queen-evidence.tar.gz`; ya no faltan las mediciones físicas originales. [Diagnóstico completo](queen-genix-diagnosis-2026-11-13.md), [resultados preservados](queen-genix-evidence-2026-11-13/), [análisis reproducible](queen-genix-evidence-2026-11-13/analysis.json). Los tres scripts adjuntos coinciden con `6673124`; no se ejecutó el código adjunto. Se conservaron todas las correcciones locales de `2b8fc198dd0ef3287c4ef2d995d4577decca0ae3`.
