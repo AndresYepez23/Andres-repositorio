@@ -18,11 +18,13 @@ const output = new URL("./dist/", import.meta.url);
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
-for (const file of ["index.html", "styles.css", "aurora-system.css", "_headers", "privacy.html", "about.html", "manifest.webmanifest"]) {
+for (const file of ["index.html", "styles.css", "aurora-system.css", "_headers", "privacy.html", "manifest.webmanifest"]) {
   await copyFile(new URL("./" + file, import.meta.url), new URL("./dist/" + file, import.meta.url));
 }
 
 await copyFile(new URL("./seo/landing.css", import.meta.url), new URL("./dist/seo.css", import.meta.url));
+
+await copyFile(new URL("./about.html", import.meta.url), new URL("./dist/acerca.html", import.meta.url));
 
 for (const dir of ["src", "assets"]) {
   await cp(new URL("./" + dir, import.meta.url), new URL("./dist/" + dir, import.meta.url), { recursive: true });

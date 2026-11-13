@@ -140,6 +140,18 @@ test('English app shell and legal page use English metadata and provide a Spanis
  assert.ok(legal.includes('href="/privacy.html"'));
  assert.ok(urls.includes(SEO_BASE+'/en/'));
  assert.ok(urls.includes(SEO_BASE+'/en/privacy.html'));
+ const about=await readOutput('en/about.html');
+ const spanishAbout=await readOutput('acerca.html');
+ assert.match(about,/<html lang="en"/);
+ assert.ok(about.includes('About Prisma Space'));
+ assert.ok(spanishAbout.includes('Acerca de Prisma Space'));
+ assert.ok(urls.includes(SEO_BASE+'/acerca.html'));
+ assert.ok(urls.includes(SEO_BASE+'/en/about.html'));
+ assert.ok(legal.includes('Google AdSense'));
+ assert.ok(legal.includes('Supabase Auth'));
+ const spanishLegal=await readOutput('privacy.html');
+ assert.ok(spanishLegal.includes('Google AdSense'));
+ assert.ok(spanishLegal.includes('Supabase Auth'));
 });
 
 test('bilingual sitemap exposes paired alternates for every published page',async()=>{
