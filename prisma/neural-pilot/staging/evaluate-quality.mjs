@@ -14,7 +14,7 @@ if(base.protocol!=='https:'||!(/^(?:[0-9a-f]{8}\.)?prisma-queen-staging\.pages\.
 if(live&&!/^[0-9a-f]{8}\.prisma-queen-staging\.pages\.dev$/.test(base.hostname))throw Error('IMMUTABLE_STAGING_DEPLOYMENT_REQUIRED');
 const output=resolve(arg('output')||'work/queen-quality-'+Date.now()+'.json');
 const report={date:new Date().toISOString(),base:base.origin,suite,suiteSha256:createHash('sha256').update(JSON.stringify(all)).digest('hex'),
- databaseId:'980bad8f-0356-48b9-87bc-56bcf363f69a',status:'prepared',mode:live?'live-neural':'offline-preparation',
+ databaseId:'980bad8f-0356-48b9-87bc-56bcf363f69a',status:'prepared',mode:live?'live-neural':'offline-preparation',maxInferencesPerEvaluationCase:1,
  fixtureScope:'Synthetic attachment metadata and fixed user requests; file contents are not sent or verified. In live mode Queen responses are authentic, never response fixtures.',
  methodology:'Expected labels remain in the client evaluator. /__queen/plan forces neural planning; the ordinary product route is used only by the optional local control. Local catalog/intent/validation gates still constrain Qwen. New cases were held out when introduced, not a perpetual unseen benchmark.',
  toolsExecuted:[],verifiedArtifacts:[],physicalVpsMetrics:null,specialistCalls:0,rows:[]};
@@ -66,6 +66,7 @@ try{
   for(const c of selected){
    const request=evaluationRequest(c,report.providers?.body.providers||[]);
    if(!request){report.rows.push({id:c.id,category:c.category,status:'blocked-no-observed-unavailable-provider',realInference:false});await save();continue;}
+   request.maxInferences=1;
    const result=await call('plan',{body:request});
    const row={id:c.id,category:c.category,request,expected:c.expect,status:result.body.realInference===true?'measured':'failed',
     decisionSource:result.body.source||'unavailable',result,neural:inferenceEvidence(result.body),assessment:assessEvaluation(c,result.body),toolsExecuted:[],verifiedArtifacts:[]};

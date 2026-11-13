@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,readFileSync,writeFileSync,chmodSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -85,4 +85,70 @@ test('offline evaluation requires neither credentials nor network and records no
   assert.equal(report.rows.every(r=>r.status==='not-requested'&&r.realInference===false),true);
   assert.deepEqual(report.verifiedArtifacts,[]);
  }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+// The --live branch below runs against an executable fixture called curl.
+// PATH contains only this fixture: no network client or model can be invoked.
+function runWithFakeCurl(mode){
+ const directory=mkdtempSync(join(tmpdir(),'queen-fake-curl-'));
+ const keyfile=join(directory,'dummy-key'),capture=join(directory,'payloads.jsonl'),output=join(directory,'report.json'),curl=join(directory,'curl');
+ writeFileSync(keyfile,'a'.repeat(64),{mode:0o600});
+ writeFileSync(curl,`#!${process.execPath}
+const fs=require('node:fs');
+const args=process.argv.slice(2),target=args.find(a=>a.startsWith('https://'));
+process.stdin.resume();
+process.stdin.on('end',()=>{
+ const route=new URL(target).pathname,index=args.indexOf('--data');
+ const body=index<0?null:JSON.parse(args[index+1]);
+ fs.appendFileSync(process.env.QUEEN_FAKE_CURL_CAPTURE,JSON.stringify({route,...(body?{body}:{})})+'\\n');
+ const databaseId='980bad8f-0356-48b9-87bc-56bcf363f69a';
+ let response,status=200;
+ if(route==='/__queen/health')response={ok:true,databaseId,missingSecrets:[]};
+ else if(route==='/__queen/plan'&&process.env.QUEEN_FAKE_CURL_MODE==='timeout'){
+  status=503;response={ok:false,code:'QUEEN_TIMEOUT',diagnostics:{completionTransportAttempted:true,inferencesAttempted:1,completedInferences:0,trace:[]}};
+ }else if(route==='/__queen/plan')response={ok:true,source:'queen',realInference:true,
+  plan:{intent:'question',message:'Respuesta fixture de transporte',steps:[],execution:{executed:false,verified:false}},
+  metrics:{inferences:1,inputTokens:2,outputTokens:3}};
+ else {status=404;response={ok:false,code:'UNEXPECTED_FIXTURE_ROUTE'};}
+ process.stdout.write(JSON.stringify(response)+'\\n'+status);
+});
+`);
+ chmodSync(curl,0o700);
+ try{
+  const run=spawnSync(process.execPath,['prisma/neural-pilot/staging/evaluate-quality.mjs','--live','--suite=original',
+   '--base=https://16436df0.prisma-queen-staging.pages.dev','--output='+output],{
+   cwd:new URL('../..',import.meta.url),encoding:'utf8',timeout:10000,
+   env:{PATH:directory,QUEEN_STAGING_OPERATOR_KEY_FILE:keyfile,QUEEN_FAKE_CURL_CAPTURE:capture,QUEEN_FAKE_CURL_MODE:mode}});
+  return {run,report:JSON.parse(readFileSync(output,'utf8')),calls:readFileSync(capture,'utf8').trim().split('\n').map(JSON.parse)};
+ }finally{rmSync(directory,{recursive:true,force:true});}
+}
+
+test('live runner emits only eight original plan payloads with one inference each, without expected labels',()=>{
+ const {run,report,calls}=runWithFakeCurl('success');
+ assert.equal(run.status,0,run.stderr);
+ assert.equal(report.maxInferencesPerEvaluationCase,1);
+ assert.equal(report.status,'evaluated-awaiting-semantic-review');
+ const plans=calls.filter(c=>c.route==='/__queen/plan');
+ assert.equal(calls.length,9);assert.equal(calls[0].route,'/__queen/health');assert.equal(plans.length,8);
+ assert.deepEqual(plans.map(c=>c.body.text),evaluationCases('original').map(c=>c.request.text));
+ for(const c of plans){
+  assert.equal(c.body.maxInferences,1);
+  assert.deepEqual(Object.keys(c.body).sort(),['files','maxInferences','text']);
+  assert.ok(!JSON.stringify(c.body).includes('expectedTools'));
+  assert.ok(!JSON.stringify(c.body).includes('messageAll'));
+ }
+ assert.equal(report.summary.backendPlanningRequests,8);assert.equal(report.summary.queenCalls,8);
+ assert.equal(report.summary.specialistCalls,0);assert.equal(report.summary.semanticReviewsPending,8);
+ assert.deepEqual(report.toolsExecuted,[]);assert.deepEqual(report.verifiedArtifacts,[]);
+});
+
+test('live runner saves first timeout and stops without requesting a second case or retry',()=>{
+ const {run,report,calls}=runWithFakeCurl('timeout');
+ assert.equal(run.status,1,run.stderr);
+ assert.equal(calls.length,2);assert.equal(calls.filter(c=>c.route==='/__queen/plan').length,1);
+ assert.equal(calls[1].body.maxInferences,1);
+ assert.equal(report.status,'stopped');assert.equal(report.rows.length,1);
+ assert.equal(report.stoppedAfter,evaluationCases('original')[0].id);
+ assert.equal(report.summary.queenCalls,1);assert.equal(report.summary.completionsObserved,0);
+ assert.equal(report.summary.unknownOutcomes,1);assert.equal(report.summary.reportedTokens.output,null);
 });
