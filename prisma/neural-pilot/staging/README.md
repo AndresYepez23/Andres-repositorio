@@ -30,7 +30,7 @@ node prisma/neural-pilot/staging/build.cjs
 
 Wrangler 4.161.0 y esbuild están en tooling, fuera del repositorio. El builder compila usando `--config wrangler.staging.toml` y verifica el UUID. No despliega ni ejecuta SQL. Subir `worker.js` como `_worker.js` **solo a prisma-queen-staging**, con la rama del PR y el SHA real. Los paquetes experimentales llevan `commit_dirty=true`; la evidencia distingue esas versiones de un paquete construido desde un commit limpio. Staging necesita `nodejs_compat` por los polyfills de Wrangler.
 
-Al actualizar el PR, usar un mensaje de commit que empiece por **`[CF-Pages-Skip]`**. El proyecto principal tiene previews automáticos para todas las ramas: este prefijo documentado evita que el push genere un despliegue allí, sin cambiar su configuración. Los checks de GitHub continúan disponibles. Referencia: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/#skipping-a-build-via-a-commit-message.
+Al actualizar el PR, usar un mensaje de commit que empiece por **`[CF-Pages-Skip]`**. El proyecto principal tiene previews automáticos para todas las ramas: el prefijo está documentado para omitirlo, pero en esta cuenta se creó igualmente un Preview encolado y fue retirado antes del build. No confiar en el prefijo sin verificar el evento. No cambiar configuración principal sin autorización. El CI del código pasó; el commit final de documentación usa también `[CI Skip]`. Referencia: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/#skipping-a-build-via-a-commit-message.
 
 ## Evaluación neuronal real
 

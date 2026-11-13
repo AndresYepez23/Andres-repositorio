@@ -135,7 +135,6 @@
   "baselineTests": 192,
   "currentTests": 210,
   "mainModified": false,
-  "primaryPagesModified": false,
   "primaryD1Modified": false,
   "prDraft": true,
   "laterGenerationState": "After a five-minute quiet period, 8-token inference again timed out after 55 seconds; all three Queen secrets remain available. No further neural trials before the requested handoff.",
@@ -164,5 +163,19 @@
   "mainBaselineSha": "42dade166714c6eaaff210fe0377cfba68da8d9c",
   "mainObservedBeforeHandoffPush": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
   "mainWrittenByThisSession": false,
-  "mainConcurrentChangesNote": "Remote main advanced externally; this session did not push main, rebase or deploy prismaspace."
+  "mainConcurrentChangesNote": "Remote main advanced externally; this session did not push main, rebase or deploy prismaspace.",
+  "primaryPagesConfigurationModified": false,
+  "primaryPagesProductionModified": false,
+  "automaticQueenPreviewCleanup": {
+    "deploymentId": "dc237372-9a3a-4da4-b0a0-205bdcec9c14",
+    "stateBeforeRemoval": "queued, no build started",
+    "triggerSha": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+    "removed": true,
+    "reason": "Unexpected automatic preview despite CF-Pages-Skip; prevent publication while preserving canonical production"
+  },
+  "implementationCommit": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+  "codeCiRun": {
+    "id": 43440104293,
+    "conclusion": "success"
+  }
 }

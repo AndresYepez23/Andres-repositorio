@@ -13,6 +13,9 @@
   "contextTokens": 2048,
   "slots": 1,
   "maxOutputTokens": 256,
-  "primaryProjectModified": false,
-  "mainSha": "42dade166714c6eaaff210fe0377cfba68da8d9c"
+  "mainSha": "42dade166714c6eaaff210fe0377cfba68da8d9c",
+  "primaryProductionModified": false,
+  "primaryConfigurationModified": false,
+  "implementationPreservedInCommit": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+  "mainShaIsSessionBaseline": true
 }

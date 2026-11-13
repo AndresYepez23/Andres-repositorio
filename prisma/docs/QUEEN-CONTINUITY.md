@@ -7,7 +7,7 @@ Estado conservado el **13/11/2026, UTC**, por solicitud de migración a otra cue
 - Repositorio: `AndresYepez23/PRISMA`.
 - Rama remota: **`feature/prisma-neural-genixnode-qwen35-pilot`**.
 - PR existente: **https://github.com/AndresYepez23/PRISMA/pull/125**, mantener **draft**, sin fusionar.
-- Base publicada al retomar: `a9c6fc9ebb7e69fb7196cc6f954622c4f43e8aef`. El commit de implementación de este cierre se registra al final de este documento después del primer push.
+- Base publicada al retomar: `a9c6fc9ebb7e69fb7196cc6f954622c4f43e8aef`. Commit de implementación y evidencias del cierre: **`6da757ba5d7aa4ca10d97a8adcb71836cf472d26`**, ya publicado y verificado en GitHub.
 - Historial que debe conservarse: `3d3da5e19ec40f32d3b4f96f0aff51380dc3e634` (integración central), `bb38210d4fd687894dcef05ae0730001455d5b22` (staging aislado), `a9c6fc9...` (evidencia previa).
 - Último despliegue **verificado** del proyecto aislado: **`2368e044-b65a-446e-87e5-b0a910cac9f2`**, https://2368e044.prisma-queen-staging.pages.dev, entorno Pages **Production**, lógico `staging`.
 - Ese despliegue se construyó desde el árbol de trabajo que se conserva en este cierre: sus metadatos todavía dicen `a9c6fc9...`, **`commit_dirty=true`**. No fingir que ya corresponde a un nuevo commit limpio. Hash y tamaño exactos del paquete: [deployment-manifest.json](queen-live-2026-11-13/deployment-manifest.json).
@@ -25,7 +25,7 @@ Estado conservado el **13/11/2026, UTC**, por solicitud de migración a otra cue
 6. **No trabajar en Prisma Developer ni en el plugin de ChatGPT.** Esas integraciones se desarrollan por separado. La referencia existente a `developer-api.js` se reutiliza como fuente del planificador local; no es una nueva misión sobre Developer.
 7. No declarar éxito operativo porque los ocho casos mínimos de intención hayan pasado.
 
-El proyecto principal tiene previews automáticos para todas las ramas. **Todo commit que se suba durante esta misión debe empezar por `[CF-Pages-Skip]`**, para que Cloudflare omita ese despliegue sin cambiar la configuración del proyecto principal. GitHub Actions sí debe seguir ejecutando sus checks. Referencia oficial: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/#skipping-a-build-via-a-commit-message.
+El proyecto principal tiene previews automáticos para todas las ramas. Se utilizó el prefijo documentado **`[CF-Pages-Skip]`**, pero **no bastó para evitar que esta cuenta crease un Preview encolado**. No tratar ese prefijo como garantía: verificar los eventos después del push y no permitir una publicación principal. Para el commit final solo de documentación se usa `[CI Skip] [CF-Pages-Skip]`; el CI del código ya pasó. No cambiar la configuración de prismaspace sin autorización. Referencia oficial: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/#skipping-a-build-via-a-commit-message.
 
 ## 3. Recursos y secretos
 
@@ -230,3 +230,14 @@ Las evidencias válidas del workspace se trasladaron al repositorio; no depender
 ## Registro del cierre remoto
 
 El primer push de este cierre contiene implementación, evidencias y este documento. El siguiente commit de documentación registra su SHA y la comprobación remota. Para el SHA del propio documento, consultar el historial/permalink en GitHub o ejecutar `git log -1`; un archivo no puede incluir el hash de su propio commit sin cambiarlo. El informe final al usuario aporta ese último SHA verificable.
+
+### Verificación remota del cierre
+
+- Código, evidencia y primera versión de continuidad: [`6da757ba5d7aa4ca10d97a8adcb71836cf472d26`](https://github.com/AndresYepez23/PRISMA/commit/6da757ba5d7aa4ca10d97a8adcb71836cf472d26).
+- GitHub Actions del código: **success**, [Prisma Core checks #533](https://github.com/AndresYepez23/PRISMA/actions/runs/43440104293). Las 210 pruebas completas también constan en el log local conservado.
+- Se leyeron desde GitHub por SHA el documento, el resumen y código del coordinador. El blob XLSX remoto `089c409eecf5a083e3d3b73383f0501cc2f1a854` coincide con `git hash-object` local.
+- PR #125 actualizado, **open, draft=true, merged=false**.
+- Producción principal: canonical `67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08`, main `4b24fe6...`; Queen desactivada allí, binding original conservado, consulta de solo lectura: **cero tablas queen_%**.
+- Cloudflare creó automáticamente el Preview **encolado** `dc237372-9a3a-4da4-b0a0-205bdcec9c14` para el push `6da757b`, pese al prefijo. Se verificó que era exclusivamente Preview de esta rama/SHA y que no era canonical, y se retiró antes de comenzar el build. No se cambió configuración del proyecto, main ni su D1. Esta limpieza es la única mutación correctiva sobre un objeto Preview principal durante el cierre; no ocultarla ni afirmar que el webhook no ocurrió.
+
+Si ocurre otra vez en la continuidad: consultar proyecto y despliegue; comprobar `environment=preview`, rama Queen, SHA del propio push e ID diferente del canonical; solo entonces cancelar/retirar **ese Preview automático**, nunca el canonical, un despliegue main o trabajo de otra rama. El prefijo no sustituye esa comprobación.

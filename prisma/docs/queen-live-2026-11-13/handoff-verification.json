@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-11-13T14:14:45.548330+00:00",
+  "implementationCommit": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+  "remoteBranch": "feature/prisma-neural-genixnode-qwen35-pilot",
+  "remoteHeadMatched": true,
+  "pr": {
+    "number": 125,
+    "draft": true,
+    "merged": false
+  },
+  "githubFilesReadBack": [
+    "prisma/docs/QUEEN-CONTINUITY.md",
+    "prisma/docs/queen-live-2026-11-13/summary.json",
+    "prisma/src/queen-handoff.js",
+    "prisma/docs/queen-live-2026-11-13/artifacts/ocr-excel-prisma-datos.xlsx"
+  ],
+  "xlsxGitBlobSha": "089c409eecf5a083e3d3b73383f0501cc2f1a854",
+  "xlsxRemoteAndLocalMatch": true,
+  "codeCi": {
+    "run": 43440104293,
+    "conclusion": "success",
+    "url": "https://github.com/AndresYepez23/PRISMA/actions/runs/43440104293"
+  },
+  "primaryCanonicalBeforeAndAfterPush": "67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08",
+  "primaryCanonicalCommit": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
+  "primaryQueenEnabled": false,
+  "primaryQueenTablesReadOnlyCount": 0,
+  "unexpectedAutomaticPreviewRemoved": "dc237372-9a3a-4da4-b0a0-205bdcec9c14",
+  "previewStateBeforeRemoval": "queued; no build started",
+  "configurationOrMainMutated": false,
+  "nextDocumentationCommit": "Contains this verification; obtain its SHA from Git history or the final handoff response."
+}
