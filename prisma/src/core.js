@@ -532,10 +532,11 @@ function renderImageModelControls(){
   }
   const list=document.createElement('div');list.className='core-create-options';
   for(const {provider,model} of entries){
-   const supported=group.key==='image'&&CREATE_IMAGE_PROVIDERS.includes(provider);
-   const availability=supported?providerAvailability(provider,'image'):{available:false,reason:group.key==='audio'?'Usar desde las herramientas de transcripción':'No conectado a generación'};
+   const isTranscription=group.key==='audio'&&['groq','cloudflare'].includes(provider)&&/whisper/i.test(String(model.id));
+   const supported=(group.key==='image'&&CREATE_IMAGE_PROVIDERS.includes(provider))||isTranscription;
+   const availability=isTranscription?{available:Boolean(centralFeatures?.[provider+'Audio']),reason:'Motor de transcripción temporalmente no disponible'}:supported?providerAvailability(provider,'image'):{available:false,reason:'No conectado a generación'};
    const ready=supported&&availability.available;
-   const chosen=ready&&activeChatRecord()?.creativeMode==='image'&&selected.provider===provider&&selected.model===model.id;
+   const chosen=ready&&activeChatRecord()?.creativeMode===(isTranscription?'transcription':'image')&&(isTranscription?activeChatRecord()?.transcriptionSelection?.provider===provider&&activeChatRecord()?.transcriptionSelection?.model===model.id:selected.provider===provider&&selected.model===model.id);
    const row=document.createElement('button');row.type='button';row.className='core-create-option'+(chosen?' is-current':'');
    row.disabled=!ready;row.setAttribute('aria-pressed',String(Boolean(chosen)));
    const copy=document.createElement('span');copy.className='core-create-option-copy';
@@ -546,12 +547,12 @@ function renderImageModelControls(){
    copy.append(name,providerLabel,purpose);
    const state=document.createElement('span');state.className='core-create-option-state';
    state.textContent=chosen?'Elegido':ready?'Elegir':supported?availability.reason:'Solo catálogo';
-   row.title=ready?'Crear imágenes con '+(model.name||model.id):availability.reason;
+   row.title=ready?(isTranscription?'Transcribir audio con ':'Crear imágenes con ')+(model.name||model.id):availability.reason;
    row.append(copy,state);
    if(ready)row.addEventListener('click',()=>{
     const chat=activeChatRecord();if(!chat)return;
-    chat.imageSelection={provider,model:model.id};chat.updated=Date.now();
-    persistChatHistory();setCoreCreativeMode('image');
+    if(isTranscription){chat.transcriptionSelection={provider,model:model.id};chat.creativeMode='transcription';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();$('.core-model-settings').open=false;status('Modelo de transcripción elegido. Adjunta un archivo de audio para transcribirlo.','success');}
+    else{chat.imageSelection={provider,model:model.id};chat.updated=Date.now();persistChatHistory();setCoreCreativeMode('image');}
    });
    list.append(row);
   }
@@ -2522,10 +2523,23 @@ function createExecutionResults(executed,partial){
   });
   return wrapper;
 }
+async function transcribeSelectedAudio(file,selection){
+ const form=new FormData();
+ form.append('file',file,file.name||'audio.wav');
+ form.append('provider',selection.provider);
+ form.append('model',selection.model);
+ const response=await fetch('/api/ai/transcribe',{method:'POST',body:form,headers:{Origin:location.origin}});
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok||!result.ok||!String(result.text||'').trim())
+  throw new Error(String(result.error||'El proveedor no devolvió una transcripción válida.'));
+ return String(result.text).trim();
+}
 async function sendMessage(){
   if(busy)return;
   const input=$('#core-input'),text=input.value.trim();
   if(!text&&!attachments.length)return;
+  const transcriptionMode=activeChatRecord()?.creativeMode==='transcription';
+  if(transcriptionMode&&!attachments.some(file=>file.type?.startsWith('audio/')||/\\.(mp3|m4a|wav|ogg|opus|webm|flac|aac)$/i.test(file.name))){status('Adjunta un archivo de audio para transcribirlo.','warning');return;}
   // Preserve both the draft and attached files when a fifth guest task is
   // requested. The onboarding gate is cumulative across local chats.
   if(!canGuestSubmit({signedIn:isPrismaAuthenticated(),count:readGuestTaskCount(localStorage),
@@ -2554,7 +2568,15 @@ async function sendMessage(){
     'Analiza los archivos adjuntos y recomienda operaciones útiles.');
   setBusy(true);
   try{
-    if(activeChat?.creativeMode==='image'&&!filesNow.length){
+    if(activeChat?.creativeMode==='transcription'){
+      const audio=filesNow.find(file=>file.type?.startsWith('audio/')||/\\.(mp3|m4a|wav|ogg|opus|webm|flac|aac)$/i.test(file.name));
+      const selection=activeChat.transcriptionSelection;
+      if(!selection||!['groq','cloudflare'].includes(selection.provider))throw new Error('Selecciona un motor de transcripción disponible.');
+      const transcript=await transcribeSelectedAudio(audio,selection);
+      addMessage('assistant',transcript);
+      attachments=[];renderAttachments();
+      status('Transcripción completada con '+selection.provider+'.','success');
+    }else if(activeChat?.creativeMode==='image'&&!filesNow.length){
       await refreshCoreProviderStatus();
       await generateVisualRequest(requestText,credentials(),'image');
     }else await requestPlan(requestText);
