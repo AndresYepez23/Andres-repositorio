@@ -526,10 +526,11 @@ function renderImageModelControls(){
    for(const model of models)if(model?.id&&!entries.some(x=>x.provider===provider&&x.model.id===model.id))entries.push({provider,model});
   }
   if(group.key==='audio'){
-   // Local browser speech: no Pollinations credits or remote TTS calls.
-   entries.push({provider:'browser',model:{
-    id:'browser-speech',name:'Lectura de texto · voz local',
-    specialty:'Convierte a audio: escucha texto con las voces de tu dispositivo, sin consumir créditos. No exporta MP3.'
+   // Reuse the existing ai-voice tool, including its Pollinations quota,
+   // allowed voices and MP3 validation; do not invent another media API.
+   entries.push({provider:'pollinations',model:{
+    id:'openai/tts-1',name:'Texto a voz · MP3',
+    specialty:'Convierte a audio: genera una narración MP3 a partir del texto o documento.'
    },tts:true});
   }
   // Hide categories without any discovered models. Whisper is already grouped
@@ -539,7 +540,7 @@ function renderImageModelControls(){
   for(const {provider,model,tts=false} of entries){
    const isTranscription=group.key==='audio'&&['groq','cloudflare'].includes(provider)&&/whisper/i.test(String(model.id));
    const supported=(group.key==='image'&&CREATE_IMAGE_PROVIDERS.includes(provider))||isTranscription||tts;
-   const availability=tts?{available:typeof window!=='undefined'&&'speechSynthesis' in window&&'SpeechSynthesisUtterance' in window,reason:'Este navegador no admite lectura por voz'}:isTranscription?{available:Boolean(centralFeatures?.[provider+'Audio']),reason:'Motor de transcripción temporalmente no disponible'}:supported?providerAvailability(provider,'image'):{available:false,reason:'No conectado a generación'};
+   const availability=tts?{available:Boolean(centralFeatures?.pollinationsAudio),reason:'Motor de texto a voz temporalmente no disponible'}:isTranscription?{available:Boolean(centralFeatures?.[provider+'Audio']),reason:'Motor de transcripción temporalmente no disponible'}:supported?providerAvailability(provider,'image'):{available:false,reason:'No conectado a generación'};
    const ready=supported&&availability.available;
    const chosen=ready&&activeChatRecord()?.creativeMode===(tts?'tts':isTranscription?'transcription':'image')&&(tts?true:(isTranscription?activeChatRecord()?.transcriptionSelection?.provider===provider&&activeChatRecord()?.transcriptionSelection?.model===model.id:selected.provider===provider&&selected.model===model.id));
    const row=document.createElement('button');row.type='button';row.className='core-create-option'+(chosen?' is-current':'');
@@ -556,7 +557,7 @@ function renderImageModelControls(){
    row.append(copy,state);
    if(ready)row.addEventListener('click',()=>{
     const chat=activeChatRecord();if(!chat)return;
-    if(tts){chat.creativeMode='tts';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();$('.core-model-settings').open=false;status('Lectura local elegida. Escribe el texto que quieres escuchar. No genera MP3.','success');}
+    if(tts){chat.creativeMode='tts';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();$('.core-model-settings').open=false;status('Texto a voz elegido. Escribe el texto o adjunta un documento.','success');}
     else if(isTranscription){chat.transcriptionSelection={provider,model:model.id};chat.creativeMode='transcription';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();$('.core-model-settings').open=false;status('Modelo de transcripción elegido. Adjunta un archivo de audio para transcribirlo.','success');}
     else{chat.imageSelection={provider,model:model.id};chat.updated=Date.now();persistChatHistory();setCoreCreativeMode('image');}
    });
@@ -2533,18 +2534,6 @@ async function transcribeSelectedAudio(file,selection){
   throw new Error(String(result.error||'El proveedor no devolvió una transcripción válida.'));
  return String(result.text).trim();
 }
-function readTextLocally(command){
- const source=String(command||'').trim();
- let content=inlineSpeechText(source);
- if(!content&&source&&!speechIntent(source))content=source;
- if(!content&&/(?:anterior|ultimo|ultima|tu respuesta|lo que escribiste)/i.test(source)){
-  const previous=messages.slice().reverse().find(item=>item.role==='assistant'&&String(item.content||'').trim());
-  content=String(previous?.content||'').trim();
- }
- if(!content){addMessage('assistant','Escribe el texto que quieres escuchar. Puedes colocar «Convierte a audio» al principio o al final. Esta función usa la voz del navegador y no crea un MP3.');return;}
- addMessage('assistant','Reproduciendo el texto con la voz de tu dispositivo. Esta lectura no consume créditos y no genera un archivo descargable.');
- speakInBrowser(content);
-}
 async function sendMessage(){
   if(busy)return;
   const input=$('#core-input'),text=input.value.trim();
@@ -2580,8 +2569,7 @@ async function sendMessage(){
   setBusy(true);
   try{
     if(activeChat?.creativeMode==='tts'){
-      if(filesNow.length){addMessage('assistant','La lectura local admite texto escrito, no documentos adjuntos. Pega el fragmento que quieres escuchar.');}
-      else readTextLocally(text);
+      await fulfillSpeechRequest('Convierte a audio: '+(text||''));
     }else if(activeChat?.creativeMode==='transcription'){
       const audio=filesNow.find(file=>file.type?.startsWith('audio/')||/\\.(mp3|m4a|wav|ogg|opus|webm|flac|aac)$/i.test(file.name));
       const selection=activeChat.transcriptionSelection;
