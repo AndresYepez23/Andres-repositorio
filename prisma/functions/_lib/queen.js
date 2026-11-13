@@ -25,6 +25,7 @@ export async function queenRequest(env,path,{body,signal,fetchImpl=fetch,timeout
  const config=queenConfig(env);
  const routes={'models':config.base+'/models','completion':config.base+'/chat/completions','tokenize':config.origin+'/tokenize','props':config.origin+'/props','slots':config.origin+'/slots'};
  if(!routes[path])throw new QueenError('QUEEN_ROUTE_NOT_ALLOWED');
+ if(signal?.aborted||!(timeoutMs>0))throw new QueenError('QUEEN_TIMEOUT',503,{completionTransportAttempted:false});
  const controller=new AbortController();
  const abort=()=>controller.abort();if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true});
  const timer=setTimeout(abort,Math.min(55000,Math.max(1,timeoutMs)));
@@ -47,26 +48,33 @@ export async function queenRequest(env,path,{body,signal,fetchImpl=fetch,timeout
 }
 export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,remainingMs=55000,compactMessages=null,maxOutputTokens=QUEEN_LIMITS.maxOutputTokens}={}){
  const config=queenConfig(env),started=Date.now();
- if(env.QUEEN_STAGE==='staging')await requireQueenIdle(env,{fetchImpl,signal});
+ const deadlineAt=started+Math.min(55000,Math.max(0,Number(remainingMs)||0));
+ const remaining=()=>{const ms=deadlineAt-Date.now();if(signal?.aborted||ms<=0)throw new QueenError('QUEEN_TIMEOUT');return ms;};
  maxOutputTokens=Math.max(1,Math.min(QUEEN_LIMITS.maxOutputTokens,Math.floor(Number(maxOutputTokens)||QUEEN_LIMITS.maxOutputTokens)));
  // llama.cpp's own tokenizer, authenticated through the same helper as inference.
  // Include framing reserve. Server context enforcement remains the final guard.
- let inputTokens;
- for(let preflight=0;preflight<2;preflight++){
-  const content=messages.map(m=>m.role+'\n'+m.content).join('\n');
-  if(new TextEncoder().encode(content).length<=12000){
-   const tokens=await queenRequest(env,'tokenize',{body:{content,add_special:true},fetchImpl,signal,timeoutMs:Math.min(5000,remainingMs-(Date.now()-started))});
-   inputTokens=tokens.tokens?.length;
-   if(!Number.isInteger(inputTokens))throw new QueenError('QUEEN_INVALID_RESPONSE');
-   if(inputTokens+maxOutputTokens+128<=QUEEN_LIMITS.contextTokens)break;
+ let inputTokens,completionTimeoutMs;
+ try{
+  if(env.QUEEN_STAGE==='staging')await requireQueenIdle(env,{fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
+  for(let preflight=0;preflight<2;preflight++){
+   const content=messages.map(m=>m.role+'\n'+m.content).join('\n');
+   if(new TextEncoder().encode(content).length<=12000){
+    const tokens=await queenRequest(env,'tokenize',{body:{content,add_special:true},fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
+    inputTokens=tokens.tokens?.length;
+    if(!Number.isInteger(inputTokens))throw new QueenError('QUEEN_INVALID_RESPONSE');
+    if(inputTokens+maxOutputTokens+128<=QUEEN_LIMITS.contextTokens)break;
+   }
+   if(preflight===1||!compactMessages)throw new QueenError('QUEEN_CONTEXT_BUDGET',422,{preflightInputTokens:Number.isInteger(inputTokens)?inputTokens:null,maxOutputTokens,contextLimit:QUEEN_LIMITS.contextTokens,completionTransportAttempted:false});
+   messages=compactMessages();
   }
-  if(preflight===1||!compactMessages)throw new QueenError('QUEEN_CONTEXT_BUDGET',422,{preflightInputTokens:Number.isInteger(inputTokens)?inputTokens:null,maxOutputTokens,contextLimit:QUEEN_LIMITS.contextTokens,completionTransportAttempted:false});
-  messages=compactMessages();
- }
- let result;try{result=await queenRequest(env,'completion',{fetchImpl,signal,timeoutMs:Math.max(1,remainingMs-(Date.now()-started)),body:{
+  // Metadata and compaction spend the same allowance as completion. Exhaustion
+  // must stop before POST, rather than creating an uncertain one-ms request.
+  completionTimeoutMs=remaining();
+ }catch(error){if(error instanceof QueenError)error.diagnostics={...error.diagnostics,preflightInputTokens:inputTokens??null,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,completionTransportAttempted:false,durationMs:Date.now()-started};throw error;}
+ let result;try{result=await queenRequest(env,'completion',{fetchImpl,signal,timeoutMs:completionTimeoutMs,body:{
   model:config.model,messages,temperature:0,max_tokens:maxOutputTokens,stream:false,cache_prompt:true,
   chat_template_kwargs:{enable_thinking:false},response_format:{type:'json_object',schema}
- }});}catch(error){if(error instanceof QueenError)error.diagnostics={...error.diagnostics,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,completionTransportAttempted:true,durationMs:Date.now()-started};throw error;}
+ }});}catch(error){if(error instanceof QueenError)error.diagnostics={...error.diagnostics,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,completionTransportAttempted:error.diagnostics?.completionTransportAttempted!==false,durationMs:Date.now()-started};throw error;}
  const choice=result.choices?.[0];
  const diagnostics={finishReason:['stop','length','tool_calls','content_filter','function_call'].includes(choice?.finish_reason)?choice.finish_reason:null,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,reasoningContentPresent:Boolean(choice?.message?.reasoning_content||choice?.message?.reasoning),thinkingTagsPresent:/<think>/i.test(String(choice?.message?.content||'')),observedInputTokens:Number.isFinite(result.usage?.prompt_tokens)?result.usage.prompt_tokens:null,observedOutputTokens:Number.isFinite(result.usage?.completion_tokens)?result.usage.completion_tokens:null,generationTokensPerSecond:Number(result.timings?.predicted_per_second)||null,promptTokensPerSecond:Number(result.timings?.prompt_per_second)||null};
  if(choice?.finish_reason==='length')throw new QueenError('QUEEN_TRUNCATED_PLAN',422,diagnostics);
@@ -78,8 +86,8 @@ export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,rem
 }
 // A timed-out HTTP request may leave llama.cpp working briefly. Staging must
 // not enqueue another inference merely because its D1 lease was released.
-export async function requireQueenIdle(env,{fetchImpl=fetch,signal}={}){
- const slots=await queenRequest(env,'slots',{fetchImpl,signal,timeoutMs:5000});
+export async function requireQueenIdle(env,{fetchImpl=fetch,signal,timeoutMs=5000}={}){
+ const slots=await queenRequest(env,'slots',{fetchImpl,signal,timeoutMs:Math.min(5000,timeoutMs)});
  if(!Array.isArray(slots)||slots.length!==1)throw new QueenError('QUEEN_SERVER_READINESS',503,{completionTransportAttempted:false});
  if(slots.some(s=>s.is_processing))throw new QueenError('QUEEN_BUSY',429,{serverProcessing:true,completionTransportAttempted:false});
 }
@@ -126,10 +134,14 @@ export async function reserveQueenRequest(env,request,now=Date.now(),{perMinute=
 // Bounded server-side SSE measurement. No generated text or reasoning is logged.
 export async function measureQueenStream(env,{fetchImpl=fetch,signal,maxTokens=32,timeoutMs=55000}={}){
  const config=queenConfig(env),started=Date.now(),controller=new AbortController();
- if(env.QUEEN_STAGE==='staging')await requireQueenIdle(env,{fetchImpl,signal});
- const abort=()=>controller.abort();if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true});
- const timer=setTimeout(abort,Math.min(55000,Math.max(1,timeoutMs)));let reader;
+ const deadlineAt=started+Math.min(55000,Math.max(0,Number(timeoutMs)||0));
+ const remaining=()=>{const ms=deadlineAt-Date.now();if(signal?.aborted||ms<=0)throw new QueenError('QUEEN_TIMEOUT');return ms;};
+ const abort=()=>controller.abort();let timer,reader,completionTransportAttempted=false;
  try{
+  if(env.QUEEN_STAGE==='staging')await requireQueenIdle(env,{fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
+  const completionTimeoutMs=remaining();
+  signal?.addEventListener('abort',abort,{once:true});timer=setTimeout(abort,completionTimeoutMs);
+  completionTransportAttempted=true;
   const response=await fetchImpl(config.base+'/chat/completions',{method:'POST',redirect:'manual',signal:controller.signal,headers:queenHeaders(env),body:JSON.stringify({model:config.model,messages:[{role:'user',content:'Responde únicamente: PRISMA QUEEN preparada.'}],temperature:0,max_tokens:Math.max(1,Math.min(32,maxTokens)),stream:true,stream_options:{include_usage:true},chat_template_kwargs:{enable_thinking:false}})});
   const headersMs=Date.now()-started;
   if(!response.ok){await response.body?.cancel();throw new QueenError(response.status===401||response.status===403?'QUEEN_AUTH_REJECTED':'QUEEN_UPSTREAM_ERROR',503,{route:'stream',upstreamStatus:response.status});}
@@ -148,6 +160,6 @@ export async function measureQueenStream(env,{fetchImpl=fetch,signal,maxTokens=3
   if(firstTokenMs===null)throw new QueenError('QUEEN_EMPTY_STREAM');
   if(!doneSeen||!finishReason)throw new QueenError('QUEEN_INCOMPLETE_STREAM');
   return {realInference:true,streaming:true,headersMs,firstTokenMs,totalMs:Date.now()-started,contentCharacters,events,usage,finishReason:['stop','length'].includes(finishReason)?finishReason:null,thinkingTagsPresent:thinking,reasoningContentPresent:reasoning,timings};
- }catch(error){if(error instanceof QueenError)throw error;throw new QueenError(controller.signal.aborted?'QUEEN_TIMEOUT':'QUEEN_UNREACHABLE',503,{completionTransportAttempted:true});}
+ }catch(error){if(error instanceof QueenError){error.diagnostics={...error.diagnostics,completionTransportAttempted,durationMs:Date.now()-started};throw error;}throw new QueenError(controller.signal.aborted?'QUEEN_TIMEOUT':'QUEEN_UNREACHABLE',503,{completionTransportAttempted,durationMs:Date.now()-started});}
  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);await reader?.cancel().catch(()=>{});reader?.releaseLock();}
 }
