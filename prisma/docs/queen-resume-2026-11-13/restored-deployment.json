@@ -1,0 +1,14 @@
+{
+  "deploymentId": "16436df0-3d50-4e89-9165-b875be731d3f",
+  "url": "https://16436df0.prisma-queen-staging.pages.dev",
+  "project": "prisma-queen-staging",
+  "environment": "production",
+  "sourceCommit": "ed94e25b9f38645a484c740f9f2e3ac3063f3a4f",
+  "commitDirty": false,
+  "sourceMethod": "git archive of preserved remote HEAD; build with documented tooling versions",
+  "workerBytes": 747763,
+  "workerSha256": "dccd715b8d2f4ba100d28df611e664c5efe4295676e5d8b4fe103bae7a2eb779",
+  "operatorHashRotated": true,
+  "queenCredentialSecretsReplaced": false,
+  "isolatedDatabaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+}

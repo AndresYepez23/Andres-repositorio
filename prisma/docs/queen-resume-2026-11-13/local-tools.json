@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-13T14:50:35.754Z",
+  "base": "https://16436df0.prisma-queen-staging.pages.dev",
+  "route": "local-tools",
+  "clientDurationMs": 1054,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "realInference": false,
+    "planSource": "deterministic-test-fixture",
+    "executed": true,
+    "verified": true,
+    "toolIds": [
+      "json-format",
+      "json-minify"
+    ],
+    "text": "{\"prisma\":true,\"valor\":7}",
+    "durationMs": 0,
+    "artifact": {
+      "status": "verified",
+      "evidence": [
+        {
+          "check": "artifact",
+          "passed": true,
+          "bytes": 25,
+          "sha256": "ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c",
+          "checks": [
+            "exists",
+            "nonempty",
+            "sha256",
+            "parsed-json",
+            "parsed-json"
+          ]
+        }
+      ],
+      "unverified": []
+    },
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging"
+  }
+}

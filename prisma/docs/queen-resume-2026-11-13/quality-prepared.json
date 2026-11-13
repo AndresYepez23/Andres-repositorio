@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-13T14:49:17.609Z",
+  "base": "https://prisma-queen-staging.pages.dev",
+  "suite": "all",
+  "suiteSha256": "14d4457fff7fe55e7be05431f63a826ed0ce4e495da7a428e593bed2e3f103a1",
+  "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "status": "prepared",
+  "mode": "offline-preparation",
+  "fixtureScope": "Synthetic attachment metadata and fixed user requests; file contents are not sent or verified. In live mode Queen responses are authentic, never response fixtures.",
+  "methodology": "Expected labels remain in the client evaluator. /__queen/plan forces neural planning; the ordinary product route is used only by the optional local control. Local catalog/intent/validation gates still constrain Qwen. New cases were held out when introduced, not a perpetual unseen benchmark.",
+  "toolsExecuted": [],
+  "verifiedArtifacts": [],
+  "physicalVpsMetrics": null,
+  "specialistCalls": 0,
+  "rows": [
+    {
+      "id": "question-not-permission",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "negation",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "missing-parameter",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "multi-step-pdf",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "json-payload",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "cancel",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "specialist-image",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "unsupported-pdf-ocr-chain",
+      "category": "original",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-word-capability",
+      "category": "paraphrase",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-negated-image",
+      "category": "negation",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-cancel-with-history",
+      "category": "cancellation",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-size-missing",
+      "category": "missing-parameter",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-third-page-word",
+      "category": "composition",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-quoted-instruction",
+      "category": "embedded-instruction",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-previous-artifact-missing",
+      "category": "previous-reference",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-new-file-current-ref",
+      "category": "new-file",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-change-goal",
+      "category": "changed-goal",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-unavailable-provider",
+      "category": "unavailable-provider",
+      "status": "not-requested",
+      "realInference": false
+    },
+    {
+      "id": "heldout-unavailable-hardware",
+      "category": "unsupported-goal",
+      "status": "not-requested",
+      "realInference": false
+    }
+  ],
+  "summary": {
+    "requestedCases": 19,
+    "attemptedCases": 0,
+    "backendPlanningRequests": 0,
+    "acceptedNeuralPlans": 0,
+    "automatedChecksPassed": 0,
+    "semanticReviewsPending": 0,
+    "completionsObserved": 0,
+    "queenCalls": 0,
+    "specialistCalls": 0,
+    "reportedQueenCalls": 0,
+    "queenUsageUnreportedRequests": 0,
+    "unknownOutcomes": 0,
+    "reportedTokens": {
+      "input": null,
+      "output": null,
+      "complete": false
+    },
+    "note": "No operational success rate: these are plans, with necessary automated checks and pending human semantic review. Lost-response tokens are unknown."
+  }
+}

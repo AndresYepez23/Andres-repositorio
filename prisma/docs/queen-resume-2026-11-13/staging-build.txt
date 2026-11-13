@@ -1,0 +1,303 @@
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+
+
+
+ ⛅️ wrangler 4.161.0
+────────────────────
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "pdf-compress" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:113:1:
+[37m      113 │  [32m'pdf-compress'[37m:['compress pdf','reduce pdf file size'],
+          ╵  [32m~~~~~~~~~~~~~~[0m
+
+  The original key "pdf-compress" is here:
+
+    ../src/core-tool-intelligence.js:97:1:
+[37m      97 │  [32m'pdf-compress'[37m:['compress pdf','reduce pdf file size'],
+         ╵  [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "pdf-metadata-clean" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:114:1:
+[37m      114 │  [32m'pdf-metadata-clean'[37m:['remove pdf metadata','clean pdf metadata'],
+          ╵  [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+  The original key "pdf-metadata-clean" is here:
+
+    ../src/core-tool-intelligence.js:101:1:
+[37m      101 │  [32m'pdf-metadata-clean'[37m:['remove pdf metadata','clean pdf metadata'],
+          ╵  [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "pdf-metadata" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:115:1:
+[37m      115 │  [32m'pdf-metadata'[37m:['view pdf metadata','inspect pdf properties'],
+          ╵  [32m~~~~~~~~~~~~~~[0m
+
+  The original key "pdf-metadata" is here:
+
+    ../src/core-tool-intelligence.js:102:1:
+[37m      102 │  [32m'pdf-metadata'[37m:['view pdf metadata','inspect pdf properties'],
+          ╵  [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "pdf-to-image" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:118:1:
+[37m      118 │  [32m'pdf-to-image'[37m:['convert pdf to images','export pdf pages as ima...
+          ╵  [32m~~~~~~~~~~~~~~[0m
+
+  The original key "pdf-to-image" is here:
+
+    ../src/core-tool-intelligence.js:98:1:
+[37m      98 │  [32m'pdf-to-image'[37m:['convert pdf to images','export pdf pages as imag...
+         ╵  [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "image-pdf" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:119:1:
+[37m      119 │  [32m'image-pdf'[37m:['convert images to pdf','images to pdf'],
+          ╵  [32m~~~~~~~~~~~[0m
+
+  The original key "image-pdf" is here:
+
+    ../src/core-tool-intelligence.js:99:1:
+[37m      99 │  [32m'image-pdf'[37m:['convert images to pdf','images to pdf'],
+         ╵  [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "image-metadata" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:127:1:
+[37m      127 │  [32m'image-metadata'[37m:['view image metadata','exif data'],
+          ╵  [32m~~~~~~~~~~~~~~~~[0m
+
+  The original key "image-metadata" is here:
+
+    ../src/core-tool-intelligence.js:103:1:
+[37m      103 │  [32m'image-metadata'[37m:['view image metadata','exif data'],
+          ╵  [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "image-strip-metadata" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:128:1:
+[37m      128 │  [32m'image-strip-metadata'[37m:['remove image metadata','strip exif data...
+          ╵  [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  The original key "image-strip-metadata" is here:
+
+    ../src/core-tool-intelligence.js:104:1:
+[37m      104 │  [32m'image-strip-metadata'[37m:['remove image metadata','strip exif data...
+          ╵  [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDuplicate key "image-watermark" in object literal[0m [duplicate-object-key]
+
+    ../src/core-tool-intelligence.js:133:1:
+[37m      133 │  [32m'image-watermark'[37m:['add watermark to image'],
+          ╵  [32m~~~~~~~~~~~~~~~~~[0m
+
+  The original key "image-watermark" is here:
+
+    ../src/core-tool-intelligence.js:100:1:
+[37m      100 │  [32m'image-watermark'[37m:['add watermark to image','watermark a photo'],
+          ╵  [32m~~~~~~~~~~~~~~~~~[0m
+
+
+▲ [WARNING] Duplicate key "pdf-compress" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:113:1:
+      113 │  'pdf-compress':['compress pdf','reduce pdf file size'],
+          ╵  ~~~~~~~~~~~~~~
+
+  The original key "pdf-compress" is here:
+
+    prisma/src/core-tool-intelligence.js:97:1:
+      97 │  'pdf-compress':['compress pdf','reduce pdf file size'],
+         ╵  ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-metadata-clean" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:114:1:
+      114 │  'pdf-metadata-clean':['remove pdf metadata','clean pdf metadata'],
+          ╵  ~~~~~~~~~~~~~~~~~~~~
+
+  The original key "pdf-metadata-clean" is here:
+
+    prisma/src/core-tool-intelligence.js:101:1:
+      101 │  'pdf-metadata-clean':['remove pdf metadata','clean pdf metadata'],
+          ╵  ~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-metadata" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:115:1:
+      115 │  'pdf-metadata':['view pdf metadata','inspect pdf properties'],
+          ╵  ~~~~~~~~~~~~~~
+
+  The original key "pdf-metadata" is here:
+
+    prisma/src/core-tool-intelligence.js:102:1:
+      102 │  'pdf-metadata':['view pdf metadata','inspect pdf properties'],
+          ╵  ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-to-image" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:118:1:
+      118 │  'pdf-to-image':['convert pdf to images','export pdf pages as ima...
+          ╵  ~~~~~~~~~~~~~~
+
+  The original key "pdf-to-image" is here:
+
+    prisma/src/core-tool-intelligence.js:98:1:
+      98 │  'pdf-to-image':['convert pdf to images','export pdf pages as imag...
+         ╵  ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-pdf" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:119:1:
+      119 │  'image-pdf':['convert images to pdf','images to pdf'],
+          ╵  ~~~~~~~~~~~
+
+  The original key "image-pdf" is here:
+
+    prisma/src/core-tool-intelligence.js:99:1:
+      99 │  'image-pdf':['convert images to pdf','images to pdf'],
+         ╵  ~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-metadata" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:127:1:
+      127 │  'image-metadata':['view image metadata','exif data'],
+          ╵  ~~~~~~~~~~~~~~~~
+
+  The original key "image-metadata" is here:
+
+    prisma/src/core-tool-intelligence.js:103:1:
+      103 │  'image-metadata':['view image metadata','exif data'],
+          ╵  ~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-strip-metadata" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:128:1:
+      128 │  'image-strip-metadata':['remove image metadata','strip exif data...
+          ╵  ~~~~~~~~~~~~~~~~~~~~~~
+
+  The original key "image-strip-metadata" is here:
+
+    prisma/src/core-tool-intelligence.js:104:1:
+      104 │  'image-strip-metadata':['remove image metadata','strip exif data...
+          ╵  ~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-watermark" in object literal [duplicate-object-key]
+
+    prisma/src/core-tool-intelligence.js:133:1:
+      133 │  'image-watermark':['add watermark to image'],
+          ╵  ~~~~~~~~~~~~~~~~~
+
+  The original key "image-watermark" is here:
+
+    prisma/src/core-tool-intelligence.js:100:1:
+      100 │  'image-watermark':['add watermark to image','watermark a photo'],
+          ╵  ~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-compress" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3608:2:
+      3608 │   "pdf-compress": ["compress pdf", "reduce pdf file size"],
+           ╵   ~~~~~~~~~~~~~~
+
+  The original key "pdf-compress" is here:
+
+    ../queen-staging-build-current/pages/index.js:3593:2:
+      3593 │   "pdf-compress": ["compress pdf", "reduce pdf file size"],
+           ╵   ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-metadata-clean" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3609:2:
+      3609 │   "pdf-metadata-clean": ["remove pdf metadata", "clean pdf metad...
+           ╵   ~~~~~~~~~~~~~~~~~~~~
+
+  The original key "pdf-metadata-clean" is here:
+
+    ../queen-staging-build-current/pages/index.js:3597:2:
+      3597 │   "pdf-metadata-clean": ["remove pdf metadata", "clean pdf metad...
+           ╵   ~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-metadata" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3610:2:
+      3610 │   "pdf-metadata": ["view pdf metadata", "inspect pdf properties"],
+           ╵   ~~~~~~~~~~~~~~
+
+  The original key "pdf-metadata" is here:
+
+    ../queen-staging-build-current/pages/index.js:3598:2:
+      3598 │   "pdf-metadata": ["view pdf metadata", "inspect pdf properties"],
+           ╵   ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "pdf-to-image" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3613:2:
+      3613 │   "pdf-to-image": ["convert pdf to images", "export pdf pages as...
+           ╵   ~~~~~~~~~~~~~~
+
+  The original key "pdf-to-image" is here:
+
+    ../queen-staging-build-current/pages/index.js:3594:2:
+      3594 │   "pdf-to-image": ["convert pdf to images", "export pdf pages as...
+           ╵   ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-pdf" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3614:2:
+      3614 │   "image-pdf": ["convert images to pdf", "images to pdf"],
+           ╵   ~~~~~~~~~~~
+
+  The original key "image-pdf" is here:
+
+    ../queen-staging-build-current/pages/index.js:3595:2:
+      3595 │   "image-pdf": ["convert images to pdf", "images to pdf"],
+           ╵   ~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-metadata" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3622:2:
+      3622 │   "image-metadata": ["view image metadata", "exif data"],
+           ╵   ~~~~~~~~~~~~~~~~
+
+  The original key "image-metadata" is here:
+
+    ../queen-staging-build-current/pages/index.js:3599:2:
+      3599 │   "image-metadata": ["view image metadata", "exif data"],
+           ╵   ~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-strip-metadata" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3623:2:
+      3623 │   "image-strip-metadata": ["remove image metadata", "strip exif ...
+           ╵   ~~~~~~~~~~~~~~~~~~~~~~
+
+  The original key "image-strip-metadata" is here:
+
+    ../queen-staging-build-current/pages/index.js:3600:2:
+      3600 │   "image-strip-metadata": ["remove image metadata", "strip exif ...
+           ╵   ~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate key "image-watermark" in object literal [duplicate-object-key]
+
+    ../queen-staging-build-current/pages/index.js:3628:2:
+      3628 │   "image-watermark": ["add watermark to image"],
+           ╵   ~~~~~~~~~~~~~~~~~
+
+  The original key "image-watermark" is here:
+
+    ../queen-staging-build-current/pages/index.js:3596:2:
+      3596 │   "image-watermark": ["add watermark to image", "watermark a pho...
+           ╵   ~~~~~~~~~~~~~~~~~
+
+{"artifact":"/workspace/work/queen-staging-build-current/worker.js","bytes":748477,"project":"prisma-queen-staging","productionChanged":false}

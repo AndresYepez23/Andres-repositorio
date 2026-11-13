@@ -1,0 +1,34 @@
+{
+  "node": {
+    "tests": 236,
+    "pass": 236,
+    "fail": 0,
+    "log": "node-tests.txt"
+  },
+  "staticBuild": {
+    "pass": true,
+    "embeddedTests": 130,
+    "log": "static-build.txt"
+  },
+  "stagingBuild": {
+    "pass": true,
+    "deployed": false,
+    "workerBytes": 748477,
+    "workerSha256": "8fbda6d059c7000a9057d8ed18819bd957e7fed68b5d87b659c881904712d7be",
+    "log": "staging-build.txt"
+  },
+  "browser": {
+    "realEngines": true,
+    "realInference": false,
+    "sourceTree": "local new runtime; current PR checkpoint",
+    "passed": [
+      "digital-pdf-word",
+      "changed-files"
+    ],
+    "failures": [],
+    "log": "browser-controls.json"
+  },
+  "neuralRegressionOfNewCode": "blocked by 8-token generation timeout on preserved clean snapshot",
+  "baselineTestsPreserved": 210,
+  "historicalPreQueenTestsPreserved": 192
+}

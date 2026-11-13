@@ -2277,6 +2277,7 @@ async function coordinateWithQueen(userText,resolvedTask){
   }
   const context=queenTaskContext(resolvedTask,activeChatRecord()?.modelSelection);
   status('Queen está interpretando la solicitud…');
+  const queenStartedAt=Date.now();
   queenPlanningController=new AbortController();setBusy(true);
   const response=await requestQueenPlan({text:userText,files:resolvedTask.files,context},{signal:queenPlanningController.signal});
   queenPlanningController=null;
@@ -2297,7 +2298,7 @@ async function coordinateWithQueen(userText,resolvedTask){
   if(plan.intent!=='execute')return false;
   attachments=resolvedTask.files;renderAttachments();
   const steps=plan.steps.map(step=>({tool:tools.find(t=>t.id===step.tool_id),params:step.params,reason:step.id}));
-  const queenPlan={...plan,queen:true,userRequest:userText,queenMetrics:response.metrics,queenContext:context};
+  const queenPlan={...plan,queen:true,userRequest:userText,queenMetrics:response.metrics,queenContext:context,queenStartedAt};
   if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(queenPlan,steps);
   else{pendingPlan={plan:queenPlan,steps};await executeQueenPlan();}
   return true;
@@ -2310,7 +2311,7 @@ async function executeQueenPlan(){
   const state=plan.queenState||createQueenExecutionState();
   try{
     const outcome=await executeQueenDAG(plan,sourceFiles,{
-      state,initialInferences:plan.queenMetrics?.inferences||1,
+      state,startedAt:plan.queenStartedAt,initialInferences:plan.queenMetrics?.inferences||1,
       cancel:()=>cancelRequested||activeConversationId!==chatId,
       authorize:()=>true, // Entered through the existing approval panel for external steps.
       run:async(id,files,params,cb)=>{
@@ -2327,8 +2328,8 @@ async function executeQueenPlan(){
         }
         return result;
       },
-      repair:async({step,code})=>{
-        const response=await requestQueenPlan({text:plan.userRequest,files:sourceFiles,context:{...plan.queenContext,failedStep:{id:step.id,tool_id:step.tool_id,params:step.params,code}},repair:true});
+      repair:async({step,code,signal})=>{
+        const response=await requestQueenPlan({text:plan.userRequest,files:sourceFiles,context:{...plan.queenContext,failedStep:{id:step.id,tool_id:step.tool_id,params:step.params,code}},repair:true},{signal});
         if(response?.source!=='queen'||response.plan.steps.length!==1)throw Error('REPAIR_UNAVAILABLE');
         return response.plan.steps[0];
       },

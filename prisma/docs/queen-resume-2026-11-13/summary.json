@@ -1,0 +1,91 @@
+{
+  "missionComplete": false,
+  "baseCommit": "ed94e25b9f38645a484c740f9f2e3ac3063f3a4f",
+  "lastDeployment": {
+    "deploymentId": "16436df0-3d50-4e89-9165-b875be731d3f",
+    "url": "https://16436df0.prisma-queen-staging.pages.dev",
+    "project": "prisma-queen-staging",
+    "environment": "production",
+    "sourceCommit": "ed94e25b9f38645a484c740f9f2e3ac3063f3a4f",
+    "commitDirty": false,
+    "sourceMethod": "git archive of preserved remote HEAD; build with documented tooling versions",
+    "workerBytes": 747763,
+    "workerSha256": "dccd715b8d2f4ba100d28df611e664c5efe4295676e5d8b4fe103bae7a2eb779",
+    "operatorHashRotated": true,
+    "queenCredentialSecretsReplaced": false,
+    "isolatedDatabaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+  },
+  "newCodeDeployed": false,
+  "realInference": {
+    "requestsAttempted": 1,
+    "completionsObserved": 0,
+    "outcomesUnknown": 1,
+    "tokensConsumed": {
+      "input": null,
+      "output": null
+    },
+    "preflightInputTokens": 64,
+    "maxOutputTokens": 8,
+    "httpStatus": 503,
+    "code": "QUEEN_TIMEOUT",
+    "completionDurationMs": 55000,
+    "clientDurationMs": 57614,
+    "ttftMs": null,
+    "repeatedAfterFailure": false
+  },
+  "fixtureTests": "Local transport, deadline, evaluator and plan fixtures; not real Qwen completions",
+  "deterministicRealEngineControls": {
+    "backendJsonComposition": true,
+    "browserRows": [
+      {
+        "id": "digital-pdf-word",
+        "ok": true,
+        "durationMs": 19536
+      },
+      {
+        "id": "changed-files",
+        "ok": true,
+        "durationMs": 4782
+      }
+    ],
+    "fullGoalNeuralCoordination": false
+  },
+  "qualityEvaluation": {
+    "historicalRoundsPreserved": 7,
+    "originalCases": 8,
+    "newCases": 11,
+    "newLiveCasesAttempted": 0,
+    "status": "prepared-offline"
+  },
+  "specialists": {
+    "providerMetadataObserved": true,
+    "chatAvailable": [
+      "kilo"
+    ],
+    "inferenceCalls": 0,
+    "delegationDemonstrated": false
+  },
+  "physicalVpsMetrics": {
+    "ramBytes": null,
+    "cpuPercent": null,
+    "swapBytes": null,
+    "oom": null,
+    "restarts": null,
+    "sshAvailable": false
+  },
+  "constraints": {
+    "contextTokens": 2048,
+    "maxOutputTokens": 256,
+    "concurrentInferences": 1,
+    "inferenceTimeoutMs": 55000,
+    "taskBudgetMs": 120000,
+    "maxSteps": 8,
+    "maxQueenInferences": 2,
+    "mainWritten": false,
+    "primaryD1Written": false,
+    "primaryProjectConfigurationChanged": false,
+    "prDraft": true
+  },
+  "nextStep": "Obtain secure operational GenixNode access or host monitor samples, restore completion generation, deploy new clean branch HEAD only to isolated staging, then small inference and targeted neural operational tests. Do not repeat the timeout without new information.",
+  "previewIncidentRegister": "PR #125 checkpoint body records exact own-SHA automatic previews and any authorized cleanup after publication."
+}

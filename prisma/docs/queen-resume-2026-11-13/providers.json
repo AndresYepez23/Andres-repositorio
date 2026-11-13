@@ -1,0 +1,968 @@
+{
+  "at": "2026-11-13T14:50:35.701Z",
+  "base": "https://16436df0.prisma-queen-staging.pages.dev",
+  "route": "providers",
+  "clientDurationMs": 3959,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "providers": [
+      {
+        "id": "pollinations",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "openai/gpt-5.4-nano",
+                "specialty": "Texto rápido y tareas creativas",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "openai/gpt-oss-20b",
+                "specialty": "Instrucciones y escritura",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "mistralai/mistral-small-3.2",
+                "specialty": "Redacción y conversación",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "qwen/qwen3-coder-30b-a3b-instruct",
+                "specialty": "Programación y explicación de código",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "google/gemma-4-26b-a4b-it",
+                "specialty": "Tareas generales y análisis",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "deepseek/deepseek-v4-flash",
+                "specialty": "Análisis y programación · selección opcional",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": [
+              {
+                "id": "black-forest-labs/flux.1-schnell",
+                "specialty": "Generación de imágenes",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "tongyi-mai/z-image-turbo",
+                "specialty": "Imágenes rápidas",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "gemini",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "gemini-3.5-flash-lite",
+                "specialty": "Respuestas breves",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "gemini-3.8-flash",
+                "specialty": "Tareas complejas",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": [
+              {
+                "id": "gemini-3.1-flash-image",
+                "specialty": "Imagen premium, requiere activación de facturación",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "huggingface",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "openai/gpt-oss-20b:cheapest",
+                "specialty": "Chat rápido y económico",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "openai/gpt-oss-120b:cheapest",
+                "specialty": "Razonamiento avanzado",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "Qwen/Qwen3-4B-Thinking-2507:cheapest",
+                "specialty": "Razonamiento ligero",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "Qwen/Qwen2.5-Coder-32B-Instruct:cheapest",
+                "specialty": "Programación",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "deepseek-ai/DeepSeek-R1:cheapest",
+                "specialty": "Investigación y razonamiento complejo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "google/gemma-3-27b-it:cheapest",
+                "specialty": "Chat e instrucciones",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": [
+              {
+                "id": "stabilityai/stable-diffusion-3-medium-diffusers",
+                "specialty": "Generación de imágenes con HF Inference",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": [
+              {
+                "id": "openai/whisper-large-v3",
+                "specialty": "Transcripción (reserva no habilitada)",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "groq",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "openai/gpt-oss-20b",
+                "specialty": "Chat y planificación rápida",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "openai/gpt-oss-120b",
+                "specialty": "Redacción creativa y razonamiento",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": [
+              {
+                "id": "whisper-large-v3-turbo",
+                "specialty": "Transcripción rápida",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "cloudflare",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "@cf/google/gemma-4-26b-a4b-it",
+                "specialty": "Chat y razonamiento",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+                "specialty": "Alternativa de chat",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "@cf/qwen/qwen3.8-27b",
+                "specialty": "Instrucciones y programación",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
+                "specialty": "Razonamiento y análisis",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": [
+              {
+                "id": "@cf/black-forest-labs/flux-1-schnell",
+                "specialty": "Generación de imágenes con Workers AI",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": [
+              {
+                "id": "@cf/openai/whisper-large-v3-turbo",
+                "specialty": "Respaldo de transcripción · cuota compartida",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "openrouter",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "openrouter/free",
+                "specialty": "Respaldo automático · selecciona modelos gratuitos disponibles",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "kilo",
+        "configured": false,
+        "available": true,
+        "authentication": "unverified",
+        "state": "anonymous",
+        "quotas": {
+          "available": true,
+          "daily": {
+            "used": 0,
+            "limit": 2000,
+            "remaining": 2000,
+            "resetAt": "2026-11-14T00:00:00.000Z"
+          },
+          "minute": null
+        },
+        "retryAt": null,
+        "recentError": "anonymous",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": true,
+            "models": [
+              {
+                "id": "kilo-auto/free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3.5-super-vl:free",
+                "specialty": "Gratis · endpoint NVIDIA de prueba; puede registrar prompts. No enviar datos personales o confidenciales.",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "stealth/glyph-cluster",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "baidu/ernie-5.5-flash-preview:free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "liquid/lfm-3-1.7b:free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "particle-ai/particle-1:free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "dots-studio/dots-3-note-preview:free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3.5-lightning:free",
+                "specialty": "Gratis · endpoint NVIDIA de prueba; puede registrar prompts. No enviar datos personales o confidenciales.",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "cohere/north-mini-code:free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3-ultra-550b-a55b:free",
+                "specialty": "Gratis · endpoint NVIDIA de prueba; puede registrar prompts. No enviar datos personales o confidenciales.",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+                "specialty": "Gratis · endpoint NVIDIA de prueba; puede registrar prompts. No enviar datos personales o confidenciales.",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "openrouter/free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "humansand/ampersand-v0.1",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "reflection/beam-free",
+                "specialty": "Modelo de chat gratuito · precio cero verificado en el catálogo Kilo",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "requesty",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "nvidia/nemotron-3-ultra-550b-a55b",
+                "specialty": "Razonamiento · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3-super-120b-a12b",
+                "specialty": "Razonamiento y agentes · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3-nano-30b-a3b",
+                "specialty": "Chat rápido · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+                "specialty": "Razonamiento multimodal · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "poolside/laguna-xs.2",
+                "specialty": "Código ligero · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "poolside/laguna-m.1",
+                "specialty": "Programación · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "google/gemma-4-31b-it",
+                "specialty": "Chat y razonamiento · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "mistral/leanstral-1-5",
+                "specialty": "Pruebas formales y programación · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/nemotron-3.5-lightning-30b-a3b",
+                "specialty": "Agentes y razonamiento · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "nvidia/muse-glimmer-30b",
+                "specialty": "Razonamiento y herramientas · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "novita/ling-3.1-flash",
+                "specialty": "Razonamiento híbrido · Novita · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "novita/inclusionai/ling-3.0-tiny",
+                "specialty": "Agentes y conversación · Novita · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "sensenova",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "sensenova-6.8-flash-lite",
+                "specialty": "Razonamiento, agentes y multimodalidad · beta gratuita",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "zai",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": [
+              {
+                "id": "glm-4.7-flash",
+                "specialty": "Razonamiento y programación · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "glm-4.5-flash",
+                "specialty": "Conversación rápida · gratuito",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              },
+              {
+                "id": "glm-4.6v-flash",
+                "specialty": "Modelo visual gratuito; este flujo usa solo texto",
+                "contextTokens": null,
+                "maxOutputTokens": null,
+                "tested": false,
+                "evidence": null,
+                "cost": null
+              }
+            ]
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      },
+      {
+        "id": "aihubmix",
+        "configured": false,
+        "available": false,
+        "authentication": "missing",
+        "state": "missing",
+        "quotas": null,
+        "retryAt": null,
+        "recentError": "missing",
+        "lastSuccessAt": null,
+        "latencyMs": null,
+        "costUsd": null,
+        "capabilities": [
+          {
+            "kind": "chat",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "image",
+            "executable": false,
+            "models": []
+          },
+          {
+            "kind": "transcription",
+            "executable": false,
+            "models": []
+          }
+        ],
+        "restrictions": [
+          "existing-rate-limits",
+          "circuit-breakers",
+          "credential-pools",
+          "manual-preference"
+        ]
+      }
+    ],
+    "realProviderInference": false
+  }
+}

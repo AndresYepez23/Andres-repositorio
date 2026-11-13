@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-13T14:50:35.829Z",
+  "base": "https://16436df0.prisma-queen-staging.pages.dev",
+  "route": "local-routing",
+  "clientDurationMs": 1133,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "source": "prisma-core-local",
+    "fallback": true,
+    "execution": {
+      "executed": false,
+      "verified": false
+    },
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "realInference": false
+  }
+}
