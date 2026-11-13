@@ -557,9 +557,9 @@ function renderImageModelControls(){
    row.append(copy,state);
    if(ready)row.addEventListener('click',()=>{
     const chat=activeChatRecord();if(!chat)return;
-    if(tts){chat.creativeMode='tts';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();$('.core-model-settings').open=false;status('Texto a voz elegido. Escribe el texto o adjunta un documento.','success');}
-    else if(isTranscription){chat.transcriptionSelection={provider,model:model.id};chat.creativeMode='transcription';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();$('.core-model-settings').open=false;status('Modelo de transcripción elegido. Adjunta un archivo de audio para transcribirlo.','success');}
-    else{chat.imageSelection={provider,model:model.id};chat.updated=Date.now();persistChatHistory();setCoreCreativeMode('image');}
+    if(tts){chat.creativeMode='tts';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();status('Texto a voz elegido. Escribe el texto o adjunta un documento.','success');}
+    else if(isTranscription){chat.transcriptionSelection={provider,model:model.id};chat.creativeMode='transcription';chat.updated=Date.now();activeModelTab='image';persistChatHistory();renderModelPicker();renderComposerMode();status('Modelo de transcripción elegido. Adjunta un archivo de audio para transcribirlo.','success');}
+    else{chat.imageSelection={provider,model:model.id};chat.updated=Date.now();persistChatHistory();setCoreCreativeMode('image',{keepPickerOpen:true});}
    });
    list.append(row);
   }
@@ -611,7 +611,7 @@ function renderComposerMode(){
  $('#core-composer-mode')?.classList.add('hidden');
  const input=$('#core-input');if(input)input.placeholder='Escribe a Prisma…';
 }
-function setCoreCreativeMode(mode){
+function setCoreCreativeMode(mode,{keepPickerOpen=false}={}){
  const chat=activeChatRecord();if(!chat)return;
  if(mode==='image'&&!CREATE_IMAGE_PROVIDERS.some(imageProviderReady)){
   status('No hay un motor de imágenes disponible en este momento.','warning');return;
@@ -619,8 +619,8 @@ function setCoreCreativeMode(mode){
  chat.creativeMode=mode==='image'?'image':'chat';
  chat.updated=Date.now();activeModelTab=chat.creativeMode;
  persistChatHistory();renderModelPicker();renderComposerMode();
- const picker=$('.core-model-settings');if(picker)picker.open=false;
- $('#core-input')?.focus();
+ const picker=$('.core-model-settings');if(picker&&!keepPickerOpen)picker.open=false;
+ if(!keepPickerOpen)$('#core-input')?.focus();
  status(chat.creativeMode==='image'?'Modo imagen activado: este campo generará una imagen real, no una respuesta de texto.':'Modo chat activado.','success');
 }
 async function persistGeneratedResults(results){
