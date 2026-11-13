@@ -1,0 +1,44 @@
+services:
+  qwen:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    platform: linux/amd64
+    container_name: prisma-neural-qwen
+    restart: unless-stopped
+    init: true
+    environment:
+      LLAMA_CACHE: /models/cache
+      LLAMA_API_KEY: "${LLAMA_API_KEY:?Set LLAMA_API_KEY in .env}"
+    command:
+      - --hf-repo
+      - unsloth/Qwen3.5-2B-GGUF:Q4_K_M
+      - --no-mmproj
+      - --host
+      - 0.0.0.0
+      - --port
+      - "7860"
+      - --ctx-size
+      - "2048"
+      - --batch-size
+      - "256"
+      - --ubatch-size
+      - "128"
+      - --threads
+      - "2"
+      - --threads-batch
+      - "2"
+      - --parallel
+      - "1"
+      - --n-gpu-layers
+      - "0"
+      - --n-predict
+      - "256"
+      - --jinja
+      - --no-ui
+      - --timeout
+      - "600"
+    ports:
+      - "127.0.0.1:7860:7860"
+    volumes:
+      - ./models:/models
+    cpus: 2.0
+    stop_grace_period: 60s
