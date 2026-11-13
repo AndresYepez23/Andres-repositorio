@@ -875,7 +875,7 @@ assert.equal(chooseCoreResponseLength('songwriting','Crea una canción completa'
 assert.equal(chooseCoreReasoning('coding','¿Qué es HTML?'),'balanced');
 
 // Connection panel exposes independently tracked image quota, not only text usage.
-const connectionsSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const connectionsSource=(readFileSync(new URL('../src/main.js',import.meta.url),'utf8')+readFileSync(new URL('../src/tool-fields.js',import.meta.url),'utf8'));
 assert.match(connectionsSource,/central\.imageUsage\?\.\[provider\]/);
 assert.match(connectionsSource,/cloudflare-image-usage/);
 assert.match(connectionsSource,/pollinations-image-usage/);
@@ -938,7 +938,7 @@ assert.match(chatSource,/refundFailedProviderUsage\(context\.env,reservedProvide
 const economyCore=readFileSync(new URL('../src/core.js',import.meta.url),'utf8');
 assert.match(economyCore,/chooseCoreContextOptions\(task,taskText\)/);
 assert.match(economyCore,/asksAboutPrisma/,'Provider catalog must not be sent with every question');
-const economyMain=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const economyMain=(readFileSync(new URL('../src/main.js',import.meta.url),'utf8')+readFileSync(new URL('../src/tool-fields.js',import.meta.url),'utf8'));
 assert.match(economyMain,/readInferenceUsage\(\)/);
 assert.match(economyMain,/tokens reportados/);
 
@@ -1059,7 +1059,7 @@ assert.deepEqual(findConversations(searchFixture,'').map(x=>x.id),['b','c','a'])
 assert.equal(findConversations(searchFixture,'',1).length,1);
 assert.match(findConversations(searchFixture,'implantes')[0].preview,/implantes/);
 const uiHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const uiMain=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const uiMain=(readFileSync(new URL('../src/main.js',import.meta.url),'utf8')+readFileSync(new URL('../src/tool-fields.js',import.meta.url),'utf8'));
 assert.match(uiHtml,/id="conversation-search-layer"/);
 assert.match(uiHtml,/id="conversation-search-results"/);
 assert.match(uiHtml,/id="conversation-search-field-slot"/);
@@ -1160,7 +1160,7 @@ assert.match(videoEngineSource,/compressVideoNative\(file,p,cb\)/);
 assert.match(videoEngineSource,/trunc\(iw\*min\(1,/,'Portrait videos must limit longest dimension, not just width');
 assert.match(videoEngineSource,/preferNativeVideoCompression/);
 assert.match(videoEngineSource,/blob\.size>=files\[0\]\.size/,'Do not report success for larger files');
-const videoMainSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const videoMainSource=(readFileSync(new URL('../src/main.js',import.meta.url),'utf8')+readFileSync(new URL('../src/tool-fields.js',import.meta.url),'utf8'));
 assert.match(videoMainSource,/case 'video-compress':return selectField/);
 
 
@@ -1369,7 +1369,7 @@ assert.throws(()=>planPdfSplit({mode:'parts',parts:10},4),/superar/i);
 assert.throws(()=>planPdfSplit({mode:'chunk',chunkSize:0},9),/bloque/i);
 assert.throws(()=>planPdfSplit({mode:'selected',pages:''},9),/indica/i);
 
-const splitUiSource=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const splitUiSource=(readFileSync(new URL('../src/main.js',import.meta.url),'utf8')+readFileSync(new URL('../src/tool-fields.js',import.meta.url),'utf8'));
 assert.match(splitUiSource,/setupPdfSplitOptions\(\)/);
 assert.match(splitUiSource,/planPdfSplit\(readParams\(\),count\)/);
 assert.match(splitUiSource,/case 'pdf-split':return selectField/);

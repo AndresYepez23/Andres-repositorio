@@ -216,7 +216,7 @@ function resolveCapabilityRequest(raw,files=[],task=null){
  if(task?.text&&/^ahora (?:a|en) csv/.test(q))q='json a csv';
  if(task?.text&&/^ahora (?:a|en) json/.test(q))q='csv a json';
  if(!q||/^(?:que es|como funciona|para que sirve|explica|por que)\b/.test(q))return null;
- if(/^(?:hazlo|continua|tambien eso|todas|la segunda|el segundo|repite el proceso(?: con este archivo)?)[.!\s]*$/.test(q)&&task?.steps?.length){
+ if(/^(?:hazlo|continua|tambien eso|todas|la segunda|el segundo|haz lo mismo(?: con este(?: otro)? archivo)?|repite el proceso(?: con este archivo)?)[.!\s]*$/.test(q)&&task?.steps?.length){
   return {type:'ready',message:'Retomo las operaciones de esta tarea.',steps:task.steps.map(s=>({...s,params:{...s.params}})),confidence:1};
  }
  if(/^(?:mejor en|ahora (?:en|a)|con menos calidad|conserva las dimensiones|utiliza el mismo formato|dejala|dejalas)/.test(q)&&task?.steps?.length){

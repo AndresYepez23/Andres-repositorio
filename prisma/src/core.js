@@ -1,3 +1,5 @@
+import { requestQueenPlan, queenTaskContext, queenFailureDescription } from './queen-client.js';
+import { executeQueenDAG, createQueenExecutionState } from './queen-execution.js';
 import { recordCoreMetric } from './core-telemetry.js';
 import { planCapabilityRequest } from './core-capabilities.js';
 import { isExplicitResearchRequest, searchPrismaWeb, formatResearchSources } from './core-research.js';
@@ -93,6 +95,7 @@ let pendingPlan = null;
 let busy = false;
 let executionActive = false;
 let cancelRequested = false;
+let queenPlanningController = null;
 let centralProviders = { gemini: false, huggingface: false, groq: false, cloudflare: false, pollinations: false, openrouter: false, kilo:false, requesty:false, sensenova:false, zai:false, aihubmix:false };
 let centralFeatures = { pollinationsImages:false, cloudflareImages:false, huggingfaceImages:false, huggingfaceAudio:false, groqAudio:false, openrouterChat:false };
 let centralModelCatalog = { chat:{}, image:{}, audio:{} };
@@ -926,7 +929,7 @@ function setBusy(value){
   $('#core-file-button').disabled=value;
   const sendLabel=$('#core-send-label');if(sendLabel)sendLabel.textContent=value?'Trabajando…':'Enviar';
   $('#core-composer').setAttribute('aria-busy',String(value));
-  const cancelButton=$('#core-cancel');if(cancelButton){cancelButton.classList.toggle('hidden',!(value&&executionActive));cancelButton.disabled=false;}
+  const cancelButton=$('#core-cancel');if(cancelButton){cancelButton.classList.toggle('hidden',!(value&&(executionActive||queenPlanningController)));cancelButton.disabled=false;}
   // A conversational turn already has an inline thinking indicator. Keep the
   // separate progress rail for real tool executions only, never for LLM latency.
   if(value&&executionActive)setProgress(.02,'Preparando herramienta…');
@@ -1863,8 +1866,11 @@ async function interpretAttachedImageText(userText){
  }
 }
 async function requestPlan(userText){
+  cancelRequested=false;
   const resolvedTask=taskMemory.resolve(activeConversationId,userText,attachments);
+  if(resolvedTask.cancelled){pendingPlan=null;$('#core-plan')?.classList.add('hidden');addMessage('assistant','Tarea cancelada.');return;}
   const capabilityPlan=planCapabilityRequest(resolvedTask.request||userText,resolvedTask.files,resolvedTask.task);
+  if((capabilityPlan?.steps?.length>1||capabilityPlan?.type==='needs-input')&&await coordinateWithQueen(resolvedTask.request||userText,resolvedTask))return;
   if(capabilityPlan){
     if(capabilityPlan.type!=='ready'){
       recordCoreMetric('core','clarification');
@@ -1928,6 +1934,7 @@ async function requestPlan(userText){
     status('Herramientas relacionadas identificadas sin usar IA.','success');
     return;
   }
+  if(await coordinateWithQueen(resolvedTask.request||userText,resolvedTask))return;
   // Explicit web research is an optional enrichment path. Existing local
   // tools, greetings, product answers and capability discovery keep priority.
   // If Tavily is unavailable or out of quota, Core falls through to its normal
@@ -2255,8 +2262,103 @@ async function requestPlan(userText){
   if(requiresApproval){showPlan(plan,steps);status('Este flujo usa servicios externos. Revisa y autoriza antes de continuar.','warning');setProgress(1,'Esperando tu autorización');}
   else{pendingPlan={plan,steps};$('#core-plan').classList.add('hidden');await executePlan();}
 }
+// Queen plans through the backend; the existing runtime still owns permissions,
+// credentials, actual tools, storage and conversation state.
+async function coordinateWithQueen(userText,resolvedTask){
+  const chatId=activeConversationId;
+  const previousExecution=resolvedTask.task?.execution;
+  if(previousExecution&&/^(?:contin[uú]a|reintenta|int[eé]ntalo de nuevo)/i.test(userText)){
+    attachments=previousExecution.sourceFiles;renderAttachments();
+    const plan={...previousExecution.plan,queenState:previousExecution.state};
+    const steps=plan.steps.map(s=>({tool:tools.find(t=>t.id===s.tool_id),params:s.params,reason:s.id}));
+    if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(plan,steps);
+    else{pendingPlan={plan,steps};await executeQueenPlan();}
+    return true;
+  }
+  const context=queenTaskContext(resolvedTask,activeChatRecord()?.modelSelection);
+  status('Queen está interpretando la solicitud…');
+  queenPlanningController=new AbortController();setBusy(true);
+  const response=await requestQueenPlan({text:userText,files:resolvedTask.files,context},{signal:queenPlanningController.signal});
+  queenPlanningController=null;
+  if(cancelRequested){status('Planificación cancelada.','info');return true;}
+  if(chatId!==activeConversationId)return true;
+  if(!response||response.fallback||response.source!=='queen')return false;
+  recordCoreMetric('core','queen-plan',{duration:response.metrics?.durationMs});
+  const plan=response.plan;
+  if(plan.intent==='clarify'){
+    taskMemory.wait(chatId,userText,resolvedTask.files);
+    addMessage('assistant',plan.message);status('Hace falta una aclaración.','info');return true;
+  }
+  if(plan.intent==='question'&&context.preferences.mode!=='manual'&&!resolvedTask.files.length&&!isExplicitResearchRequest(userText)){
+    addMessage('assistant',plan.message,{engine:'queen'});status('Respuesta preparada por Queen.','success');return true;
+  }
+  // Conversation and specialized routes keep existing account rotation,
+  // manual model selection, quotas and circuit breakers.
+  if(plan.intent!=='execute')return false;
+  attachments=resolvedTask.files;renderAttachments();
+  const steps=plan.steps.map(step=>({tool:tools.find(t=>t.id===step.tool_id),params:step.params,reason:step.id}));
+  const queenPlan={...plan,queen:true,userRequest:userText,queenMetrics:response.metrics,queenContext:context};
+  if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(queenPlan,steps);
+  else{pendingPlan={plan:queenPlan,steps};await executeQueenPlan();}
+  return true;
+}
+async function executeQueenPlan(){
+  if(!pendingPlan||executionActive)return;
+  const {plan}=pendingPlan;pendingPlan=null;
+  const chatId=activeConversationId,sourceFiles=[...attachments];
+  $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
+  const state=plan.queenState||createQueenExecutionState();
+  try{
+    const outcome=await executeQueenDAG(plan,sourceFiles,{
+      state,initialInferences:plan.queenMetrics?.inferences||1,
+      cancel:()=>cancelRequested||activeConversationId!==chatId,
+      authorize:()=>true, // Entered through the existing approval panel for external steps.
+      run:async(id,files,params,cb)=>{
+        const step=plan.steps.find(s=>s.id===state.activeStepId);
+        const requested={...params,...credentials(),...(step?.delegation?{provider:step.delegation.provider,model:step.delegation.model}:{})};
+        if(['ai-assistant','ai-youtube-kit','ai-study-notes','ai-code-helper','ai-webpage','music-lyrics'].includes(id)){
+          const selection=activeChatRecord()?.modelSelection;
+          if(selection?.mode==='manual')Object.assign(requested,conversationModelRequest(selection));
+          else requested.allowFallback=true;
+        }
+        const result=await runTool(id,files,requested,cb);
+        if(['ai-assistant','ai-youtube-kit','ai-study-notes','ai-code-helper','ai-webpage','music-lyrics'].includes(id)&&result?.provider&&result?.model){
+          const chat=conversations.find(c=>c.id===chatId);if(chat){chat.modelSelection=pinConversationModel(chat.modelSelection,result,Date.now());if(chatId===activeConversationId)renderModelPicker();}
+        }
+        return result;
+      },
+      repair:async({step,code})=>{
+        const response=await requestQueenPlan({text:plan.userRequest,files:sourceFiles,context:{...plan.queenContext,failedStep:{id:step.id,tool_id:step.tool_id,params:step.params,code}},repair:true});
+        if(response?.source!=='queen'||response.plan.steps.length!==1)throw Error('REPAIR_UNAVAILABLE');
+        return response.plan.steps[0];
+      },
+      progress:(p,message)=>{status(message||'Ejecutando herramientas seleccionadas por Queen…');setProgress(p,message||'Ejecutando…');}
+    });
+    const cards=outcome.results.flatMap((entry,i)=>executionCards(tools.find(t=>t.id===entry.tool_id)?.name||entry.tool_id,entry.verification.status,entry.result,i));
+    await persistGeneratedResults(cards);
+    if(chatId!==activeConversationId)return;
+    const pending=outcome.results.flatMap(r=>r.verification.unverified);
+    addMessage('assistant',outcome.verified?'Los resultados pasaron las comprobaciones independientes.':
+      'Las herramientas produjeron estos resultados. Quedan comprobaciones pendientes: '+[...new Set(pending)].join(', ')+'.',
+      {results:cards,queenVerification:{status:outcome.status,steps:outcome.results.map(r=>({id:r.id,...r.verification}))}});
+    taskMemory.save(chatId,{files:outcome.results.flatMap(r=>r.files),originals:sourceFiles,steps:plan.steps,text:outcome.results.map(r=>r.result.text||'').join('\n')});
+    recordCoreMetric('core',outcome.verified?'queen-verified':'queen-verification-pending',{duration:outcome.metrics.durationMs});
+    status(outcome.verified?'Resultados verificados.':'Resultados producidos; verificación parcial.',outcome.verified?'success':'warning');
+    recordCompletedCoreTask({fileTask:sourceFiles.length>0||outcome.results.some(r=>r.files.length>0)||isGuestFileTask({text:plan.userRequest})});
+    attachments=[];$('#core-file-input').value='';
+  }catch(error){
+    const cards=(error.partialResults||[]).flatMap((entry,i)=>executionCards(entry.tool_id,'Resultado parcial',entry.result,i));
+    await persistGeneratedResults(cards);
+    const {queenState:discardedState,...savedPlan}=plan;
+    taskMemory.save(chatId,{files:(error.partialResults||[]).flatMap(r=>r.files),originals:sourceFiles,steps:plan.steps,
+      execution:{plan:savedPlan,state,sourceFiles}});
+    if(chatId===activeConversationId)addMessage('assistant','Queen no pudo completar y verificar la tarea. '+queenFailureDescription(error)+' Se conservaron los resultados disponibles.',{results:cards,partial:true});
+    recordCoreMetric('core','queen-failed');status('Tarea detenida; resultados parciales conservados.','error');
+  }finally{executionActive=false;setBusy(false);renderAttachments();}
+}
 async function executePlan(){
   if(!pendingPlan||executionActive)return;
+  if(pendingPlan.plan.queen)return executeQueenPlan();
   const {plan,steps}=pendingPlan;pendingPlan=null;
   $('#core-plan').classList.add('hidden');executionActive=true;cancelRequested=false;setBusy(true);
   const executed=[];let currentFiles=[...attachments],lastText='',successful=false,allResultFilesSaved=true;
@@ -2765,7 +2867,7 @@ export function initPrismaCore(){
       miniButton.disabled=false;
     }
   });
-  $('#core-cancel').addEventListener('click',()=>{if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
+  $('#core-cancel').addEventListener('click',()=>{if(queenPlanningController){cancelRequested=true;queenPlanningController.abort();status('Planificación cancelada.','info');return;}if(!executionActive||!busy)return;cancelRequested=true;$('#core-cancel').disabled=true;status('Detendré la secuencia al terminar la operación actual…','warning');});
   $('#core-input').addEventListener('keydown',event=>{
     if(event.key!=='Enter'||event.shiftKey)return;
     let shortcut='enter';

@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: "22"
       - name: Run Prisma Core provider and workflow regressions
-        run: node --test prisma/tests/core-agent-routing.test.mjs prisma/tests/core-model-session.test.mjs prisma/tests/conversation-history.test.mjs prisma/tests/provider-orchestration.test.mjs prisma/tests/research-providers.test.mjs prisma/tests/core-create-model-groups.test.mjs prisma/tests/core-composer-single-row.test.mjs prisma/tests/core-creative-catalog.test.mjs prisma/tests/core-create-transcription.test.mjs prisma/tests/core-create-tts.test.mjs prisma/tests/core-create-picker-open.test.mjs prisma/tests/pollinations-audio-multikey.test.mjs
+        run: node --test prisma/tests/queen.test.mjs prisma/tests/core-agent-routing.test.mjs prisma/tests/core-model-session.test.mjs prisma/tests/conversation-history.test.mjs prisma/tests/provider-orchestration.test.mjs prisma/tests/research-providers.test.mjs prisma/tests/core-create-model-groups.test.mjs prisma/tests/core-composer-single-row.test.mjs prisma/tests/core-creative-catalog.test.mjs prisma/tests/core-create-transcription.test.mjs prisma/tests/core-create-tts.test.mjs prisma/tests/core-create-picker-open.test.mjs prisma/tests/pollinations-audio-multikey.test.mjs
       - name: Build Prisma and test SEO output
         run: |
           node prisma/build.mjs

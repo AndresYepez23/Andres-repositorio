@@ -1,3 +1,4 @@
+import {observeQueenProvider} from '../../_lib/queen-observations.js';
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
 import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/credential-pool.js";
@@ -6,6 +7,7 @@ function errorResponse(error,status=400){
  return Response.json({error},{status,headers:{"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
 }
 export async function onRequestPost({request,env}){
+ const queenObservedStart=Date.now();
  const url=new URL(request.url);
  if(request.headers.get("Origin")!==url.origin)return errorResponse("Origen no autorizado.",403);
  if(Number(request.headers.get("Content-Length")||0)>8192)return errorResponse("La solicitud es demasiado grande.",413);
@@ -46,6 +48,7 @@ export async function onRequestPost({request,env}){
    if(bytes.byteLength>10*1024*1024)return errorResponse("La imagen de Gemini excede 10 MB.",502);
    const mime=data.mimeType||data.mime_type||"image/png";
    if(!["image/png","image/jpeg","image/webp"].includes(mime))return errorResponse("Gemini devolvió un tipo de archivo no permitido.",502);
+   await observeQueenProvider(env,{provider,model,capability:'image',status:200,durationMs:Date.now()-queenObservedStart});
    return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Prisma-Model":model,"X-Content-Type-Options":"nosniff"}});
   }catch(error){console.error("Prisma Gemini Image",String(error?.message||error).slice(0,100));return errorResponse("No fue posible generar la imagen con Gemini.",502);}
  }
@@ -55,6 +58,7 @@ export async function onRequestPost({request,env}){
    if(!response?.image)return errorResponse("Workers AI no devolvió ninguna imagen.",502);
    const raw=atob(response.image);
    const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+   await observeQueenProvider(env,{provider,model,capability:'image',status:200,durationMs:Date.now()-queenObservedStart});
    return new Response(bytes,{headers:{"Content-Type":"image/jpeg","Cache-Control":"no-store","X-Prisma-Model":model,"X-Content-Type-Options":"nosniff"}});
   }catch(error){
    console.error("Prisma image Workers AI",String(error?.message||error).slice(0,120));
@@ -78,6 +82,7 @@ export async function onRequestPost({request,env}){
    if(length>10*1024*1024)return errorResponse("La imagen generada supera 10 MB.",502);
    const bytes=await response.arrayBuffer();
    if(bytes.byteLength>10*1024*1024)return errorResponse("La imagen generada supera 10 MB.",502);
+   await observeQueenProvider(env,{provider,model,capability:'image',status:200,durationMs:Date.now()-queenObservedStart});
    return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
   }catch(error){
    console.error("Prisma image Pollinations",String(error?.message||error).slice(0,100));
@@ -96,6 +101,7 @@ export async function onRequestPost({request,env}){
   if(!mime.startsWith("image/"))return errorResponse("Hugging Face no devolvió una imagen válida.",502);
   const bytes=await response.arrayBuffer();
   if(bytes.byteLength>10*1024*1024)return errorResponse("La imagen excede el tamaño permitido.",502);
-  return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+  await observeQueenProvider(env,{provider,model,capability:'image',status:200,durationMs:Date.now()-queenObservedStart});
+   return new Response(bytes,{headers:{"Content-Type":mime,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
  }catch{return errorResponse("No fue posible conectar con Hugging Face para crear la imagen.",502);}
 }

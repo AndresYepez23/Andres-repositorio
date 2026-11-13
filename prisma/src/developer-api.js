@@ -1,3 +1,4 @@
+import {toolContract} from './queen-contracts.js';
 import { planCapabilityRequest, isInformationalIntent } from './core-capabilities.js';
 import { planFileConversion } from './file-conversions.js';
 import { tools, categories } from "./registry.js";
@@ -34,7 +35,8 @@ function publicTool(tool) {
     multiple: Boolean(tool.multiple),
     maxFiles: tool.maxFiles || null,
     accept: tool.accept || null,
-    tag: tool.tag || null
+    tag: tool.tag || null,
+    contract: toolContract(tool)
   };
 }
 

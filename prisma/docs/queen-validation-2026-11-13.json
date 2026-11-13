@@ -1,0 +1,114 @@
+{
+  "date": "2026-11-13",
+  "branch": "feature/prisma-neural-genixnode-qwen35-pilot",
+  "pullRequest": 125,
+  "productionModified": false,
+  "checks": {
+    "nodeTests": {
+      "passed": 181,
+      "failed": 0
+    },
+    "queenTests": {
+      "passed": 45,
+      "failed": 0
+    },
+    "staticBuild": "passed",
+    "pagesFunctionsBundle": "passed",
+    "browser": {
+      "json": {
+        "status": "verified",
+        "result": "{\"a\":1}"
+      },
+      "image": {
+        "status": "verified",
+        "evidence": [
+          {
+            "check": "artifact",
+            "passed": true,
+            "bytes": 791,
+            "sha256": "4b70ee91f6b267b8409f467d9261fe41adb65c5bd73d48bbc1c1c24301c00752",
+            "checks": [
+              "exists",
+              "nonempty",
+              "sha256",
+              "decoded-image",
+              "dimensions",
+              "file-signature",
+              "format-consistency",
+              "decoded-image",
+              "requested-dimensions"
+            ],
+            "width": 160,
+            "height": 100
+          }
+        ]
+      },
+      "pdf": {
+        "status": "verified",
+        "pages": 1,
+        "wrongPageCountRejected": true
+      },
+      "office": {
+        "fakeDocxRejected": true
+      },
+      "ui": {
+        "queenPlanToRealLocalExecution": true,
+        "queenQuestionWithoutExternalProvider": true,
+        "pageErrors": []
+      }
+    },
+    "runtime": {
+      "pagesEndpoint": {
+        "status": 503,
+        "code": "QUEEN_DISABLED"
+      },
+      "workerdD1": {
+        "planValidated": true,
+        "executed": false,
+        "metricsPersisted": true,
+        "leaseReleased": true
+      }
+    }
+  },
+  "queenRemote": {
+    "unauthenticatedModelsHttpStatus": 403,
+    "authenticatedInference": "blocked-missing-runtime-credentials",
+    "actualModelRequests": 0,
+    "latencyMs": null,
+    "tokens": null,
+    "autonomyPercent": null,
+    "calibratedConfidence": null
+  },
+  "historicalMatrix": {
+    "file": "docs/core-matrix-388.csv",
+    "originalBaselineRows": 381,
+    "currentRecordedRows": 388,
+    "sha256": "f0882266126422b6a8e14fd877a38e832df72045cabf2d839b34c4820582f476",
+    "reexecuted": false
+  },
+  "liveEvaluation": {
+    "measured": 0,
+    "passed": 0,
+    "accuracy": null,
+    "note": "Plan selection only. Does not measure task execution, artifact quality or operational autonomy."
+  },
+  "providers": {
+    "source": "read-only public production status",
+    "configured": [
+      "gemini",
+      "groq",
+      "cloudflare",
+      "pollinations",
+      "openrouter",
+      "kilo",
+      "sensenova",
+      "zai",
+      "aihubmix"
+    ],
+    "notConfigured": [
+      "huggingface",
+      "requesty"
+    ],
+    "allModalitiesTested": false
+  }
+}

@@ -1,3 +1,4 @@
+import {observeQueenProvider} from '../../_lib/queen-observations.js';
 import { getProviderHold, setProviderHold } from "../../_lib/provider-health.js";
 import { allowedModel } from "../../_lib/model-catalog.js";
 import { checkLimits } from "../../_lib/limits.js";
@@ -6,6 +7,7 @@ import { getCredentialSlots, requestWithCredentialPool } from "../../_lib/creden
 function json(data,status=200){return Response.json(data,{status,headers:{"Cache-Control":"no-store"}});}
 
 export async function onRequestPost({request,env}){
+ const queenObservedStart=Date.now();
  const url=new URL(request.url);
  if(request.headers.get("Origin")!==url.origin)return json({error:"Origen no autorizado."},403);
  const maxBytes=12*1024*1024;
@@ -82,5 +84,6 @@ export async function onRequestPost({request,env}){
  }
  const text=String(result.text||"").trim();
  if(!text)return json({error:"El proveedor no devolvió una transcripción."},502);
+ await observeQueenProvider(env,{provider,model,capability:'transcription',status:200,durationMs:Date.now()-queenObservedStart});
  return json({ok:true,provider,model,text});
 }

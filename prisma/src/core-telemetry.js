@@ -2,7 +2,7 @@
 // credentials, account IDs or error strings. Disabled in preview and Node tests.
 import { tools } from './registry.js';
 const ids=new Set(tools.map(t=>t.id));
-const events=new Set(['requested','succeeded','failed','clarification','unresolved','local-plan','provider-attempt','provider-success','provider-failed']);
+const events=new Set(['requested','succeeded','failed','clarification','unresolved','local-plan','provider-attempt','provider-success','provider-failed','queen-plan','queen-verified','queen-verification-pending','queen-failed']);
 export function metricEvent(id,event,{duration=0,files=0}={}){
  if(!ids.has(id)&&id!=='core')return null;if(!events.has(event))return null;
  return {id,event,duration:Math.min(300000,Math.max(0,Math.round(Number(duration)||0))),files:Math.min(100,Math.max(0,Math.round(Number(files)||0)))};
