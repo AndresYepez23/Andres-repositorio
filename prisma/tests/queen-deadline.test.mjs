@@ -10,9 +10,9 @@ function leaseEnv(statements){return {...env(),QUEEN_STAGE:'staging',PRISMA_RATE
 test('tokenizer exhausting the inference allowance cannot launch a one-millisecond completion',async t=>{
  let clock=0;const calls=[];t.mock.method(Date,'now',()=>clock);
  await assert.rejects(inferQueen(env(),[{role:'user',content:'fixture'}],{}, {fetchImpl:async url=>{
-  calls.push(url);if(url.endsWith('/tokenize')){clock=55000;return json({tokens:[1]});}return completion();
+  calls.push(url);if(url.endsWith('/slots'))return json([{id:0,is_processing:false}]);if(url.endsWith('/tokenize')){clock=55000;return json({tokens:[1]});}return completion();
  }}),error=>error.code==='QUEEN_TIMEOUT'&&error.diagnostics.completionTransportAttempted===false);
- assert.equal(calls.length,1);assert.ok(calls[0].endsWith('/tokenize'));
+ assert.equal(calls.length,2);assert.ok(calls[0].endsWith('/slots'));assert.ok(calls[1].endsWith('/tokenize'));
 });
 
 test('an exhausted initial allowance sends no tokenizer or completion request',async()=>{
@@ -75,16 +75,16 @@ test('readiness, tokenizer and dispatched completion share 55 seconds and uncert
 
 test('compacting an oversized context cannot renew an exhausted inference allowance',async t=>{
  let clock=0,calls=0;t.mock.method(Date,'now',()=>clock);
- await assert.rejects(inferQueen(env(),[{role:'user',content:'fixture'}],{}, {compactMessages:()=>{clock=55000;return [{role:'user',content:'smaller fixture'}];},fetchImpl:async()=>{calls++;return json({tokens:Array(2000).fill(1)});}}),error=>error.code==='QUEEN_TIMEOUT'&&error.diagnostics.completionTransportAttempted===false);
- assert.equal(calls,1);
+ await assert.rejects(inferQueen(env(),[{role:'user',content:'fixture'}],{}, {compactMessages:()=>{clock=55000;return [{role:'user',content:'smaller fixture'}];},fetchImpl:async url=>{calls++;return url.endsWith('/slots')?json([{id:0,is_processing:false}]):json({tokens:Array(2000).fill(1)});}}),error=>error.code==='QUEEN_TIMEOUT'&&error.diagnostics.completionTransportAttempted===false);
+ assert.equal(calls,2);
 });
 
 test('cancellation during tokenizer preflight prevents the completion POST',async()=>{
  const controller=new AbortController();let calls=0;
- await assert.rejects(inferQueen(env(),[{role:'user',content:'fixture'}],{}, {signal:controller.signal,fetchImpl:async()=>{
-  calls++;controller.abort();return json({tokens:[1]});
+ await assert.rejects(inferQueen(env(),[{role:'user',content:'fixture'}],{}, {signal:controller.signal,fetchImpl:async url=>{
+  calls++;if(url.endsWith('/slots'))return json([{id:0,is_processing:false}]);controller.abort();return json({tokens:[1]});
  }}),error=>error.code==='QUEEN_TIMEOUT'&&error.diagnostics.completionTransportAttempted===false);
- assert.equal(calls,1);
+ assert.equal(calls,2);
 });
 
 test('SSE already-aborted or zero-budget requests do not dispatch metadata or completion',async()=>{

@@ -174,6 +174,7 @@ export function isInformationalIntent(raw){
  if(/^how\b|^what\b|^why\b|^which\b|^where\b|^when\b|^(?:can|could|would)\s+you\s+(?:explain|tell me|show me)\b|^tell me how\b/.test(original))return true;
  if(/^cuant[ao]s?\s+(?:palabras|letras|caracteres)\b/.test(q)&&
     /(?:texto|contenido|datos|lista|text|content|data|list)\s*:/i.test(String(raw||'')))return false;
+ if(/\b(?:solo|solamente|unicamente)\s+(?:quiero|necesito)\s+(?:saber|conocer|entender)\b/.test(q))return true;
  return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
   /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
 }
@@ -191,8 +192,19 @@ function positiveClauses(original) {
 }
 const need=message=>({type:'needs-input',message,steps:[],confidence:0});
 const mime=q=>/\bwebp\b/.test(q)?'image/webp':/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'';
+// Normalize only explicit page ordinals in the instruction, never quoted data.
+// Relative references and an unspecified page count remain execution-time facts.
+const PAGE_ORDINALS=Object.freeze({primer:1,primero:1,primera:1,first:1,segundo:2,segunda:2,second:2,
+ tercer:3,tercero:3,tercera:3,third:3,cuarto:4,cuarta:4,fourth:4,quinto:5,quinta:5,fifth:5,
+ sexto:6,sexta:6,sixth:6,septimo:7,septima:7,seventh:7,octavo:8,octava:8,eighth:8,
+ noveno:9,novena:9,ninth:9,decimo:10,decima:10,tenth:10});
+const ordinalWords=Object.keys(PAGE_ORDINALS).join('|');
+function explicitPageOrdinals(q){
+ return q.replace(new RegExp('\\b('+ordinalWords+')\\s+(pagina|hoja)\\b','g'),(_,word,noun)=>noun+' '+PAGE_ORDINALS[word])
+  .replace(new RegExp('\\b(pagina|hoja)\\s+('+ordinalWords+')\\b','g'),(_,noun,word)=>noun+' '+PAGE_ORDINALS[word]);
+}
 function resolveCapabilityRequest(raw,files=[],task=null){
- let {instruction,text}=extractPayload(raw);let q=normalizeIntent(instruction).trim();
+ let {instruction,text}=extractPayload(raw);let q=explicitPageOrdinals(normalizeIntent(instruction).trim());
  // In file-edit instructions, a colon may introduce page ranges rather than
  // content payload: "Divide el PDF en dos: páginas 1-3 y 4-6".
  if(/^(?:divide|dividir|separa|separar|extrae|extraer|quita|elimina|gira|rota)\b/.test(q)&&

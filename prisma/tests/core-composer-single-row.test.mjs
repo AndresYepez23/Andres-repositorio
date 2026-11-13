@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 const css = read('../aurora-system.css');
 const html = read('../index.html');
+const layoutCss = read('../styles.css');
 
 const composerFix = css.slice(css.indexOf('/* iOS / PWA composer: one compact horizontal row'));
 const mobileFix = composerFix.slice(composerFix.indexOf('@media(max-width:620px)'), composerFix.indexOf('@media(max-width:355px)'));
@@ -31,4 +32,20 @@ test('all composer controls remain in their existing DOM order and keep their ID
  }
  assert.ok(composer.indexOf('id="core-file-button"') < composer.indexOf('id="core-input"'));
  assert.ok(composer.indexOf('id="core-input"') < composer.indexOf('class="core-composer-footer"'));
+});
+
+
+test('new and existing Core conversations keep one full-width chat and composer layout', () => {
+ const start = layoutCss.lastIndexOf('/* Prisma Core · stable full-width contract for empty and populated chats.');
+ assert.ok(start >= 0, 'final full-width layout contract exists');
+ const rules = layoutCss.slice(start);
+ assert.ok(rules.includes('body.is-core-view #core-workspace{'));
+ assert.ok(rules.includes('body.is-core-view .core-chat-column{'));
+ assert.ok(rules.includes('body.is-core-view #core-composer{'));
+ assert.ok(rules.includes('body.is-core-view .core-compose-surface{'));
+ assert.ok(rules.includes('display:flex!important;'));
+ assert.ok(rules.includes('align-items:stretch!important;'));
+ assert.ok(rules.includes('width:100%!important;'));
+ assert.ok(rules.includes('max-width:none!important;'));
+ assert.doesNotMatch(rules, /has-conversation/, 'the width contract must not depend on chat age or message state');
 });

@@ -7,6 +7,7 @@ import {executeQueenDAG} from '../../src/queen-execution.js';
 import {verifyQueenResult} from '../../src/queen-verifier.js';
 import {runTool} from '../../src/engines.js';
 import cases from '../queen-cases.json' with {type:'json'};
+import {createCredentialPromotionHandler} from './credential-promotion.mjs';
 export const STAGING_DATABASE='980bad8f-0356-48b9-87bc-56bcf363f69a';
 const PRODUCTION_DATABASE='e02104b5-0861-475a-a60f-7658439d4fe0';
 const SECRET_NAMES=['QUEEN_ACCESS_CLIENT_ID','QUEEN_ACCESS_CLIENT_SECRET','QUEEN_API_KEY'];
@@ -57,7 +58,10 @@ export async function runStagingGuards(){
  let corruptJsonRejected=false;try{await verifyQueenResult({tool_id:'json-format',params:{text:'{}'}},{text:'not-json'});}catch{corruptJsonRejected=true;}
  return {ok:checks.every(c=>c.rejected)&&corruptJsonRejected,realInference:false,planSource:'adversarial-test-fixtures',checks,corruptJsonRejected};
 }
-export function createQueenStagingWorker(pages){return {async fetch(request,env,ctx){
+export function createQueenStagingWorker(pages,{credentialPromotion=null}={}){
+ const promote=createCredentialPromotionHandler(credentialPromotion);
+ return {async fetch(request,env,ctx){
+ if(credentialPromotion&&new URL(request.url).pathname==='/__queen/credential-promotion')return await promote(request,env)||new Response('Not found',{status:404});
  if(!await authorizedQueenStaging(request,env))return new Response('Not found',{status:404,headers:{'Cache-Control':'no-store'}});
  let identity;try{identity=await assertQueenStaging(env);}catch(error){return json(errorResult(error),503);}
  const path=new URL(request.url).pathname;

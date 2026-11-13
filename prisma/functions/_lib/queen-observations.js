@@ -1,9 +1,10 @@
 // Aggregate upstream API evidence only. No request/response content or keys.
+import {queenControlDB} from './queen-control.js';
 export async function observeQueenProvider(env,{provider,model,capability,status,durationMs=0,usage=null}={}){
  if(env.QUEEN_ENABLED!=='1'||!provider||!model||!['chat','image','transcription','speech'].includes(capability))return;
  const safe=n=>Number.isFinite(Number(n))?Math.max(0,Number(n)):0;
  const ok=status>=200&&status<300,now=Date.now();
- try{await env.PRISMA_RATE_DB?.prepare(`INSERT INTO queen_provider_observations
+ try{await queenControlDB(env)?.prepare(`INSERT INTO queen_provider_observations
  (provider,model,capability,successes,failures,last_success_at,last_failure_at,last_status,duration_ms,samples,input_tokens,output_tokens)
  VALUES(?,?,?,?,?,?,?,?,?,1,?,?) ON CONFLICT(provider,model,capability) DO UPDATE SET
  successes=successes+excluded.successes,failures=failures+excluded.failures,
@@ -14,5 +15,5 @@ export async function observeQueenProvider(env,{provider,model,capability,status
   Math.min(300000,safe(durationMs)),safe(usage?.prompt_tokens),safe(usage?.completion_tokens)).run();}catch{/* Missing preview migration never breaks existing providers. */}
 }
 export async function readQueenProviderObservations(env){
- try{const r=await env.PRISMA_RATE_DB?.prepare('SELECT * FROM queen_provider_observations').all();return r?.results||[];}catch{return [];}
+ try{const r=await queenControlDB(env)?.prepare('SELECT * FROM queen_provider_observations').all();return r?.results||[];}catch{return [];}
 }

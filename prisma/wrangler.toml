@@ -1,11 +1,17 @@
 name = "prismaspace"
 compatibility_date = "2026-11-08"
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
 
 [[d1_databases]]
 binding = "PRISMA_RATE_DB"
 database_name = "prisma-ai-limits"
 database_id = "e02104b5-0861-475a-a60f-7658439d4fe0"
+
+[[d1_databases]]
+binding = "QUEEN_CONTROL_DB"
+database_name = "prisma-queen-staging"
+database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
 
 [ai]
 binding = "AI"
@@ -16,3 +22,16 @@ binding = "AI"
 PRISMA_SUPABASE_URL = "https://hyoxywiwhnhfekakhivp.supabase.co"
 PRISMA_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3I8riH969aihitAxy_qC4w_Vfpuacpd"
 PRISMA_AUTH_GOOGLE_ENABLED = "1"
+QUEEN_ENABLED = "1"
+QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
+QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+QUEEN_STAGE = "production"
+
+[env.preview.vars]
+PRISMA_SUPABASE_URL = "https://hyoxywiwhnhfekakhivp.supabase.co"
+PRISMA_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3I8riH969aihitAxy_qC4w_Vfpuacpd"
+PRISMA_AUTH_GOOGLE_ENABLED = "1"
+QUEEN_ENABLED = "0"
+QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
+QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+QUEEN_STAGE = "preview"

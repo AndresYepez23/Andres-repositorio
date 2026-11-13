@@ -69,17 +69,19 @@ test('one timeout covers receiving the upstream body, not just response headers'
  }}),/QUEEN_TIMEOUT/);
 });
 test('llama tokenizer preflight refuses context overflow without running completion',async()=>{
- let calls=0;await assert.rejects(inferQueen(env(),[{role:'user',content:'test'}],{}, {fetchImpl:async()=>{calls++;return json({tokens:Array(2000).fill(1)});}}),/CONTEXT_BUDGET/);assert.equal(calls,1);
+ const calls=[];await assert.rejects(inferQueen(env(),[{role:'user',content:'test'}],{}, {fetchImpl:async url=>{calls.push(url);return url.endsWith('/slots')?json([{id:0,is_processing:false}]):json({tokens:Array(2000).fill(1)});}}),/CONTEXT_BUDGET/);
+ assert.equal(calls.length,2);assert.ok(calls[0].endsWith('/slots'));assert.ok(calls[1].endsWith('/tokenize'));
 });
 test('Queen disables thinking, uses structured bounded output and records actual usage',async()=>{
  let count=0;
- const r=await inferQueen(env(),[{role:'user',content:'test'}],{type:'object'},{fetchImpl:async(_url,options)=>{
+ const r=await inferQueen(env(),[{role:'user',content:'test'}],{type:'object'},{fetchImpl:async(url,options)=>{
+  if(url.endsWith('/slots'))return json([{id:0,is_processing:false}]);
   if(count++===0)return json({tokens:[1,2]});const body=JSON.parse(options.body);assert.equal(body.stream,false);assert.equal(body.max_tokens,256);assert.equal(body.chat_template_kwargs.enable_thinking,false);assert.equal(body.cache_prompt,true);
   return json({choices:[{message:{content:JSON.stringify(proposal([],'clarify'))},finish_reason:'stop'}],usage:{prompt_tokens:5,completion_tokens:12}});
  }});assert.equal(r.usage.inputTokens,5);assert.equal(r.usage.outputTokens,12);
 });
 test('truncated model output cannot be accepted as a plan',async()=>{
- let calls=0;await assert.rejects(inferQueen(env(),[],{}, {fetchImpl:async()=>calls++?json({choices:[{message:{content:'{}'},finish_reason:'length'}]}):json({tokens:[1]})}),/TRUNCATED/);
+ let calls=0;await assert.rejects(inferQueen(env(),[],{}, {fetchImpl:async url=>url.endsWith('/slots')?json([{id:0,is_processing:false}]):calls++?json({choices:[{message:{content:'{}'},finish_reason:'length'}]}):json({tokens:[1]})}),/TRUNCATED/);
 });
 test('D1 lease serializes concurrent requests across independent callers and releases on errors',async()=>{
  const e=env();let finish;const first=withQueenLease(e,()=>new Promise(resolve=>{finish=resolve;}));await new Promise(r=>setImmediate(r));
@@ -237,9 +239,9 @@ test('approved specialist delegation can execute after server capability validat
 
 test('context compaction rechecks actual tokens without increasing context or generation concurrency',async()=>{
  let requests=0,compacted=0;
- const result=await inferQueen(env(),[{role:'user',content:'large input'}],{}, {compactMessages:()=>{compacted++;return [{role:'user',content:'small input'}];},fetchImpl:async()=>{
-  requests++;if(requests===1)return json({tokens:Array(2000).fill(1)});if(requests===2)return json({tokens:[1,2]});return json({choices:[{message:{content:JSON.stringify(proposal([],'clarify'))},finish_reason:'stop'}]});
- }});assert.equal(compacted,1);assert.equal(requests,3);assert.equal(result.plan.intent,'clarify');
+ const result=await inferQueen(env(),[{role:'user',content:'large input'}],{}, {compactMessages:()=>{compacted++;return [{role:'user',content:'small input'}];},fetchImpl:async url=>{
+  requests++;if(url.endsWith('/slots'))return json([{id:0,is_processing:false}]);if(requests===2)return json({tokens:Array(2000).fill(1)});if(requests===3)return json({tokens:[1,2]});return json({choices:[{message:{content:JSON.stringify(proposal([],'clarify'))},finish_reason:'stop'}]});
+ }});assert.equal(compacted,1);assert.equal(requests,4);assert.equal(result.plan.intent,'clarify');
 });
 test('ordinary online tools do not require an unrelated AI provider delegation',async()=>{
  const result=await planWithQueen(env(),{text:'Necesito consultar la cotización de monedas con currency',files:[]},{...dependencies,infer:async()=>({plan:proposal([step('currency',{amount:1,from:'USD',to:'COP'})]),usage:{inputTokens:10,outputTokens:10}})});

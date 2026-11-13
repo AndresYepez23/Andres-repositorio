@@ -62,7 +62,8 @@ test('diagnostic classification never copies upstream messages or authentication
 test('staging cannot increase the production token ceiling through the diagnostic option',async()=>{
  const {inferQueen}=await import('../functions/_lib/queen.js');let calls=0;
  const e={QUEEN_ENABLED:'1',QUEEN_API_KEY:'test',QUEEN_ACCESS_CLIENT_ID:'test',QUEEN_ACCESS_CLIENT_SECRET:'test'};
- await inferQueen(e,[],{}, {maxOutputTokens:10000,fetchImpl:async(_url,options)=>{
+ await inferQueen(e,[],{}, {maxOutputTokens:10000,fetchImpl:async(url,options)=>{
+  if(url.endsWith('/slots'))return new Response('[{"id":0,"is_processing":false}]',{headers:{'Content-Type':'application/json'}});
   if(!calls++)return new Response('{"tokens":[1]}',{headers:{'Content-Type':'application/json'}});
   assert.equal(JSON.parse(options.body).max_tokens,256);
   return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{}',reasoning_content:''}}],usage:{prompt_tokens:1,completion_tokens:2}}),{headers:{'Content-Type':'application/json'}});

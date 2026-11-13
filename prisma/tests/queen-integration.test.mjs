@@ -82,13 +82,14 @@ test('same task cannot reuse results for changed file bytes even when names and 
 test('SSE requires a finish event and DONE, handles split chunks and retains both authentication layers',async()=>{
  const events=[{choices:[{delta:{content:'PRISMA'},finish_reason:null}]},{choices:[{delta:{},finish_reason:'stop'}],usage:{prompt_tokens:8,completion_tokens:3}}];
  const body=events.map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')+'data: [DONE]\n\n';
- const r=await measureQueenStream(env(),{fetchImpl:async(_url,options)=>{
+ const r=await measureQueenStream(env(),{fetchImpl:async(url,options)=>{
   assert.equal(options.headers['CF-Access-Client-Secret'],'test-secret');assert.equal(options.headers.Authorization,'Bearer test-key');
+  if(url.endsWith('/slots'))return new Response('[{"id":0,"is_processing":false}]',{headers:{'content-type':'application/json'}});
   assert.equal(JSON.parse(options.body).chat_template_kwargs.enable_thinking,false);
   return new Response(new ReadableStream({start(c){for(let i=0;i<body.length;i+=7)c.enqueue(new TextEncoder().encode(body.slice(i,i+7)));c.close();}}),{headers:{'content-type':'text/event-stream'}});
  }});
  assert.equal(r.finishReason,'stop');assert.deepEqual(r.usage,{inputTokens:8,outputTokens:3});assert.equal(r.contentCharacters,6);
- await assert.rejects(measureQueenStream(env(),{fetchImpl:async()=>new Response('data: '+JSON.stringify(events[0])+'\n\n',{headers:{'content-type':'text/event-stream'}})}),/INCOMPLETE_STREAM/);
+ await assert.rejects(measureQueenStream(env(),{fetchImpl:async url=>url.endsWith('/slots')?new Response('[{"id":0,"is_processing":false}]',{headers:{'content-type':'application/json'}}):new Response('data: '+JSON.stringify(events[0])+'\n\n',{headers:{'content-type':'text/event-stream'}})}),/INCOMPLETE_STREAM/);
 });
 test('staging observes the real llama slot before sending another tokenize or completion request',async()=>{
  let calls=0;

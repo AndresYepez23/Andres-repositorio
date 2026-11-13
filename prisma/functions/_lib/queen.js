@@ -1,5 +1,6 @@
 // Server-only. Never import this module from src/ or the static build.
 import {QUEEN_LIMITS} from '../../src/queen-plan.js';
+import {queenControlDB} from './queen-control.js';
 export class QueenError extends Error{
  constructor(code,status=503,diagnostics=null){super(code);this.code=code;this.status=status;if(diagnostics)this.diagnostics=diagnostics;}
 }
@@ -55,7 +56,7 @@ export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,rem
  // Include framing reserve. Server context enforcement remains the final guard.
  let inputTokens,completionTimeoutMs;
  try{
-  if(env.QUEEN_STAGE==='staging')await requireQueenIdle(env,{fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
+  if(env.QUEEN_ENABLED==='1')await requireQueenIdle(env,{fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
   for(let preflight=0;preflight<2;preflight++){
    const content=messages.map(m=>m.role+'\n'+m.content).join('\n');
    if(new TextEncoder().encode(content).length<=12000){
@@ -84,7 +85,7 @@ export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,rem
  return {plan,usage:{inputTokens:finite(result.usage?.prompt_tokens)??inputTokens,
   outputTokens:finite(result.usage?.completion_tokens),externalCostUsd:0},durationMs:Date.now()-started,diagnostics};
 }
-// A timed-out HTTP request may leave llama.cpp working briefly. Staging must
+// A timed-out HTTP request may leave llama.cpp working briefly. Callers must
 // not enqueue another inference merely because its D1 lease was released.
 export async function requireQueenIdle(env,{fetchImpl=fetch,signal,timeoutMs=5000}={}){
  const slots=await queenRequest(env,'slots',{fetchImpl,signal,timeoutMs:Math.min(5000,timeoutMs)});
@@ -92,7 +93,7 @@ export async function requireQueenIdle(env,{fetchImpl=fetch,signal,timeoutMs=500
  if(slots.some(s=>s.is_processing))throw new QueenError('QUEEN_BUSY',429,{serverProcessing:true,completionTransportAttempted:false});
 }
 export async function withQueenLease(env,operation){
- const db=env.PRISMA_RATE_DB;if(!db?.prepare)throw new QueenError('QUEEN_CONTROL_UNAVAILABLE');
+ const db=queenControlDB(env);if(!db?.prepare)throw new QueenError('QUEEN_CONTROL_UNAVAILABLE');
  const owner=crypto.randomUUID(),now=Date.now();let acquired;
  try{acquired=await db.prepare('INSERT INTO queen_leases(slot,owner,expires_at) VALUES(?,?,?) ON CONFLICT(slot) DO UPDATE SET owner=excluded.owner,expires_at=excluded.expires_at WHERE queen_leases.expires_at<? RETURNING owner')
   .bind('queen',owner,now+QUEEN_LIMITS.taskMs+5000,now).first();}
@@ -101,7 +102,7 @@ export async function withQueenLease(env,operation){
  let coolingDown=false;
  try{return await operation();}
  catch(error){
-  if(env.QUEEN_STAGE==='staging'&&error?.code==='QUEEN_TIMEOUT'&&error.diagnostics?.completionTransportAttempted){
+  if(env.QUEEN_ENABLED==='1'&&error?.code==='QUEEN_TIMEOUT'&&error.diagnostics?.completionTransportAttempted){
    coolingDown=true;const until=Date.now()+300000;
    try{await db.prepare('UPDATE queen_leases SET expires_at=? WHERE slot=? AND owner=?').bind(until,'queen',owner).run();}catch{}
    error.diagnostics={...error.diagnostics,cooldownUntil:until};
@@ -112,23 +113,23 @@ export async function withQueenLease(env,operation){
 export async function recordQueenMetric(env,event,{durationMs=0,inputTokens=0,outputTokens=0}={}){
  if(env.QUEEN_ENABLED!=='1'||!['planned','clarify','delegated','failed','repair','local'].includes(event))return;
  const safe=n=>Math.max(0,Math.min(1000000,Math.round(Number(n)||0)));
- try{await env.PRISMA_RATE_DB?.prepare('INSERT INTO queen_metrics(day,event,count,duration_ms,input_tokens,output_tokens) VALUES(?,?,1,?,?,?) ON CONFLICT(day,event) DO UPDATE SET count=count+1,duration_ms=duration_ms+excluded.duration_ms,input_tokens=input_tokens+excluded.input_tokens,output_tokens=output_tokens+excluded.output_tokens')
+ try{await queenControlDB(env)?.prepare('INSERT INTO queen_metrics(day,event,count,duration_ms,input_tokens,output_tokens) VALUES(?,?,1,?,?,?) ON CONFLICT(day,event) DO UPDATE SET count=count+1,duration_ms=duration_ms+excluded.duration_ms,input_tokens=input_tokens+excluded.input_tokens,output_tokens=output_tokens+excluded.output_tokens')
   .bind(new Date().toISOString().slice(0,10),event,safe(durationMs),safe(inputTokens),safe(outputTokens)).run();}catch{/* Never log payloads or exception bodies. */}
 }
 
 // Dedicated public planner limits do not spend an external provider's quota.
 export async function reserveQueenRequest(env,request,now=Date.now(),{perMinute=5,perDay=30,namespace=''}={}){
- if(!env.PRISMA_RATE_DB?.prepare)throw new QueenError('QUEEN_CONTROL_UNAVAILABLE');
+ const db=queenControlDB(env);if(!db?.prepare)throw new QueenError('QUEEN_CONTROL_UNAVAILABLE');
  const day=new Date(now).toISOString().slice(0,10);
  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(day+':'+(namespace?namespace+':':'')+(request.headers.get('CF-Connecting-IP')||'unknown')));
  const visitor=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
  for(const [period,window,limit] of [['minute',Math.floor(now/60000),Math.min(12,Math.max(1,perMinute))],['day',Math.floor(now/86400000)*1440,Math.min(96,Math.max(1,perDay))]]){
-  let row;try{row=await env.PRISMA_RATE_DB.prepare('INSERT INTO queen_request_limits(visitor,window_start,count) VALUES(?,?,1) ON CONFLICT(visitor,window_start) DO UPDATE SET count=count+1 WHERE count<? RETURNING count').bind(visitor+':'+period,window,limit).first();}
+  let row;try{row=await db.prepare('INSERT INTO queen_request_limits(visitor,window_start,count) VALUES(?,?,1) ON CONFLICT(visitor,window_start) DO UPDATE SET count=count+1 WHERE count<? RETURNING count').bind(visitor+':'+period,window,limit).first();}
   catch{throw new QueenError('QUEEN_CONTROL_UNAVAILABLE');}
   if(!row)throw new QueenError('QUEEN_RATE_LIMIT',429);
  }
  // Retain at most the current daily window. Contains no raw IP or prompts.
- try{await env.PRISMA_RATE_DB.prepare('DELETE FROM queen_request_limits WHERE window_start<?').bind(Math.floor(now/86400000)*1440).run();}catch{}
+ try{await db.prepare('DELETE FROM queen_request_limits WHERE window_start<?').bind(Math.floor(now/86400000)*1440).run();}catch{}
 }
 
 // Bounded server-side SSE measurement. No generated text or reasoning is logged.
@@ -138,7 +139,7 @@ export async function measureQueenStream(env,{fetchImpl=fetch,signal,maxTokens=3
  const remaining=()=>{const ms=deadlineAt-Date.now();if(signal?.aborted||ms<=0)throw new QueenError('QUEEN_TIMEOUT');return ms;};
  const abort=()=>controller.abort();let timer,reader,completionTransportAttempted=false;
  try{
-  if(env.QUEEN_STAGE==='staging')await requireQueenIdle(env,{fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
+  if(env.QUEEN_ENABLED==='1')await requireQueenIdle(env,{fetchImpl,signal,timeoutMs:Math.min(5000,remaining())});
   const completionTimeoutMs=remaining();
   signal?.addEventListener('abort',abort,{once:true});timer=setTimeout(abort,completionTimeoutMs);
   completionTransportAttempted=true;
