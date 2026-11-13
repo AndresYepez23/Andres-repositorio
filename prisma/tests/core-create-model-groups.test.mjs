@@ -12,10 +12,11 @@ test('Create pane uses grouped model cards, not image-only dropdowns',()=>{
  for(const id of ['core-image-provider','core-image-model','core-image-activate'])assert.doesNotMatch(html,new RegExp('id="'+id+'"'));
  assert.doesNotMatch(html,/Generación de imágenes|Motor de imagen|Modelo de imagen|Usar modo imagen en este chat/);
 });
-test('Creative catalogue includes images, audio, music and video with individual purposes',()=>{
- for(const [key,title] of [['image','Imágenes'],['audio','Audio'],['music','Música'],['video','Vídeo']]){
+test('Crear only shows images and audio with individual purposes',()=>{
+ for(const [key,title] of [['image','Imágenes'],['audio','Audio']]){
   assert.ok(core.includes("key:'"+key+"',title:'"+title+"'"));
  }
+ for(const key of ['music','video','embedding','safety'])assert.doesNotMatch(core,new RegExp("key:'"+key+"',title:"));
  assert.match(core,/purpose\.textContent=String\(model\.specialty/);
  assert.match(core,/if\(\['huggingface','requesty'\]\.includes\(provider\)\|\|!Array\.isArray\(models\)\)continue/);
  assert.match(css,/\.core-create-option-copy \.core-create-purpose/);
