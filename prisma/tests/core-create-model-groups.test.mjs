@@ -18,7 +18,7 @@ test('Crear only shows images and audio with individual purposes',()=>{
  }
  for(const key of ['music','video','embedding','safety'])assert.doesNotMatch(core,new RegExp("key:'"+key+"',title:"));
  assert.match(core,/purpose\.textContent=String\(model\.specialty/);
- assert.match(core,/if\(\['huggingface','requesty'\]\.includes\(provider\)\|\|!Array\.isArray\(models\)\)continue/);
+ assert.match(core,/if\(\['huggingface','requesty'\]\.includes\(provider\)\|\|\(group\.key==='image'&&provider==='gemini'\)\|\|!Array\.isArray\(models\)\)continue/);
  assert.match(css,/\.core-create-option-copy \.core-create-purpose/);
 });
 test('Image generation receives selected card model, not removed dropdown values',()=>{
@@ -32,4 +32,10 @@ test('Unsupported creative media are informational, never sent to text chat as f
  assert.match(core,/row\.disabled=!ready/);
  assert.match(core,/if\(ready\)row\.addEventListener/);
  assert.match(core,/\$\('#core-composer-mode'\)\?\.classList\.add\('hidden'\)/);
+});
+
+test('Gemini premium image is hidden in Crear without disabling Gemini chat',()=>{
+ const create=core.slice(core.indexOf('function renderImageModelControls()'),core.indexOf('function renderModelPicker()'));
+ assert.equal(create.split("(group.key==='image'&&provider==='gemini')").length-1,2);
+ assert.match(core,/gemini:'Gemini'/);
 });
