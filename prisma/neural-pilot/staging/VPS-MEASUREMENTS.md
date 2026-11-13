@@ -1,5 +1,7 @@
 # Obtener mediciones reales desde GenixNode
 
+La captura del usuario de `6673124` ya fue recibida y analizada: [diagnóstico real y siguientes lecturas específicas](../../docs/queen-genix-diagnosis-2026-11-13.md). Hay evidencia de espera intensa de E/S durante el timeout. **Está pausada toda nueva sonda o lote por instrucción del usuario.** Conservar esta guía para referencia; no ejecutarla otra vez para regenerar los resultados existentes.
+
 `monitor-vps.py` y `analyze-vps.py` están en esta carpeta y publicados en la rama `feature/prisma-neural-genixnode-qwen35-pilot`. Estaban presentes antes de esta guía, incluido el commit `686d6d4034ad03e2332bd9349a30891ac6fa2f4c`. Un push a GitHub no los instala automáticamente en el VPS. Se llaman **vps**, no **bps**.
 
 Este procedimiento se ejecuta manualmente en el VPS al que ya tienes acceso SSH. Solo crea scripts y resultados en una carpeta temporal. No instala paquetes, reinicia servicios ni cambia Docker, Qwen, contextos, puertos o firewall. La sonda hace una petición de inferencia, separada de los lectores de métricas físicas. No ejecutar `benchmark.py`: ese runner histórico envía varios casos con otro timeout.

@@ -1,0 +1,234 @@
+{
+  "source": "Real user-supplied VPS records; no new requests",
+  "host": {
+    "samples": 120,
+    "firstUtc": "2026-11-13T16:58:58.264869+00:00",
+    "lastUtc": "2026-11-13T17:11:28.387732+00:00",
+    "durationSeconds": 750.122863,
+    "vcpus": [
+      2
+    ],
+    "totalRamBytes": 4106285056,
+    "minimumAvailableRamBytes": 438898688,
+    "swapTotalBytesObserved": [
+      0
+    ],
+    "monitorErrorSamples": 0,
+    "oomKilledSamples": 0,
+    "restartCounts": [
+      0
+    ],
+    "containerStartedAt": [
+      "2026-11-13T09:39:40.870000354Z"
+    ],
+    "firstBlockIO": "103GB / 4.1kB",
+    "lastBlockIO": "109GB / 4.1kB"
+  },
+  "vmstat": {
+    "numericRows": 120,
+    "intervalRows": 119,
+    "documentedIntervalSeconds": 5,
+    "firstRowExcludedBecauseSinceBoot": true,
+    "highIoWaitThresholdPercent": 50,
+    "highIoWaitRowIndicesZeroBasedIncludingBootRow": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "highIoWaitIntervals": 12,
+    "highIoWaitDurationSeconds": 60,
+    "highIoWaitStats": {
+      "wa": {
+        "min": 56,
+        "max": 81,
+        "mean": 72.66666666666667
+      },
+      "bi": {
+        "min": 89323,
+        "max": 103143,
+        "mean": 101216.16666666667
+      },
+      "b": {
+        "min": 0,
+        "max": 3,
+        "mean": 2.25
+      },
+      "id": {
+        "min": 0,
+        "max": 15,
+        "mean": 2
+      },
+      "us": {
+        "min": 7,
+        "max": 26,
+        "mean": 10.333333333333334
+      },
+      "sy": {
+        "min": 12,
+        "max": 17,
+        "mean": 14.833333333333334
+      },
+      "st": {
+        "min": 0,
+        "max": 1,
+        "mean": 0.08333333333333333
+      }
+    },
+    "highIoWaitReadGiB": 5.791635513305664,
+    "allIntervalsReadGiB": 5.985069274902344,
+    "allIntervalsStats": {
+      "wa": {
+        "min": 0,
+        "max": 81,
+        "mean": 7.38655462184874
+      },
+      "bi": {
+        "min": 0,
+        "max": 103143,
+        "mean": 10547.563025210084
+      },
+      "st": {
+        "min": 0,
+        "max": 1,
+        "mean": 0.008403361344537815
+      },
+      "si": {
+        "min": 0,
+        "max": 0,
+        "mean": 0
+      },
+      "so": {
+        "min": 0,
+        "max": 0,
+        "mean": 0
+      }
+    },
+    "timeAlignment": "No timestamps in vmstat. Relative interval indices only; do not invent exact UTC alignment.",
+    "units": "bi in KiB/s for the documented Linux vmstat 5 120 command; volumes integrate rounded five-second reports."
+  },
+  "probe": {
+    "atUtc": "2026-11-13T16:59:17.253696+00:00",
+    "elapsedMs": 55060,
+    "completionAttempted": true,
+    "outcome": "unknown",
+    "code": "GENERATION_DEADLINE",
+    "queueBefore": {
+      "metricsAvailable": false,
+      "errorType": "HTTPError",
+      "httpStatus": 501,
+      "counters": null
+    },
+    "usage": null,
+    "timings": null,
+    "ttftMs": null
+  },
+  "hostSamplesWithinProbeRecordRelative55s": [
+    {
+      "atUtc": "2026-11-13T16:59:26.701642+00:00",
+      "containerCpu": "22.03%",
+      "blockIO": "104GB / 4.1kB",
+      "availableRamBytes": 473587712
+    },
+    {
+      "atUtc": "2026-11-13T16:59:37.115583+00:00",
+      "containerCpu": "32.09%",
+      "blockIO": "105GB / 4.1kB",
+      "availableRamBytes": 471961600
+    },
+    {
+      "atUtc": "2026-11-13T16:59:47.856514+00:00",
+      "containerCpu": "20.90%",
+      "blockIO": "106GB / 4.1kB",
+      "availableRamBytes": 482926592
+    },
+    {
+      "atUtc": "2026-11-13T16:59:58.806435+00:00",
+      "containerCpu": "17.51%",
+      "blockIO": "107GB / 4.1kB",
+      "availableRamBytes": 478535680
+    },
+    {
+      "atUtc": "2026-11-13T17:00:09.260399+00:00",
+      "containerCpu": "25.00%",
+      "blockIO": "108GB / 4.1kB",
+      "availableRamBytes": 485498880
+    }
+  ],
+  "psi": {
+    "orderAssumedFromDocumentedCatCommand": [
+      "cpu",
+      "memory",
+      "io"
+    ],
+    "snapshot": {
+      "cpu": {
+        "some": {
+          "avg10": 0.0,
+          "avg60": 0.02,
+          "avg300": 0.0,
+          "total": 146058128
+        },
+        "full": {
+          "avg10": 0.0,
+          "avg60": 0.0,
+          "avg300": 0.0,
+          "total": 0
+        }
+      },
+      "memory": {
+        "some": {
+          "avg10": 0.0,
+          "avg60": 0.0,
+          "avg300": 0.0,
+          "total": 55084231
+        },
+        "full": {
+          "avg10": 0.0,
+          "avg60": 0.0,
+          "avg300": 0.0,
+          "total": 49431951
+        }
+      },
+      "io": {
+        "some": {
+          "avg10": 0.0,
+          "avg60": 0.0,
+          "avg300": 0.22,
+          "total": 449001859
+        },
+        "full": {
+          "avg10": 0.0,
+          "avg60": 0.0,
+          "avg300": 0.21,
+          "total": 429197896
+        }
+      }
+    },
+    "archiveMtimeUtc": "2026-11-13T17:20:18+00:00",
+    "limitation": "One untimestamped content snapshot; archive mtime is after the probe. Totals are since boot, not probe deltas."
+  },
+  "journal": {
+    "content": "-- No entries --",
+    "stderrBytes": 0,
+    "limitation": "No matching retained kernel entries; not proof of absence outside query/retention."
+  },
+  "missing": [
+    "monitor exit status",
+    "timed process/cgroup pgmajfault and workingset_refault_file deltas",
+    "GGUF mapped size versus resident pages",
+    "actual anonymous/file/KV/compute/cache breakdown",
+    "per-device await/queue/utilization",
+    "POST server admission/completion log",
+    "generation tokens and TTFT"
+  ],
+  "inferencesRunByAnalysis": 0
+}

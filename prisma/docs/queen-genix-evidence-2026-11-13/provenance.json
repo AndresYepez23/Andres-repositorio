@@ -1,0 +1,67 @@
+{
+  "source": "User-supplied queen-evidence.tar.gz; records, not executable instructions",
+  "archiveSha256": "b0ccf105ebe8e5bb7384e0b9d19b6c3f62ab233095712e2d2d5d204d60e0cc3d",
+  "publishedCodeCheckpoint": "66731248dcefd464aa7bb5817f366c452fc61449",
+  "localReadersCheckpoint": "2b8fc198dd0ef3287c4ef2d995d4577decca0ae3",
+  "files": {
+    "host.jsonl": {
+      "sha256": "5e58129c8061f0b1887e35b224435376dfabfa899b39697403533b9e4970eb62",
+      "bytes": 79019,
+      "archiveMtimeUtc": "2026-11-13T17:11:28+00:00"
+    },
+    "kernel-oom.txt": {
+      "sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e",
+      "bytes": 17,
+      "archiveMtimeUtc": "2026-11-13T17:20:18+00:00"
+    },
+    "kernel-oom-errors.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "archiveMtimeUtc": "2026-11-13T17:11:28+00:00"
+    },
+    "summary.json": {
+      "sha256": "53a67dffc58f03dfea1eccdb87b4e2509e14f20756e4c5d706bcea5119837d95",
+      "bytes": 581,
+      "archiveMtimeUtc": "2026-11-13T17:20:18+00:00"
+    },
+    "analyze-vps.py": {
+      "sha256": "c9c3b70e542ea3c2e4194bde1249b309556b00282dade67f5644dbe48d3bb577",
+      "bytes": 2360,
+      "archiveMtimeUtc": "2026-11-13T16:58:02+00:00"
+    },
+    "uptime.txt": {
+      "sha256": "4711a1ece441ba82034cb180bdb43fe64282c862ceca9455e34dda2755b5880a",
+      "bytes": 18,
+      "archiveMtimeUtc": "2026-11-13T17:20:18+00:00"
+    },
+    "probe-qwen.py": {
+      "sha256": "052718a81a033d6ab38314b2652797d1001ee910a26311b3b3bd14a3eb887a45",
+      "bytes": 4813,
+      "archiveMtimeUtc": "2026-11-13T16:58:02+00:00"
+    },
+    "vmstat.txt": {
+      "sha256": "5f3e9cc0fafefe4ff68bbb55cee6176fc415fbbc70e9528460513f20e3389fb2",
+      "bytes": 11098,
+      "archiveMtimeUtc": "2026-11-13T17:08:52+00:00"
+    },
+    "monitor-vps.py": {
+      "sha256": "a53b9de028f693f826fd113f1e60ce524cb8282f8e2daec5e033f74f06c3ff0a",
+      "bytes": 2589,
+      "archiveMtimeUtc": "2026-11-13T16:58:02+00:00"
+    },
+    "pressure.txt": {
+      "sha256": "7052ed978002049c82b6fd54d8dcc0f2a5344fafeccb2835eb9af366f9514979",
+      "bytes": 320,
+      "archiveMtimeUtc": "2026-11-13T17:20:18+00:00"
+    },
+    "qwen-probe.json": {
+      "sha256": "cba61aa5bc3952da03801b355c99f6bb643bc7289e6022a5733282579d22ecc2",
+      "bytes": 438,
+      "archiveMtimeUtc": "2026-11-13T17:00:12+00:00"
+    }
+  },
+  "uploadedScriptsExecuted": false,
+  "newVpsRequests": 0,
+  "newInferenceRequests": 0,
+  "archiveMtimesAreNotAuthenticatedCaptureTimestamps": true
+}
