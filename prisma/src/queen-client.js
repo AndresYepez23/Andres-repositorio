@@ -14,7 +14,12 @@ export async function requestQueenPlan({text,files=[],context={},repair=false},{
  try{
   const response=await fetchImpl('/api/core/plan',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
    body:JSON.stringify({text,files:files.map(f=>({name:f.name,type:f.type,size:f.size})),context,repair})});
-  if(!response.ok)return null;
+  if(!response.ok){
+   // Fetch resolves when headers arrive. Abort now to cancel the unread error body
+   // and release the response stream while preserving the existing local fallback.
+   controller.abort();
+   return null;
+  }
   const payload=await response.json();return payload?.ok?payload:null;
  }catch{return null;}
  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}

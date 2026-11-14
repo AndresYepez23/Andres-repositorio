@@ -190,6 +190,20 @@ test('browser client sends only metadata and procedure references, with no files
  }});
 });
 
+test('browser client aborts non-success responses so unread error bodies are cancelled',async()=>{
+ let requestSignal,cancelled=false;
+ const result=await requestQueenPlan({text:'current request'},{fetchImpl:async(url,options)=>{
+  assert.equal(url,'/api/core/plan');requestSignal=options.signal;
+  const response=new Response(new ReadableStream({cancel(){cancelled=true;}}),{status:422});
+  // Native fetch binds its response stream to the request signal; mirror that in this mock.
+  options.signal.addEventListener('abort',()=>{void response.body?.cancel().catch(()=>{});},{once:true});
+  return response;
+ }});
+ assert.equal(result,null);
+ assert.equal(requestSignal.aborted,true);
+ assert.equal(cancelled,true);
+});
+
 test('provider observations persist model and modality evidence without promoting unrelated capabilities',async()=>{
  const {observeQueenProvider,readQueenProviderObservations}=await import('../functions/_lib/queen-observations.js');
  const e=env();await observeQueenProvider(e,{provider:'groq',model:'known-text',capability:'chat',status:200,durationMs:150,usage:{prompt_tokens:10,completion_tokens:5}});
