@@ -78,3 +78,8 @@ export async function onRequestPost({request,env},{interpret=interpretWithQwenCo
   return json({ok:false,code:safe.code,fallback:true},safe.status);
  }
 }
+
+export async function onRequestGet({request,env}){
+ const isolatedStaging=env.QUEEN_ENABLED==='1'&&env.QUEEN_STAGE==='staging'&&env.QWEN_CORE_STAGING_ENABLED==='1'&&(()=>{try{return /(?:^|\.)prisma-queen-staging\.pages\.dev$/i.test(new URL(request.url).hostname);}catch{return false;}})();
+ return json({ready:isolatedStaging,deploymentCommit:isolatedStaging?(env.CF_PAGES_COMMIT_SHA||null):null});
+}
