@@ -215,5 +215,52 @@ jobs:
           if(!item?.ok||item.realInference||item.neural?.source!=='queen-hybrid-local'||item.neural?.metrics?.inferences!==0||!item.evidence?.exactCells)throw Error('QUEEN_HYBRID_OCR_CHAIN_NOT_VERIFIED');
           if(r.failures?.length)throw Error('BROWSER_DEPENDENCY_FAILURE');
           NODE
+      - name: One-shot Queen repair with genuine engine failure in staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 12
+        env:
+          QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-recovery-once]'; then
+            echo "Queen live repair trial not requested by this commit."
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          const base='https://prisma-queen-staging.pages.dev',expected=process.env.QUEEN_STAGING_EXPECTED_COMMIT;
+          let ready=false;
+          for(let attempt=0;attempt<20;attempt++){
+            try{
+              const r=await fetch(base+'/api/core/qwen-interpret',{signal:AbortSignal.timeout(10000)});
+              if(r.ok){const body=await r.json();if(body.ready===true&&body.deploymentCommit===expected){ready=true;break;}}
+            }catch{}
+            await new Promise(resolve=>setTimeout(resolve,15000));
+          }
+          if(!ready)throw Error('STAGING_PROVENANCE_UNVERIFIED: no inference attempted');
+          NODE
+          tooling="$RUNNER_TEMP/queen-playwright"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export QUEEN_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma >"$RUNNER_TEMP/queen-local-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 2
+          done
+          export QUEEN_PUBLIC_STAGING_URL='https://prisma-queen-staging.pages.dev/'
+          export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-repair-trial"
+          export QUEEN_OPERATIONS_CASES='real-parameter-recovery'
+          node prisma/neural-pilot/staging/browser-operations.cjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
+          const x=r.rows.find(x=>x.id==='real-parameter-recovery');
+          console.log(JSON.stringify({case:x?.id,ok:x?.ok??false,error:x?.error||null,realInference:x?.realInference||false,initial:x?.initial?.plan?.steps?.map(s=>s.tool_id)||[],correction:x?.correction?.plan?.steps?.map(s=>s.tool_id)||[],initialInferences:x?.initial?.metrics?.inferences??null,correctionInferences:x?.correction?.metrics?.inferences??null,engineCalls:x?.engineCalls??null,verified:x?.verified??false,metrics:x?.metrics||null}));
+          if(!x?.ok||!x.realInference||!x.verified||x.initial?.source!=='queen'||x.correction?.source!=='queen'||x.engineCalls<2||x.metrics?.repairs!==1)
+            throw Error('QUEEN_REAL_PARAMETER_RECOVERY_NOT_VERIFIED');
+          NODE
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v
