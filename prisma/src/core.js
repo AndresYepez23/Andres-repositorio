@@ -14,7 +14,7 @@ import { getCentralProviderStatus } from './provider-connections.js';
 import { loadLocalBrain, rankLocalTools } from './local-brain.js';
 import { buildSmartLocalFlow } from './smart-flows.js';
 import { coreToolCatalog, searchCoreTools, planCoreOfflineAction, describeCoreTools, isToolDiscoveryQuestion, coreCapabilityContext } from './core-tool-intelligence.js';
-import { planFileConversion } from './file-conversions.js';
+import { planFileConversion, planFileAssessment, assessFileConversions } from './file-conversions.js';
 import { openImageEditor, initImageEditor, applyImageText } from './core-image-editor.js';
 import { renderMarkdownSafe } from './core-markdown.js';
 import { imageAnalysisIntent, isBatchImageTranscription } from './core-image-analysis.js';
@@ -1890,6 +1890,28 @@ async function requestPlan(userText){
   const resolvedTask=taskMemory.resolve(activeConversationId,userText,attachments);
   if(resolvedTask.cancelled){pendingPlan=null;$('#core-plan')?.classList.add('hidden');addMessage('assistant','Tarea cancelada.');return;}
   const coreRequest=resolvedTask.request||userText;
+  // Read-only prerequisites must finish before a tool matcher can turn a
+  // mentioned format into an executable conversion or a missing-target reply.
+  const assessment=planFileAssessment(coreRequest,resolvedTask.files);
+  let fileAssessmentCompleted=false;
+  if(assessment){
+    if(assessment.type==='needs-input'){
+      taskMemory.wait(activeConversationId,coreRequest,resolvedTask.files);
+      addMessage('assistant',assessment.message);return;
+    }
+    let compatible=true;
+    const reply=await assessFileConversions(resolvedTask.files,{run:runTool,progress:message=>status(message),
+      askTarget:!assessment.continueConversion,onInspection:result=>{compatible=compatible&&result.compatible;}});
+    attachments=resolvedTask.files;renderAttachments();
+    addMessage('assistant',reply,{engine:'prisma-core-local'});
+    if(!assessment.continueConversion||!compatible){
+      if(compatible)taskMemory.wait(activeConversationId,'Convierte el archivo'+(assessment.destination?' a '+assessment.destination:''),attachments);
+      status('Tipo y conversiones evaluados localmente. El archivo original sigue disponible.','success');return;
+    }
+    // Keep the full original request: later planners must still account for
+    // extraction, compression or other transformations as well as conversion.
+    fileAssessmentCompleted=true;
+  }
   const capabilityPlan=planCapabilityRequest(coreRequest,resolvedTask.files,resolvedTask.task);
   // Grounded scanned CSV pipelines use the existing five-step backend graph,
   // not Qwen's generic 2B multi-step synthesis. This does not call a model.
@@ -2094,7 +2116,7 @@ async function requestPlan(userText){
   if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
   const previousTexts=messages.slice(-9,-1).filter(message=>message.role==='user').map(message=>message.content);
-  const fileConversion=planFileConversion(userText,attachments,previousTexts);
+  const fileConversion=planFileConversion(coreRequest,resolvedTask.files,previousTexts,{assessmentComplete:fileAssessmentCompleted});
   if(fileConversion&&!(fileConversion.type==='ready'&&assessQwenCorePlanCoverage(userText,fileConversion.steps).needsSemanticReview)){
     if(fileConversion.type!=='ready'){
       // Preserve the conversion objective while asking for format or source file.
@@ -2105,6 +2127,7 @@ async function requestPlan(userText){
       return;
     }
     const plan={message:fileConversion.message,steps:fileConversion.steps,userRequest:userText,needs_clarification:false,combineFinalFiles:true,conversion:true};
+    attachments=resolvedTask.files;renderAttachments();
     const steps=validatePlan(plan);
     pendingPlan={plan,steps};
     addMessage('assistant',fileConversion.message);
