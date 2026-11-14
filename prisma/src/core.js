@@ -1,4 +1,6 @@
-import { requestQueenPlan, queenTaskContext, queenFailureDescription } from './queen-client.js';
+import { requestQueenPlan, queenFailureDescription } from './queen-client.js';
+import { assessQwenCorePlanCoverage } from './qwen-core-plan-coverage.js';
+import { requestQwenCoreInterpretation, prioritizeQwenCoreTools } from './qwen-core-client.js';
 import { executeQueenDAG, createQueenExecutionState } from './queen-execution.js';
 import { recordCoreMetric } from './core-telemetry.js';
 import { planCapabilityRequest } from './core-capabilities.js';
@@ -1130,6 +1132,7 @@ function compatibleFiles(tool,files){
 }
 function validatePlan(plan){
   if(!plan||typeof plan!=='object'||!Array.isArray(plan.steps))throw new Error('El plan no tiene el formato esperado.');
+  if(plan.userRequest&&assessQwenCorePlanCoverage(plan.userRequest,plan.steps).needsSemanticReview)throw Error('El plan no cubre todas las condiciones de la solicitud.');
   if(plan.steps.length>MAX_STEPS)throw new Error('El plan supera el máximo seguro de '+MAX_STEPS+' operaciones.');
   const ready=new Map(tools.filter(tool=>['ready','beta'].includes(tool.status)).map(tool=>[tool.id,tool]));
   let inputs=attachments.map(file=>({name:file.name,type:file.type||''}));
@@ -1215,6 +1218,23 @@ function showPlan(plan,steps){
   const cancel=document.createElement('button');cancel.type='button';cancel.className='button button-quiet';cancel.textContent='Cancelar plan';cancel.addEventListener('click',()=>{pendingPlan=null;panel.classList.add('hidden');status('Plan cancelado.');});
   const run=document.createElement('button');run.type='button';run.className='button button-primary';run.textContent='Autorizar y ejecutar';run.addEventListener('click',executePlan);
   actions.append(cancel,run);panel.append(actions);
+}
+function showQwenCoreOptions(hint){
+ const matches=(hint?.tool_ids||[]).map(id=>tools.find(t=>t.id===id&&['ready','beta'].includes(t.status))).filter(Boolean).slice(0,3);
+ if(!matches.length)return false;
+ const panel=$('#core-plan');if(!panel)return false;
+ pendingPlan=null;panel.replaceChildren();panel.classList.remove('hidden');
+ const head=document.createElement('strong');head.textContent='Opciones sugeridas por Qwen';panel.append(head);
+ const explanation=document.createElement('p');explanation.textContent='El plan automático no cubre todos los pasos. Elige una herramienta para configurarla; nada se ha ejecutado.';panel.append(explanation);
+ const actions=document.createElement('div');actions.className='core-plan-actions';
+ for(const tool of matches){
+  const button=document.createElement('button');button.type='button';button.className='button button-quiet';button.textContent=tool.name;
+  button.addEventListener('click',()=>{panel.classList.add('hidden');document.querySelector('[data-view="explore"]')?.click();const search=document.querySelector('#explore-search');if(search){search.value=tool.name;search.dispatchEvent(new Event('input',{bubbles:true}));search.focus();}});
+  actions.append(button);
+ }
+ const back=document.createElement('button');back.type='button';back.className='button button-quiet';back.textContent='Volver al chat';back.addEventListener('click',()=>{panel.classList.add('hidden');$('#core-input')?.focus();});
+ actions.append(back);panel.append(actions);
+ return true;
 }
 function buildLocalPlan(userText){
   const q=String(userText||'').toLowerCase();
@@ -1869,9 +1889,11 @@ async function requestPlan(userText){
   cancelRequested=false;
   const resolvedTask=taskMemory.resolve(activeConversationId,userText,attachments);
   if(resolvedTask.cancelled){pendingPlan=null;$('#core-plan')?.classList.add('hidden');addMessage('assistant','Tarea cancelada.');return;}
-  const capabilityPlan=planCapabilityRequest(resolvedTask.request||userText,resolvedTask.files,resolvedTask.task);
-  if((capabilityPlan?.steps?.length>1||capabilityPlan?.type==='needs-input')&&await coordinateWithQueen(resolvedTask.request||userText,resolvedTask))return;
-  if(capabilityPlan){
+  const coreRequest=resolvedTask.request||userText;
+  const capabilityPlan=planCapabilityRequest(coreRequest,resolvedTask.files,resolvedTask.task);
+  if(await coordinateWithQueen(coreRequest,resolvedTask))return;
+  const incompleteCapabilityPlan=capabilityPlan?.type==='ready'&&assessQwenCorePlanCoverage(coreRequest,capabilityPlan.steps).needsSemanticReview;
+  if(capabilityPlan&&!incompleteCapabilityPlan){
     if(capabilityPlan.type!=='ready'){
       recordCoreMetric('core','clarification');
       taskMemory.wait(activeConversationId,resolvedTask.request||userText,resolvedTask.files);
@@ -1934,7 +1956,6 @@ async function requestPlan(userText){
     status('Herramientas relacionadas identificadas sin usar IA.','success');
     return;
   }
-  if(await coordinateWithQueen(resolvedTask.request||userText,resolvedTask))return;
   // Explicit web research is an optional enrichment path. Existing local
   // tools, greetings, product answers and capability discovery keep priority.
   // If Tavily is unavailable or out of quota, Core falls through to its normal
@@ -2052,7 +2073,7 @@ async function requestPlan(userText){
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
   const previousTexts=messages.slice(-9,-1).filter(message=>message.role==='user').map(message=>message.content);
   const fileConversion=planFileConversion(userText,attachments,previousTexts);
-  if(fileConversion){
+  if(fileConversion&&!(fileConversion.type==='ready'&&assessQwenCorePlanCoverage(userText,fileConversion.steps).needsSemanticReview)){
     if(fileConversion.type!=='ready'){
       // Preserve the conversion objective while asking for format or source file.
       // A later "A Word" or "Procesa los archivos adjuntos" must not repeat a PDF split.
@@ -2069,7 +2090,7 @@ async function requestPlan(userText){
     return;
   }
   const pdfAction=buildPdfEditPlan(userText);
-  if(pdfAction){
+  if(pdfAction&&!(pdfAction.type==='execute'&&assessQwenCorePlanCoverage(userText,pdfAction.plan?.steps).needsSemanticReview)){
    if(pdfAction.type!=='execute'){addMessage('assistant',pdfAction.message);status('Edición de documentos lista.','info');return;}
    const plan=pdfAction.plan;
    const steps=validatePlan(plan);
@@ -2086,7 +2107,7 @@ async function requestPlan(userText){
   }
   const previousUserTexts=messages.slice(-9,-1).filter(m=>m.role==='user').map(m=>m.content);
   const guidedFlow=buildSmartLocalFlow(userText,attachments,previousUserTexts);
-  if(guidedFlow){
+  if(guidedFlow&&!(guidedFlow.type==='ready'&&assessQwenCorePlanCoverage(userText,guidedFlow.steps).needsSemanticReview)){
     if(guidedFlow.type!=='ready'){
       addMessage('assistant',guidedFlow.message);
       status('Entendí la operación: falta información para ejecutarla.','info');
@@ -2105,7 +2126,7 @@ async function requestPlan(userText){
   // image privacy/effects, video speed/orientation, audio normalization,
   // file inspection, hashes and safe text processing.
   const directLocal=planCoreOfflineAction(userText,attachments,previousUserTexts);
-  if(directLocal){
+  if(directLocal&&!(directLocal.type==='ready'&&assessQwenCorePlanCoverage(userText,directLocal.steps).needsSemanticReview)){
     if(directLocal.type!=='ready'){
       addMessage('assistant',directLocal.message);
       status('Falta un dato necesario para ejecutar esta herramienta.','info');
@@ -2165,6 +2186,11 @@ async function requestPlan(userText){
     // Prisma Mini / browser-based models are deliberately excluded from the
     // independent Core fallback. Only deterministic, shipped operations apply.
     const localPlan=buildLocalPlan(userText);
+    if(assessQwenCorePlanCoverage(userText,localPlan.steps||[]).needsSemanticReview){
+      const hint=await requestQwenCoreInterpretation({text:coreRequest,files:attachments});
+      if(!showQwenCoreOptions(hint))addMessage('assistant','No ejecutaré un plan que omita pasos de tu solicitud. Especifica el resultado final o utiliza Explorar.');
+      status('Plan incompleto; no se modificaron archivos.','warning');return;
+    }
     let localSteps;
     try{localSteps=validatePlan(localPlan);}catch(error){addMessage('assistant','No pude preparar una operación local segura: '+error.message);status('No se pudo preparar el trabajo.','warning');return;}
     if(!localSteps.length){addMessage('assistant',localPlan.message);status('Sin conexión de IA: capacidad local no disponible para esta solicitud.','warning');return;}
@@ -2222,7 +2248,12 @@ async function requestPlan(userText){
       if(miniButton)miniButton.textContent='Activar Prisma Mini';
     }
   }
-  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500),miniShortlist);
+  // Qwen only ranks known tools for unresolved composite work; never executes.
+  let qwenHint=null;
+  const compoundInstruction=/(?:primero|despu[eé]s|luego|adem[aá]s|y\s+(?:convierte|transforma|extrae|gira|quita|elimina|crea|exporta))/i.test(userText);
+  if(attachments.length&&(incompleteCapabilityPlan||compoundInstruction))qwenHint=await requestQwenCoreInterpretation({text:coreRequest,files:attachments});
+  const shortlist=prioritizeQwenCoreTools(miniShortlist||compactPlanningCatalog(userText),qwenHint);
+  const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500),shortlist);
   let plan,steps;
   // Provider/network errors must not trigger a second costly inference request.
   // Deterministic tools already ran without consuming inference; plan only
@@ -2235,19 +2266,20 @@ async function requestPlan(userText){
   },(p,msg)=>{status(msg||'Planificando…');setProgress(.04+Math.max(0,Math.min(1,Number(p)||0))*.12,msg||'Planificando…');});
   try{
     plan=parsePlan(result.text);
-    if(!plan.needs_clarification)steps=validatePlan(plan);
+    if(!plan.needs_clarification)steps=validatePlan({...plan,userRequest:userText});
   }catch(firstError){
     // Avoid a second large planner request that wastes quotas. Use the local
     // rule-based planner when it can identify a safe operation; otherwise
     // explain the limitation instead of silently showing a dead approval form.
     console.warn('Prisma Core plan invalid; using deterministic fallback',firstError?.message||firstError);
+    plan=null;steps=null;
     const local=buildLocalPlan(userText);
-    if(local.steps?.length){
+    if(local.steps?.length&&!assessQwenCorePlanCoverage(userText,local.steps).needsSemanticReview){
       const safeLocal=local.steps.every(step=>tools.some(tool=>tool.id===step.tool_id&&['local','browser'].includes(tool.mode)));
       if(safeLocal){plan=local;steps=validatePlan(local);}
     }
     if(!plan){
-      addMessage('assistant','Entendí tu solicitud, pero no pude construir una secuencia segura de herramientas. Intenta describir el resultado final o abre la herramienta correspondiente en Explorar. Los motores de IA siguen disponibles para responder preguntas y redactar contenido.');
+      if(!showQwenCoreOptions(qwenHint))addMessage('assistant','No encontré un plan que cubra todas las condiciones. Puedes precisar el resultado final o abrir las herramientas desde Explorar.');
       status('No fue posible organizar el flujo; prueba una instrucción más específica.','warning');
       return;
     }
@@ -2265,43 +2297,15 @@ async function requestPlan(userText){
 // Queen plans through the backend; the existing runtime still owns permissions,
 // credentials, actual tools, storage and conversation state.
 async function coordinateWithQueen(userText,resolvedTask){
-  const chatId=activeConversationId;
-  const previousExecution=resolvedTask.task?.execution;
-  if(previousExecution&&/^(?:contin[uú]a|reintenta|int[eé]ntalo de nuevo)/i.test(userText)){
-    attachments=previousExecution.sourceFiles;renderAttachments();
-    const plan={...previousExecution.plan,queenState:previousExecution.state};
-    const steps=plan.steps.map(s=>({tool:tools.find(t=>t.id===s.tool_id),params:s.params,reason:s.id}));
-    if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(plan,steps);
-    else{pendingPlan={plan,steps};await executeQueenPlan();}
-    return true;
-  }
-  const context=queenTaskContext(resolvedTask,activeChatRecord()?.modelSelection);
-  status('Queen está interpretando la solicitud…');
-  const queenStartedAt=Date.now();
-  queenPlanningController=new AbortController();setBusy(true);
-  const response=await requestQueenPlan({text:userText,files:resolvedTask.files,context},{signal:queenPlanningController.signal});
-  queenPlanningController=null;
-  if(cancelRequested){status('Planificación cancelada.','info');return true;}
-  if(chatId!==activeConversationId)return true;
-  if(!response||response.fallback||response.source!=='queen')return false;
-  recordCoreMetric('core','queen-plan',{duration:response.metrics?.durationMs});
-  const plan=response.plan;
-  if(plan.intent==='clarify'){
-    taskMemory.wait(chatId,userText,resolvedTask.files);
-    addMessage('assistant',plan.message);status('Hace falta una aclaración.','info');return true;
-  }
-  if(plan.intent==='question'&&context.preferences.mode!=='manual'&&!resolvedTask.files.length&&!isExplicitResearchRequest(userText)){
-    addMessage('assistant',plan.message,{engine:'queen'});status('Respuesta preparada por Queen.','success');return true;
-  }
-  // Conversation and specialized routes keep existing account rotation,
-  // manual model selection, quotas and circuit breakers.
-  if(plan.intent!=='execute')return false;
-  attachments=resolvedTask.files;renderAttachments();
-  const steps=plan.steps.map(step=>({tool:tools.find(t=>t.id===step.tool_id),params:step.params,reason:step.id}));
-  const queenPlan={...plan,queen:true,userRequest:userText,queenMetrics:response.metrics,queenContext:context,queenStartedAt};
-  if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(queenPlan,steps);
-  else{pendingPlan={plan:queenPlan,steps};await executeQueenPlan();}
-  return true;
+ // Preserve already-started work only. No new requests to the old broad neural planner.
+ const previous=resolvedTask.task?.execution;
+ if(!previous||!/^(?:contin[uú]a|reintenta|int[eé]ntalo de nuevo)/i.test(userText))return false;
+ attachments=previous.sourceFiles;renderAttachments();
+ const plan={...previous.plan,queenState:previous.state};
+ const steps=plan.steps.map(item=>({tool:tools.find(t=>t.id===item.tool_id),params:item.params,reason:item.id}));
+ if(steps.some(({tool})=>!['local','browser'].includes(tool.mode)))showPlan(plan,steps);
+ else{pendingPlan={plan,steps};await executeQueenPlan();}
+ return true;
 }
 async function executeQueenPlan(){
   if(!pendingPlan||executionActive)return;
