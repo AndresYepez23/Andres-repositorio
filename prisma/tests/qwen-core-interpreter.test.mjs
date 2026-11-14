@@ -58,7 +58,7 @@ test('staging flag enables the interpreter only in the isolated staging environm
  const url='https://prisma-queen-staging.pages.dev/api/core/qwen-interpret';
  const req=()=>new Request(url,{method:'POST',headers:{Origin:'https://prisma-queen-staging.pages.dev','Content-Type':'application/json'},body:JSON.stringify({text:'Convierte el PDF a Word',files:pdf})});
  const run=async env=>{const r=await onRequestPost({request:req(),env},{reserve:async()=>{invoked++;},interpret:async()=>({ok:true,source:'qwen-core',intent:'question',tool_ids:[]})});return r.json();};
- const auth={QUEEN_ENABLED:'1',QUEEN_STAGE:'staging',CF_PAGES_BRANCH:'feature/qwen-core-hybrid',CF_PAGES_URL:'https://prisma-queen-staging.pages.dev',QUEEN_ACCESS_CLIENT_ID:'test',QUEEN_ACCESS_CLIENT_SECRET:'test',QUEEN_API_KEY:'test',QUEEN_BASE_URL:'https://queen.example/v1'};
+ const auth={QUEEN_ENABLED:'1',QUEEN_STAGE:'staging',QWEN_CORE_STAGING_ENABLED:'1',CF_PAGES_BRANCH:'feature/qwen-core-hybrid',CF_PAGES_URL:'https://prisma-queen-staging.pages.dev',QUEEN_ACCESS_CLIENT_ID:'test',QUEEN_ACCESS_CLIENT_SECRET:'test',QUEEN_API_KEY:'test',QUEEN_BASE_URL:'https://queen.example/v1'};
  assert.equal((await run(auth)).ok,true);
  assert.equal((await run({...auth,CF_PAGES_URL:'https://prismaspace.pages.dev'})).available,false);
  assert.equal((await run({...auth,CF_PAGES_URL:'https://prisma-queen-staging.pages.dev.evil.invalid'})).available,false);
@@ -68,7 +68,7 @@ test('staging flag enables the interpreter only in the isolated staging environm
 });
 
 test('isolated staging is allowed only on its own Pages project and dedicated branch',async()=>{
- const base={QUEEN_ENABLED:'1',QUEEN_STAGE:'staging',CF_PAGES_BRANCH:'feature/qwen-core-hybrid',
+ const base={QUEEN_ENABLED:'1',QUEEN_STAGE:'staging',QWEN_CORE_STAGING_ENABLED:'1',CF_PAGES_BRANCH:'feature/qwen-core-hybrid',
   CF_PAGES_URL:'https://d5e9a521.prisma-queen-staging.pages.dev',
   QUEEN_ACCESS_CLIENT_ID:'staging-client',QUEEN_ACCESS_CLIENT_SECRET:'staging-secret',QUEEN_API_KEY:'staging-key'};
  const make=env=>new Request('https://d5e9a521.prisma-queen-staging.pages.dev/api/core/qwen-interpret',{method:'POST',
