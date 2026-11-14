@@ -272,6 +272,42 @@ test('an explicit original-file goal does not constrain conversion to the extrac
  });
 });
 
+test('whole-document wording preserves the original input in both grammar and semantic validation',async()=>{
+ for(const whole of ['todo el PDF','el PDF completo','el documento entero','todo el archivo']){
+  const response=await planWithQueen(env(),{text:`Extrae la segunda página del PDF y después convierte ${whole} a Word`,files:pdf},{
+   forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
+    const execute=(schema.oneOf||[schema]).find(v=>v.properties.intent.enum.includes('execute'));
+    for(const variant of execute.properties.steps.items.oneOf[1].oneOf){
+     assert.ok(variant.properties.inputs.items.enum.includes('file:0'));
+     assert.equal(variant.properties.dependsOn.minItems,undefined);
+    }
+    return result({intent:'execute',message:'Plan preparado.',steps:[step('s1','pdf-extract',{pages:'2'},['file:0']),step('s2','pdf-to-word',{},['file:0'],['s1'])]});
+   }
+  });
+  assert.deepEqual(response.plan.steps[1].inputs,['file:0']);
+ }
+});
+
+test('generation constrains intermediate input only when the later clause explicitly refers to it',async()=>{
+ for(const [later,intermediate] of [['convierte el PDF a Word',false],['conviértela a Word',true],['convierte dicha salida a Word',true]]){
+  await planWithQueen(env(),{text:'Extrae la segunda página del PDF y después '+later,files:pdf},{
+   forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
+    const execute=(schema.oneOf||[schema]).find(v=>v.properties.intent.enum.includes('execute'));
+    for(const variant of execute.properties.steps.items.oneOf[1].oneOf){
+     if(intermediate){
+      assert.deepEqual(variant.properties.inputs.items.enum,['step:s1']);
+      assert.equal(variant.properties.dependsOn.minItems,1);
+     }else{
+      assert.ok(variant.properties.inputs.items.enum.includes('file:0'));
+      assert.equal(variant.properties.dependsOn.minItems,undefined);
+     }
+    }
+    return result({intent:'execute',message:'Plan preparado.',steps:[step('s1','pdf-extract',{pages:'2'},['file:0']),step('s2','pdf-to-word',{},['step:s1'],['s1'])]});
+   }
+  });
+ }
+});
+
 test('small scalar contracts retain exact choices while dependency text remains optional only later',()=>{
  const contracts=queenToolCatalog().filter(c=>c.id==='json-format');
  const schema=queenCatalogSchema(contracts,[],['execute'],{maxSteps:2});
