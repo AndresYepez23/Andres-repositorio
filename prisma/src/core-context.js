@@ -141,7 +141,7 @@ export function chooseCoreContextOptions(task='conversation',text=''){
  if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
   return {maxMessages:15,maxChars:16000,newTask:false};
  if(newTask)return {maxMessages:4,maxChars:4500,newTask:true};
- if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500,newTask:true,isolated:true};
+ if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500,newTask:false};
  if(['coding','reasoning'].includes(task))return {maxMessages:11,maxChars:11500,newTask:false};
  return {maxMessages:8,maxChars:7500,newTask:false};
 }
