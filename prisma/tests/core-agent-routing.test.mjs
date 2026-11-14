@@ -529,6 +529,25 @@ assert.ok(cooled.indexOf('sensenova')<cooled.indexOf('kilo'),
 assert.equal(selectTaskModel('cloudflare','coding','balanced',[{id:'@cf/qwen/qwen3.8-27b'}]),'@cf/qwen/qwen3.8-27b');
 assert.equal(selectTaskModel('pollinations','coding','balanced',[{id:'qwen/qwen3-coder-30b-a3b-instruct'}]),'qwen/qwen3-coder-30b-a3b-instruct');
 assert.equal(selectTaskModel('gemini','reasoning','smart',[{id:'gemini-3.8-flash'}]),'gemini-3.8-flash');
+const exactComparison='Explícame las diferencias entre Qwen y GPT y dime cuál utilizarías para programar.';
+assert.equal(chooseCoreReasoning('reasoning',exactComparison),'balanced');
+assert.equal(chooseCoreResponseLength('reasoning',exactComparison),'medium');
+assert.equal(selectTaskModel('cloudflare','reasoning','balanced',CHAT_MODELS.cloudflare),'@cf/google/gemma-4-26b-a4b-it');
+assert.equal(selectTaskModel('cloudflare','reasoning','smart',CHAT_MODELS.cloudflare),'@cf/google/gemma-4-26b-a4b-it');
+assert.equal(selectTaskModel('cloudflare','planner','smart',CHAT_MODELS.cloudflare),'@cf/google/gemma-4-26b-a4b-it');
+assert.ok(!CHAT_MODELS.cloudflare.some(m=>m.id.includes('deepseek-v4.1-flash')),
+ 'Do not offer a paid-only Workers AI model on the Workers Free deployment');
+const cfChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
+assert.match(cfChatSource,/chat_template_kwargs:\\{enable_thinking:false\\}/,
+ 'Gemma 4 needs visible answer tokens rather than thinking-only output');
+const reasoningEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
+assert.match(reasoningEngineSource,/task==='reasoning'&&p\\.length==='medium'\\?900/,
+ 'Short comparisons should not force a 1,900+ token generation');
+assert.match(reasoningEngineSource,/task==='reasoning'\\?30000:16000/,
+ 'Reasoning requests need enough time to finish before fallback');
+assert.match(reasoningEngineSource,/length:id==='ai-compare-options'\\?\\(p\\.length\\|\\|'medium'\\):'long'/,
+ 'Comparative questions must preserve the requested response length');
+
 assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
 assert.equal(selectTaskModel('sensenova','general','balanced',[{id:'sensenova-6.8-flash-lite'}]),'sensenova-6.8-flash-lite');
 assert.equal(selectTaskModel('zai','reasoning','smart',[{id:'glm-4.7-flash'}]),'glm-4.7-flash');
