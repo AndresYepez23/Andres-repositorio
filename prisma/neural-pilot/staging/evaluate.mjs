@@ -4,6 +4,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 import {spawn} from 'node:child_process';
 import cases from '../queen-cases.json' with {type:'json'};
+import {STAGING_DATABASE,stagingHealthReady} from './isolation.mjs';
 const args=process.argv.slice(2),arg=name=>args.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3);
 const base=new URL(arg('base')||'https://prisma-queen-staging.pages.dev');
 if(base.protocol!=='https:'||!(base.hostname==='prisma-queen-staging.pages.dev'||base.hostname.endsWith('.prisma-queen-staging.pages.dev'))||base.username||base.password||base.search||base.hash)throw Error('STAGING_HOST_REQUIRED');
@@ -15,8 +16,8 @@ await mkdir(dirname(output),{recursive:true});
 await writeFile(output,'', {flag:'wx'}); // Keep earlier reports; never silently overwrite.
 const live=args.includes('--live');
 const previous=arg('resume-from')?JSON.parse(await readFile(resolve(arg('resume-from')),'utf8')):null;
-if(previous&&(previous.base!==base.origin||previous.databaseId!=='980bad8f-0356-48b9-87bc-56bcf363f69a'||Date.now()-Date.parse(previous.date)>3600000))throw Error('RESUME_REQUIRES_SAME_RECENT_DEPLOYMENT');
-const report={date:new Date().toISOString(),base:base.origin,mode:live?'live':'credentials-independent',databaseId:'980bad8f-0356-48b9-87bc-56bcf363f69a',primaryProductionModified:false,isolatedPagesEnvironment:'production',
+if(previous&&(previous.base!==base.origin||previous.databaseId!==STAGING_DATABASE||Date.now()-Date.parse(previous.date)>3600000))throw Error('RESUME_REQUIRES_SAME_RECENT_DEPLOYMENT');
+const report={date:new Date().toISOString(),base:base.origin,mode:live?'live':'credentials-independent',databaseId:STAGING_DATABASE,primaryProductionModified:false,isolatedPagesEnvironment:'production',
  modelCompletionsObserved:0,modelRequestsWithUnknownOutcome:0,realVpsRamCpuMeasurement:false,rows:[],controls:[],status:'running',methodology:'Real Qwen output constrained by live catalog grammar and existing deterministic safety gates; case expected labels never enter the model prompt.'};
 async function save(){await writeFile(output,JSON.stringify(report,null,2)+'\n');}
 async function call(route,{method='POST',body={}}={}){
@@ -49,7 +50,7 @@ function summarizeInference(){
 }
 try{
  report.health=await call('health',{method:'GET'});
- if(!report.health.body.ok||report.health.body.databaseId!==report.databaseId)throw Error('STAGING_READINESS_FAILED');
+ if(!stagingHealthReady(report.health,{requireQueen:live,expectedCommit:arg('expected-commit')}))throw Error('STAGING_READINESS_FAILED');
  report.localTools=await call('local-tools');report.guards=await call('guards');
  if(!report.localTools.body.verified||!report.guards.body.ok)throw Error('STAGING_LOCAL_CHECK_FAILED');
  const missing=report.health.body.missingSecrets||[];

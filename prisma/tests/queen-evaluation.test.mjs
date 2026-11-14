@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {evaluationCases,evaluationRequest,assessEvaluation,inferenceEvidence,stopAfterFailure} from '../neural-pilot/staging/quality-evaluation.mjs';
+import {STAGING_DATABASE,assertStagingBuildConfig,stagingHealthReady} from '../neural-pilot/staging/isolation.mjs';
 const find=id=>evaluationCases('all').find(c=>c.id===id);
 const response=(intent,message,steps=[])=>({ok:true,source:'queen',realInference:true,plan:{intent,message,steps,execution:{executed:false,verified:false}}});
 const step=(id,tool_id,params={},inputs=[],dependsOn=[])=>({id,tool_id,params,inputs,dependsOn});
@@ -101,9 +102,9 @@ process.stdin.on('end',()=>{
  const route=new URL(target).pathname,index=args.indexOf('--data');
  const body=index<0?null:JSON.parse(args[index+1]);
  fs.appendFileSync(process.env.QUEEN_FAKE_CURL_CAPTURE,JSON.stringify({route,...(body?{body}:{})})+'\\n');
- const databaseId='980bad8f-0356-48b9-87bc-56bcf363f69a';
+ const databaseId='${STAGING_DATABASE}';
  let response,status=200;
- if(route==='/__queen/health')response={ok:true,databaseId,missingSecrets:[]};
+ if(route==='/__queen/health')response={ok:true,databaseId,environment:'staging',queenEnabled:true,missingSecrets:[]};
  else if(route==='/__queen/plan'&&process.env.QUEEN_FAKE_CURL_MODE==='timeout'){
   status=503;response={ok:false,code:'QUEEN_TIMEOUT',diagnostics:{completionTransportAttempted:true,inferencesAttempted:1,completedInferences:0,trace:[]}};
  }else if(route==='/__queen/plan')response={ok:true,source:'queen',realInference:true,
@@ -152,4 +153,20 @@ test('live runner saves first timeout and stops without requesting a second case
  assert.equal(report.stoppedAfter,evaluationCases('original')[0].id);
  assert.equal(report.summary.queenCalls,1);assert.equal(report.summary.completionsObserved,0);
  assert.equal(report.summary.unknownOutcomes,1);assert.equal(report.summary.reportedTokens.output,null);
+});
+
+test('live tooling accepts only the current isolated database and a complete readiness response',()=>{
+ const config=readFileSync(new URL('../wrangler.staging.toml',import.meta.url),'utf8');
+ assert.equal(STAGING_DATABASE,'6a3256b2-c016-4650-9759-79aca3b4446f');
+ assert.doesNotThrow(()=>assertStagingBuildConfig(config));
+ const healthy={httpStatus:200,body:{ok:true,databaseId:STAGING_DATABASE,environment:'staging',queenEnabled:true,missingSecrets:[],sourceCommit:'a'.repeat(40)}};
+ assert.equal(stagingHealthReady(healthy,{requireQueen:true,expectedCommit:'a'.repeat(40)}),true);
+ for(const id of ['e02104b5-0861-475a-a60f-7658439d4fe0','980bad8f-0356-48b9-87bc-56bcf363f69a']){
+  assert.throws(()=>assertStagingBuildConfig(config.replaceAll(STAGING_DATABASE,id)),/UNSAFE_STAGING_CONFIG/);
+  assert.equal(stagingHealthReady({...healthy,body:{...healthy.body,databaseId:id}},{requireQueen:true}),false);
+ }
+ for(const change of [{queenEnabled:false},{missingSecrets:['QUEEN_API_KEY']},{missingSecrets:undefined},{environment:'production'}])
+  assert.equal(stagingHealthReady({...healthy,body:{...healthy.body,...change}},{requireQueen:true}),false);
+ assert.equal(stagingHealthReady({...healthy,httpStatus:503},{requireQueen:true}),false);
+ assert.equal(stagingHealthReady(healthy,{expectedCommit:'b'.repeat(40)}),false);
 });
