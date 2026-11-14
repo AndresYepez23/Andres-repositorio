@@ -1,0 +1,97 @@
+{
+  "at": "2026-11-14T19:58:09.287Z",
+  "base": "https://06f1982e.prisma-queen-staging.pages.dev",
+  "route": "plan",
+  "clientDurationMs": 25968,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "source": "queen",
+    "plan": {
+      "taskId": "6ba87fb8-85cb-4ff6-bd14-5eaf69bb0967",
+      "objective": "De este PDF de tres páginas, toma únicamente la hoja intermedia y entrégala en un Word editable.",
+      "intent": "delegate",
+      "message": "Para procesar el PDF y extraer la hoja intermedia, necesito un especialista en manipulación de PDF.",
+      "steps": [],
+      "constraints": [
+        "catalog-only",
+        "existing-permissions",
+        "verify-before-success"
+      ],
+      "status": "validated",
+      "needs_clarification": false,
+      "question": "",
+      "execution": {
+        "executed": false,
+        "verified": false
+      }
+    },
+    "decision": {
+      "schemaValid": true,
+      "catalogValid": true,
+      "parametersValid": true,
+      "semanticConfidence": null,
+      "calibration": "requires-authenticated-evaluation",
+      "requiresApproval": false
+    },
+    "delegate": {
+      "provider": "kilo",
+      "model": "kilo-auto/free",
+      "capability": "chat",
+      "allowFallback": true
+    },
+    "metrics": {
+      "inputTokens": 539,
+      "outputTokens": 41,
+      "externalCostUsd": 0,
+      "inferences": 1,
+      "repairs": 0,
+      "retrievals": 0,
+      "diagnostics": {
+        "finishReason": "stop",
+        "preflightInputTokens": 527,
+        "contextLimit": 2048,
+        "maxOutputTokens": 256,
+        "reasoningContentPresent": false,
+        "thinkingTagsPresent": false,
+        "observedInputTokens": 539,
+        "observedOutputTokens": 41,
+        "generationTokensPerSecond": 5.948346344845267,
+        "promptTokensPerSecond": 35.15820736715123,
+        "responseCharacters": 146,
+        "responseWhitespaceCharacters": 17
+      },
+      "trace": [
+        {
+          "intent": "delegate",
+          "search": null,
+          "toolIds": [],
+          "steps": [],
+          "usage": {
+            "inputTokens": 539,
+            "outputTokens": 41,
+            "externalCostUsd": 0
+          },
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 527,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 539,
+            "observedOutputTokens": 41,
+            "generationTokensPerSecond": 5.948346344845267,
+            "promptTokensPerSecond": 35.15820736715123,
+            "responseCharacters": 146,
+            "responseWhitespaceCharacters": 17
+          }
+        }
+      ],
+      "durationMs": 23824
+    },
+    "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+    "environment": "staging",
+    "realInference": true
+  }
+}

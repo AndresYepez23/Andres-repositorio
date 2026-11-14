@@ -1,0 +1,23 @@
+{
+  "method": "Independent ZIP/XML and JSON parsing of actual files from the final integrated runtime, without neural inference.",
+  "queenWordOriginalPages": [
+    true,
+    true,
+    true
+  ],
+  "localWordOriginalPages": [
+    false,
+    true,
+    false
+  ],
+  "minifiedJsonPreserved": true,
+  "hashes": {
+    "json-format-then-minify.json": "708e5392b35d60a538db9178edabf86b36f89dcf5ceb4de2ee02482bc0e499f7",
+    "split-and-original-word-s1-tres-paginas-paginas-seleccionadas.pdf": "d30e120f597748952a3e5753a9b4501b747dd68ec56502aed0d5670ae56e2cd8",
+    "foto-prueba.png": "40b23b4cef4f8be1a6a1cd6a354d68d0eae92c45c99d29869147392a12a9caa6",
+    "tres-paginas.pdf": "a8aec8e132a9b1e4e2b2ee780f5f1221bbc60021a27354c654bf3258d37d8323",
+    "split-and-original-word-s2-tres-paginas.docx": "6d2e964ed2a38ee969c1c17fd7fa9f4feab837825283425a00bea8ce358cd356",
+    "local-split-and-original-word-tres-paginas-paginas-seleccionadas.docx": "d773ae5f2531cc30e70abc752288d65a0d0e1518800ea03489a0652d678364f2",
+    "results.json": "b0cb370b28c208e80dcc0ef2db1a02f98ad0b0189f956766170a223f031539d5"
+  }
+}

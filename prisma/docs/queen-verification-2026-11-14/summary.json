@@ -1,0 +1,44 @@
+{
+  "realQueenCompletions": 15,
+  "unknownOutcomes": 0,
+  "specialistInferences": 0,
+  "reportedInputTokens": 8532,
+  "reportedOutputTokens": 1161,
+  "baseMain": "238a33681cbc34e2d49e88771dc1adced29f9267",
+  "integratedMain": "1e33cf5026cb7988172697903e17283056ba4578",
+  "runtimeCommit": "f03f8482cc2fe6a4510ea3f079b253478fc1d2aa",
+  "stagingBase": "https://bbb3ba0c.prisma-queen-staging.pages.dev",
+  "targetedCases": {
+    "cases": 3,
+    "queenCompletions": 3,
+    "goalMet": 3,
+    "generatedArtifacts": 3,
+    "fullyVerifiedArtifacts": 3,
+    "improvements": [
+      "split-and-original-word"
+    ],
+    "skipped": 0
+  },
+  "priorRuntimeSmoke": {
+    "cases": 1,
+    "queenCompletions": 1,
+    "goalMet": 1,
+    "generatedArtifacts": 2,
+    "fullyVerifiedArtifacts": 2,
+    "improvements": [
+      "split-and-original-word"
+    ],
+    "skipped": 0
+  },
+  "integratedValidation": {
+    "cases": 3,
+    "queenCompletions": 3,
+    "goalMet": 3,
+    "generatedArtifacts": 3,
+    "fullyVerifiedArtifacts": 3,
+    "improvements": [
+      "split-and-original-word"
+    ],
+    "skipped": 0
+  }
+}

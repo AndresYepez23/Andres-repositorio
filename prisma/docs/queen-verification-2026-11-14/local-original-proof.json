@@ -1,0 +1,36 @@
+{
+  "plan": {
+    "source": "prisma-core-capabilities",
+    "type": "ready",
+    "message": "Voy a ejecutar 2 operación(es), procesando todos los archivos compatibles y comprobando cada resultado.",
+    "steps": [
+      {
+        "index": 1,
+        "tool_id": "pdf-extract",
+        "tool_name": "Extraer páginas",
+        "status": "ready",
+        "mode": "local",
+        "reason": "Capacidad y parámetros identificados localmente",
+        "params": {
+          "pages": "2"
+        }
+      },
+      {
+        "index": 2,
+        "tool_id": "pdf-to-word",
+        "tool_name": "PDF a Word",
+        "status": "beta",
+        "mode": "browser",
+        "reason": "Capacidad y parámetros identificados localmente",
+        "params": {}
+      }
+    ]
+  },
+  "containsFirst": false,
+  "containsSecond": true,
+  "containsThird": false,
+  "realBrowser": true,
+  "realEngine": true,
+  "queenInferences": 0,
+  "artifactSha256": "505b710aa2ffe48f12c1fd4f0fc65166171f6b22b8fc3b874e1bd40704f213bf"
+}

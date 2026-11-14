@@ -1,0 +1,436 @@
+{
+  "base": "https://b951293d.prisma-queen-staging.pages.dev",
+  "expectedCommit": "10728c818a2d5554614e184e7dd089c8c436169d",
+  "selectedCases": [
+    "split-and-original-word"
+  ],
+  "startedAt": "2026-11-14T20:43:15.724Z",
+  "realBrowser": true,
+  "realFileBytes": true,
+  "metadataOnlyToQueen": true,
+  "specialistInferences": 0,
+  "requests": [
+    {
+      "request": {
+        "text": "Extrae la segunda página del PDF y después convierte todo el PDF original a Word.",
+        "files": [
+          {
+            "name": "tres-paginas.pdf",
+            "type": "application/pdf",
+            "size": 1290
+          }
+        ],
+        "maxInferences": 1,
+        "capturePartialOutput": true
+      },
+      "httpStatus": 200,
+      "body": {
+        "ok": true,
+        "source": "queen",
+        "plan": {
+          "taskId": "9b723665-bb75-4ef3-82d6-5823f2a91bc1",
+          "objective": "Extrae la segunda página del PDF y después convierte todo el PDF original a Word.",
+          "intent": "execute",
+          "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar.",
+          "steps": [
+            {
+              "id": "s1",
+              "tool_id": "pdf-extract",
+              "params": {
+                "pages": "2"
+              },
+              "dependsOn": [],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            },
+            {
+              "id": "s2",
+              "tool_id": "pdf-to-word",
+              "params": {},
+              "dependsOn": [
+                "s1"
+              ],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            }
+          ],
+          "constraints": [
+            "catalog-only",
+            "existing-permissions",
+            "verify-before-success"
+          ],
+          "status": "validated",
+          "needs_clarification": false,
+          "question": "",
+          "execution": {
+            "executed": false,
+            "verified": false
+          }
+        },
+        "decision": {
+          "schemaValid": true,
+          "catalogValid": true,
+          "parametersValid": true,
+          "semanticConfidence": null,
+          "calibration": "requires-authenticated-evaluation",
+          "requiresApproval": false
+        },
+        "delegate": null,
+        "metrics": {
+          "inputTokens": 542,
+          "outputTokens": 84,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 530,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 542,
+            "observedOutputTokens": 84,
+            "generationTokensPerSecond": 6.3888688969463905,
+            "promptTokensPerSecond": 35.97920561233123,
+            "responseCharacters": 248,
+            "responseWhitespaceCharacters": 10
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "pdf-extract",
+                "pdf-to-word"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "pages": "string"
+                  },
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 542,
+                "outputTokens": 84,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 530,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 542,
+                "observedOutputTokens": 84,
+                "generationTokensPerSecond": 6.3888688969463905,
+                "promptTokensPerSecond": 35.97920561233123,
+                "responseCharacters": 248,
+                "responseWhitespaceCharacters": 10
+              }
+            }
+          ],
+          "durationMs": 30226
+        },
+        "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+        "environment": "staging",
+        "realInference": true
+      },
+      "durationMs": 32185,
+      "usage": {
+        "completionsObserved": 1,
+        "requestsAttempted": 1,
+        "unknownOutcomes": 0,
+        "inputTokens": 542,
+        "outputTokens": 84,
+        "queenCalls": 1,
+        "specialistCalls": 0,
+        "specialistCallsNote": "Planning endpoints do not invoke specialists."
+      }
+    }
+  ],
+  "rows": [
+    {
+      "id": "split-and-original-word",
+      "request": "Extrae la segunda página del PDF y después convierte todo el PDF original a Word.",
+      "local": {
+        "type": "ready",
+        "source": "prisma-core-capabilities",
+        "tools": [
+          "pdf-extract",
+          "pdf-to-word"
+        ],
+        "executed": true,
+        "goalMet": false,
+        "artifact": {
+          "filename": "local-split-and-original-word-tres-paginas-paginas-seleccionadas.docx",
+          "bytes": 7644,
+          "sha256": "d7bbc2e1cf14fd2857e5d0abfe69012abf4d40926ed8a8542d1692098158d02e"
+        },
+        "error": "WORD_CONTENT_MISMATCH"
+      },
+      "queen": {
+        "source": "queen",
+        "intent": "execute",
+        "tools": [
+          "pdf-extract",
+          "pdf-to-word"
+        ],
+        "metrics": {
+          "inputTokens": 542,
+          "outputTokens": 84,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 530,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 542,
+            "observedOutputTokens": 84,
+            "generationTokensPerSecond": 6.3888688969463905,
+            "promptTokensPerSecond": 35.97920561233123,
+            "responseCharacters": 248,
+            "responseWhitespaceCharacters": 10
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "pdf-extract",
+                "pdf-to-word"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "pages": "string"
+                  },
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 542,
+                "outputTokens": 84,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 530,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 542,
+                "observedOutputTokens": 84,
+                "generationTokensPerSecond": 6.3888688969463905,
+                "promptTokensPerSecond": 35.97920561233123,
+                "responseCharacters": 248,
+                "responseWhitespaceCharacters": 10
+              }
+            }
+          ],
+          "durationMs": 30226
+        },
+        "diagnostics": null,
+        "realInference": true,
+        "executed": true,
+        "goalMet": true,
+        "planAssessment": {
+          "automatedPassed": true,
+          "checks": [
+            {
+              "id": "accepted-plan",
+              "passed": true
+            },
+            {
+              "id": "intent",
+              "passed": true
+            },
+            {
+              "id": "requested-operations",
+              "passed": true
+            },
+            {
+              "id": "no-premature-execution-claim",
+              "passed": true
+            }
+          ],
+          "semanticReview": "pending",
+          "artifactVerification": "not-performed",
+          "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+        },
+        "verified": true,
+        "verifications": [
+          {
+            "tool": "pdf-extract",
+            "status": "verified",
+            "evidence": [
+              {
+                "check": "artifact",
+                "passed": true,
+                "bytes": 868,
+                "sha256": "520f9b0ce3f425a5071b46efb2f56104606e68eca7618c0d28979d0b76b55f0e",
+                "checks": [
+                  "exists",
+                  "nonempty",
+                  "sha256",
+                  "file-signature",
+                  "format-consistency",
+                  "parsed-pdf",
+                  "requested-page-count"
+                ],
+                "pages": 1
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "tool": "pdf-to-word",
+            "status": "verified",
+            "evidence": [
+              {
+                "check": "pdf-word-selectable-text-and-page-breaks",
+                "passed": true,
+                "pages": 3,
+                "characters": 50,
+                "scope": "ordered-selectable-text-and-explicit-page-breaks",
+                "layoutVerified": false
+              },
+              {
+                "check": "artifact",
+                "passed": true,
+                "bytes": 7687,
+                "sha256": "52df74f4933b78c82c6d590b76f8028a58e66fadd6ee22bc8e8ec33655caa5fb",
+                "checks": [
+                  "exists",
+                  "nonempty",
+                  "sha256",
+                  "file-signature",
+                  "format-consistency",
+                  "archive-crc",
+                  "archive-structure"
+                ],
+                "entries": 20
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "artifacts": [
+          {
+            "filename": "split-and-original-word-s1-tres-paginas-paginas-seleccionadas.pdf",
+            "bytes": 868,
+            "sha256": "520f9b0ce3f425a5071b46efb2f56104606e68eca7618c0d28979d0b76b55f0e",
+            "verification": "verified"
+          },
+          {
+            "filename": "split-and-original-word-s2-tres-paginas.docx",
+            "bytes": 7687,
+            "sha256": "52df74f4933b78c82c6d590b76f8028a58e66fadd6ee22bc8e8ec33655caa5fb",
+            "verification": "verified"
+          }
+        ],
+        "evidence": {
+          "selectedPageOnly": false,
+          "allOriginalPages": true,
+          "orderedTextVerified": true
+        }
+      },
+      "improvesOnLocal": true
+    }
+  ],
+  "health": {
+    "httpStatus": 200,
+    "body": {
+      "ok": true,
+      "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+      "environment": "staging",
+      "queenEnabled": true,
+      "missingSecrets": [],
+      "sourceCommit": "10728c818a2d5554614e184e7dd089c8c436169d"
+    },
+    "durationMs": 424
+  },
+  "server": {
+    "httpStatus": 200,
+    "body": {
+      "ok": true,
+      "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+      "environment": "staging",
+      "observations": {
+        "props": {
+          "available": true,
+          "totalSlots": 1,
+          "contextTokens": 2048
+        },
+        "slots": {
+          "available": true,
+          "slots": [
+            {
+              "id": 0,
+              "contextTokens": 2048,
+              "isProcessing": false
+            }
+          ]
+        }
+      },
+      "physicalRamCpuMeasured": false,
+      "note": "API slot/context state does not measure physical VPS RAM or CPU."
+    },
+    "durationMs": 1765
+  },
+  "recordedPdfInference": null,
+  "summary": {
+    "cases": 1,
+    "queenCompletions": 1,
+    "goalMet": 1,
+    "generatedArtifacts": 2,
+    "fullyVerifiedArtifacts": 2,
+    "improvements": [
+      "split-and-original-word"
+    ],
+    "skipped": 0
+  },
+  "finishedAt": "2026-11-14T20:43:53.390Z"
+}

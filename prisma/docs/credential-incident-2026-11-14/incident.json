@@ -1,0 +1,159 @@
+{
+  "status": "BLOCKED_NOT_REPAIRED",
+  "confirmed": "The new production snapshot loses usable secret bindings for generation, research, Queen and welcome-service configuration while public Supabase config, AI and D1 remain present.",
+  "causeHypothesis": "The full production env_vars update submitted 48 secret entries immediately before the failing rebuild. A redacted GET-to-PATCH round trip may have replaced their values. Audit logs remove secret values, so the exact submitted bytes and Cloudflare's stored secret contents cannot be proven from these logs.",
+  "variables": {
+    "counts": {
+      "total": 55,
+      "secret_text": 48,
+      "plain_text": 7
+    },
+    "types": {
+      "AIHUBMIX_API_KEY": "secret_text",
+      "AIHUBMIX_API_KEY_2": "secret_text",
+      "AIHUBMIX_API_KEY_3": "secret_text",
+      "AIHUBMIX_API_KEY_4": "secret_text",
+      "AIHUBMIX_API_KEY_5": "secret_text",
+      "GEMINI_API_KEYS_JSON": "secret_text",
+      "GROQ_API_KEY": "secret_text",
+      "GROQ_API_KEY_2": "secret_text",
+      "GROQ_API_KEY_3": "secret_text",
+      "GROQ_API_KEY_4": "secret_text",
+      "GROQ_API_KEY_5": "secret_text",
+      "JINA_API_KEY": "secret_text",
+      "KILO_API_KEY": "secret_text",
+      "KILO_API_KEY_2": "secret_text",
+      "KILO_API_KEY_3": "secret_text",
+      "KILO_API_KEY_4": "secret_text",
+      "KILO_API_KEY_5": "secret_text",
+      "KILO_API_KEY_6": "secret_text",
+      "OPENROUTER_API_KEY": "secret_text",
+      "OPENROUTER_API_KEY_2": "secret_text",
+      "OPENROUTER_API_KEY_3": "secret_text",
+      "OPENROUTER_API_KEY_4": "secret_text",
+      "OPENROUTER_API_KEY_5": "secret_text",
+      "OPENROUTER_API_KEY_6": "secret_text",
+      "POLLINATIONS_API_KEY": "secret_text",
+      "POLLINATIONS_API_KEY_2": "secret_text",
+      "POLLINATIONS_API_KEY_3": "secret_text",
+      "POLLINATIONS_API_KEY_4": "secret_text",
+      "POLLINATIONS_API_KEY_5": "secret_text",
+      "POLLINATIONS_API_KEY_6": "secret_text",
+      "PRISMA_AUTH_GOOGLE_ENABLED": "plain_text",
+      "PRISMA_SUPABASE_PUBLISHABLE_KEY": "plain_text",
+      "PRISMA_SUPABASE_URL": "plain_text",
+      "QUEEN_ACCESS_CLIENT_ID": "secret_text",
+      "QUEEN_ACCESS_CLIENT_SECRET": "secret_text",
+      "QUEEN_API_KEY": "secret_text",
+      "QUEEN_BASE_URL": "plain_text",
+      "QUEEN_ENABLED": "plain_text",
+      "QUEEN_MODEL": "plain_text",
+      "QUEEN_STAGE": "plain_text",
+      "RESEND_API_KEY": "secret_text",
+      "SENSENOVA_API_KEY": "secret_text",
+      "SENSENOVA_API_KEY_2": "secret_text",
+      "SENSENOVA_API_KEY_3": "secret_text",
+      "SENSENOVA_API_KEY_4": "secret_text",
+      "SENSENOVA_API_KEY_5": "secret_text",
+      "SENSENOVA_API_KEY_6": "secret_text",
+      "SUPABASE_SERVICE_ROLE_KEY_2": "secret_text",
+      "TAVILY_API_KEYS_JSON": "secret_text",
+      "ZAI_API_KEY": "secret_text",
+      "ZAI_API_KEY_2": "secret_text",
+      "ZAI_API_KEY_3": "secret_text",
+      "ZAI_API_KEY_4": "secret_text",
+      "ZAI_API_KEY_5": "secret_text",
+      "ZAI_API_KEY_6": "secret_text"
+    }
+  },
+  "audit": [
+    {
+      "id": "01a1da0f-0ccb-7705-a8a7-f155ad6c0898",
+      "time": "2026-11-14T12:36:21.835Z",
+      "description": "Retry a Pages deployment",
+      "uri": "/accounts/26c2a31382f903f4ce4f5f7bafbd6820/pages/projects/prismaspace/deployments/17a6c338-ef6d-4cc1-8e71-44893bbec035/retry",
+      "requestKeys": [],
+      "variableCount": 0,
+      "secretCount": 0,
+      "secretValueFieldCount": 0,
+      "redactedSecretLengths": []
+    },
+    {
+      "id": "01a1da0d-c406-7960-928d-59eede84dc30",
+      "time": "2026-11-14T12:34:57.67Z",
+      "description": "Update a Cloudflare Pages project",
+      "uri": "/accounts/26c2a31382f903f4ce4f5f7bafbd6820/pages/projects/prismaspace",
+      "requestKeys": [
+        "deployment_configs"
+      ],
+      "variableCount": 56,
+      "secretCount": 48,
+      "secretValueFieldCount": 0,
+      "redactedSecretLengths": []
+    }
+  ],
+  "deployments": [
+    {
+      "id": "17a6c338-ef6d-4cc1-8e71-44893bbec035",
+      "environment": "production",
+      "commit": "b8a4b6ea02f2d9941cada6b6c1a5e734d4fad887",
+      "created_on": "2026-11-14T12:24:19.673966Z",
+      "ai": {
+        "AI": {}
+      },
+      "d1": {
+        "PRISMA_RATE_DB": {
+          "id": "e02104b5-0861-475a-a60f-7658439d4fe0"
+        },
+        "QUEEN_CONTROL_DB": {
+          "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+        }
+      },
+      "compatibility_date": "2026-11-08",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ]
+    },
+    {
+      "id": "dc242fc1-da03-45f6-b9e6-0572b2292153",
+      "environment": "production",
+      "commit": "b8a4b6ea02f2d9941cada6b6c1a5e734d4fad887",
+      "created_on": "2026-11-14T12:36:21.995447Z",
+      "ai": {
+        "AI": {}
+      },
+      "d1": {
+        "PRISMA_RATE_DB": {
+          "id": "e02104b5-0861-475a-a60f-7658439d4fe0"
+        },
+        "QUEEN_CONTROL_DB": {
+          "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+        }
+      },
+      "compatibility_date": "2026-11-08",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ]
+    }
+  ],
+  "runtimeVerification": "See controls.json for real HTTP requests. Public/private configuration checks are not upstream API validity or inference proofs.",
+  "recoveryBoundary": {
+    "goodWorkerVersion": "37f51f5c-72b5-473a-97f4-a89126e26bf6",
+    "badWorkerVersion": "bb3ede67-247e-4366-b3d0-66c9aa19aa6f",
+    "goodWorkerEtag": "ae790e328b5cbf5c1ac24032f3f2cdcb98c8368495ccf3c77f7ee7fc7083e6e5",
+    "badWorkerEtag": "7aec071e7398414eab114d65c2bfe511fea481b8780bb3d9c2454ffa98d37648",
+    "specificHistoricalBindings": "Workers API inheritance from a specific version is documented only under /workers/workers/{worker_id}/versions. This internal Pages Worker is absent from that API (GET returns 404/10007; list has no matching Worker). The legacy script API supports inheritance from latest only, which is the defective version.",
+    "historicalWorkerCode": "Historical function artifacts have different etags; their complete module contents were not obtained via the supported API. Matching static core.js/build bytes do not prove function bundles are byte-identical.",
+    "availableSources": "No credential backup found in PRISMA work files; Cloudflare Secrets Store list is empty. Secret GET metadata is not a credential backup.",
+    "requiredAction": "Restore the existing 48 secret values from the owner's secure original copy, or request Cloudflare restore their encrypted project bindings from known-good deployment 17a6c338-ef6d-4cc1-8e71-44893bbec035. No new keys are required. Then validate a candidate without changing the restored public deployment."
+  },
+  "changes": {
+    "commit": "9aff146bc8cdbc8e3bea301cc3cf544cdb4eb80d",
+    "fixed": "Undefined variable in successful binding comparisons; added Tavily, Jina, AI and D1 regressions plus CI tests.",
+    "providerImplementationChanged": false,
+    "queenImplementationChanged": false,
+    "cloudflareConfigurationMutations": 0,
+    "productionDeploymentMutations": 0,
+    "prMerged": false
+  }
+}

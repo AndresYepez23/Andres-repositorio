@@ -4,6 +4,7 @@ import {renderToolFields} from './tool-fields.js';
 import {relatedCoreTools,searchCoreTools} from './core-tool-intelligence.js';
 import {validateImageParameters} from './image-contracts.js';
 import {extractPayload} from './core-capabilities.js';
+import {requestedConversionFormat,compatibleFileConversions} from './file-conversions.js';
 
 const OPTIONAL=new Set(['context','negativePrompt','content','term','doi','url','organization','sheet','language','model','provider']);
 const attr=(text,key)=>String(text).match(new RegExp('(?:^|\\s)'+key+'="([^"]*)"'))?.[1];
@@ -62,13 +63,21 @@ export function queenInflectedOperations(query){
  });
 }
 export function retrieveQueenTools(query,files=[],limit=6){
- query=String(query)+' '+queenInflectedOperations(query).map(o=>o.stem).join(' ');
+ const instruction=extractPayload(query).instruction;
+ const target=requestedConversionFormat(instruction);
+ // Keep a requested output producer in the bounded catalog even when lexical
+ // ranking favors earlier operations. This supplies options, not a fixed plan:
+ // Queen still chooses the tools, parameters, order and input dependencies.
+ const outputIds=new Set(target?files.flatMap(file=>compatibleFileConversions(file)
+  .filter(route=>route.target===target).flatMap(route=>route.steps.map(s=>s.tool_id))):[]);
+ const outputTools=tools.filter(t=>outputIds.has(t.id)&&['ready','beta'].includes(t.status));
+ query=instruction+' '+queenInflectedOperations(instruction).map(o=>o.stem).join(' ');
  const explicit=tools.filter(t=>['ready','beta'].includes(t.status)&&String(query).toLowerCase().includes(t.id));
  const ranked=searchCoreTools(query,files,limit),threshold=Math.max(8,(ranked[0]?.rank||0)*.4);
  const vocabulary={imagen:'image',imagenes:'image',image:'image',images:'image',foto:'image',fotos:'image',pdf:'pdf',json:'json',csv:'csv',excel:'xlsx',xlsx:'xlsx',word:'word',docx:'word',audio:'audio',video:'video'};
  const domains=[...new Set(String(query).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z0-9]+/).map(w=>vocabulary[w]).filter(Boolean))];
  const matchesDomain=t=>!domains.length||domains.some(d=>t.id.split('-').includes(d)||t.category===d||d==='xlsx'&&/excel|xlsx/i.test(t.name+' '+t.description));
- return [...explicit,...ranked.filter(t=>t.rank>=threshold&&matchesDomain(t)&&!explicit.some(e=>e.id===t.id))].slice(0,limit).map(toolContract);
+ return [...new Map([...explicit,...outputTools,...ranked.filter(t=>t.rank>=threshold&&matchesDomain(t))].map(t=>[t.id,t])).values()].slice(0,limit).map(toolContract);
 }
 export function validateQueenParameters(id,params,{fromDependency=false}={}){
  const tool=tools.find(t=>t.id===id&&['ready','beta'].includes(t.status));

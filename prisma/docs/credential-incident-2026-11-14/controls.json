@@ -1,0 +1,217 @@
+{
+  "startedAt": "2026-11-14T21:32:04.781Z",
+  "realHttp": true,
+  "productionMutations": 0,
+  "inferences": [
+    {
+      "base": "https://17a6c338.prismaspace.pages.dev",
+      "route": "/api/ai/chat",
+      "purpose": "Known-good control only; does not validate any new deployment.",
+      "http": 200,
+      "ok": true,
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "text": "OK",
+      "usage": {
+        "promptTokenCount": 6,
+        "candidatesTokenCount": 1,
+        "totalTokenCount": 7,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 6
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "error": null,
+      "durationMs": 2245
+    }
+  ],
+  "controls": [
+    {
+      "label": "functional",
+      "base": "https://17a6c338.prismaspace.pages.dev",
+      "route": "/api/research/search",
+      "requestedProvider": "tavily",
+      "http": 200,
+      "ok": true,
+      "actualProvider": "tavily",
+      "resultCount": 8,
+      "resultsHaveUrlsAndContent": true,
+      "diagnostics": null,
+      "durationMs": 4086
+    },
+    {
+      "label": "functional",
+      "base": "https://17a6c338.prismaspace.pages.dev",
+      "route": "/api/research/search",
+      "requestedProvider": "jina",
+      "http": 200,
+      "ok": true,
+      "actualProvider": "jina",
+      "resultCount": 8,
+      "resultsHaveUrlsAndContent": true,
+      "diagnostics": null,
+      "durationMs": 6214
+    },
+    {
+      "label": "functional",
+      "route": "/api/auth/config",
+      "http": 200,
+      "enabled": true,
+      "features": {
+        "email": true,
+        "google": true,
+        "apple": false,
+        "phone": false
+      }
+    },
+    {
+      "label": "functional",
+      "route": "/api/auth/welcome",
+      "purpose": "Invalid authentication must fail before any email can be sent; checks configuration only, not Resend API validity.",
+      "http": 401,
+      "error": "unauthorized"
+    },
+    {
+      "label": "defective",
+      "base": "https://dc242fc1.prismaspace.pages.dev",
+      "route": "/api/research/search",
+      "requestedProvider": "tavily",
+      "http": 502,
+      "ok": false,
+      "actualProvider": "tavily",
+      "resultCount": 0,
+      "resultsHaveUrlsAndContent": false,
+      "diagnostics": {
+        "tavily": {
+          "code": "TAVILY_NOT_CONFIGURED",
+          "status": null,
+          "detail": null
+        }
+      },
+      "durationMs": 255
+    },
+    {
+      "label": "defective",
+      "base": "https://dc242fc1.prismaspace.pages.dev",
+      "route": "/api/research/search",
+      "requestedProvider": "jina",
+      "http": 502,
+      "ok": false,
+      "actualProvider": "jina",
+      "resultCount": 0,
+      "resultsHaveUrlsAndContent": false,
+      "diagnostics": {
+        "jina": {
+          "code": "JINA_NOT_CONFIGURED",
+          "status": null,
+          "detail": null
+        }
+      },
+      "durationMs": 264
+    },
+    {
+      "label": "defective",
+      "route": "/api/auth/config",
+      "http": 200,
+      "enabled": true,
+      "features": {
+        "email": true,
+        "google": true,
+        "apple": false,
+        "phone": false
+      }
+    },
+    {
+      "label": "defective",
+      "route": "/api/auth/welcome",
+      "purpose": "Invalid authentication must fail before any email can be sent; checks configuration only, not Resend API validity.",
+      "http": 503,
+      "error": "service_unavailable"
+    },
+    {
+      "label": "functional",
+      "route": "/api/core/plan",
+      "purpose": "Empty objective: configuration validation only, no neural inference requested.",
+      "http": 400,
+      "code": "INVALID_REQUEST"
+    },
+    {
+      "label": "functional",
+      "route": "/prisma-build.json",
+      "http": 200,
+      "contentType": "application/json",
+      "bytes": 91,
+      "sha256": "e05c020ab19dd2e7af02c72120ea2613cc3c2c04d4ce292a430243ef510c94a0",
+      "build": "b8a4b6ea02f2d9941cada6b6c1a5e734d4fad887"
+    },
+    {
+      "label": "functional",
+      "route": "/src/core.js",
+      "http": 200,
+      "contentType": "application/javascript",
+      "bytes": 208048,
+      "sha256": "a6411c31d208295577c947bb9fdf4db30fe0531a1c4df795b6859281a257f8d9"
+    },
+    {
+      "label": "defective",
+      "route": "/api/core/plan",
+      "purpose": "Empty objective: configuration validation only, no neural inference requested.",
+      "http": 503,
+      "code": "QUEEN_AUTH_NOT_CONFIGURED"
+    },
+    {
+      "label": "defective",
+      "route": "/prisma-build.json",
+      "http": 200,
+      "contentType": "application/json",
+      "bytes": 91,
+      "sha256": "e05c020ab19dd2e7af02c72120ea2613cc3c2c04d4ce292a430243ef510c94a0",
+      "build": "b8a4b6ea02f2d9941cada6b6c1a5e734d4fad887"
+    },
+    {
+      "label": "defective",
+      "route": "/src/core.js",
+      "http": 200,
+      "contentType": "application/javascript",
+      "bytes": 208048,
+      "sha256": "a6411c31d208295577c947bb9fdf4db30fe0531a1c4df795b6859281a257f8d9"
+    }
+  ],
+  "finishedAt": "2026-11-14T21:34:14.506Z",
+  "publicProduction": {
+    "http": 200,
+    "counts": {
+      "gemini": 7,
+      "groq": 5,
+      "huggingface": 0,
+      "openrouter": 6,
+      "pollinations": 6,
+      "kilo": 6,
+      "requesty": 0,
+      "sensenova": 6,
+      "zai": 6,
+      "aihubmix": 5
+    },
+    "research": {
+      "tavily": {
+        "configured": true,
+        "configuredKeys": 7
+      },
+      "jina": {
+        "configured": true
+      }
+    },
+    "cloudflare": true,
+    "d1": true
+  },
+  "limitations": [
+    "No new production deployment was created or promoted.",
+    "Jina Search was exercised with real returned content. No separate Jina Reader/extraction route exists in this repository, so authenticated Reader extraction was not validated.",
+    "The invalid-token welcome control proves only configuration gating, not successful email delivery or upstream Resend authentication. No email was sent.",
+    "The Supabase publishable configuration is present on both snapshots. SUPABASE_SERVICE_ROLE_KEY_2 has no runtime consumer in the current repository and cannot be verified through a public endpoint.",
+    "All 55 variable names/types were inventoried; this does not prove that all 48 private values are usable."
+  ]
+}

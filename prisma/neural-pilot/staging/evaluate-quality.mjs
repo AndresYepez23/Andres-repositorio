@@ -5,6 +5,7 @@ import {resolve,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {evaluationCases,evaluationRequest,assessEvaluation,inferenceEvidence,stopAfterFailure} from './quality-evaluation.mjs';
+import {STAGING_DATABASE,stagingHealthReady} from './isolation.mjs';
 const args=process.argv.slice(2),arg=name=>args.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3);
 const suite=arg('suite')||'heldout',all=evaluationCases(suite);
 const selected=arg('case')?all.filter(c=>c.id===arg('case')):all;
@@ -14,7 +15,7 @@ if(base.protocol!=='https:'||!(/^(?:[0-9a-f]{8}\.)?prisma-queen-staging\.pages\.
 if(live&&!/^[0-9a-f]{8}\.prisma-queen-staging\.pages\.dev$/.test(base.hostname))throw Error('IMMUTABLE_STAGING_DEPLOYMENT_REQUIRED');
 const output=resolve(arg('output')||'work/queen-quality-'+Date.now()+'.json');
 const report={date:new Date().toISOString(),base:base.origin,suite,suiteSha256:createHash('sha256').update(JSON.stringify(all)).digest('hex'),
- databaseId:'980bad8f-0356-48b9-87bc-56bcf363f69a',status:'prepared',mode:live?'live-neural':'offline-preparation',maxInferencesPerEvaluationCase:1,
+ databaseId:STAGING_DATABASE,status:'prepared',mode:live?'live-neural':'offline-preparation',maxInferencesPerEvaluationCase:1,
  fixtureScope:'Synthetic attachment metadata and fixed user requests; file contents are not sent or verified. In live mode Queen responses are authentic, never response fixtures.',
  methodology:'Expected labels remain in the client evaluator. /__queen/plan forces neural planning; the ordinary product route is used only by the optional local control. Local catalog/intent/validation gates still constrain Qwen. New cases were held out when introduced, not a perpetual unseen benchmark.',
  toolsExecuted:[],verifiedArtifacts:[],physicalVpsMetrics:null,specialistCalls:0,rows:[]};
@@ -50,7 +51,7 @@ try{
   const keyfile=process.env.QUEEN_STAGING_OPERATOR_KEY_FILE;if(!keyfile)throw Error('OPERATOR_KEY_FILE_REQUIRED');
   key=(await readFile(keyfile,'utf8')).trim();if(!/^[a-f0-9]{64}$/.test(key))throw Error('INVALID_OPERATOR_KEY_FILE');
   report.health=await call('health',{method:'GET'});
-  if(report.health.body.databaseId!==report.databaseId||!report.health.body.ok||report.health.body.missingSecrets?.length)throw Error('STAGING_READINESS_FAILED');
+  if(!stagingHealthReady(report.health,{requireQueen:true,expectedCommit:arg('expected-commit')}))throw Error('STAGING_READINESS_FAILED');
   report.status='running';await save();
   if(args.includes('--include-local-control')){
    report.localControl=await call('plan',{product:true,body:{text:'Formatea este JSON: {"controlLocal":true}',files:[]}});

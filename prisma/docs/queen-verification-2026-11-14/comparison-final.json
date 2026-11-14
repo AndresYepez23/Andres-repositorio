@@ -1,0 +1,984 @@
+{
+  "base": "https://89faa4bc.prisma-queen-staging.pages.dev",
+  "expectedCommit": "594105d848c6a8d91cb25554665bdf1c1724e466",
+  "selectedCases": [
+    "split-and-original-word",
+    "ambiguous-image-size",
+    "json-format-then-minify"
+  ],
+  "startedAt": "2026-11-14T20:32:42.048Z",
+  "realBrowser": true,
+  "realFileBytes": true,
+  "metadataOnlyToQueen": true,
+  "specialistInferences": 0,
+  "requests": [
+    {
+      "request": {
+        "text": "Extrae la segunda página del PDF y después convierte todo el PDF original a Word.",
+        "files": [
+          {
+            "name": "tres-paginas.pdf",
+            "type": "application/pdf",
+            "size": 1290
+          }
+        ],
+        "maxInferences": 1,
+        "capturePartialOutput": true
+      },
+      "httpStatus": 200,
+      "body": {
+        "ok": true,
+        "source": "queen",
+        "plan": {
+          "taskId": "b19f0ace-19e0-4e74-8506-173b0390fc2a",
+          "objective": "Extrae la segunda página del PDF y después convierte todo el PDF original a Word.",
+          "intent": "execute",
+          "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar.",
+          "steps": [
+            {
+              "id": "s1",
+              "tool_id": "pdf-extract",
+              "params": {
+                "pages": "2"
+              },
+              "dependsOn": [],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            },
+            {
+              "id": "s2",
+              "tool_id": "pdf-to-word",
+              "params": {},
+              "dependsOn": [
+                "s1"
+              ],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            }
+          ],
+          "constraints": [
+            "catalog-only",
+            "existing-permissions",
+            "verify-before-success"
+          ],
+          "status": "validated",
+          "needs_clarification": false,
+          "question": "",
+          "execution": {
+            "executed": false,
+            "verified": false
+          }
+        },
+        "decision": {
+          "schemaValid": true,
+          "catalogValid": true,
+          "parametersValid": true,
+          "semanticConfidence": null,
+          "calibration": "requires-authenticated-evaluation",
+          "requiresApproval": false
+        },
+        "delegate": null,
+        "metrics": {
+          "inputTokens": 542,
+          "outputTokens": 84,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 530,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 542,
+            "observedOutputTokens": 84,
+            "generationTokensPerSecond": 6.244019282735212,
+            "promptTokensPerSecond": 33.81996856989268,
+            "responseCharacters": 248,
+            "responseWhitespaceCharacters": 10
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "pdf-extract",
+                "pdf-to-word"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "pages": "string"
+                  },
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 542,
+                "outputTokens": 84,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 530,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 542,
+                "observedOutputTokens": 84,
+                "generationTokensPerSecond": 6.244019282735212,
+                "promptTokensPerSecond": 33.81996856989268,
+                "responseCharacters": 248,
+                "responseWhitespaceCharacters": 10
+              }
+            }
+          ],
+          "durationMs": 30921
+        },
+        "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+        "environment": "staging",
+        "realInference": true
+      },
+      "durationMs": 33028,
+      "usage": {
+        "completionsObserved": 1,
+        "requestsAttempted": 1,
+        "unknownOutcomes": 0,
+        "inputTokens": 542,
+        "outputTokens": 84,
+        "queenCalls": 1,
+        "specialistCalls": 0,
+        "specialistCallsNote": "Planning endpoints do not invoke specialists."
+      }
+    },
+    {
+      "request": {
+        "text": "Cambia el tamaño de esta imagen.",
+        "files": [
+          {
+            "name": "foto-prueba.png",
+            "type": "image/png",
+            "size": 386
+          }
+        ],
+        "maxInferences": 1,
+        "capturePartialOutput": true
+      },
+      "httpStatus": 200,
+      "body": {
+        "ok": true,
+        "source": "queen",
+        "plan": {
+          "taskId": "f86119eb-1616-4c54-855f-147839a7749a",
+          "objective": "Cambia el tamaño de esta imagen.",
+          "intent": "clarify",
+          "message": "¿Indica el ancho y alto en píxeles para el nuevo tamaño?",
+          "steps": [],
+          "constraints": [
+            "catalog-only",
+            "existing-permissions",
+            "verify-before-success"
+          ],
+          "status": "validated",
+          "needs_clarification": true,
+          "question": "¿Indica el ancho y alto en píxeles para el nuevo tamaño?",
+          "execution": {
+            "executed": false,
+            "verified": false
+          }
+        },
+        "decision": {
+          "schemaValid": true,
+          "catalogValid": true,
+          "parametersValid": true,
+          "semanticConfidence": null,
+          "calibration": "requires-authenticated-evaluation",
+          "requiresApproval": false
+        },
+        "delegate": null,
+        "metrics": {
+          "inputTokens": 637,
+          "outputTokens": 29,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 625,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 637,
+            "observedOutputTokens": 29,
+            "generationTokensPerSecond": 6.513431976158977,
+            "promptTokensPerSecond": 36.38731226403228,
+            "responseCharacters": 100,
+            "responseWhitespaceCharacters": 10
+          },
+          "trace": [
+            {
+              "intent": "clarify",
+              "search": null,
+              "toolIds": [],
+              "steps": [],
+              "usage": {
+                "inputTokens": 637,
+                "outputTokens": 29,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 625,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 637,
+                "observedOutputTokens": 29,
+                "generationTokensPerSecond": 6.513431976158977,
+                "promptTokensPerSecond": 36.38731226403228,
+                "responseCharacters": 100,
+                "responseWhitespaceCharacters": 10
+              }
+            }
+          ],
+          "durationMs": 22689
+        },
+        "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+        "environment": "staging",
+        "realInference": true
+      },
+      "durationMs": 24322,
+      "usage": {
+        "completionsObserved": 1,
+        "requestsAttempted": 1,
+        "unknownOutcomes": 0,
+        "inputTokens": 637,
+        "outputTokens": 29,
+        "queenCalls": 1,
+        "specialistCalls": 0,
+        "specialistCallsNote": "Planning endpoints do not invoke specialists."
+      }
+    },
+    {
+      "request": {
+        "text": "Primero formatea este JSON: {\"nota\":\"solo datos\",\"valores\":[7,12]}. Después minifica ese resultado sin cambiar los datos.",
+        "files": [],
+        "maxInferences": 1,
+        "capturePartialOutput": true
+      },
+      "httpStatus": 200,
+      "body": {
+        "ok": true,
+        "source": "queen",
+        "plan": {
+          "taskId": "3808773d-89e7-4e6f-b3a7-054ef9113eb1",
+          "objective": "Primero formatea este JSON: {\"nota\":\"solo datos\",\"valores\":[7,12]}. Después minifica ese resultado sin cambiar los datos.",
+          "intent": "execute",
+          "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar.",
+          "steps": [
+            {
+              "id": "s1",
+              "tool_id": "json-format",
+              "params": {
+                "text": "{\"nota\":\"solo datos\",\"valores\":[7,12]}",
+                "indent": "2"
+              },
+              "dependsOn": [],
+              "inputs": [],
+              "status": "planned"
+            },
+            {
+              "id": "s2",
+              "tool_id": "json-minify",
+              "params": {},
+              "dependsOn": [
+                "s1"
+              ],
+              "inputs": [
+                "step:s1"
+              ],
+              "status": "planned"
+            }
+          ],
+          "constraints": [
+            "catalog-only",
+            "existing-permissions",
+            "verify-before-success"
+          ],
+          "status": "validated",
+          "needs_clarification": false,
+          "question": "",
+          "execution": {
+            "executed": false,
+            "verified": false
+          }
+        },
+        "decision": {
+          "schemaValid": true,
+          "catalogValid": true,
+          "parametersValid": true,
+          "semanticConfidence": null,
+          "calibration": "requires-authenticated-evaluation",
+          "requiresApproval": false
+        },
+        "delegate": null,
+        "metrics": {
+          "inputTokens": 547,
+          "outputTokens": 94,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 535,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 547,
+            "observedOutputTokens": 94,
+            "generationTokensPerSecond": 6.186522043076952,
+            "promptTokensPerSecond": 34.209774839642456,
+            "responseCharacters": 291,
+            "responseWhitespaceCharacters": 6
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "json-format",
+                "json-minify"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "text": "string",
+                    "indent": "string"
+                  },
+                  "inputs": [],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "step:s1"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 547,
+                "outputTokens": 94,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 535,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 547,
+                "observedOutputTokens": 94,
+                "generationTokensPerSecond": 6.186522043076952,
+                "promptTokensPerSecond": 34.209774839642456,
+                "responseCharacters": 291,
+                "responseWhitespaceCharacters": 6
+              }
+            }
+          ],
+          "durationMs": 32882
+        },
+        "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+        "environment": "staging",
+        "realInference": true
+      },
+      "durationMs": 34999,
+      "usage": {
+        "completionsObserved": 1,
+        "requestsAttempted": 1,
+        "unknownOutcomes": 0,
+        "inputTokens": 547,
+        "outputTokens": 94,
+        "queenCalls": 1,
+        "specialistCalls": 0,
+        "specialistCallsNote": "Planning endpoints do not invoke specialists."
+      }
+    }
+  ],
+  "rows": [
+    {
+      "id": "split-and-original-word",
+      "request": "Extrae la segunda página del PDF y después convierte todo el PDF original a Word.",
+      "local": {
+        "type": "ready",
+        "source": "prisma-core-capabilities",
+        "tools": [
+          "pdf-extract",
+          "pdf-to-word"
+        ],
+        "executed": true,
+        "goalMet": false,
+        "artifact": {
+          "filename": "local-split-and-original-word-tres-paginas-paginas-seleccionadas.docx",
+          "bytes": 7645,
+          "sha256": "8b2071c6d87c920245229121c07d20eb04a6ab224f9382ad4c875cf9803367e2"
+        },
+        "error": "WORD_CONTENT_MISMATCH"
+      },
+      "queen": {
+        "source": "queen",
+        "intent": "execute",
+        "tools": [
+          "pdf-extract",
+          "pdf-to-word"
+        ],
+        "metrics": {
+          "inputTokens": 542,
+          "outputTokens": 84,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 530,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 542,
+            "observedOutputTokens": 84,
+            "generationTokensPerSecond": 6.244019282735212,
+            "promptTokensPerSecond": 33.81996856989268,
+            "responseCharacters": 248,
+            "responseWhitespaceCharacters": 10
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "pdf-extract",
+                "pdf-to-word"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "pages": "string"
+                  },
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 542,
+                "outputTokens": 84,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 530,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 542,
+                "observedOutputTokens": 84,
+                "generationTokensPerSecond": 6.244019282735212,
+                "promptTokensPerSecond": 33.81996856989268,
+                "responseCharacters": 248,
+                "responseWhitespaceCharacters": 10
+              }
+            }
+          ],
+          "durationMs": 30921
+        },
+        "diagnostics": null,
+        "realInference": true,
+        "executed": true,
+        "goalMet": true,
+        "planAssessment": {
+          "automatedPassed": true,
+          "checks": [
+            {
+              "id": "accepted-plan",
+              "passed": true
+            },
+            {
+              "id": "intent",
+              "passed": true
+            },
+            {
+              "id": "requested-operations",
+              "passed": true
+            },
+            {
+              "id": "no-premature-execution-claim",
+              "passed": true
+            }
+          ],
+          "semanticReview": "pending",
+          "artifactVerification": "not-performed",
+          "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+        },
+        "verified": true,
+        "verifications": [
+          {
+            "tool": "pdf-extract",
+            "status": "verified",
+            "evidence": [
+              {
+                "check": "artifact",
+                "passed": true,
+                "bytes": 868,
+                "sha256": "0d907ac9fd00f40773308bb8208ebba8e829335d8e55c39deb909b3075f75f5f",
+                "checks": [
+                  "exists",
+                  "nonempty",
+                  "sha256",
+                  "file-signature",
+                  "format-consistency",
+                  "parsed-pdf",
+                  "requested-page-count"
+                ],
+                "pages": 1
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "tool": "pdf-to-word",
+            "status": "verified",
+            "evidence": [
+              {
+                "check": "pdf-word-selectable-text-and-page-breaks",
+                "passed": true,
+                "pages": 3,
+                "characters": 50,
+                "scope": "ordered-selectable-text-and-explicit-page-breaks",
+                "layoutVerified": false
+              },
+              {
+                "check": "artifact",
+                "passed": true,
+                "bytes": 7689,
+                "sha256": "fb477183647afa61692c3740f55b2685de145093b27567bb2f46f21fa211d26a",
+                "checks": [
+                  "exists",
+                  "nonempty",
+                  "sha256",
+                  "file-signature",
+                  "format-consistency",
+                  "archive-crc",
+                  "archive-structure"
+                ],
+                "entries": 20
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "artifacts": [
+          {
+            "filename": "split-and-original-word-s1-tres-paginas-paginas-seleccionadas.pdf",
+            "bytes": 868,
+            "sha256": "0d907ac9fd00f40773308bb8208ebba8e829335d8e55c39deb909b3075f75f5f",
+            "verification": "verified"
+          },
+          {
+            "filename": "split-and-original-word-s2-tres-paginas.docx",
+            "bytes": 7689,
+            "sha256": "fb477183647afa61692c3740f55b2685de145093b27567bb2f46f21fa211d26a",
+            "verification": "verified"
+          }
+        ],
+        "evidence": {
+          "selectedPageOnly": false,
+          "allOriginalPages": true,
+          "orderedTextVerified": true
+        }
+      },
+      "improvesOnLocal": true
+    },
+    {
+      "id": "ambiguous-image-size",
+      "request": "Cambia el tamaño de esta imagen.",
+      "local": {
+        "type": "needs-input",
+        "source": "prisma-core-capabilities",
+        "tools": [],
+        "executed": false,
+        "goalMet": true
+      },
+      "queen": {
+        "source": "queen",
+        "intent": "clarify",
+        "tools": [],
+        "metrics": {
+          "inputTokens": 637,
+          "outputTokens": 29,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 625,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 637,
+            "observedOutputTokens": 29,
+            "generationTokensPerSecond": 6.513431976158977,
+            "promptTokensPerSecond": 36.38731226403228,
+            "responseCharacters": 100,
+            "responseWhitespaceCharacters": 10
+          },
+          "trace": [
+            {
+              "intent": "clarify",
+              "search": null,
+              "toolIds": [],
+              "steps": [],
+              "usage": {
+                "inputTokens": 637,
+                "outputTokens": 29,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 625,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 637,
+                "observedOutputTokens": 29,
+                "generationTokensPerSecond": 6.513431976158977,
+                "promptTokensPerSecond": 36.38731226403228,
+                "responseCharacters": 100,
+                "responseWhitespaceCharacters": 10
+              }
+            }
+          ],
+          "durationMs": 22689
+        },
+        "diagnostics": null,
+        "realInference": true,
+        "executed": false,
+        "goalMet": true,
+        "planAssessment": {
+          "automatedPassed": true,
+          "checks": [
+            {
+              "id": "accepted-plan",
+              "passed": true
+            },
+            {
+              "id": "intent",
+              "passed": true
+            },
+            {
+              "id": "answer-not-cut-off",
+              "passed": true
+            },
+            {
+              "id": "requested-operations",
+              "passed": true
+            },
+            {
+              "id": "no-premature-execution-claim",
+              "passed": true
+            }
+          ],
+          "semanticReview": "pending",
+          "artifactVerification": "not-performed",
+          "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+        },
+        "message": "¿Indica el ancho y alto en píxeles para el nuevo tamaño?"
+      },
+      "improvesOnLocal": false
+    },
+    {
+      "id": "json-format-then-minify",
+      "request": "Primero formatea este JSON: {\"nota\":\"solo datos\",\"valores\":[7,12]}. Después minifica ese resultado sin cambiar los datos.",
+      "local": {
+        "type": "ready",
+        "source": "prisma-core-capabilities",
+        "tools": [
+          "json-format",
+          "json-minify"
+        ],
+        "executed": true,
+        "goalMet": true,
+        "evidence": {
+          "minifiedJsonAndDataPreserved": true
+        }
+      },
+      "queen": {
+        "source": "queen",
+        "intent": "execute",
+        "tools": [
+          "json-format",
+          "json-minify"
+        ],
+        "metrics": {
+          "inputTokens": 547,
+          "outputTokens": 94,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 535,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 547,
+            "observedOutputTokens": 94,
+            "generationTokensPerSecond": 6.186522043076952,
+            "promptTokensPerSecond": 34.209774839642456,
+            "responseCharacters": 291,
+            "responseWhitespaceCharacters": 6
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "json-format",
+                "json-minify"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "text": "string",
+                    "indent": "string"
+                  },
+                  "inputs": [],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "step:s1"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 547,
+                "outputTokens": 94,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 535,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 547,
+                "observedOutputTokens": 94,
+                "generationTokensPerSecond": 6.186522043076952,
+                "promptTokensPerSecond": 34.209774839642456,
+                "responseCharacters": 291,
+                "responseWhitespaceCharacters": 6
+              }
+            }
+          ],
+          "durationMs": 32882
+        },
+        "diagnostics": null,
+        "realInference": true,
+        "executed": true,
+        "goalMet": true,
+        "planAssessment": {
+          "automatedPassed": true,
+          "checks": [
+            {
+              "id": "accepted-plan",
+              "passed": true
+            },
+            {
+              "id": "intent",
+              "passed": true
+            },
+            {
+              "id": "requested-operations",
+              "passed": true
+            },
+            {
+              "id": "intermediate-artifact-reference",
+              "passed": true
+            },
+            {
+              "id": "no-premature-execution-claim",
+              "passed": true
+            }
+          ],
+          "semanticReview": "pending",
+          "artifactVerification": "not-performed",
+          "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+        },
+        "verified": true,
+        "verifications": [
+          {
+            "tool": "json-format",
+            "status": "verified",
+            "evidence": [
+              {
+                "check": "parsed-json",
+                "passed": true
+              },
+              {
+                "check": "input-data-preserved",
+                "passed": true
+              },
+              {
+                "check": "nonempty-text",
+                "passed": true
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "tool": "json-minify",
+            "status": "verified",
+            "evidence": [
+              {
+                "check": "parsed-json",
+                "passed": true
+              },
+              {
+                "check": "input-data-preserved",
+                "passed": true
+              },
+              {
+                "check": "nonempty-text",
+                "passed": true
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "artifacts": [
+          {
+            "filename": "json-format-then-minify.json",
+            "bytes": 38,
+            "sha256": "708e5392b35d60a538db9178edabf86b36f89dcf5ceb4de2ee02482bc0e499f7",
+            "verification": "verified"
+          }
+        ],
+        "evidence": {
+          "minifiedJsonAndDataPreserved": true
+        }
+      },
+      "improvesOnLocal": false
+    }
+  ],
+  "health": {
+    "httpStatus": 200,
+    "body": {
+      "ok": true,
+      "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+      "environment": "staging",
+      "queenEnabled": true,
+      "missingSecrets": [],
+      "sourceCommit": "594105d848c6a8d91cb25554665bdf1c1724e466"
+    },
+    "durationMs": 469
+  },
+  "server": {
+    "httpStatus": 200,
+    "body": {
+      "ok": true,
+      "databaseId": "6a3256b2-c016-4650-9759-79aca3b4446f",
+      "environment": "staging",
+      "observations": {
+        "props": {
+          "available": true,
+          "totalSlots": 1,
+          "contextTokens": 2048
+        },
+        "slots": {
+          "available": true,
+          "slots": [
+            {
+              "id": 0,
+              "contextTokens": 2048,
+              "isProcessing": false
+            }
+          ]
+        }
+      },
+      "physicalRamCpuMeasured": false,
+      "note": "API slot/context state does not measure physical VPS RAM or CPU."
+    },
+    "durationMs": 1698
+  },
+  "recordedPdfInference": null,
+  "summary": {
+    "cases": 3,
+    "queenCompletions": 3,
+    "goalMet": 3,
+    "generatedArtifacts": 3,
+    "fullyVerifiedArtifacts": 3,
+    "improvements": [
+      "split-and-original-word"
+    ],
+    "skipped": 0
+  },
+  "finishedAt": "2026-11-14T20:34:20.134Z"
+}
