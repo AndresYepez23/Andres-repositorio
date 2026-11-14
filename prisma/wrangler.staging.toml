@@ -4,29 +4,42 @@ compatibility_date = "2026-11-08"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
 
+# Both bindings point to the isolated staging-only D1 database.
 [[d1_databases]]
 binding = "PRISMA_RATE_DB"
-database_name = "prisma-queen-staging"
-database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
-preview_database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
+database_name = "prisma-queen-core-staging-isolated"
+database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
+preview_database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
 
-# Production of this isolated project is the authorized validation environment.
+[[d1_databases]]
+binding = "QUEEN_CONTROL_DB"
+database_name = "prisma-queen-core-staging-isolated"
+database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
+preview_database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
+
+# Wrangler is the source of truth for this isolated Pages project.
 [vars]
 QUEEN_ENABLED = "1"
 QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
 QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
 QUEEN_STAGE = "staging"
-QUEEN_STAGING_DATABASE_ID = "980bad8f-0356-48b9-87bc-56bcf363f69a"
+QWEN_CORE_STAGING_ENABLED = "1"
 
 [env.preview.vars]
 QUEEN_ENABLED = "0"
 QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
 QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
 QUEEN_STAGE = "staging"
-QUEEN_STAGING_DATABASE_ID = "980bad8f-0356-48b9-87bc-56bcf363f69a"
+QWEN_CORE_STAGING_ENABLED = "0"
 
 [[env.preview.d1_databases]]
 binding = "PRISMA_RATE_DB"
-database_name = "prisma-queen-staging"
-database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
-preview_database_id = "980bad8f-0356-48b9-87bc-56bcf363f69a"
+database_name = "prisma-queen-core-staging-isolated"
+database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
+preview_database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
+
+[[env.preview.d1_databases]]
+binding = "QUEEN_CONTROL_DB"
+database_name = "prisma-queen-core-staging-isolated"
+database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
+preview_database_id = "6a3256b2-c016-4650-9759-79aca3b4446f"
