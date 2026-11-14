@@ -6,7 +6,6 @@ import {extractPayload,isInformationalIntent,normalizeIntent} from './core-capab
 
 const normalize=text=>normalizeIntent(text).replace(/\s+/g,' ').trim();
 const ids=steps=>steps.map(s=>String(s?.tool_id||s?.tool?.id||''));
-const includesOrdered=(items,a,b)=>items.indexOf(a)>=0&&items.indexOf(b)>items.indexOf(a);
 const hasSelectedPage=step=>step?.tool_id==='pdf-extract'||
  (step?.tool_id==='pdf-split'&&step?.params?.mode==='selected'&&!!step?.params?.pages);
 const xlsxProducer=step=>step?.tool_id==='json-xlsx'||
@@ -26,7 +25,7 @@ export function assessQwenCorePlanCoverage(request,steps=[]){
  const page=/\b(?:pagina|paginas|hoja|hojas)\b/.test(q);
  const extract=/\b(?:extrae|extraer|saca|sacar|selecciona|seleccionar|conserva|conservar|separa|separar|extract|select)\b/.test(q);
  const word=/\b(?:word|docx)\b/.test(q);
- const convert=/\b(?:convierte|convertir|pasala|pasalo|pasar|transforma|transformar|convert|turn)\b/.test(q);
+ const convert=/\b(?:conviert\w*|convert\w*|pasala|pasalo|pasar|transform\w*|turn)\b/.test(q);
  if(pdf&&page&&extract&&word&&convert){
   const first=list.findIndex(hasSelectedPage);
   const second=toolIds.indexOf('pdf-to-word');
