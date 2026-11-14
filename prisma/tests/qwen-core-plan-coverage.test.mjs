@@ -55,3 +55,26 @@ test('English multi-step PDF request keeps both operations',()=>{
  const review=audit('Extract the second page of this PDF and convert it to Word',[step('pdf-to-word')]);
  assert.ok(review.missing.includes('extract-requested-pdf-page'));
 });
+
+test('the actual Prisma Core planner never approves an incomplete multi-step PDF goal',async()=>{
+ const {planWithPrismaCore}=await import('../src/developer-api.js');
+ const result=planWithPrismaCore({text:'Extrae la segunda página del PDF y conviértela a Word',files:[{name:'documento.pdf',type:'application/pdf',size:2500}]});
+ assert.equal(result.ok,true);
+ if(result.planner.type==='ready'){
+  assert.deepEqual(result.planner.steps.map(s=>s.tool_id),['pdf-extract','pdf-to-word']);
+ }else{
+  assert.equal(result.planner.type,'needs-planning');
+  assert.equal(result.planner.steps.length,0);
+  assert.ok(result.planner.goalCoverage?.missing.includes('extract-requested-pdf-page'));
+ }
+});
+
+test('the actual Core planner flags CSV auditing as incomplete deduplication/export',async()=>{
+ const {planWithPrismaCore}=await import('../src/developer-api.js');
+ const result=planWithPrismaCore({text:'Organiza estos datos en Excel, elimina duplicados y entrégame un archivo',files:[{name:'datos.csv',type:'text/csv',size:1800}]});
+ assert.equal(result.ok,true);
+ assert.equal(result.planner.type,'needs-planning');
+ assert.equal(result.planner.steps.length,0);
+ assert.ok(result.planner.goalCoverage?.missing.includes('remove-structured-duplicates'));
+ assert.ok(result.planner.goalCoverage?.missing.includes('produce-excel-file'));
+});
