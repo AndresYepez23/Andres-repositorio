@@ -138,7 +138,7 @@ export const CAPABILITIES = [
  ['pdf-to-word','pdf',/(?:a|en|como) word|a docx/],
  ['pdf-metadata-clean','pdf',/(?:quita|limpia|borra|elimina).*metadatos/],
  ['json-format','text',/(?:organiza|formatea|embellece|ordena|indenta|sangria|legible|valida|mal formado|sintaxis|comprueba).*json|json bonito|formatear json|json.*mal formado/],
- ['json-minify','text',/(?:minifica|comprime).*json/],
+ ['json-minify','text',/(?:minifica|comprime).*json|json.*(?:minifica|minificar)|\bminifica\s+(?:(?:el|la|este|esta|ese|esa|dicho|dicha)\s+)?(?:resultado|salida)\b/],
  ['csv-json','text',/(?:csv|tabla).*(?:a|en|como|por) json|json (?:desde|del) (?:este )?csv/],
  ['json-csv','text',/json.*(?:a|en|como) csv/],
  ['qr','text',/\bqr\b/],
@@ -155,7 +155,33 @@ export const CAPABILITY_WORKFLOWS=workflowCatalog.map(flow=>({...flow}));
 export function extractPayload(raw){
  const s=String(raw||'');const fenced=s.match(/```[^\n]*\n([\s\S]*?)\n?```/);if(fenced)return {instruction:s.slice(0,fenced.index),text:fenced[1]};
  const label=s.match(/(?:texto|contenido|datos|lista|text|content|data|list)\s*:\s*([\s\S]*)$/i);if(label)return {instruction:s.slice(0,label.index),text:label[1]};
- const json=s.search(/[\[{]/);if(json>=0&&/json/i.test(s.slice(0,json)))return {instruction:s.slice(0,json),text:s.slice(json)};
+ const json=s.search(/[\[{]/);
+ if(json>=0&&/json/i.test(s.slice(0,json))){
+  // A JSON literal can sit between two instructions. Never promote strings
+  // contained INSIDE the literal into executable user instructions.
+  const stack=[];let quoted=false,escaped=false;
+  for(let i=json;i<s.length;i++){
+   const ch=s[i];
+   if(quoted){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')quoted=false;continue;}
+   if(ch==='"'){quoted=true;continue;}
+   if(ch==='{'||ch==='[')stack.push(ch);
+   else if(ch==='}'||ch===']'){
+    const previous=stack.pop();
+    if(previous!==(ch==='}'?'{':'['))break;
+    if(!stack.length){
+     const literal=s.slice(json,i+1);
+     try{
+      JSON.parse(literal);
+      const prefix=s.slice(0,json).trim().replace(/[:\s]+$/,'');
+      const trailing=s.slice(i+1).trim().replace(/^[.;,:\s]+/,'');
+      return {instruction:trailing?prefix+'. '+trailing:prefix,text:literal};
+     }catch{/* Preserve existing behavior for invalid JSON. */}
+     break;
+    }
+   }
+  }
+  return {instruction:s.slice(0,json),text:s.slice(json)};
+ }
  const colon=s.search(/:(?!\/\/)/);if(colon>=0)return {instruction:s.slice(0,colon),text:s.slice(colon+1).replace(/^\s/, '')};
  const quote=s.match(/[“"]([^”"]+)[”"]\s*$/);if(quote)return {instruction:s.slice(0,quote.index),text:quote[1]};
  return {instruction:s,text:''};

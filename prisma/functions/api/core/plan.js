@@ -102,7 +102,7 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
  const clauseSteps=compound?extractPayload(text).instruction.split(/\b(?:y\s+)?(?:despu[eé]s|luego|then|afterwards)\b/i).flatMap(clause=>{const p=planWithPrismaCore({text:clause,files}).planner;return p?.type==='ready'?p.steps:[];}):[];
  const knownSteps=[...clauseSteps,...steps];
  const requiredIds=deterministic.planner?.type==='ready'?[...new Set([...knownSteps.map(s=>s.tool_id),...queenInflectedOperations(text).map(o=>o.tool_id)])]:[];
- const closedFlowLimit=compound&&files.length===1&&deterministic.planner?.type==='ready'&&deterministic.planner.source==='prisma-core-capabilities'&&[2,3].includes(steps.length)&&requiredIds.length===steps.length&&steps.every(s=>['local','browser'].includes(s.mode))?steps.length:8;
+ const closedFlowLimit=compound&&files.length<=1&&deterministic.planner?.type==='ready'&&deterministic.planner.source==='prisma-core-capabilities'&&[2,3].includes(steps.length)&&requiredIds.length===steps.length&&steps.every(s=>['local','browser'].includes(s.mode))?steps.length:8;
  const excludedIds=new Set(excludedCapabilityIds(text,files));
  const informational=queenIntentOptions(text,{status:deterministic.planner?.type}).length===1&&queenIntentOptions(text,{status:deterministic.planner?.type})[0]==='question';
  const binaryCapabilityQuestion=informational&&isBinaryCapabilityQuestion(text);
