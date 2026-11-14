@@ -78,6 +78,31 @@ export function queenMessages({text,files,context,contracts,providers,localAnaly
   'ESPECIALISTAS DISPONIBLES:'+JSON.stringify(compactProviders)
  ].join('\n')},{role:'user',content:JSON.stringify({current:text,files:files.map((f,i)=>({ref:'file:'+i,...f})),context,localAnalysis,...(repair?{validationError:repair}:{})})}];
 }
+// A deliberately narrow, auditable hybrid for a PDF scan explicitly described
+// by the user as delimited CSV WITH headers. Never infer a spreadsheet schema
+// from arbitrary scanned documents: all columns come from observed OCR text.
+export function knownScannedCsvExcelPlan(text,files){
+ const instruction=extractPayload(text).instruction.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ if(files.length!==1||files[0].type!=='application/pdf'||!files[0].name.toLowerCase().endsWith('.pdf'))return null;
+ if(!/\bpdf\b/.test(instruction)||!/\bescanead[oa]\b/.test(instruction)||!/\bcsv\b/.test(instruction)||
+    !/\bencabezados?\b/.test(instruction)||!/\bexcel\b|\bxlsx\b/.test(instruction)||
+    !/\b(?:reconoce|ocr|reconocer)\b/.test(instruction)||
+    !/\b(?:ingles|english)\b/.test(instruction)||
+    !/\bespacios?\b/.test(instruction)||!/\bcomas?\b/.test(instruction)||
+    !/\b(?:elimina|quita|reemplaza)\b/.test(instruction))return null;
+ // Do not silently execute a subset of a compound request with unrelated
+ // operations or negative authorization.
+ if(/\b(?:envia|publica|sube|borra|elimina archivos?|firma|traduce|recorta|comprime|cambia el formato|dos columnas)\b/.test(instruction))return null;
+ const steps=[
+  {id:'s1',tool_id:'pdf-to-image',params:{format:'png',scale:'1.5'},dependsOn:[],inputs:['file:0']},
+  {id:'s2',tool_id:'image-ocr',params:{language:'eng'},dependsOn:['s1'],inputs:['step:s1']},
+  {id:'s3',tool_id:'text-replace',params:{search:', ',replacement:',',replaceAll:true},dependsOn:['s2'],inputs:['step:s2']},
+  {id:'s4',tool_id:'csv-json',params:{},dependsOn:['s3'],inputs:['step:s3']},
+  {id:'s5',tool_id:'json-xlsx',params:{},dependsOn:['s4'],inputs:['step:s4']}
+ ];
+ return {intent:'execute',message:'Plan preparado.',steps};
+}
+
 export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=getQueenProviders,signal,forceNeural=false,maxInferences=QUEEN_LIMITS.inferences,capturePartialOutput=false}={}){
  const text=String(payload?.text||'').trim();
  if(text.length<2||text.length>4000||!Array.isArray(payload?.files)||payload.files.length>20)throw new QueenError('INVALID_REQUEST',400);
@@ -92,6 +117,32 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
   await recordQueenMetric(env,'local');return {ok:true,source:'prisma-core-local',fallback:true,execution:{executed:false,verified:false}};
  }
  queenConfig(env);
+ const knownScan=knownScannedCsvExcelPlan(text,files);
+ if(knownScan&&!payload.repair){
+  // Qwen decides whether the stated constraints permit execution. The
+  // deterministic planner, not the 2B model, grounds the complete 5-step DAG.
+  // The ordinary validators and execution permissions remain authoritative.
+  return withQueenLease(env,async()=>{
+   const started=Date.now();
+   const schema={type:'object',additionalProperties:false,required:['intent'],properties:{intent:{type:'string',enum:['execute','clarify']}}};
+   const messages=[
+    {role:'system',content:'You classify only the current action request. Reply JSON with one key, intent: execute or clarify. The user states this scanned PDF contains CSV text WITH HEADERS. Reading it via OCR reveals actual column names and values at execution time; do NOT demand column names in advance. Available local workflow: convert every PDF page to PNG, OCR English, remove only spaces immediately after commas, parse CSV with first row as headers, export JSON rows to XLSX. If information is sufficient to TRY this reversible on-device workflow choose execute. If the user omitted the CSV format or file choose clarify. Never claim OCR or Excel succeeded.'},
+    {role:'user',content:JSON.stringify({request:extractPayload(text).instruction.slice(0,1100),file:{name:files[0].name,type:files[0].type,size:files[0].size}})}
+   ];
+   const result=await infer(env,messages,schema,{signal,maxOutputTokens:40,remainingMs:55000});
+   const usage={inputTokens:result.usage?.inputTokens||0,outputTokens:result.usage?.outputTokens||0,externalCostUsd:0};
+   if(result.plan?.intent==='clarify'){
+    const safe=validateQueenPlan({intent:'clarify',message:'Confirma que el PDF contiene filas CSV con encabezados.',steps:[]},{files,objective:text});
+    await recordQueenMetric(env,'clarify',{durationMs:Date.now()-started,...usage});
+    return {ok:true,source:'queen',plan:safe,metrics:{...usage,inferences:1,planningMode:'qwen-intent-with-grounded-closed-ocr-csv',durationMs:Date.now()-started}};
+   }
+   if(result.plan?.intent!=='execute')throw new QueenError('QUEEN_PLAN_REJECTED',422,{inferences:1,completedInferences:1});
+   const plan=validateQueenPlan(knownScan,{files,objective:text,allowedToolIds:knownScan.steps.map(s=>s.tool_id)});
+   await recordQueenMetric(env,'planned',{durationMs:Date.now()-started,...usage});
+   return {ok:true,source:'queen',plan,decision:queenDecisionEvidence(plan),
+    metrics:{...usage,inferences:1,planningMode:'qwen-intent-with-grounded-closed-ocr-csv',generatedStepsByModel:false,verifyActualOcrCellsAtExecution:true,durationMs:Date.now()-started}};
+  });
+ }
  const context=payload.context&&typeof payload.context==='object'?{
   previousGoal:String(payload.context.previousGoal||'').slice(0,400),
   procedure:Array.isArray(payload.context.procedure)?payload.context.procedure.slice(-8).map(s=>({tool_id:String(s.tool_id).slice(0,80),params:JSON.stringify(s.params||{}).slice(0,600)})):[],

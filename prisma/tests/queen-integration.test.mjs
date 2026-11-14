@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {queenCatalogSchema} from '../src/queen-schema.js';
 import {queenToolCatalog,retrieveQueenTools,queenInflectedOperations} from '../src/queen-contracts.js';
-import {queenIntentOptions,planWithQueen,queenStagingSingleInferenceLimit} from '../functions/api/core/plan.js';
+import {queenIntentOptions,planWithQueen,queenStagingSingleInferenceLimit,knownScannedCsvExcelPlan} from '../functions/api/core/plan.js';
 import {extractPayload} from '../src/core-capabilities.js';
 import {planWithPrismaCore} from '../src/developer-api.js';
 import {measureQueenStream,inferQueen} from '../functions/_lib/queen.js';
@@ -160,4 +160,38 @@ test('Prisma Core inserts the necessary CSV parser for direct CSV-to-Excel witho
  assert.deepEqual(p.steps.map(step=>step.tool_id),['csv-json','json-xlsx']);
  const absent=planWithPrismaCore({text:'Crea un Excel. Datos: no soy JSON ni CSV',files:[]}).planner;
  assert.equal(absent.type,'needs-input');
+});
+
+test('Queen narrowly recognizes stated CSV-in-scanned-PDF workflows and never guesses unknown tables',()=>{
+ const file=[{name:'scan.pdf',type:'application/pdf',size:100}];
+ const text='Convierte el PDF escaneado adjunto en un Excel. El escaneo contiene texto CSV con encabezados. Reconoce el texto en inglés; elimina únicamente los espacios que aparezcan justo después de las comas antes de estructurar las filas. No inventes celdas ni contenido.';
+ const p=knownScannedCsvExcelPlan(text,file);
+ assert.deepEqual(p.steps.map(x=>x.tool_id),['pdf-to-image','image-ocr','text-replace','csv-json','json-xlsx']);
+ const v=validateQueenPlan(p,{files:file});
+ assert.equal(v.steps.length,5);
+ assert.deepEqual(v.steps[2].inputs,['step:s2']);
+ assert.equal(v.steps[0].params.pages,undefined); // Never silently drop later PDF pages.
+ assert.equal(knownScannedCsvExcelPlan('Extrae cualquier tabla del PDF escaneado a Excel',file),null);
+ assert.equal(knownScannedCsvExcelPlan(text,[{name:'file.png',type:'image/png',size:100}]),null);
+ assert.equal(knownScannedCsvExcelPlan(text+' Envíalo por correo.',file),null);
+});
+test('a single real-shaped Qwen intent vote grounds the scanned CSV plan without model-synthesized steps',async()=>{
+ const text='Convierte el PDF escaneado adjunto en un Excel. El escaneo contiene texto CSV con encabezados. Reconoce el texto en inglés; elimina únicamente los espacios que aparezcan justo después de las comas antes de estructurar las filas. No inventes celdas ni contenido.';
+ let calls=0;
+ const result=await planWithQueen(env(),{text,files:[{name:'scan.pdf',type:'application/pdf',size:100}]},{
+  infer:async(_env,messages,schema,opts)=>{
+   calls++;assert.deepEqual(schema.properties.intent.enum,['execute','clarify']);
+   assert.equal(opts.maxOutputTokens,40);
+   return {plan:{intent:'execute'},usage:{inputTokens:93,outputTokens:7}};
+  }
+ });
+ assert.equal(calls,1);assert.equal(result.source,'queen');
+ assert.deepEqual(result.plan.steps.map(s=>s.tool_id),['pdf-to-image','image-ocr','text-replace','csv-json','json-xlsx']);
+ assert.equal(result.metrics.generatedStepsByModel,false);
+ assert.equal(result.metrics.inferences,1);
+});
+test('a model clarification remains a clarification; no five-step scan plan is executed',async()=>{
+ const text='Convierte el PDF escaneado adjunto en un Excel. El escaneo contiene texto CSV con encabezados. Reconoce el texto en inglés; elimina únicamente los espacios que aparezcan justo después de las comas antes de estructurar las filas. No inventes celdas ni contenido.';
+ const r=await planWithQueen(env(),{text,files:[{name:'scan.pdf',type:'application/pdf',size:100}]},{infer:async()=>({plan:{intent:'clarify'},usage:{inputTokens:20,outputTokens:5}})});
+ assert.equal(r.plan.intent,'clarify');assert.deepEqual(r.plan.steps,[]);
 });
