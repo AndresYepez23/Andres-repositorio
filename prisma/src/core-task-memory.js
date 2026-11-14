@@ -1,5 +1,5 @@
 // Per-conversation task references, memory-only: no uploads, prompts or credentials.
-import { normalizeIntent } from './core-capabilities.js';
+import { normalizeIntent, extractPayload } from './core-capabilities.js';
 export function createTaskMemory({maxBytes=120*1024*1024,maxChats=8,ttl=30*60*1000,now=Date.now}={}){
  const tasks=new Map(),pending=new Map();
  const get=id=>{const t=tasks.get(id);if(t&&now()-t.updated>ttl){tasks.delete(id);return null;}return t||null;};
@@ -20,9 +20,16 @@ export function createTaskMemory({maxBytes=120*1024*1024,maxChats=8,ttl=30*60*10
   }
   if(waiting)pending.delete(id);
   if(!task)return {task:null,files:newFiles};
+  // Bind explicit file references to this chat's latest completed operation.
+  // Read only the instruction: quoted text and JSON values are not references.
+  const instruction=normalizeIntent(extractPayload(query).instruction).split(/[,;.!?]|\s+(?:y|pero)\s+|\s+(?=sin\b)/)
+   .filter(clause=>!/^\s*(?:no\b|sin\b|nunca\b|ignora\b|descarta\b)/.test(clause)).join('. ');
+  const originalReference=/\b(?:el (?:archivo |documento )?original|los (?:archivos |documentos )?originales|(?:el )?archivo de origen)\b/.test(instruction);
+  const resultReference=/\b(?:(?:ese|esa|esos|esas|este|esta|estos|estas) (?:resultado\w*|archivo\w*|documento\w*)|(?:el|los|la|las) (?:ultimo\w* )?(?:resultado\w*|archivo\w*|documento\w*) (?:anterior\w*|generado\w*|que acabas de (?:generar|crear|convertir))|(?:el|los) ultimo\w* (?:resultado\w*|archivo\w*|documento\w*))\b/.test(instruction);
   const follow=/^(?:a word|a docx|la ultima pagina|tambien|ahora|mejor|con menos|conserva|utiliza el mismo|haz lo mismo|hazlo|continua|todas|la segunda|el segundo|repite|dejala|dejalas|quita(?:le|les)? los metadatos)/.test(q);
-  if(!follow){if(!/^(?:gracias|muchas gracias|hola|ok|perfecto|listo)[!.\s]*$/.test(q))tasks.delete(id);return {task:null,files:newFiles};}
-  let files=newFiles.length?newFiles:task.files;
+  if(!follow&&!originalReference&&!resultReference){if(!/^(?:gracias|muchas gracias|hola|ok|perfecto|listo)[!.\s]*$/.test(q))tasks.delete(id);return {task:null,files:newFiles};}
+  let files=newFiles.length?newFiles:originalReference?
+   resultReference?[...new Set([...task.originals,...task.files])]:task.originals:task.files;
   if(/^(?:la segunda|el segundo)/.test(q))files=files[1]?[files[1]]:[];
   return {task,files,request:formatReply?'Convierte el archivo '+query:undefined};
  }};

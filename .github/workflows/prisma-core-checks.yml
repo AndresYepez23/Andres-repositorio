@@ -54,6 +54,7 @@ jobs:
             ${{ runner.temp }}/prisma-document-conversion/*.docx
             ${{ runner.temp }}/prisma-document-conversion/*.html
             ${{ runner.temp }}/prisma-document-conversion/*.pdf
+            ${{ runner.temp }}/prisma-document-conversion/*.txt
       - name: Real Qwen Core inference quality sample on isolated staging
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
         timeout-minutes: 6
