@@ -16,7 +16,7 @@ import {
   chooseCoreContextOptions
 } from '../src/core-context.js';
 
-test('automatic chats remember the last model but re-route each request by provider health',()=>{
+test('automatic chats pin the first successful model and keep it for the conversation',()=>{
   let selection=beginConversationModelTurn({mode:'auto'},1000);
   selection=pinConversationModel(selection,{provider:'groq',model:'openai/gpt-oss-20b'},1200);
   assert.equal(selection.provider,'groq');
@@ -24,18 +24,8 @@ test('automatic chats remember the last model but re-route each request by provi
   assert.equal(selection.usedAt,1200);
   const next=beginConversationModelTurn(selection,5000);
   assert.equal(next.provider,'groq');
-  assert.equal(conversationModelRequest(next).provider,'auto');
-  assert.equal(conversationModelRequest(next).model,'');
+  assert.equal(conversationModelRequest(next).provider,'groq');
   assert.equal(conversationModelRequest(next).allowFallback,true);
-});
-
-test('automatic fallback does not lock a chat to the provider that last answered',()=>{
-  let state=selectAutomaticConversationModel({},100);
-  state=pinConversationModel(state,{provider:'kilo',model:'z-ai/glm-5:free'},200);
-  assert.equal(state.provider,'kilo');
-  assert.deepEqual(conversationModelRequest(state),{provider:'auto',model:'',allowFallback:true});
-  state=pinConversationModel(state,{provider:'cloudflare',model:'@cf/google/gemma-4-26b-a4b-it',fallbackFrom:'kilo'},300);
-  assert.deepEqual(conversationModelRequest(state),{provider:'auto',model:'',allowFallback:true});
 });
 
 test('automatic model pin is refreshed after 30 minutes without a user message',()=>{
