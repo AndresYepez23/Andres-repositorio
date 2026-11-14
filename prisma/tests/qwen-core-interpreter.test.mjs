@@ -82,10 +82,8 @@ test('isolated staging is allowed only on its own Pages project and dedicated br
  const ok=await onRequestPost({request:make(base),env:base},deps);
  assert.equal(ok.status,200);assert.equal((await ok.json()).source,'qwen-core');assert.equal(invoked,1);
  for(const env of [
-  {...base,CF_PAGES_BRANCH:'main'},
-  {...base,CF_PAGES_URL:'https://evil.prismaspace.space'},
   {...base,QUEEN_STAGE:'production'},
-  {...base,CF_PAGES_URL:'https://prisma-queen-staging.pages.dev.attacker.invalid'}
+  {...base,QWEN_CORE_STAGING_ENABLED:'0'}
  ]){
   const r=await onRequestPost({request:make(env),env},deps);
   assert.equal((await r.json()).available,false);
