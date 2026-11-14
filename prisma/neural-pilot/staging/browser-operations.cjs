@@ -126,7 +126,7 @@ const transportCalls=[],taskBudgets=new Map();let activeBudgetId=null;
    }catch(e){result.rows.push({id:'specialist-delegation',ok:false,realInferenceRequested:true,realInference:observedInference(neural),neural,error:e.message,taskBudget:task.snapshot(),durationMs:Date.now()-started});}
   }
   if(live&&enabled('real-parameter-recovery')){
-   const started=Date.now(),text='Formatea este JSON sin cambiar los datos: {"recuperado":true}',task=createOperationBudget({id:'real-parameter-recovery',objective:text});let initial=null,correction=null,engineCalls=0;
+   const started=Date.now(),text='Formatea este JSON: {"recuperado":true}. Después conserva el resultado sin cambiar los datos.',task=createOperationBudget({id:'real-parameter-recovery',objective:text});let initial=null,correction=null,engineCalls=0;
    try{
     await window.queenSetBudget({id:task.id,remainingMs:task.remainingMs()});
     initial=await task.queen('initial',async signal=>(await fetch('/__queen-live/plan',{method:'POST',headers:{'content-type':'application/json','X-Queen-Task-Remaining-Ms':String(task.remainingMs())},signal,body:JSON.stringify({text,files:[],maxInferences:1})})).json());

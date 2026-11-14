@@ -187,3 +187,13 @@ test('a grounded closed OCR CSV workflow uses zero inferences and validates all 
  assert.equal(result.metrics.generatedStepsByModel,false);
  assert.equal(result.metrics.inferences,0);
 });
+
+test('real parameter recovery uses a single JSON tool but bypasses local shortcut for requested postcondition',()=>{
+ const input='Formatea este JSON: {"recuperado":true}. Después conserva el resultado sin cambiar los datos.';
+ const parsed=extractPayload(input);
+ assert.match(parsed.instruction,/despu[eé]s/i);
+ assert.equal(parsed.text,'{"recuperado":true}');
+ const r=planWithPrismaCore({text:input,files:[]});
+ assert.equal(r.planner.type,'ready');
+ assert.deepEqual(r.planner.steps.map(s=>s.tool_id),['json-format']);
+});
