@@ -2234,8 +2234,11 @@ async function requestPlan(userText){
     }
     if(extracted.length)attachmentContext='\n\nCONTENIDO EXTRAÍDO EN EL DISPOSITIVO (solo el texto necesario se incluye en la solicitud al motor de IA; los archivos originales permanecen disponibles para ejecutar herramientas):\n'+extracted.join('\n\n').slice(0,22000);
   }
+  // The new Qwen route never depends on Prisma Mini; keep Mini optional only
+  // for the untouched legacy route if a user has expressly enabled it.
+  const qwenEligible=attachments.length>0&&(incompleteCapabilityPlan||/(?:primero|despu[eé]s|luego|adem[aá]s|y\s+(?:convierte|transforma|extrae|gira|quita|elimina|crea|exporta))/i.test(userText));
   let miniShortlist=null;
-  if(localBrainEnabled){
+  if(localBrainEnabled&&!qwenEligible){
     try{
       const baseline=compactPlanningCatalog(userText);
       // The semantic model only reorders known, safe tools; it never executes an action.
@@ -2250,9 +2253,8 @@ async function requestPlan(userText){
   }
   // Qwen only ranks known tools for unresolved composite work; never executes.
   let qwenHint=null;
-  const compoundInstruction=/(?:primero|despu[eé]s|luego|adem[aá]s|y\s+(?:convierte|transforma|extrae|gira|quita|elimina|crea|exporta))/i.test(userText);
-  if(attachments.length&&(incompleteCapabilityPlan||compoundInstruction))qwenHint=await requestQwenCoreInterpretation({text:coreRequest,files:attachments});
-  const shortlist=prioritizeQwenCoreTools(miniShortlist||compactPlanningCatalog(userText),qwenHint);
+  if(qwenEligible)qwenHint=await requestQwenCoreInterpretation({text:coreRequest,files:attachments});
+  const shortlist=prioritizeQwenCoreTools(qwenEligible?compactPlanningCatalog(userText):(miniShortlist||compactPlanningCatalog(userText)),qwenHint);
   const plannerPrompt=buildPlannerPrompt(userText+attachmentContext.slice(0,7500),shortlist);
   let plan,steps;
   // Provider/network errors must not trigger a second costly inference request.
