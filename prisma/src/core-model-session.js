@@ -118,10 +118,6 @@ export function pinConversationModel(input, result = {}, now = Date.now()) {
 
 export function conversationModelRequest(input) {
   const current = normalizeConversationModelSelection(input);
-  // Automatic mode remembers the last successful model for display, not as a
-  // hard routing preference. Re-evaluate healthy providers on every request:
-  // a previous success must not make a slow/unavailable model monopolize turns.
-  if (current.mode === "auto") return { provider: "auto", model: "", allowFallback: true };
   return current.provider && current.model
     ? { provider: current.provider, model: current.model, allowFallback: true }
     : { provider: "auto", model: "", allowFallback: true };
