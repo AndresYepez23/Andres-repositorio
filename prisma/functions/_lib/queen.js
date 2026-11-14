@@ -118,7 +118,7 @@ export async function withQueenLease(env,operation){
  finally{if(!coolingDown)try{await db.prepare('DELETE FROM queen_leases WHERE slot=? AND owner=?').bind('queen',owner).run();}catch{/* Expiring lease fails closed. */}}
 }
 export async function recordQueenMetric(env,event,{durationMs=0,inputTokens=0,outputTokens=0}={}){
- if(env.QUEEN_ENABLED!=='1'||!['planned','clarify','delegated','failed','repair','local'].includes(event))return;
+ if(env.QUEEN_ENABLED!=='1'||!['planned','clarify','delegated','failed','repair','local','qwen-core-interpreted','qwen-core-failed'].includes(event))return;
  const safe=n=>Math.max(0,Math.min(1000000,Math.round(Number(n)||0)));
  try{await queenControlDB(env)?.prepare('INSERT INTO queen_metrics(day,event,count,duration_ms,input_tokens,output_tokens) VALUES(?,?,1,?,?,?) ON CONFLICT(day,event) DO UPDATE SET count=count+1,duration_ms=duration_ms+excluded.duration_ms,input_tokens=input_tokens+excluded.input_tokens,output_tokens=output_tokens+excluded.output_tokens')
   .bind(new Date().toISOString().slice(0,10),event,safe(durationMs),safe(inputTokens),safe(outputTokens)).run();}catch{/* Never log payloads or exception bodies. */}

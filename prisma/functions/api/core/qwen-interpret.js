@@ -54,7 +54,7 @@ export async function onRequestPost({request,env},{interpret=interpretWithQwenCo
  if(request.headers.get('Origin')!==new URL(request.url).origin)return json({ok:false,code:'INVALID_ORIGIN'},403);
  if(!request.headers.get('Content-Type')?.startsWith('application/json'))return json({ok:false,code:'INVALID_CONTENT_TYPE'},415);
  // Disabled until isolated quality and latency tests demonstrate a benefit.
- if(env.QWEN_CORE_INTERPRETER_ENABLED!=='1')return json({ok:false,available:false,fallback:true});
+ if(env.QWEN_CORE_INTERPRETER_ENABLED!=='1'&&!(env.QUEEN_STAGE==='staging'&&env.QUEEN_ENABLED==='1'))return json({ok:false,available:false,fallback:true});
  try{
   if(Number(request.headers.get('Content-Length')||0)>QWEN_CORE_INTERPRET_LIMITS.maxInputBytes)throw new QueenError('QWEN_CORE_REQUEST_TOO_LARGE',413);
   const payload=await readBoundedJson(request,QWEN_CORE_INTERPRET_LIMITS.maxInputBytes);

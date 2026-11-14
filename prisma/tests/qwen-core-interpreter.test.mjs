@@ -52,3 +52,13 @@ test('cross-site request never reaches Qwen Core',async()=>{
  const r=await onRequestPost({request:req,env:{QWEN_CORE_INTERPRETER_ENABLED:'1'}});
  assert.equal(r.status,403);
 });
+
+test('staging flag enables the interpreter only in the isolated staging environment',async()=>{
+ let invoked=0;
+ const req=()=>new Request('https://example.com/api/core/qwen-interpret',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:JSON.stringify({text:'Convierte el PDF a Word',files:pdf})});
+ const run=async env=>{const r=await onRequestPost({request:req(),env},{reserve:async()=>{invoked++;},interpret:async()=>({ok:true,source:'qwen-core',intent:'question',tool_ids:[]})});return r.json();};
+ assert.equal((await run({QUEEN_STAGE:'staging',QUEEN_ENABLED:'1'})).ok,true);
+ assert.equal((await run({QUEEN_STAGE:'production',QUEEN_ENABLED:'1'})).available,false);
+ assert.equal((await run({QUEEN_STAGE:'preview',QUEEN_ENABLED:'1'})).available,false);
+ assert.equal(invoked,1);
+});
