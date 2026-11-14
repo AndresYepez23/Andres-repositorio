@@ -15,10 +15,14 @@ const canonicalJson=value=>JSON.stringify(value&&typeof value==='object'?Array.i
 const cancellationRequested=text=>/^(?:(?:por favor|please)[,\s]+)?(?:no[,\s]+)?(?:cancela|detente|no hagas (?:nada|lo anterior)|cancel|stop)\b/i.test(extractPayload(text).instruction.trim());
 const comparableMessage=text=>String(text).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const normalizedInstruction=text=>String(text).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-const originalInputRequested=instruction=>/\b(?:original(?:es)?|todo\s+(?:el|este|ese|dicho)\s+(?:pdf|documento|archivo)|(?:pdf|documento|archivo)\s+(?:completo|entero))\b/.test(normalizedInstruction(instruction));
+function originalInputRequested(instruction){
+ const clauses=normalizedInstruction(instruction).split(/\b(?:despues|luego|finalmente|then|afterwards)\b/);
+ const later=clauses.length>1?clauses.slice(1).join(' '):clauses[0];
+ return /\b(?:original(?:es)?|todo\s+(?:el|este|ese|dicho)\s+(?:pdf|documento|archivo)|(?:pdf|documento|archivo)\s+(?:completo|entero))\b/.test(later);
+}
 function intermediateOutputRequested(instruction){
  const later=normalizedInstruction(instruction).split(/\b(?:despues|luego|finalmente|then|afterwards)\b/).slice(1);
- return later.length>0&&later.every(clause=>/\b(?:(?:esa|esta|dicha)\s+(?:pagina|salida|imagen|archivo|documento|resultado)|(?:resultado|salida)\s+anterior|(?:conviert[ea]|transforma|gira|rota|comprime|reduce|redimensiona|recorta|formatea|minifica|normaliza|extrae)(?:lo|la|los|las))\b/.test(clause));
+ return later.length>0&&later.every(clause=>/\b(?:(?:esa|esta|dicha|ese|este|dicho)\s+(?:pagina|salida|imagen|archivo|documento|resultado)|(?:resultado|salida)\s+anterior|(?:conviert[ea]|transforma|gira|rota|comprime|reduce|redimensiona|recorta|formatea|minifica|normaliza|extrae)(?:lo|la|los|las))\b/.test(clause));
 }
 function contradictsExclusions(message,excluded){
  const targets=[];

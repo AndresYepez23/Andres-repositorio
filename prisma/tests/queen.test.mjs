@@ -81,6 +81,9 @@ test('Queen disables thinking, uses structured bounded output and records actual
  }});assert.equal(r.usage.inputTokens,5);assert.equal(r.usage.outputTokens,12);
 });
 test('truncated model output cannot be accepted as a plan',async()=>{
+ let calls=0;await assert.rejects(inferQueen(env(),[],{}, {fetchImpl:async url=>url.endsWith('/slots')?json([{id:0,is_processing:false}]):calls++?json({choices:[{message:{content:'{}'},finish_reason:'length'}]}):json({tokens:[1]})}),/TRUNCATED/);
+});
+test('truncated output diagnostics contain numeric shape without generated values',async()=>{
  const content='{\n "message":"private-user-value"';let calls=0;
  await assert.rejects(inferQueen(env(),[],{}, {fetchImpl:async url=>{
   if(url.endsWith('/slots'))return json([{id:0,is_processing:false}]);

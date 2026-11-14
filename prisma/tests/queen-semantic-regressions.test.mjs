@@ -288,6 +288,21 @@ test('whole-document wording preserves the original input in both grammar and se
  }
 });
 
+test('whole-document wording in the first operation cannot bypass later result dependencies',async()=>{
+ for(const dependsOn of [[],['s1']]){
+  await assert.rejects(planWithQueen(env(),{text:'Comprime todo el PDF y después convierte ese resultado a Word',files:pdf},{
+   forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
+    const execute=(schema.oneOf||[schema]).find(v=>v.properties.intent.enum.includes('execute'));
+    for(const variant of execute.properties.steps.items.oneOf[1].oneOf){
+     assert.deepEqual(variant.properties.inputs.items.enum,['step:s1']);
+     assert.equal(variant.properties.dependsOn.minItems,1);
+    }
+    return result({intent:'execute',message:'Plan preparado.',steps:[step('s1','pdf-compress',{},['file:0']),step('s2','pdf-to-word',{},['file:0'],dependsOn)]});
+   }
+  }),error=>error.diagnostics.trace[0].validationError===(dependsOn.length?'DEPENDENCY_INPUT_REQUIRED:s2:s1':'SEQUENTIAL_INPUT_REQUIRED:s2:s1'));
+ }
+});
+
 test('generation constrains intermediate input only when the later clause explicitly refers to it',async()=>{
  for(const [later,intermediate] of [['convierte el PDF a Word',false],['conviértela a Word',true],['convierte dicha salida a Word',true]]){
   await planWithQueen(env(),{text:'Extrae la segunda página del PDF y después '+later,files:pdf},{
