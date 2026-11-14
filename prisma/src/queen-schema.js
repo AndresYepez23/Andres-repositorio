@@ -3,7 +3,13 @@
 // permutations remain outside it. Independent validation checks every plan.
 import {OBSERVERS} from './core-execution.js';
 
-export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],maxSteps=8,sequentialFileFlow=false}={}){
+// llama.cpp gives pattern precedence over maxLength. Keep the full finite
+// length bound inside the pattern and exclude raw JSON-unsafe characters.
+const MESSAGE_CHARACTER=String.raw`[^"\\\x00-\x1F]`;
+const COMPLETE_MESSAGE_PATTERN='^'+MESSAGE_CHARACTER+'{1,98}[.!?…]$';
+const BINARY_CAPABILITY_PATTERN='^(Sí, |No, |Depende: )'+MESSAGE_CHARACTER+'{1,89}[.!…]$';
+
+export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],maxSteps=8,sequentialFileFlow=false,binaryCapabilityQuestion=false}={}){
  // Only a complete caller-proven short flow uses per-ID alternatives. Generic
  // plans retain a compact grammar plus the independent graph validator.
  const bounded=maxSteps===2||maxSteps===3;
@@ -45,7 +51,7 @@ export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],m
  const variant=(allowed,execute)=>({type:'object',additionalProperties:false,required:['intent','message','steps'],properties:{
   // Execute messages are replaced by the validated executor notice. Do not
   // spend the fixed output budget generating prose or an inapplicable search.
-  intent:{type:'string',enum:allowed},message:execute?{type:'string',enum:['Plan preparado.']}:{type:'string',maxLength:160},
+  intent:{type:'string',enum:allowed},message:execute?{type:'string',enum:['Plan preparado.']}:{type:'string',maxLength:99,pattern:binaryCapabilityQuestion&&allowed.length===1&&allowed[0]==='question'?BINARY_CAPABILITY_PATTERN:COMPLETE_MESSAGE_PATTERN},
   ...(allowed.includes('retrieve')?{search:{type:'string',maxLength:160}}:{}),
   steps:{type:'array',minItems:execute?Math.max(1,Math.min(limit,new Set(requiredToolIds.filter(id=>contracts.some(c=>c.id===id))).size)):0,maxItems:execute?limit:0,items:execute&&contracts.length?step:{type:'object'}}
  }});

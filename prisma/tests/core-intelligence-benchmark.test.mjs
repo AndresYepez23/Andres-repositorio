@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {planCapabilityRequest,extractPayload,CAPABILITY_WORKFLOWS} from '../src/core-capabilities.js';
+import {planCapabilityRequest,extractPayload,isInformationalIntent,isBinaryCapabilityQuestion,CAPABILITY_WORKFLOWS} from '../src/core-capabilities.js';
 import {runToolBatch,resultFiles,OBSERVERS,executionCards,runIndependentJobs} from '../src/core-execution.js';
 import {createTaskMemory} from '../src/core-task-memory.js';
 import {planPdfSplit} from '../src/pdf-split-options.js';
@@ -52,6 +52,75 @@ test('ambiguity, missing inputs, negation and unsupported subtasks never become 
  assert.equal(planCapabilityRequest('Escribe un cuento de fantasía'),null);
  assert.equal(planCapabilityRequest('Investiga noticias de hoy'),null);
  assert.equal(planCapabilityRequest('Comprime',[...picture,...pdf])?.type,'needs-input');
+});
+test('natural image-size requests ask for dimensions without confusing file weight or quoted instructions',()=>{
+ for(const text of ['Cambia el tamaño de esta fotografía, por favor.','Ajusta el tamaño de esta imagen','Cambiar las dimensiones de la foto']){
+  const plan=planCapabilityRequest(text,picture),core=planWithPrismaCore({text,files:picture});
+  assert.equal(plan?.type,'needs-input',text);assert.deepEqual(plan.steps,[],text);
+  assert.match(plan.message,/ancho y alto|dimensiones|píxeles/,text);
+  assert.equal(core.planner.type,'needs-input',text);assert.deepEqual(ids(core.planner),[],text);
+ }
+ assert.deepEqual(ids(planCapabilityRequest('Cambia el tamaño de la imagen a 640 x 480',picture)),['image-resize']);
+ assert.deepEqual(ids(planCapabilityRequest('Cambia el tamaño del archivo por debajo de 500 KB',picture)),['image-compress']);
+ assert.deepEqual(ids(planCapabilityRequest('No cambies el tamaño de la imagen, solamente comprímela',picture)),['image-compress']);
+ for(const text of ['Comprime sin cambiar el tamaño','Comprime sin ajustar las dimensiones'])assert.deepEqual(ids(planCapabilityRequest(text,picture)),['image-compress'],text);
+ assert.equal(planCapabilityRequest('¿Puedes cambiar el tamaño de esta fotografía?',picture)?.type,'needs-input');
+ assert.deepEqual(ids(planCapabilityRequest('Formatea JSON: {"nota":"cambia el tamaño de la fotografía"}',[])),['json-format']);
+});
+test('separating an explicit singular PDF page preserves extraction before Word conversion',()=>{
+ for(const [text,selection] of [
+  ['Del documento adjunto, separa la página 3 y luego transforma esa página en Word.','3'],
+  ['Separa la hoja 4 y después conviértela a Word','4'],
+  ['Separa la tercera página y luego conviértela en Word','3']
+ ]){
+  const plan=planCapabilityRequest(text,pdf),core=planWithPrismaCore({text,files:pdf});
+  assert.equal(plan?.type,'ready',text);assert.deepEqual(ids(plan),['pdf-extract','pdf-to-word'],text);
+  assert.equal(plan.steps[0].params.pages,selection,text);
+  assert.equal(core.planner.source,'prisma-core-capabilities',text);
+  assert.deepEqual(ids(core.planner),['pdf-extract','pdf-to-word'],text);
+  assert.equal(core.planner.steps[0].params.pages,selection,text);
+ }
+ assert.equal(planCapabilityRequest('¿Puedes separar la página 3 y convertirla a Word?',pdf)?.type,'needs-input');
+ assert.deepEqual(ids(planCapabilityRequest('No separes la página 3, convierte el PDF a Word',pdf)),['pdf-to-word']);
+});
+test('capability questions remain informational after conversational prefaces, without promoting payloads or commands',()=>{
+ for(const [text,files] of [
+  ['Antes de decidir: ¿es posible pasar un PDF a un documento Word aquí?',pdf],
+  ['Por favor, ¿se puede cambiar el tamaño de esta imagen?',picture],
+  ['Una consulta: ¿puedo separar la página 4 del PDF?',pdf],
+  ['Antes de empezar, ¿cómo convierto este PDF a Word?',pdf],
+  ['Por favor, antes de continuar: ¿podemos comprimir este PDF?',pdf],
+  ['No conviertas el PDF, solo quiero saber si puedo pasarlo a Word',pdf]
+ ]){
+  assert.equal(isInformationalIntent(text),true,text);
+  assert.equal(planCapabilityRequest(text,files)?.type,'needs-input',text);
+  const core=planWithPrismaCore({text,files});assert.equal(core.planner.type,'needs-input',text);assert.deepEqual(ids(core.planner),[],text);
+ }
+ for(const text of ['Por favor, convierte este PDF a Word','Antes de continuar: convierte este PDF a Word','Antes de decidir: "¿es posible pasar PDF a Word?"','Antes de decidir:\n```text\n¿es posible pasar PDF a Word?\n```'])assert.equal(isInformationalIntent(text),false,text);
+ assert.deepEqual(ids(planCapabilityRequest('Por favor, convierte este PDF a Word',pdf)),['pdf-to-word']);
+ const data='Formatea JSON: {"nota":"Antes de decidir: ¿es posible pasar un PDF a Word?"}';
+ assert.equal(isInformationalIntent(data),false);assert.deepEqual(ids(planCapabilityRequest(data,[])),['json-format']);
+});
+test('binary capability questions share safe parsing without treating open questions, cancellation or quoted data as binary',()=>{
+ for(const text of [
+  '¿Puedes convertir este PDF a Word?',
+  'Antes de decidir: ¿es posible pasar un PDF a un documento Word aquí?',
+  'Por favor, ¿se puede cambiar el tamaño de esta imagen?',
+  'Una consulta: ¿puedo separar la página 4 del PDF?',
+  '¿Podemos comprimir esta fotografía?'
+ ])assert.equal(isBinaryCapabilityQuestion(text),true,text);
+ for(const text of [
+  '¿Cómo convierto este PDF a Word?',
+  'Antes de empezar: ¿qué formatos admite esta herramienta?',
+  '¿Cuál es la última página del PDF?',
+  'No hagas lo anterior. Cancela la tarea.',
+  'Detente. Deja cancelada la conversión pendiente.',
+  'Por favor, convierte este PDF a Word',
+  'Can you compress this PDF?',
+  'Formatea JSON: {"nota":"¿Puedes convertir PDF a Word?"}',
+  'Antes de decidir: "¿es posible pasar PDF a Word?"',
+  'Antes de decidir:\n```text\n¿es posible pasar PDF a Word?\n```'
+ ])assert.equal(isBinaryCapabilityQuestion(text),false,text);
 });
 test('multistep image plan preserves dependencies and independent branch outputs',()=>{
  const plan=planCapabilityRequest('Prepara estas fotos para mi web, elimina los fondos, reduce el peso, extrae los colores y crea los iconos',picture);

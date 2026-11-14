@@ -383,7 +383,8 @@ test('execution grammar reserves output for the plan instead of replaceable pros
   assert.deepEqual(execute.properties.message,{type:'string',enum:['Plan preparado.']});
   assert.equal(execute.properties.search,undefined);
   const clarify=schema.oneOf.find(v=>v.properties.intent.enum.includes('clarify'));
-  assert.deepEqual(clarify.properties.message,{type:'string',maxLength:160});
+  assert.equal(clarify.properties.message.maxLength,99);
+  assert.ok(new RegExp(clarify.properties.message.pattern,'u').test('¿Qué información falta?'));
   assert.equal(clarify.properties.search,undefined);
  }
  const messages=queenMessages({text:'Extrae la segunda página y después conviértela a Word',files:pdf,context:{},contracts,providers:[]});
@@ -400,7 +401,49 @@ test('retrieval keeps its search field without expanding mixed non-execution gra
  const other=schema.oneOf.find(v=>v.properties.intent.enum.includes('retrieve'));
  assert.deepEqual(other.properties.intent.enum,['question','clarify','retrieve']);
  assert.deepEqual(other.properties.search,{type:'string',maxLength:160});
- assert.deepEqual(other.properties.message,{type:'string',maxLength:160});
+ assert.equal(other.properties.message.maxLength,99);
+ assert.ok(new RegExp(other.properties.message.pattern,'u').test('Buscaré una herramienta adecuada.'));
+});
+
+test('non-execution message patterns bound JSON-safe Unicode text and require a complete ending',()=>{
+ const contracts=queenToolCatalog().filter(c=>c.id==='pdf-text');
+ for(const intent of ['question','clarify','delegate','retrieve']){
+  const schema=queenCatalogSchema(contracts,pdf,[intent]);
+  const message=schema.properties.message,pattern=new RegExp(message.pattern,'u');
+  assert.equal(message.maxLength,99);
+  assert.ok(pattern.test('La información está disponible; revisa sus límites.'));
+  assert.ok(pattern.test('¿Qué dato necesitas?'));
+  assert.ok(pattern.test('a'.repeat(98)+'.'));
+  for(const text of ['a'.repeat(99)+'.','Texto sin terminar','Contiene "comillas".','Contiene \\barra.','Control\ncrudo.','Control\u0000crudo.'])assert.equal(pattern.test(text),false);
+  if(intent==='retrieve')assert.deepEqual(schema.properties.search,{type:'string',maxLength:160});
+ }
+});
+
+test('only a binary question-only grammar uses a neutral declarative answer prefix',()=>{
+ const contracts=queenToolCatalog().filter(c=>c.id==='pdf-text');
+ const binary=queenCatalogSchema(contracts,pdf,['question'],{binaryCapabilityQuestion:true});
+ const pattern=new RegExp(binary.properties.message.pattern,'u');
+ for(const text of ['Sí, hay una opción compatible.','No, falta una capacidad necesaria.','Depende: revisa los límites del archivo…'])assert.ok(pattern.test(text));
+ for(const text of ['¿Puedes realizar la operación?','Explica las opciones.','Sí, ¿qué quieres hacer?','Depende: '+'a'.repeat(90)+'.'])assert.equal(pattern.test(text),false);
+ assert.ok(pattern.test('Depende: '+'a'.repeat(89)+'.'));
+ for(const intents of [['question'],['clarify'],['delegate'],['question','clarify']]){
+  const schema=queenCatalogSchema(contracts,pdf,intents,{binaryCapabilityQuestion:intents.length!==1||intents[0]!=='question'});
+  assert.ok(new RegExp(schema.properties.message.pattern,'u').test('Revisa las opciones disponibles.'));
+ }
+});
+
+test('the planner passes binary capability formatting without imposing it on open questions or cancellation',async()=>{
+ for(const [text,binary] of [['¿Puedes convertir este PDF a Word?',true],['¿Qué herramientas puedo usar con este PDF?',false],['Cancela',false]]){
+  await planWithQueen(env(),{text,files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,messages,schema)=>{
+   assert.deepEqual(intents(schema),['question']);
+   const input=JSON.parse(messages[1].content);
+   assert.equal(Boolean(input.localAnalysis.binaryCapabilityQuestion),binary);
+   assert.equal(messages[0].content.includes('This is a binary capability question.'),binary);
+   const pattern=new RegExp(schema.properties.message.pattern,'u');
+   assert.equal(pattern.test('Información disponible.'),!binary);
+   return result({intent:'question',message:binary?'Sí, consulta los límites de la herramienta.':'Solicitud recibida.',steps:[]});
+  }});
+ }
 });
 
 test('a complete local file flow omits unrelated provider menus and empty UI preferences from the model only',async()=>{

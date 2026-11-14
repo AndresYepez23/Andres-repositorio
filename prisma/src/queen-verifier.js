@@ -1,5 +1,6 @@
 import {verifyToolOutputArtifacts} from './core-artifact-contracts.js';
 import {parsePdfPageSelection} from './pdf-split-options.js';
+import {verifyQueenPdfWordContent} from './queen-document-verifier.js';
 const moduleLoader=url=>import(url);
 const OFFICE={docx:'word/document.xml',xlsx:'xl/workbook.xml',pptx:'ppt/presentation.xml'};
 const error=code=>{throw Object.assign(Error(code),{verificationCode:code});};
@@ -22,7 +23,7 @@ export function checkQueenArchiveBudget(buffer,{maxEntries=1000,maxExpandedBytes
 
 // Runs independently of the model and the executor's succeeded flag. Prior
 // verification labels never substitute for reading the returned bytes.
-export async function verifyQueenResult(step,result,inputs=[],{load=moduleLoader,decode=globalThis.createImageBitmap}={}){
+export async function verifyQueenResult(step,result,inputs=[],{load=moduleLoader,decode=globalThis.createImageBitmap,parseXml,signal}={}){
  const checked=await verifyToolOutputArtifacts(step.tool_id,result);
  const artifacts=checked?.blob?[checked]:checked?.artifacts||[];
  const evidence=[],unverified=[];
@@ -74,7 +75,10 @@ export async function verifyQueenResult(step,result,inputs=[],{load=moduleLoader
    const names=Object.keys(zip.files);if(!names.length)error('EMPTY_ARCHIVE');
    if(OFFICE[ext]&&(!zip.file('[Content_Types].xml')||!zip.file(OFFICE[ext])))error('INVALID_OFFICE_STRUCTURE');
    checks.push('archive-crc','archive-structure');details.entries=names.length;
-   unverified.push(ext==='zip'?'archive-member-correspondence':'document-content-correspondence');
+   if(ext==='docx'&&step.tool_id==='pdf-to-word'){
+    const content=await verifyQueenPdfWordContent(inputs,zip,{load,parseXml,signal});
+    evidence.push(...content.evidence);unverified.push(...content.unverified);
+   }else unverified.push(ext==='zip'?'archive-member-correspondence':'document-content-correspondence');
   }else if(String(blob.type).startsWith('image/')){
    if(typeof decode!=='function')unverified.push('image-decoding');
    else{

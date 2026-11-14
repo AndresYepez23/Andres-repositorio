@@ -120,7 +120,7 @@ export function fileKind(f){const n=String(f?.name||'').toLowerCase(),t=String(f
 export const CAPABILITIES = [
  ['image-bg','image',/quitar?\w*.*fondo|elimin\w*.*fondo|borr\w*.*fondo|retir\w*.*fondo|sin fondo|fondo.*desapare|dej\w*.*transparen|(?:solo|solamente) el objeto|solo (?:la persona|el sujeto)|aislar? el sujeto|recorta el sujeto.*detras|conserva el objeto/],
  ['image-strip-metadata','image',/(?:quit|borr|elimin|limpi|retir)\w*.*(?:metadatos|exif|ubicacion|gps)/],
- ['image-resize','image',/redimension|\b\d{2,4}\s*[x×]\s*\d{2,4}\b|cambia(?:r)? (?:las )?dimensiones/],
+ ['image-resize','image',/redimension|\b\d{2,4}\s*[x×]\s*\d{2,4}\b|(?:cambia(?:r)?|ajusta(?:r)?) (?:(?:el|las) )?(?:dimensiones|tamano(?! del archivo))/],
  ['image-compress','image',/comprim|pese menos|baja\w* el peso|reduce.*peso|ocupe menos espacio|mas ligera|tamano del archivo|cargue mas rapido|optimiz|debajo de \d|menos de \d/],
  ['image-convert','image',/(?:conviert|convert|pasa|export|guarda|cambia|transforma|necesito|quiero|version|de jpg).*(?:png|jpe?g|webp)/],
  ['image-palette','image',/(?:extra|saca|obten|identifica|muestra|detecta).*colores|paleta de colores|colores dominantes/],
@@ -162,8 +162,20 @@ export function extractPayload(raw){
 }
 // Questions and explanations are NOT permission to modify an uploaded file.
 // Keep this guard shared by Core chat and Prisma Developer's MCP planner.
+const SPANISH_QUESTION_START=/^(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|puedo|podemos|me puedes|me podrias|es posible|sera posible|se puede|se podria)\b/;
+function informationalInstruction(raw){
+ let {instruction}=extractPayload(raw);
+ // A conversational preface can use a colon without introducing data. Only
+ // unwrap it when an actual question follows; quoted/fenced payloads and
+ // commands such as "Por favor, convierte..." keep their existing meaning.
+ let candidate=String(raw||'').trim(),prefixed=false;
+ const intro=/^(?:por\s+favor|antes\s+de\s+(?:decidir|empezar|comenzar|hacerlo|continuar)|(?:tengo\s+)?(?:una\s+)?(?:consulta|pregunta))(?:\s*[:,]\s*|\s+(?=¿))/i;
+ while(intro.test(candidate)){candidate=candidate.replace(intro,'');prefixed=true;}
+ if(prefixed&&SPANISH_QUESTION_START.test(normalizeIntent(candidate).replace(/^[¿\s]+/,'')))instruction=extractPayload(candidate).instruction;
+ return instruction;
+}
 export function isInformationalIntent(raw){
- const {instruction}=extractPayload(raw);
+ const instruction=informationalInstruction(raw);
  const q=normalizeIntent(instruction).trim().replace(/^[¿¡\s]+/,'');
  // A direct English request such as "Can you compress this PDF?" is an
  // action request, not an informational question. Do not block execution.
@@ -175,8 +187,15 @@ export function isInformationalIntent(raw){
  if(/^cuant[ao]s?\s+(?:palabras|letras|caracteres)\b/.test(q)&&
     /(?:texto|contenido|datos|lista|text|content|data|list)\s*:/i.test(String(raw||'')))return false;
  if(/\b(?:solo|solamente|unicamente)\s+(?:quiero|necesito)\s+(?:saber|conocer|entender)\b/.test(q))return true;
- return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
+ return SPANISH_QUESTION_START.test(q)||
   /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
+}
+// This describes the question's form, never whether a capability is available.
+// Queen must still choose a truthful affirmative, negative or conditional reply.
+export function isBinaryCapabilityQuestion(raw){
+ if(!isInformationalIntent(raw))return false;
+ const q=normalizeIntent(informationalInstruction(raw)).replace(/^[¿¡\s]+/,'');
+ return /^(?:puedes|puedo|podemos|se puede|es posible)\b/.test(q);
 }
 
 // Explicit prohibitions constrain both operation selection and explanations.
@@ -236,7 +255,7 @@ function resolveCapabilityRequest(raw,files=[],task=null){
  if(positive.negated)q=positive.value;
  if(positive.negated&&/^(?:explica|describe|dime|indica|informa)\b/.test(q))
   return need('No modificaré el archivo: has solicitado información, no una transformación.');
- q=q.replace(/\bsin cambiar (?:las )?dimensiones\b/g,'conservando dimensiones');
+ q=q.replace(/\bsin (?:cambiar|ajustar) (?:(?:las )?dimensiones|(?:el )?tamano(?! del archivo))\b/g,'conservando dimensiones');
  if(task?.text&&!text&&/^(?:ahora|tambien|mejor|con menos)/.test(q))text=task.text;
  if(task&&/^ahora al contrario[.!\s]*$/.test(q)){
   const last=task.steps?.at(-1)?.tool_id;
@@ -356,7 +375,7 @@ function resolveCapabilityRequest(raw,files=[],task=null){
   return {type:'ready',confidence:1,message:'Comprimiré el vídeo conservando su duración y su pista de audio.',steps:[{tool_id:'video-compress',params:{quality:'balanced'},reason:'Compresión sin recorte de duración'}]};
  }
  if(kind==='image'&&/a pdf|en pdf|como pdf/.test(q))return null;
- if(kind==='pdf'&&/divid|separ|partir|fragment|troce/.test(q)&&!/(?:paginas|hojas)\s*\d/.test(q))return buildSmartLocalFlow(raw,files,[]);
+ if(kind==='pdf'&&/divid|separ|partir|fragment|troce/.test(q)&&!/(?:paginas?|hojas?)\s*\d/.test(q))return buildSmartLocalFlow(raw,files,[]);
  if(kind==='image'&&/reduce (?:su |el )?tamano/.test(q)&&!/(?:archivo|peso|dimensiones|\d+\s*[x×])/.test(q))return need('¿Quieres reducir el peso del archivo o sus dimensiones en píxeles?');
  if(/(?:sin|no uses|no utilizar).*?(?:ia|inteligencia artificial)/.test(q)&&/\b(?:genera|inventa|escribe).*(?:cuento|ensayo|cancion)/.test(q))return need('Esa creación requiere un motor generativo. Puedo hacer transformaciones locales de un texto que proporciones.');
  let found=CAPABILITIES.filter(c=>(c.kind===kind||c.kind==='text'&&!files.length)&&c.pattern.test(q));

@@ -64,7 +64,10 @@ export async function executeQueenDAG(plan,files,{run,verify=verifyQueenResult,a
      assertBudget();
      const raw=await bounded(runToolBatch(tool,tool.file?inputs:[],params,run,progress,()=>cancel()||now()>=state.deadlineAt));
      rawReceived=true;record.status='executed';assertBudget();
-     const inspected=await bounded(verify({...step,params},raw,inputs));assertBudget();
+     const verificationController=new AbortController();let inspected;
+     try{inspected=await bounded(verify({...step,params},raw,inputs,{signal:verificationController.signal}));}
+     finally{verificationController.abort();}
+     assertBudget();
      const outputFiles=resultFiles(inspected.result);
      outputBytes+=outputFiles.reduce((n,f)=>n+f.size,0);if(outputBytes>maxOutputBytes)throw Error('OUTPUT_RESOURCE_BUDGET');
      record.status=inspected.verification.status==='verified'?'verified':'verification-pending';
