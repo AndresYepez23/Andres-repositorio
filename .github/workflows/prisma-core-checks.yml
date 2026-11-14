@@ -26,10 +26,54 @@ jobs:
         with:
           node-version: "22"
       - name: Run Prisma Core provider and workflow regressions
-        run: node --test prisma/tests/queen-integration.test.mjs prisma/tests/queen-staging.test.mjs prisma/tests/queen.test.mjs prisma/tests/core-agent-routing.test.mjs prisma/tests/core-model-session.test.mjs prisma/tests/conversation-history.test.mjs prisma/tests/provider-orchestration.test.mjs prisma/tests/research-providers.test.mjs prisma/tests/core-create-model-groups.test.mjs prisma/tests/core-composer-single-row.test.mjs prisma/tests/core-creative-catalog.test.mjs prisma/tests/core-create-transcription.test.mjs prisma/tests/core-create-tts.test.mjs prisma/tests/core-create-picker-open.test.mjs prisma/tests/pollinations-audio-multikey.test.mjs
+        run: node --test prisma/tests/qwen-core-plan-coverage.test.mjs prisma/tests/qwen-core-client.test.mjs prisma/tests/qwen-core-interpreter.test.mjs prisma/tests/qwen-core-hybrid-benchmark.test.mjs prisma/tests/queen-integration.test.mjs prisma/tests/queen-staging.test.mjs prisma/tests/queen.test.mjs prisma/tests/core-agent-routing.test.mjs prisma/tests/core-model-session.test.mjs prisma/tests/conversation-history.test.mjs prisma/tests/provider-orchestration.test.mjs prisma/tests/research-providers.test.mjs prisma/tests/core-create-model-groups.test.mjs prisma/tests/core-composer-single-row.test.mjs prisma/tests/core-creative-catalog.test.mjs prisma/tests/core-create-transcription.test.mjs prisma/tests/core-create-tts.test.mjs prisma/tests/core-create-picker-open.test.mjs prisma/tests/pollinations-audio-multikey.test.mjs
       - name: Build Prisma and test SEO output
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
+      - name: Real Qwen Core inference quality sample on isolated staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
+        timeout-minutes: 6
+        env:
+          QWEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          const url = "https://prisma-queen-staging.pages.dev/api/core/qwen-interpret";
+          const expectedCommit = process.env.QWEN_STAGING_EXPECTED_COMMIT;
+          const cases = [
+            {name:"pdf_extract_then_word",text:"Extrae la segunda página del PDF y conviértela a Word",files:[{name:"smoke-test.pdf",type:"application/pdf",size:1024}],expected:["pdf-extract","pdf-to-word"]},
+            {name:"pdf_word_without_compression",text:"No comprimas el PDF; conviértelo a Word",files:[{name:"smoke-test.pdf",type:"application/pdf",size:1024}],expected:["pdf-to-word"],forbidden:["pdf-compress"]},
+            {name:"informational_question",text:"¿Cómo puedo extraer una página de un PDF?",files:[],expected:[],intent:"question"},
+            {name:"image_metadata_then_webp",text:"Quita los metadatos de esta foto y conviértela a WebP",files:[{name:"smoke-test.jpg",type:"image/jpeg",size:1024}],expected:["image-strip-metadata","image-convert"]}
+          ];
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          let ready=false;
+          for(let attempt=1;attempt<=20;attempt++){
+            try{
+              const response=await fetch(url,{method:"GET",signal:AbortSignal.timeout(10000)});
+              if(response.ok){
+                const probe=await response.json();
+                if(probe.ready===true&&probe.deploymentCommit===expectedCommit){ready=true;break;}
+              }
+            }catch{}
+            await sleep(15000);
+          }
+          if(!ready)throw new Error("The isolated staging deployment did not match the expected commit.");
+          for(const item of cases){
+            const response=await fetch(url,{method:"POST",headers:{Origin:"https://prisma-queen-staging.pages.dev","Content-Type":"application/json"},
+              body:JSON.stringify({text:item.text,files:item.files}),signal:AbortSignal.timeout(40000)});
+            if(!response.ok)throw new Error(item.name+": HTTP "+response.status);
+            const result=await response.json();
+            if(result.ok!==true||result.source!=="qwen-core"||result.deploymentCommit!==expectedCommit||
+              !["tools","question","clarify"].includes(result.intent)||!Array.isArray(result.tool_ids)||result.tool_ids.length>3)
+              throw new Error(item.name+": invalid structured result "+String(result.code||"INVALID_RESULT"));
+            const missing=item.expected.filter(id=>!result.tool_ids.includes(id));
+            const forbidden=(item.forbidden||[]).filter(id=>result.tool_ids.includes(id));
+            console.log(JSON.stringify({case:item.name,intent:result.intent,tool_ids:result.tool_ids,expected:item.expected,missing,forbidden,durationMs:result.metrics?.durationMs??null,inferences:result.metrics?.inferences??null}));
+            if(missing.length)throw new Error(item.name+": omitted requested operations: "+missing.join(","));
+            if(item.intent&&result.intent!==item.intent)throw new Error(item.name+": expected intent "+item.intent);
+            if(forbidden.length)throw new Error(item.name+": prohibited tool suggested: "+forbidden.join(","));
+          }
+          NODE
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v
