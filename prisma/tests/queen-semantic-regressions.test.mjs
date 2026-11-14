@@ -226,6 +226,52 @@ test('a short PDF grammar forbids uncontracted or nested params and keeps Word p
  assert.equal(multiSchema.properties.steps.items.oneOf[0].properties.inputs.maxItems,20);
 });
 
+test('proven sequential file grammar consumes exactly the preceding transformed output',()=>{
+ const contracts=queenToolCatalog().filter(c=>['pdf-extract','pdf-rotate','pdf-to-word'].includes(c.id));
+ const schema=queenCatalogSchema(contracts,pdf,['execute'],{requiredToolIds:contracts.map(c=>c.id),maxSteps:3,sequentialFileFlow:true});
+ for(const [index,slot] of schema.properties.steps.items.oneOf.entries())for(const variant of slot.oneOf){
+  const properties=variant.properties;
+  assert.equal(properties.inputs.minItems,1);assert.equal(properties.inputs.maxItems,1);
+  if(index){
+   assert.deepEqual(properties.inputs.items.enum,['step:s'+index]);
+   assert.deepEqual(properties.dependsOn,{type:'array',minItems:1,maxItems:1,items:{type:'string',enum:['s'+index]}});
+  }else{
+   assert.deepEqual(properties.inputs.items.enum,['file:0']);
+   assert.equal(properties.dependsOn.maxItems,0);
+  }
+ }
+});
+
+test('generic, observation and multi-file schemas retain original inputs instead of forcing a transform chain',()=>{
+ const catalog=queenToolCatalog(),transforms=catalog.filter(c=>['pdf-extract','pdf-to-word'].includes(c.id));
+ for(const contracts of [
+  [...transforms.filter(c=>c.id==='pdf-extract'),catalog.find(c=>c.id==='pdf-metadata')],
+  transforms.map(c=>({...c,inputs:{...c.inputs,multiple:true}}))
+ ]){
+  const schema=queenCatalogSchema(contracts,pdf,['execute'],{maxSteps:2,sequentialFileFlow:true});
+  for(const variant of schema.properties.steps.items.oneOf[1].oneOf){
+   assert.ok(variant.properties.inputs.items.enum.includes('file:0'));
+   assert.equal(variant.properties.dependsOn.minItems,undefined);
+  }
+ }
+ const generic=queenCatalogSchema(transforms,pdf,['execute'],{sequentialFileFlow:true});
+ assert.ok(generic.properties.steps.items.properties.inputs.items.enum.includes('file:0'));
+ assert.equal(generic.properties.steps.items.properties.dependsOn.minItems,undefined);
+});
+
+test('an explicit original-file goal does not constrain conversion to the extracted output',async()=>{
+ await planWithQueen(env(),{text:'Extrae la segunda página del PDF y después convierte el PDF original a Word',files:pdf},{
+  forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
+   const execute=(schema.oneOf||[schema]).find(v=>v.properties.intent.enum.includes('execute'));
+   for(const variant of execute.properties.steps.items.oneOf[1].oneOf){
+    assert.ok(variant.properties.inputs.items.enum.includes('file:0'));
+    assert.equal(variant.properties.dependsOn.minItems,undefined);
+   }
+   return result({intent:'execute',message:'Plan preparado.',steps:[step('s1','pdf-extract',{pages:'2'},['file:0']),step('s2','pdf-to-word',{},['file:0'])]});
+  }
+ });
+});
+
 test('small scalar contracts retain exact choices while dependency text remains optional only later',()=>{
  const contracts=queenToolCatalog().filter(c=>c.id==='json-format');
  const schema=queenCatalogSchema(contracts,[],['execute'],{maxSteps:2});
@@ -319,6 +365,12 @@ test('a complete local file flow omits unrelated provider menus and empty UI pre
    assert.ok(messages[0].content.includes('ESPECIALISTAS DISPONIBLES:[]'));
    assert.equal(messages[0].content.includes('configured-provider-'),false);
    assert.equal(intents(schema).includes('retrieve'),false);
+   const execute=(schema.oneOf||[schema]).find(variant=>variant.properties.intent.enum.includes('execute'));
+   for(const variant of execute.properties.steps.items.oneOf[1].oneOf){
+    assert.deepEqual(variant.properties.inputs.items.enum,['step:s1']);
+    assert.equal(variant.properties.dependsOn.minItems,1);
+    assert.deepEqual(variant.properties.dependsOn.items.enum,['s1']);
+   }
    return result({intent:'execute',message:'Prepararé la página solicitada.',steps:[step('s1','pdf-extract',{pages:'2'},['file:0']),step('s2','pdf-to-word',{},['step:s1'],['s1'])]});
   }
  });

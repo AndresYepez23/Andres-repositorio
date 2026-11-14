@@ -1,7 +1,9 @@
 // A small grammar bounds structure and live IDs. Only short flows with tiny
 // scalar contracts bind parameters in the grammar; larger optional-parameter
 // permutations remain outside it. Independent validation checks every plan.
-export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],maxSteps=8}={}){
+import {OBSERVERS} from './core-execution.js';
+
+export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],maxSteps=8,sequentialFileFlow=false}={}){
  // Only a complete caller-proven short flow uses per-ID alternatives. Generic
  // plans retain a compact grammar plus the independent graph validator.
  const bounded=maxSteps===2||maxSteps===3;
@@ -13,6 +15,7 @@ export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],m
   return c.parameters?.type==='object'&&c.parameters.properties&&fields.length<=2&&fields.every(field=>
    ['string','number','integer','boolean'].includes(field.type)&&!['oneOf','anyOf','allOf'].some(key=>key in field));
  });
+ const sequential=sequentialFileFlow&&smallContracts&&files.length===1&&contracts.every(c=>c.inputs.file&&!c.inputs.multiple&&!OBSERVERS.has(c.id));
  const parameterSchema=(contract,previous)=>({type:'object',additionalProperties:false,
   properties:Object.fromEntries(Object.entries(contract.parameters.properties).map(([key,field])=>[key,
    Object.fromEntries(['type','enum','minimum','maximum','minLength','maxLength','pattern'].filter(name=>field[name]!==undefined).map(name=>[name,field[name]]))
@@ -24,9 +27,11 @@ export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],m
  // IDs establish a partial order independently of the array's item positions.
  // A step can consume originals or preceding IDs, never its own/future output.
  const stepVariant=(allowedIds,previous,refs,contract=null)=>{
+  const requiredPrevious=sequential&&previous.length?previous.at(-1):null;
+  if(requiredPrevious)refs=['step:'+requiredPrevious];
   return {type:'object',additionalProperties:false,required:['id','tool_id','params','dependsOn','inputs'],properties:{
    id:{type:'string',enum:allowedIds},tool_id:{type:'string',enum:contract?[contract.id]:contracts.map(c=>c.id)},params:contract?parameterSchema(contract,previous):{type:'object'},
-   dependsOn:{type:'array',maxItems:previous.length,items:previous.length?{type:'string',enum:previous}:{type:'string'}},
+   dependsOn:{type:'array',...(requiredPrevious?{minItems:1}:{}),maxItems:requiredPrevious?1:previous.length,items:previous.length?{type:'string',enum:requiredPrevious?[requiredPrevious]:previous}:{type:'string'}},
    inputs:{type:'array',minItems:refs.length&&fileInputsRequired?1:0,maxItems:refs.length?(contract?.inputs.file&&!contract.inputs.multiple?1:20):0,items:refs.length?{type:'string',enum:refs}:{type:'string'}}
   }};
  };
