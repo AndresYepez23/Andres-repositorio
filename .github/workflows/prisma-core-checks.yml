@@ -33,7 +33,7 @@ jobs:
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
-      - name: Real local DOCX assessment and conversion in Chromium
+      - name: Real local DOCX, PDF and TXT assessment and conversion in Chromium
         timeout-minutes: 4
         run: |
           tooling="$RUNNER_TEMP/prisma-browser"
@@ -53,6 +53,7 @@ jobs:
             ${{ runner.temp }}/prisma-document-conversion/results.json
             ${{ runner.temp }}/prisma-document-conversion/*.docx
             ${{ runner.temp }}/prisma-document-conversion/*.html
+            ${{ runner.temp }}/prisma-document-conversion/*.pdf
       - name: Real Qwen Core inference quality sample on isolated staging
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
         timeout-minutes: 6
