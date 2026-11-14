@@ -116,6 +116,21 @@ export function pinConversationModel(input, result = {}, now = Date.now()) {
   };
 }
 
+// Keep the catalogue visible without sending requests to unavailable providers.
+// Availability is decided by the backend; display never overrides automatic routing.
+export function coreProviderPickerState({available=false,configured=false,personal=false,reason='',models=[]}={}){
+  const count=Array.isArray(models)?models.length:0;
+  const connected=Boolean(configured||personal);
+  const selectable=Boolean(available||personal)&&count>0;
+  return {
+    visible:count>0||connected||Boolean(available),
+    selectable,
+    status:selectable?'Disponible':connected?'Temporalmente no disponible':'Sin configurar',
+    reason:selectable?'':String(reason||'').trim()||
+      (count===0?'Sin modelos de chat verificados':connected?'Temporalmente no disponible':'Sin credenciales centrales configuradas')
+  };
+}
+
 export function conversationModelRequest(input) {
   const current = normalizeConversationModelSelection(input);
   return current.provider && current.model
