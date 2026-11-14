@@ -45,6 +45,8 @@ function attachmentNames(item){
  * explicit new tasks deliberately avoid importing unrelated old material.
  */
 export function buildConversationContext(history = [], query = '', options = {}) {
+  // Independent questions must not inherit completed file tasks or their assistant replies.
+  if (options.isolated === true) return [];
   const limit = Math.max(4, Math.min(16, Number(options.maxMessages) || 13));
   const budget = Math.max(2800, Math.min(22000, Number(options.maxChars) || 14000));
   const revision=/\b(?:cambia|corrige|reescribe|revisa|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|el anterior|la anterior|esa cancion|ese texto|ese codigo|el coro|la estrofa|la respuesta|otra version)\b/.test(fold(query));
@@ -135,7 +137,7 @@ export function chooseCoreContextOptions(task='conversation',text=''){
  const q=fold(text).replace(/^[¿?¡!\s]+/,'').trim();
  const newTask=isCoreNewTask(q);
  const revision=/\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\b/.test(q)||isCoreFollowUp(q);
- const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\b/.test(q)&&!isCoreFollowUp(q);
+ const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica|explicame|compara|comparame)\b/.test(q)&&!isCoreFollowUp(q);
  if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
   return {maxMessages:15,maxChars:16000,newTask:false};
  if(newTask)return {maxMessages:4,maxChars:4500,newTask:true};

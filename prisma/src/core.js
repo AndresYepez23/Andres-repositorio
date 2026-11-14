@@ -2805,8 +2805,10 @@ export function initPrismaCore(){
     const remote=Array.isArray(event.detail?.conversations)?event.detail.conversations:null;
     const previousActiveId=activeConversationId;
     let activeConversationChanged=false;
-    // Merge remote history without changing the user's reading position.
-    if(!remote&&(busy||executionActive))return;
+    // Never replace the active in-memory turn with a stale cloud snapshot.
+    // A sync event can arrive after the user's message was added but before
+    // the assistant has finished executing the tool or generating its reply.
+    if(busy||executionActive)return;
     if(remote){
       const synced=mergeConversationLists(remote,conversations).filter(hasConversationMessages);
       conversations=retainActiveConversationDraft(conversations,synced,activeConversationId);
