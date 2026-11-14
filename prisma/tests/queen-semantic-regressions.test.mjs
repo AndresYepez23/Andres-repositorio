@@ -189,10 +189,10 @@ test('an explicit sequential file task cannot become two independent original-fi
 
 test('each step grammar permits only original files and preceding IDs, never own or future references',()=>{
  const contracts=queenToolCatalog().filter(c=>['pdf-extract','pdf-to-word'].includes(c.id));
- const schema=queenCatalogSchema(contracts,pdf,['execute'],{requiredToolIds:['pdf-extract','pdf-to-word']});
+ const schema=queenCatalogSchema(contracts,pdf,['execute'],{requiredToolIds:['pdf-extract','pdf-to-word'],maxSteps:3});
  assert.equal(schema.properties.steps.minItems,2);
  const variants=schema.properties.steps.items.oneOf;
- assert.equal(variants.length,8);
+ assert.equal(variants.length,3);
  for(let i=0;i<variants.length;i++){
   const properties=variants[i].properties;
   assert.deepEqual(properties.id.enum,['s'+(i+1)]);
@@ -206,11 +206,24 @@ test('each step grammar permits only original files and preceding IDs, never own
 
 test('literal-text grammar keeps first inputs and dependencies empty without an invalid empty enum',()=>{
  const contracts=queenToolCatalog().filter(c=>c.id==='json-format');
- const schema=queenCatalogSchema(contracts,[],['execute']);
+ const schema=queenCatalogSchema(contracts,[],['execute'],{maxSteps:2});
  const first=schema.properties.steps.items.oneOf[0].properties;
  assert.equal(first.inputs.minItems,0);assert.equal(first.inputs.maxItems,0);
  assert.equal(first.inputs.items.enum,undefined);
  assert.equal(first.dependsOn.maxItems,0);assert.equal(first.dependsOn.items.enum,undefined);
  const serialized=JSON.stringify(schema);
  assert.equal(serialized.includes('"enum":[]'),false);
+});
+
+test('generic or longer planning stays compact and delegates graph correctness to validation',()=>{
+ const contracts=queenToolCatalog().filter(c=>['pdf-extract','pdf-to-word'].includes(c.id));
+ const schema=queenCatalogSchema(contracts,pdf,['execute','clarify'],{requiredToolIds:['pdf-extract','pdf-to-word']});
+ const execute=schema.oneOf.find(v=>v.properties.intent.enum.includes('execute'));
+ assert.equal(execute.properties.steps.maxItems,8);
+ assert.equal(execute.properties.steps.items.oneOf,undefined);
+ assert.deepEqual(execute.properties.steps.items.properties.id.enum,Array.from({length:8},(_,i)=>'s'+(i+1)));
+ const clarify=schema.oneOf.find(v=>v.properties.intent.enum.includes('clarify'));
+ assert.equal(clarify.properties.steps.maxItems,0);
+ assert.deepEqual(clarify.properties.steps.items,{type:'object'});
+ assert.ok(JSON.stringify(schema).length<2000);
 });
