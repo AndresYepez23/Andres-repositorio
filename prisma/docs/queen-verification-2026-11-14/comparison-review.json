@@ -1,0 +1,200 @@
+{
+  "method": "Offline reassessment of saved genuine model responses; no new inference.",
+  "rawSummarySuperseded": true,
+  "reason": "The initial harness checked final JSON data but not its dependency reference; it also accepted a cut-off clarification. Its verifiedArtifacts field counted produced artifacts, including partially verified images.",
+  "rows": [
+    {
+      "id": "semantic-middle-page-word",
+      "realInferenceObserved": true,
+      "necessaryPlanChecks": {
+        "automatedPassed": false,
+        "checks": [
+          {
+            "id": "accepted-plan",
+            "passed": false
+          }
+        ],
+        "semanticReview": "pending",
+        "artifactVerification": "not-performed"
+      },
+      "originalHarnessGoal": false,
+      "artifactVerification": null,
+      "status": "failed"
+    },
+    {
+      "id": "split-and-original-word",
+      "realInferenceObserved": true,
+      "necessaryPlanChecks": {
+        "automatedPassed": true,
+        "checks": [
+          {
+            "id": "accepted-plan",
+            "passed": true
+          },
+          {
+            "id": "intent",
+            "passed": true
+          },
+          {
+            "id": "requested-operations",
+            "passed": true
+          },
+          {
+            "id": "no-premature-execution-claim",
+            "passed": true
+          }
+        ],
+        "semanticReview": "pending",
+        "artifactVerification": "not-performed",
+        "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+      },
+      "originalHarnessGoal": true,
+      "artifactVerification": true,
+      "status": "passed"
+    },
+    {
+      "id": "ambiguous-image-size",
+      "realInferenceObserved": true,
+      "necessaryPlanChecks": {
+        "automatedPassed": false,
+        "checks": [
+          {
+            "id": "accepted-plan",
+            "passed": true
+          },
+          {
+            "id": "intent",
+            "passed": true
+          },
+          {
+            "id": "answer-not-cut-off",
+            "passed": false
+          },
+          {
+            "id": "requested-operations",
+            "passed": true
+          },
+          {
+            "id": "answer-topic-relevant",
+            "passed": true
+          },
+          {
+            "id": "no-premature-execution-claim",
+            "passed": true
+          }
+        ],
+        "semanticReview": "pending",
+        "artifactVerification": "not-performed",
+        "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+      },
+      "originalHarnessGoal": true,
+      "artifactVerification": null,
+      "status": "failed"
+    },
+    {
+      "id": "json-format-then-minify",
+      "realInferenceObserved": true,
+      "necessaryPlanChecks": {
+        "automatedPassed": false,
+        "checks": [
+          {
+            "id": "accepted-plan",
+            "passed": true
+          },
+          {
+            "id": "intent",
+            "passed": true
+          },
+          {
+            "id": "requested-operations",
+            "passed": true
+          },
+          {
+            "id": "intermediate-artifact-reference",
+            "passed": false
+          },
+          {
+            "id": "no-premature-execution-claim",
+            "passed": true
+          }
+        ],
+        "semanticReview": "pending",
+        "artifactVerification": "not-performed",
+        "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+      },
+      "originalHarnessGoal": true,
+      "artifactVerification": true,
+      "status": "failed"
+    },
+    {
+      "id": "image-metadata-then-webp",
+      "realInferenceObserved": true,
+      "necessaryPlanChecks": {
+        "automatedPassed": true,
+        "checks": [
+          {
+            "id": "accepted-plan",
+            "passed": true
+          },
+          {
+            "id": "intent",
+            "passed": true
+          },
+          {
+            "id": "requested-operations",
+            "passed": true
+          },
+          {
+            "id": "intermediate-artifact-reference",
+            "passed": true
+          },
+          {
+            "id": "no-premature-execution-claim",
+            "passed": true
+          }
+        ],
+        "semanticReview": "pending",
+        "artifactVerification": "not-performed",
+        "note": "Necessary case-specific checks only. A human must review relevance and truthfulness; metadata planning never proves artifact content."
+      },
+      "originalHarnessGoal": true,
+      "artifactVerification": false,
+      "status": "partial"
+    },
+    {
+      "id": "reference-to-generated-word",
+      "realInferenceObserved": true,
+      "necessaryPlanChecks": {
+        "automatedPassed": false,
+        "checks": [
+          {
+            "id": "accepted-plan",
+            "passed": false
+          }
+        ],
+        "semanticReview": "pending",
+        "artifactVerification": "not-performed"
+      },
+      "originalHarnessGoal": false,
+      "artifactVerification": null,
+      "status": "failed"
+    }
+  ],
+  "finalTargetedValidation": {
+    "cases": 3,
+    "queenCompletions": 3,
+    "goalMet": 3,
+    "generatedArtifacts": 3,
+    "fullyVerifiedArtifacts": 3,
+    "improvements": [
+      "split-and-original-word"
+    ],
+    "skipped": 0
+  },
+  "limitations": [
+    "General middle-page wording was rejected as an invalid model plan.",
+    "Forcing Queen on an already solved DOCX-to-TXT follow-up failed; the ordinary product route correctly chose local Core.",
+    "The image run verified decoding, dimensions and WebP output; metadata-removal verification remains partial.",
+    "Authenticated operator tests force neural planning; they do not establish automatic production UI routing."
+  ]
+}

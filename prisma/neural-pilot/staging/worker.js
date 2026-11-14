@@ -8,7 +8,8 @@ import {verifyQueenResult} from '../../src/queen-verifier.js';
 import {runTool} from '../../src/engines.js';
 import cases from '../queen-cases.json' with {type:'json'};
 import {createCredentialPromotionHandler} from './credential-promotion.mjs';
-export const STAGING_DATABASE='6a3256b2-c016-4650-9759-79aca3b4446f';
+import {STAGING_DATABASE} from './isolation.mjs';
+export {STAGING_DATABASE};
 const PRODUCTION_DATABASE='e02104b5-0861-475a-a60f-7658439d4fe0';
 const SECRET_NAMES=['QUEEN_ACCESS_CLIENT_ID','QUEEN_ACCESS_CLIENT_SECRET','QUEEN_API_KEY'];
 const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'};
@@ -58,14 +59,14 @@ export async function runStagingGuards(){
  let corruptJsonRejected=false;try{await verifyQueenResult({tool_id:'json-format',params:{text:'{}'}},{text:'not-json'});}catch{corruptJsonRejected=true;}
  return {ok:checks.every(c=>c.rejected)&&corruptJsonRejected,realInference:false,planSource:'adversarial-test-fixtures',checks,corruptJsonRejected};
 }
-export function createQueenStagingWorker(pages,{credentialPromotion=null}={}){
+export function createQueenStagingWorker(pages,{credentialPromotion=null,sourceCommit=null}={}){
  const promote=createCredentialPromotionHandler(credentialPromotion);
  return {async fetch(request,env,ctx){
  if(credentialPromotion&&new URL(request.url).pathname==='/__queen/credential-promotion')return await promote(request,env)||new Response('Not found',{status:404});
  if(!await authorizedQueenStaging(request,env))return new Response('Not found',{status:404,headers:{'Cache-Control':'no-store'}});
  let identity;try{identity=await assertQueenStaging(env);}catch(error){return json(errorResult(error),503);}
  const path=new URL(request.url).pathname;
- if(path==='/__queen/health')return json({ok:true,...identity,queenEnabled:env.QUEEN_ENABLED==='1',missingSecrets:SECRET_NAMES.filter(name=>!env[name]),sourceCommit:env.QUEEN_SOURCE_COMMIT||null});
+ if(path==='/__queen/health')return json({ok:true,...identity,queenEnabled:env.QUEEN_ENABLED==='1',missingSecrets:SECRET_NAMES.filter(name=>!env[name]),sourceCommit:sourceCommit||env.CF_PAGES_COMMIT_SHA||env.QUEEN_SOURCE_COMMIT||null});
  if(!path.startsWith('/__queen/'))return pages.fetch(request,env,ctx);
  if(path==='/__queen/local-tools'||path==='/__queen/artifact'){
   const result=await runStagingLocalTools();

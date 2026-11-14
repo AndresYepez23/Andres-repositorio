@@ -1,0 +1,18 @@
+{
+  "method": "Independent parsing of saved file bytes; no new neural inference.",
+  "queenWordAllOriginalPages": true,
+  "localWordOnlySelectedPage": true,
+  "jsonDataPreserved": true,
+  "webpDimensionsAndFormatVerified": true,
+  "metadataRemovalPositiveControl": false,
+  "hashes": {
+    "photo.webp": "ff2684fe8cecb6fc8d622c8cf5693d175328cd15f5368e6b08f214dbb7cbfb79",
+    "photo-input.png": "40b23b4cef4f8be1a6a1cd6a354d68d0eae92c45c99d29869147392a12a9caa6",
+    "queen-original-word.docx": "fb477183647afa61692c3740f55b2685de145093b27567bb2f46f21fa211d26a",
+    "tres-paginas.pdf": "a8aec8e132a9b1e4e2b2ee780f5f1221bbc60021a27354c654bf3258d37d8323",
+    "local-followup.txt": "bc1dd58437de7b2d52da30b07a07acbee65bdb4ef60bf6ec2555225c75d3d423",
+    "photo-stripped.png": "40b23b4cef4f8be1a6a1cd6a354d68d0eae92c45c99d29869147392a12a9caa6",
+    "local-original-word.docx": "505b710aa2ffe48f12c1fd4f0fc65166171f6b22b8fc3b874e1bd40704f213bf",
+    "queen-selected-page.pdf": "0d907ac9fd00f40773308bb8208ebba8e829335d8e55c39deb909b3075f75f5f"
+  }
+}

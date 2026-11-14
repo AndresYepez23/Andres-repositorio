@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-14T20:31:30.724Z",
+  "base": "https://b062e767.prisma-queen-staging.pages.dev",
+  "route": "product-plan",
+  "clientDurationMs": 908,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "source": "prisma-core-local",
+    "fallback": true,
+    "execution": {
+      "executed": false,
+      "verified": false
+    }
+  }
+}

@@ -28,6 +28,12 @@ test('isolated Wrangler configuration does not reference any production D1',()=>
  assert.ok(config.includes('prisma-queen-staging'));assert.ok(config.includes(STAGING_DATABASE));assert.ok(!config.includes('e02104b5-0861-475a-a60f-7658439d4fe0'));
 });
 
+test('staging health reports the built source commit instead of a stale environment value',async()=>{
+ const env=await environment();env.QUEEN_SOURCE_COMMIT='b'.repeat(40);
+ const response=await createQueenStagingWorker({},{sourceCommit:'a'.repeat(40)}).fetch(request({'X-Queen-Staging-Key':key}),env,{});
+ assert.equal((await response.json()).sourceCommit,'a'.repeat(40));
+});
+
 test('staging runs actual existing tools and exports a structurally verified JSON artifact without model credentials',async()=>{
  const {runStagingLocalTools}=await import('../neural-pilot/staging/worker.js');
  const r=await runStagingLocalTools();assert.equal(r.realInference,false);assert.equal(r.executed,true);assert.equal(r.verified,true);
