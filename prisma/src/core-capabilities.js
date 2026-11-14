@@ -140,6 +140,7 @@ export const CAPABILITIES = [
  ['json-format','text',/(?:organiza|formatea|embellece|ordena|indenta|sangria|legible|valida|mal formado|sintaxis|comprueba).*json|json bonito|formatear json|json.*mal formado/],
  ['json-minify','text',/(?:minifica|comprime).*json|json.*(?:minifica|minificar)|\bminifica\s+(?:(?:el|la|este|esta|ese|esa|dicho|dicha)\s+)?(?:resultado|salida)\b/],
  ['csv-json','text',/(?:csv|tabla).*(?:a|en|como|por) json|json (?:desde|del) (?:este )?csv/],
+ ['json-xlsx','text',/(?:json|csv).*(?:a|en|como)\s+(?:excel|xlsx)|(?:crea|genera|exporta|convierte|transforma).*\b(?:excel|xlsx)\b/],
  ['json-csv','text',/json.*(?:a|en|como) csv/],
  ['qr','text',/\bqr\b/],
  ['word-count','text',/(?:cuenta|cuantas|contar|numero|recuenta|conteo|contador|total).*palabras/],
@@ -405,6 +406,18 @@ function resolveCapabilityRequest(raw,files=[],task=null){
  if(kind==='image'&&/reduce (?:su |el )?tamano/.test(q)&&!/(?:archivo|peso|dimensiones|\d+\s*[x×])/.test(q))return need('¿Quieres reducir el peso del archivo o sus dimensiones en píxeles?');
  if(/(?:sin|no uses|no utilizar).*?(?:ia|inteligencia artificial)/.test(q)&&/\b(?:genera|inventa|escribe).*(?:cuento|ensayo|cancion)/.test(q))return need('Esa creación requiere un motor generativo. Puedo hacer transformaciones locales de un texto que proporciones.');
  let found=CAPABILITIES.filter(c=>(c.kind===kind||c.kind==='text'&&!files.length)&&c.pattern.test(q));
+ // Keep CSV→JSON→Excel on the original engines. XLSX accepts JSON rows;
+ // insert the parsing step only if an actual CSV payload is present.
+ if(found.some(c=>c.id==='json-xlsx')&&!found.some(c=>c.id==='csv-json')){
+  const payload=extractPayload(raw).text.trim();let jsonRows=false;
+  try{jsonRows=Array.isArray(JSON.parse(payload));}catch{}
+  if(!jsonRows){
+   if(/\bcsv\b/.test(q)&&payload.includes('\n')&&payload.includes(',')){
+    const csv=CAPABILITIES.find(c=>c.id==='csv-json');if(csv)found=[csv,...found];
+   }else return need('Para crear el Excel adjunta un CSV o pega una lista JSON válida.');
+  }
+ }
+
  if(!found.length)return null;
  // Negation is not authorization, and unsupported clauses may not disappear.
  // Explicit negative clauses were removed before matching; positive steps may proceed.

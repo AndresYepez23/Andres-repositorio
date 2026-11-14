@@ -145,3 +145,19 @@ test('Queen refuses a sequential JSON plan missing minification rather than sile
  });
  assert.equal(calls,1);
 });
+
+test('Prisma Core chains real CSV conversion and XLSX export using local browser engines',()=>{
+ const text='Convierte este CSV a JSON y después crea un Excel con exactamente las mismas filas y columnas. Datos:\nproducto,cantidad,precio\nPrisma,2,15\nQueen,3,20';
+ const plan=planWithPrismaCore({text,files:[]}).planner;
+ assert.equal(plan.type,'ready');
+ assert.deepEqual(plan.steps.map(step=>step.tool_id),['csv-json','json-xlsx']);
+ assert.equal(plan.steps[0].params.text,'producto,cantidad,precio\nPrisma,2,15\nQueen,3,20');
+ assert.ok(!plan.steps[1].params.text);
+});
+test('Prisma Core inserts the necessary CSV parser for direct CSV-to-Excel without model inference',()=>{
+ const p=planWithPrismaCore({text:'Convierte este CSV a Excel. Datos:\nproducto,cantidad\nPrisma,2',files:[]}).planner;
+ assert.equal(p.type,'ready');
+ assert.deepEqual(p.steps.map(step=>step.tool_id),['csv-json','json-xlsx']);
+ const absent=planWithPrismaCore({text:'Crea un Excel. Datos: no soy JSON ni CSV',files:[]}).planner;
+ assert.equal(absent.type,'needs-input');
+});
