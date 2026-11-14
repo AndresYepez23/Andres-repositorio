@@ -1,6 +1,6 @@
 import { requestQueenPlan, queenFailureDescription } from './queen-client.js';
 import { assessQwenCorePlanCoverage } from './qwen-core-plan-coverage.js';
-import { requestQwenCoreInterpretation, prioritizeQwenCoreTools } from './qwen-core-client.js';
+import { requestQwenCoreInterpretation, prioritizeQwenCoreTools, isKnownScannedCsvExcelCandidate } from './qwen-core-client.js';
 import { executeQueenDAG, createQueenExecutionState } from './queen-execution.js';
 import { recordCoreMetric } from './core-telemetry.js';
 import { planCapabilityRequest } from './core-capabilities.js';
@@ -1891,6 +1891,28 @@ async function requestPlan(userText){
   if(resolvedTask.cancelled){pendingPlan=null;$('#core-plan')?.classList.add('hidden');addMessage('assistant','Tarea cancelada.');return;}
   const coreRequest=resolvedTask.request||userText;
   const capabilityPlan=planCapabilityRequest(coreRequest,resolvedTask.files,resolvedTask.task);
+  // Grounded scanned CSV pipelines use the existing five-step backend graph,
+  // not Qwen's generic 2B multi-step synthesis. This does not call a model.
+  if(isKnownScannedCsvExcelCandidate(coreRequest,resolvedTask.files)){
+   const controller=new AbortController();queenPlanningController=controller;
+   let response=null;
+   try{
+    status('Organizando la conversión local de escaneo a Excel…');
+    response=await requestQueenPlan({text:coreRequest,files:resolvedTask.files},{signal:controller.signal});
+   }finally{queenPlanningController=null;}
+   if(cancelRequested)return;
+   if(response?.source==='queen-hybrid-local'&&response.plan?.intent==='execute'){
+    const plan={...response.plan,queen:true,queenCompiled:true,
+      queenMetrics:response.metrics,userRequest:coreRequest,queenStartedAt:Date.now()};
+    const steps=plan.steps.map(s=>({tool:tools.find(t=>t.id===s.tool_id),params:s.params,reason:s.id}));
+    if(steps.every(({tool})=>tool&&['local','browser'].includes(tool.mode))){
+     attachments=resolvedTask.files;renderAttachments();
+     pendingPlan={plan,steps};
+     addMessage('assistant','Preparé las cinco operaciones locales para convertir el escaneo CSV a Excel. Comprobaré cada resultado.');
+     await executeQueenPlan();return;
+    }
+   }
+  }
   if(await coordinateWithQueen(coreRequest,resolvedTask))return;
   const incompleteCapabilityPlan=capabilityPlan?.type==='ready'&&assessQwenCorePlanCoverage(coreRequest,capabilityPlan.steps).needsSemanticReview;
   if(capabilityPlan&&!incompleteCapabilityPlan){
@@ -2317,7 +2339,7 @@ async function executeQueenPlan(){
   const state=plan.queenState||createQueenExecutionState();
   try{
     const outcome=await executeQueenDAG(plan,sourceFiles,{
-      state,startedAt:plan.queenStartedAt,initialInferences:plan.queenMetrics?.inferences||1,
+      state,startedAt:plan.queenStartedAt,initialInferences:plan.queenMetrics?.inferences??1,
       cancel:()=>cancelRequested||activeConversationId!==chatId,
       authorize:()=>true, // Entered through the existing approval panel for external steps.
       run:async(id,files,params,cb)=>{
@@ -2334,12 +2356,12 @@ async function executeQueenPlan(){
         }
         return result;
       },
-      repair:async({step,code,signal})=>{
+      repair:plan.queenCompiled?null:async({step,code,signal})=>{
         const response=await requestQueenPlan({text:plan.userRequest,files:sourceFiles,context:{...plan.queenContext,failedStep:{id:step.id,tool_id:step.tool_id,params:step.params,code}},repair:true},{signal});
         if(response?.source!=='queen'||response.plan.steps.length!==1)throw Error('REPAIR_UNAVAILABLE');
         return response.plan.steps[0];
       },
-      progress:(p,message)=>{status(message||'Ejecutando herramientas seleccionadas por Qwen…');setProgress(p,message||'Ejecutando…');}
+      progress:(p,message)=>{status(message||(plan.queenCompiled?'Ejecutando operaciones locales del escaneo…':'Ejecutando herramientas seleccionadas por Qwen…'));setProgress(p,message||'Ejecutando…');}
     });
     const cards=outcome.results.flatMap((entry,i)=>executionCards(tools.find(t=>t.id===entry.tool_id)?.name||entry.tool_id,entry.verification.status,entry.result,i));
     await persistGeneratedResults(cards);
@@ -2359,7 +2381,7 @@ async function executeQueenPlan(){
     const {queenState:discardedState,...savedPlan}=plan;
     taskMemory.save(chatId,{files:(error.partialResults||[]).flatMap(r=>r.files),originals:sourceFiles,steps:plan.steps,
       execution:{plan:savedPlan,state,sourceFiles}});
-    if(chatId===activeConversationId)addMessage('assistant','Qwen no pudo completar y verificar la tarea. '+queenFailureDescription(error)+' Se conservaron los resultados disponibles.',{results:cards,partial:true});
+    if(chatId===activeConversationId)addMessage('assistant',(plan.queenCompiled?'El flujo local del escaneo no pudo completarse. ':'Qwen no pudo completar y verificar la tarea. ')+queenFailureDescription(error)+' Se conservaron los resultados disponibles.',{results:cards,partial:true});
     recordCoreMetric('core','queen-failed');status('Tarea detenida; resultados parciales conservados.','error');
   }finally{executionActive=false;setBusy(false);renderAttachments();}
 }

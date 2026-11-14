@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {prioritizeQwenCoreTools,requestQwenCoreInterpretation,resetQwenCoreDisabledForTest} from '../src/qwen-core-client.js';
+import {prioritizeQwenCoreTools,requestQwenCoreInterpretation,resetQwenCoreDisabledForTest,isKnownScannedCsvExcelCandidate} from '../src/qwen-core-client.js';
 
 test('Qwen tool hints only re-rank existing catalog entries',()=>{
  const catalog=[{id:'pdf-to-word',name:'Word'},{id:'pdf-extract',name:'Extract'},{id:'image-rotate',name:'Rotate'}];
@@ -32,4 +32,14 @@ test('invalid or unsuccessful remote hints never become executable plans',async(
  resetQwenCoreDisabledForTest();
  const result=await requestQwenCoreInterpretation({text:'Convertir PDF'},{fetchImpl:async()=>new Response(JSON.stringify({ok:true,source:'qwen-core',intent:'tools',tool_ids:['one','two','three','four']}))});
  assert.equal(result,null);
+});
+
+test('the scanned-CSV candidate is restricted to stated PDF/CSV/Excel semantics; it does not open general neural planning',()=>{
+ const text='Convierte el PDF escaneado adjunto en un Excel. El escaneo contiene texto CSV con encabezados. Reconoce el texto en inglés; elimina los espacios después de las comas.';
+ const file={name:'escaneo.pdf',type:'application/pdf',size:2048};
+ assert.equal(isKnownScannedCsvExcelCandidate(text,[file]),true);
+ assert.equal(isKnownScannedCsvExcelCandidate(text,[file,file]),false);
+ assert.equal(isKnownScannedCsvExcelCandidate(text.replace('texto CSV','tabla libre'),[file]),false);
+ assert.equal(isKnownScannedCsvExcelCandidate(text+' Envíalo por correo.',[file]),false);
+ assert.equal(isKnownScannedCsvExcelCandidate(text,[{...file,type:'image/png'}]),false);
 });

@@ -1,5 +1,18 @@
 // The browser never receives Qwen's credentials or a tool-execution command.
 // Hints only re-rank EXISTING catalog entries; Core still plans and validates.
+// Client-side prefilter only; the server owns the stricter workflow match
+// and validates every operation before dispatch.
+export function isKnownScannedCsvExcelCandidate(text,files=[]){
+ if(!Array.isArray(files)||files.length!==1||
+    files[0]?.type!=='application/pdf'||!Number.isFinite(files[0]?.size)||
+    files[0].size>50*1024*1024)return false;
+ const q=String(text||'').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ return /\bpdf\b/.test(q)&&/\b(?:escanead[oa]|escaneo)\b/.test(q)&&
+  /\bcsv\b/.test(q)&&/\bencabezados?\b/.test(q)&&/\b(?:excel|xlsx)\b/.test(q)&&
+  /\b(?:reconoce|reconocer|ocr)\b/.test(q)&&/\b(?:ingles|english)\b/.test(q)&&
+  /\bespacios?\b/.test(q)&&/\bcomas?\b/.test(q)&&
+  !/\b(?:envi\w*|public\w*|sub\w*|borr\w*|firm\w*|traduc\w*)\b/.test(q);
+}
 let disabledForPage=false;
 export function prioritizeQwenCoreTools(catalog,hint){
  if(!Array.isArray(catalog))return [];
