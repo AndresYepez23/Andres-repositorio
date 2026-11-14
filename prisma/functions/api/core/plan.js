@@ -92,7 +92,7 @@ export function knownScannedCsvExcelPlan(text,files){
     !/\b(?:elimina|quita|reemplaza)\b/.test(instruction))return null;
  // Do not silently execute a subset of a compound request with unrelated
  // operations or negative authorization.
- if(/\b(?:envia|publica|sube|borra|elimina archivos?|firma|traduce|recorta|comprime|cambia el formato|dos columnas)\b/.test(instruction))return null;
+ if(/\b(?:envi\w*|public\w*|sub\w*|borr\w*|elimina archivos?|firm\w*|traduc\w*|recort\w*|comprim\w*|cambia el formato|dos columnas)\b/.test(instruction))return null;
  const steps=[
   {id:'s1',tool_id:'pdf-to-image',params:{format:'png',scale:'1.5'},dependsOn:[],inputs:['file:0']},
   {id:'s2',tool_id:'image-ocr',params:{language:'eng'},dependsOn:['s1'],inputs:['step:s1']},
