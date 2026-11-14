@@ -20,11 +20,11 @@ export const CHAT_MODELS = {
     {id:"openai/gpt-oss-20b",name:"GPT-OSS 20B",specialty:"Chat y planificación rápida"},
     {id:"openai/gpt-oss-120b",name:"GPT-OSS 120B",specialty:"Redacción creativa y razonamiento"}
   ],
+  // List only verified Workers Free text models; paid-only DeepSeek V4.1 must not be selectable.
   cloudflare: [
     {id:"@cf/google/gemma-4-26b-a4b-it",name:"Gemma 4 26B",specialty:"Chat y razonamiento"},
     {id:"@cf/meta/llama-3.3-70b-instruct-fp8-fast",name:"Llama 3.3 70B Fast",specialty:"Alternativa de chat"},
-    {id:"@cf/qwen/qwen3.8-27b",name:"Qwen 3.8 27B",specialty:"Instrucciones y programación"},
-    {id:"@cf/deepseek-ai/deepseek-v4.1-flash-1017",name:"DeepSeek V4.1 Flash",specialty:"Razonamiento y análisis"}
+    {id:"@cf/qwen/qwen3.8-27b",name:"Qwen 3.8 27B",specialty:"Instrucciones y programación"}
   ],
   gemini: [
     {id:"gemini-3.5-flash-lite",name:"Gemini Flash-Lite",specialty:"Respuestas breves"},
