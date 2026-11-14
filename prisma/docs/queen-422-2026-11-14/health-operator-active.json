@@ -1,0 +1,15 @@
+{
+  "at": "2026-11-14T07:37:38.224Z",
+  "base": "https://2e3bdf32.prisma-queen-staging.pages.dev",
+  "route": "health",
+  "clientDurationMs": 289,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "queenEnabled": true,
+    "missingSecrets": [],
+    "sourceCommit": "1a7c97c954bf8b951059843c102b69a706b18526"
+  }
+}

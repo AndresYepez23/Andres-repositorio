@@ -1,5 +1,27 @@
 # Queen — transferencia maestra de PRISMA
 
+## Estado vigente — generación y cadena real recuperadas, 14/11/2026 UTC
+
+Continuación de `614bc06`, sin reinstalar ni modificar GenixNode. **Queen todavía no está terminada.** El HTTP 422 reproducido en staging se identificó y se corrigió progresivamente con respuestas reales; no repetir la sonda histórica del VPS.
+
+- Código publicado: `62aafd539c36e722e7f5de1191fa8d29ad2dee7c`, rama `feature/prisma-neural-genixnode-qwen35-pilot`; PR #125 abierto y borrador, sin fusión.
+- Staging activo y verificado: `c7918ef7-d9bb-4fee-bf82-4a846e420a46`, https://c7918ef7.prisma-queen-staging.pages.dev. Production del proyecto **aislado** `prisma-queen-staging`, `QUEEN_ENABLED=1`, D1 `980bad8f-0356-48b9-87bc-56bcf363f69a`, tres secretos presentes. No confundirlo con la producción principal.
+- Cuatro inferencias reales, una por solicitud y sin reintentos inciertos: dos `length` a 256 tokens; después JSON completo de 86 tokens rechazado por `DEPENDENCY_INPUT_REQUIRED:s2:s1`; finalmente plan válido de 87 tokens, 482 de entrada, 29.556 s de backend y 6.108419 tokens/s informados.
+- Con el último plan se ejecutaron los motores reales `pdf-extract → pdf-to-word` sobre el PDF real de tres páginas. DOCX inspeccionado: texto de página 2 presente, páginas 1/3 ausentes. Total desde la solicitud neuronal: **33.142 s**, una inferencia, sin reparación. Son bytes reales con contenido de control sintético; no son respuestas de modelo simuladas.
+- El ledger genérico conserva `verification-pending` para Word: la comprobación externa del contenido **no equivale a verificación autónoma ya implementada**. Se trabaja en cerrar esa diferencia sin aceptar escaneos o contenido gráfico como verificados por una simple coincidencia de texto.
+- Evaluación auténtica de19 casos **detenida automáticamente tras13**: originales6/8(75%) con calidad/aceptación; total7/13 aprobados, un timeout con consumo desconocido y seis no ejecutados. Informe permanente [calidad real](queen-422-2026-11-14/QUALITY-ROUND-1.md). No reenviar el caso incierto; respetar cooldown y verificar slot libre antes de nuevas solicitudes distintas.
+- Verificaciones locales actuales: **308 pruebas Node** y **132 del build estático**. El primer intento amplio falló por falta de `dist`; se generó el build local y la suite posterior pasó. Son controles deterministas, no inferencias.
+- Los cinco commits correctivos conservan límites de 2048/256 tokens, concurrencia1 y plazos55s/120s. Restringen parámetros pequeños, entrada única y referencias intermedias explícitas; preservan solicitudes sobre el PDF completo/original, observadores y casos genéricos. Validadores, motores y proveedores se conservan.
+- Solo se renovó el operador privado `QUEEN_STAGING_KEY_SHA256`, autorizado por el usuario, y se actualizó la metadata de fuente de staging. Clave privada local: `/workspace/work/queen-422-operator/operator-key`, fuera de Git,0600. No copiar secretos Queen ni reactivar el puente antiguo.
+- Producción principal se conserva: `prismaspace` canonical `6a41daae-1c35-4123-9761-cb99de2ca969`, código `24dd33d612c1e56876b703de6f7dcbb2084947e6`; main remoto observado `4b24fe6d6f74375a337936aafe1199df9b1e9072`; D1 principal `e02104b5-0861-475a-a60f-7658439d4fe0`. Sin escrituras/migraciones allí ni cambios del VPS. La autorización más reciente permite completar y preparar la publicación, pero estos cambios todavía no se promovieron a producción.
+
+Leer [diagnóstico y comparación real](queen-422-2026-11-14/DIAGNOSIS.md), [matriz de aceptación](queen-422-2026-11-14/ACCEPTANCE.md), [respuesta aceptada](queen-422-2026-11-14/sequential-validation-response.json) y [artefactos](queen-422-2026-11-14/real-pdf-word/results.json). Reproducir la inspección guardada, sin nuevas inferencias: `python3 prisma/docs/queen-422-2026-11-14/verify-evidence.py`.
+
+Siguiente paso exacto: terminar y conservar el informe de 19 casos, corregir/repetir únicamente los fallidos con consumo conocido y detenerse ante incertidumbre. Completar verificación autónoma del DOCX y cadenas OCR→Excel, recuperación y delegación reales antes de declarar Queen terminada. No fusionar PR ni escribir main; no cambiar parámetros del VPS.
+
+<details>
+<summary>Checkpoint anterior íntegro: registro histórico, no instrucciones vigentes</summary>
+
 **Estado vigente: 14/11/2026 UTC. Prioridad actual del usuario: preservar y sincronizar; desarrollo, despliegues e inferencias detenidos.** Este archivo sustituye las instrucciones de recuperación anteriores. Queen está implementada y activada en producción, pero **su planificación pública todavía falla y no está terminada**. No repetir capturas del VPS ni reinstalar el modelo.
 
 ## 1. Recuperación exacta y orden de lectura
@@ -147,3 +169,5 @@ Para Pages, worker público normal y wrapper staging son diferentes. FormData ex
 Tras push, comprobar Preview propio por rama/SHA; skip prefix no garantiza omisión. Nunca eliminar canonical ni deployments ajenos. PreviewQueen deshabilitado no es prueba pública. Reversión conocida al deployment público previo67b3e7e7 requiere operación Pages rollback; **no revierte variables ni bindings**. No ejecutarla durante esta transferencia.
 
 Excluidos deliberadamente: operador, OAuth, SSH, .env, baseline resuelto privado, RSA/JWT/nonce temporales, logs crudos sensibles y caches/node_modules/builds regenerables. Secretos existentes siguen en servicios; snapshots privados siguen en VPS. Se preservan código, decisiones, evidencia relevante y artefactos sintéticos, no una exportación íntegra del chat. La orden actual no autoriza nuevas funcionalidades; al terminar, verificar commit remoto y árbol limpio antes de afirmar conservación.
+
+</details>

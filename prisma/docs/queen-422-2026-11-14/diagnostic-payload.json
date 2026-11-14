@@ -1,0 +1,1 @@
+{"text":"Extrae la segunda página de este PDF y después convierte esa página a Word","files":[{"name":"queen-three-pages.pdf","type":"application/pdf","size":1155}],"context":{"previousGoal":"","procedure":[],"previousTools":[],"preferences":{"mode":"auto","provider":"","model":""}},"repair":false,"maxInferences":1}

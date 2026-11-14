@@ -1,0 +1,209 @@
+{
+  "status": "stopped",
+  "requestedCases": 19,
+  "attemptedCases": 13,
+  "notExecuted": 6,
+  "originalAcceptedQualityPassed": 6,
+  "originalCount": 8,
+  "originalQualityPercent": 75.0,
+  "originalVisibleIntentToolSelection": 8,
+  "selectionDefinition": "Intent and requested/allowed/forbidden tool IDs in complete response or rejected trace; ignores message, params, dataflow and acceptance. Not an operational success rate.",
+  "unknownOutcomes": 1,
+  "reportedTokens": {
+    "input": 6138,
+    "output": 711,
+    "complete": false
+  },
+  "rows": [
+    {
+      "id": "question-not-permission",
+      "category": "original",
+      "accepted": false,
+      "qualityPassed": false,
+      "selectionVisible": true,
+      "httpStatus": 422,
+      "code": "QUEEN_PLAN_REJECTED",
+      "validationErrors": [
+        "QUESTION_ECHO"
+      ],
+      "clientDurationMs": 21764,
+      "inputTokens": 544,
+      "outputTokens": 22,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "negation",
+      "category": "original",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 24535,
+      "inputTokens": 623,
+      "outputTokens": 31,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "missing-parameter",
+      "category": "original",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 25407,
+      "inputTokens": 539,
+      "outputTokens": 52,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "multi-step-pdf",
+      "category": "original",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 29114,
+      "inputTokens": 479,
+      "outputTokens": 87,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "json-payload",
+      "category": "original",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 23278,
+      "inputTokens": 473,
+      "outputTokens": 55,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "cancel",
+      "category": "original",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 15195,
+      "inputTokens": 370,
+      "outputTokens": 22,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "specialist-image",
+      "category": "original",
+      "accepted": false,
+      "qualityPassed": false,
+      "selectionVisible": true,
+      "httpStatus": 422,
+      "code": "QUEEN_PLAN_REJECTED",
+      "validationErrors": [
+        "INCOMPLETE_MESSAGE"
+      ],
+      "clientDurationMs": 25282,
+      "inputTokens": 504,
+      "outputTokens": 51,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "unsupported-pdf-ocr-chain",
+      "category": "original",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 24848,
+      "inputTokens": 556,
+      "outputTokens": 43,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "heldout-word-capability",
+      "category": "paraphrase",
+      "accepted": true,
+      "qualityPassed": false,
+      "selectionVisible": false,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 35904,
+      "inputTokens": 537,
+      "outputTokens": 122,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "heldout-negated-image",
+      "category": "negation",
+      "accepted": false,
+      "qualityPassed": false,
+      "selectionVisible": true,
+      "httpStatus": 422,
+      "code": "QUEEN_PLAN_REJECTED",
+      "validationErrors": [
+        "INCOMPLETE_MESSAGE"
+      ],
+      "clientDurationMs": 25733,
+      "inputTokens": 551,
+      "outputTokens": 46,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "heldout-cancel-with-history",
+      "category": "cancellation",
+      "accepted": true,
+      "qualityPassed": true,
+      "selectionVisible": true,
+      "httpStatus": 200,
+      "code": null,
+      "validationErrors": [],
+      "clientDurationMs": 18188,
+      "inputTokens": 409,
+      "outputTokens": 30,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "heldout-size-missing",
+      "category": "missing-parameter",
+      "accepted": false,
+      "qualityPassed": false,
+      "selectionVisible": false,
+      "httpStatus": 422,
+      "code": "QUEEN_PLAN_REJECTED",
+      "validationErrors": [
+        "PARAMETER_RANGE:size"
+      ],
+      "clientDurationMs": 40867,
+      "inputTokens": 553,
+      "outputTokens": 150,
+      "unknownOutcomes": 0
+    },
+    {
+      "id": "heldout-third-page-word",
+      "category": "composition",
+      "accepted": false,
+      "qualityPassed": false,
+      "selectionVisible": null,
+      "httpStatus": 503,
+      "code": "QUEEN_TIMEOUT",
+      "validationErrors": [],
+      "clientDurationMs": 56079,
+      "inputTokens": null,
+      "outputTokens": null,
+      "unknownOutcomes": 1
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "purpose": "Single controlled validation after known length failure and published fix",
+  "authorization": "Latest user explicitly authorizes completing Queen and public integration; no automatic retry of uncertain requests",
+  "allowedModelInferences": 1,
+  "inferencesDispatched": 1,
+  "attemptReserved": true,
+  "sourceCommit": "5da3a352614c83421e072936b2baf796db2e32c8",
+  "deploymentId": "c0547de6-7105-485e-aea9-9e4b9edc7e78",
+  "payloadSha256": "ce686eb2ca18a5639826d881baacb79cc4b57c54e190b505f78f15daa0db900e",
+  "reservedAt": "2026-11-14T07:45:08.379887+00:00",
+  "maxInferences": 1,
+  "modelInferencesObserved": 1,
+  "httpStatus": 422,
+  "resultCode": "QUEEN_TRUNCATED_PLAN",
+  "repeatProhibited": true
+}

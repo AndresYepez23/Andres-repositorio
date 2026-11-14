@@ -1,0 +1,21 @@
+{
+  "project": "prisma-queen-staging",
+  "projectId": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+  "deploymentId": "c7918ef7-d9bb-4fee-bf82-4a846e420a46",
+  "url": "https://c7918ef7.prisma-queen-staging.pages.dev",
+  "sourceCommit": "62aafd539c36e722e7f5de1191fa8d29ad2dee7c",
+  "status": "success",
+  "canonical": true,
+  "endedOn": "2026-11-14T08:09:41.201531Z",
+  "environment": "production",
+  "logicalEnvironment": "staging",
+  "d1": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "workerBytes": 771017,
+  "workerSha256": "cb4468637db025b54febe72e71baaea94c21db89cb1ab257b8e7aed6c745e513",
+  "principalCanonicalUnchanged": "6a41daae-1c35-4123-9761-cb99de2ca969",
+  "principalSource": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+  "principalD1": "e02104b5-0861-475a-a60f-7658439d4fe0",
+  "gitMainObserved": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
+  "modelConfigChanged": false,
+  "queenSecretsChanged": false
+}

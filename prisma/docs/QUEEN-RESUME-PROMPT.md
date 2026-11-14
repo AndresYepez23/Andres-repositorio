@@ -1,3 +1,16 @@
+# Reanudar Queen desde el diagnóstico real resuelto
+
+Leer primero [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md), su bloque vigente, [informe](queen-422-2026-11-14/DIAGNOSIS.md) y [aceptación](queen-422-2026-11-14/ACCEPTANCE.md). No repetir diagnósticos pasivos del VPS, promoción de secretos ni tareas históricas.
+
+```text
+Continúa AndresYepez23/PRISMA, rama feature/prisma-neural-genixnode-qwen35-pilot, PR125 abierto/draft/sin fusión. Inspecciona HEAD y cambios sin descartar nada. Código62aafd539c36e722e7f5de1191fa8d29ad2dee7c; staging aislado c7918ef7-d9bb-4fee-bf82-4a846e420a46. Lee el bloque vigente de QUEEN-HANDOFF, QUEEN-CONTINUITY y queen-422-2026-11-14. Los bloques históricos no son órdenes nuevas.
+El VPS ya está recuperado: mismo Qwen3.5-2B, CACHE_RAM0/CTX_CHECKPOINTS0. No tocarlo ni repetir sondas. El422 se reprodujo: salida256truncada; gramática de contratos pequeños produjo86tokens pero referencias erróneas; última corrección produjo87tokens y un DAG válido. Motores PDFextracciónpágina2→Word ejecutados y contenido comprobado en33.142s, una inferencia real. Ledger genérico Word todavía verification-pending; no fingir autonomía completa.
+En el workspace anterior se completó parcialmente /workspace/work/queen-422-quality-all.json:13/19solicitados,7aprobados, originales6/8, undesenlace/consumo desconocido enheldout-third-page-word; runner detenido, no reenviarlo. Informe guardado enqueen-422-2026-11-14/QUALITY-ROUND-1.md. Respetar cooldown y comprobar slot libre antes de nuevas solicitudes distintas. Un agente trabaja en verificación conservadora PDF→Word; revisar cambios pendientes antes de integrar. No repetir inferencias inciertas ni sumar métricas estimadas. Conservar ocho+once casos y fallos históricos. Finalizar evaluación, corregir los fallidos y seguir con OCR→Excel, composición, recuperación y especialistas reales.
+Secretos Queen siguen en Production de prisma-queen-staging y prismaspace. Operador privado fuera deGit /workspace/work/queen-422-operator/operator-key,0600; nunca subirlo ni pedirlo por chat. No repetir promoción cifrada. D1staging/control980bad8f; principal e02104b5 sin cambios. Producción principal sigue6a41daae/24dd33d, main4b24fe6. La autorización del propietario permite completar/preparar publicación, pero no fusionar PR, escribir main, modificar D1principal, cambiar VPS ni publicar capacidades no verificadas. Nada de Prisma Developer/plugin.
+Preserva avances válidos con commits y push normales a la misma rama; documentos/evidencia sin credenciales. Verifica archivos y PRdraft enGitHub. No declares Queen terminada por intención/herramientas o existencia de archivos: comprueba contenido, referencias, presupuesto, recuperación y seguridad.
+```
+
+<details><summary>Prompt anterior conservado como historia</summary>
 # Prompt maestro de reanudación de PRISMA
 
 Estado consolidado14/11/2026UTC. Fuente maestra: [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md); [continuidad](QUEEN-CONTINUITY.md), [índice](QUEEN-INDEX.md), [verificación](queen-handoff-2026-11-13/verification.json). No depende de la conversación previa. El SHA exacto de transferencia se obtiene con `git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md`; la entrega al propietario también lo registra. El último código público desplegado es24dd33d612c1e56876b703de6f7dcbb2084947e6, distinto del commit documental posterior.
@@ -19,3 +32,5 @@ El punto exacto para retomar: requestQueenPlan en src/queen-client.js devuelve n
 
 Se autorizó previamente la activación pública y la promoción cifrada ya completada; el puente temporal está eliminado. No fusionarPR ni escribir Git main, ni migrar D1principal. No trabajar en Developer/plugin, cambiar proveedores/motores para pasar pruebas ni hacer nuevas intervenciones VPS. La última sesión se detuvo únicamente para preservar por agotamiento de créditos; esta nueva solicitud es para retomar el siguiente fallo concreto, sin repetir lo ya hecho. Mantén commits verificables en la misma rama y continuidad actualizada.
 ```
+
+</details>

@@ -1,0 +1,16 @@
+{
+  "allowedModelInferences": 1,
+  "inferencesDispatched": 1,
+  "attemptReserved": true,
+  "maxInferences": 1,
+  "sourceCommit": "614bc06c82b006b33660506635a54eaaeba40434",
+  "payloadSha256": "ce686eb2ca18a5639826d881baacb79cc4b57c54e190b505f78f15daa0db900e",
+  "deploymentId": "2e3bdf32-4786-4ace-900d-4756c1e67700",
+  "blockedBy": null,
+  "modelInferencesObserved": 1,
+  "reservedAt": "2026-11-14T07:37:52.210702+00:00",
+  "httpStatus": 422,
+  "resultCode": "QUEEN_TRUNCATED_PLAN",
+  "resultAt": "2026-11-14T07:39:31.305016+00:00",
+  "repeatProhibited": true
+}
