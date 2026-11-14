@@ -27,6 +27,15 @@ test('historical intent success does not hide unrelated Word answer or cancellat
  assert.equal(assessEvaluation(find('cancel'),response('question','Tarea cancelada.')).automatedPassed,true);
  assert.equal(assessEvaluation(find('cancel'),response('question','No cancelaré la tarea.')).automatedPassed,false);
 });
+
+test('a relevant but cut-off clarification and a copied text payload cannot pass quality checks',()=>{
+ const c=find('missing-parameter');
+ assert.equal(assessEvaluation(c,response('clarify','Indica ancho y alto en píxeles (o.')).automatedPassed,false);
+ assert.equal(assessEvaluation(c,response('clarify','¿Qué ancho y alto en píxeles deseas?')).automatedPassed,true);
+ const chain=find('heldout-quoted-instruction');
+ const steps=[step('s1','json-format',{text:JSON.stringify(chain.expect.literalJson)}),step('s2','json-minify',{text:JSON.stringify(chain.expect.literalJson)},['step:s1'],['s1'])];
+ assert.equal(assessEvaluation(chain,response('execute','Plan preparado.',steps)).automatedPassed,false);
+});
 test('PDF composition requires requested page and intermediate artifact, not only tool IDs',()=>{
  const c=find('heldout-third-page-word');
  const steps=[step('s1','pdf-extract',{pages:'3'},['file:0']),step('s2','pdf-to-word',{},['file:0'],['s1'])];

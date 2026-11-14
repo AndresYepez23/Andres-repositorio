@@ -33,13 +33,17 @@ export function assessEvaluation(c,body){
  if(!body?.ok||!plan){return {automatedPassed:false,checks:[{id:'accepted-plan',passed:false}],semanticReview:'pending',artifactVerification:'not-performed'};}
  const e=c.expect||{},steps=plan.steps||[],ids=steps.map(s=>s.tool_id),message=normalize(plan.message);
  check('accepted-plan',true);check('intent',e.intents.includes(plan.intent));
+ if(plan.intent!=='execute'){
+  const value=String(plan.message||''),balanced=[['(',')'],['[',']'],['{','}']].every(([a,b])=>[...value].filter(x=>x===a).length===[...value].filter(x=>x===b).length);
+  check('answer-not-cut-off',balanced&&!/\b(?:o|y|pero|porque|para|con|sin|de|del)[.!…]$/i.test(value.trim()));
+ }
  if(e.noSteps)check('no-execution-proposed',steps.length===0);
  if(e.tools)check('requested-operations',same(ids,e.tools));
  if(e.forbidden)check('forbidden-operations-absent',!e.forbidden.some(id=>ids.includes(id)));
  if(e.allowedTools)check('only-allowed-operations',ids.every(id=>e.allowedTools.includes(id)));
  if(e.firstInputs)check('current-input-reference',same(steps[0]?.inputs,e.firstInputs));
  if(e.parameters)for(const p of e.parameters)check(`parameter-${p.step}-${p.key}`,same(steps[p.step]?.params?.[p.key],p.value));
- if(e.sequentialInputs)check('intermediate-artifact-reference',steps.length>1&&steps.slice(1).every((s,i)=>same(s.inputs,['step:'+steps[i].id])&&s.dependsOn?.includes(steps[i].id)));
+ if(e.sequentialInputs)check('intermediate-artifact-reference',steps.length>1&&steps.slice(1).every((s,i)=>same(s.inputs,['step:'+steps[i].id])&&s.dependsOn?.includes(steps[i].id)&&!s.params?.text&&!s.params?.prompt));
  if(e.literalJson){let value;try{value=JSON.parse(steps[0]?.params?.text);}catch{}check('literal-json-preserved',same(canonical(value),canonical(e.literalJson)));}
  if(e.messageAll)check('answer-topic-required',e.messageAll.every(term=>message.includes(normalize(term))));
  if(e.messageAny)check('answer-topic-relevant',e.messageAny.some(term=>message.includes(normalize(term))));

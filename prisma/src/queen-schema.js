@@ -9,7 +9,7 @@ const MESSAGE_CHARACTER=String.raw`[^"\\\x00-\x1F]`;
 const COMPLETE_MESSAGE_PATTERN='^'+MESSAGE_CHARACTER+'{1,98}[.!?…]$';
 const BINARY_CAPABILITY_PATTERN='^(Sí, |No, |Depende: )'+MESSAGE_CHARACTER+'{1,89}[.!…]$';
 
-export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],maxSteps=8,sequentialFileFlow=false,binaryCapabilityQuestion=false}={}){
+export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],maxSteps=8,sequentialFileFlow=false,sequentialTextFlow=false,binaryCapabilityQuestion=false}={}){
  // Only a complete caller-proven short flow uses per-ID alternatives. Generic
  // plans retain a compact grammar plus the independent graph validator.
  const bounded=maxSteps===2||maxSteps===3;
@@ -21,9 +21,10 @@ export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],m
   return c.parameters?.type==='object'&&c.parameters.properties&&fields.length<=2&&fields.every(field=>
    ['string','number','integer','boolean'].includes(field.type)&&!['oneOf','anyOf','allOf'].some(key=>key in field));
  });
- const sequential=sequentialFileFlow&&smallContracts&&files.length===1&&contracts.every(c=>c.inputs.file&&!c.inputs.multiple&&!OBSERVERS.has(c.id));
+ const textSequence=sequentialTextFlow&&smallContracts&&!files.length&&contracts.every(c=>!c.inputs.file&&c.parameters.properties.text);
+ const sequential=textSequence||sequentialFileFlow&&smallContracts&&files.length===1&&contracts.every(c=>c.inputs.file&&!c.inputs.multiple&&!OBSERVERS.has(c.id));
  const parameterSchema=(contract,previous)=>({type:'object',additionalProperties:false,
-  properties:Object.fromEntries(Object.entries(contract.parameters.properties).map(([key,field])=>[key,
+  properties:Object.fromEntries(Object.entries(contract.parameters.properties).filter(([key])=>!(textSequence&&previous.length&&key==='text')).map(([key,field])=>[key,
    Object.fromEntries(['type','enum','minimum','maximum','minLength','maxLength','pattern'].filter(name=>field[name]!==undefined).map(name=>[name,field[name]]))
   ])),
   // A later step may obtain literal text from a dependency, as the existing
@@ -38,7 +39,7 @@ export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],m
   return {type:'object',additionalProperties:false,required:['id','tool_id','params','dependsOn','inputs'],properties:{
    id:{type:'string',enum:allowedIds},tool_id:{type:'string',enum:contract?[contract.id]:contracts.map(c=>c.id)},params:contract?parameterSchema(contract,previous):{type:'object'},
    dependsOn:{type:'array',...(requiredPrevious?{minItems:1}:{}),maxItems:requiredPrevious?1:previous.length,items:previous.length?{type:'string',enum:requiredPrevious?[requiredPrevious]:previous}:{type:'string'}},
-   inputs:{type:'array',minItems:refs.length&&fileInputsRequired?1:0,maxItems:refs.length?(contract?.inputs.file&&!contract.inputs.multiple?1:20):0,items:refs.length?{type:'string',enum:refs}:{type:'string'}}
+   inputs:{type:'array',minItems:requiredPrevious||refs.length&&fileInputsRequired?1:0,maxItems:requiredPrevious?1:refs.length?(contract?.inputs.file&&!contract.inputs.multiple?1:20):0,items:refs.length?{type:'string',enum:refs}:{type:'string'}}
   }};
  };
  const step=bounded?{oneOf:ids.map((id,index)=>{

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {retrieveQueenTools} from '../src/queen-contracts.js';
 import {planWithPrismaCore} from '../src/developer-api.js';
 import {planWithQueen} from '../functions/api/core/plan.js';
+import {queenToolCatalog} from '../src/queen-contracts.js';
+import {queenCatalogSchema} from '../src/queen-schema.js';
 const pdf=[{name:'tres-paginas.pdf',type:'application/pdf',size:1300}];
 const measured='De este PDF de tres páginas, toma únicamente la hoja intermedia y entrégala en un Word editable.';
 
@@ -45,4 +47,40 @@ test('the neural planner receives the candidate without a forced answer or speci
 test('a model-proposed chat delegation cannot replace the available local file workflow',async()=>{
  const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
  await assert.rejects(planWithQueen(env,{text:measured,files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>({plan:{intent:'delegate',message:'Necesito un especialista PDF.',steps:[]},usage:{inputTokens:10,outputTokens:10}})}),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='INTENT_CONFLICT');
+});
+
+test('capabilities backed by an external provider retain the existing delegation route',async()=>{
+ const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
+ const providers=[{id:'cloudflare',available:true,capabilities:[{kind:'image',executable:true,models:[{id:'image-model'}]}]}];
+ const result=await planWithQueen(env,{text:'image-gen: un bosque',files:[]},{forceNeural:true,maxInferences:1,loadProviders:async()=>providers,infer:async(_env,_messages,schema)=>{
+  assert.equal(JSON.stringify(schema).includes('"delegate"'),true);
+  return {plan:{intent:'delegate',message:'Propongo el motor de imágenes disponible.',steps:[]},usage:{inputTokens:10,outputTokens:10}};
+ }});
+ assert.equal(result.delegate.provider,'cloudflare');assert.equal(result.delegate.capability,'image');
+});
+
+test('measured incomplete clarifications are rejected while complete useful questions remain valid',async()=>{
+ const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
+ const request={text:'Cambia el tamaño de esta imagen.',files:[{name:'foto.png',type:'image/png',size:386}]};
+ const proposal=message=>({forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>({plan:{intent:'clarify',message,steps:[]},usage:{inputTokens:10,outputTokens:10}})});
+ for(const message of ['Para cambiar el tamaño de la imagen, necesito que especifiques el nuevo ancho y alto en píxeles (o.','Indica el ancho y el alto o.','Especifica [ancho y alto.'])
+  await assert.rejects(planWithQueen(env,request,proposal(message)),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='INCOMPLETE_MESSAGE');
+ const response=await planWithQueen(env,request,proposal('¿Qué ancho y alto en píxeles deseas?'));
+ assert.equal(response.plan.intent,'clarify');assert.deepEqual(response.plan.steps,[]);
+});
+
+test('explicit text chains must consume the intermediate result rather than resubmit literal text',async()=>{
+ const contracts=queenToolCatalog().filter(t=>['json-format','json-minify'].includes(t.id));
+ const schema=queenCatalogSchema(contracts,[],['execute'],{maxSteps:2,sequentialTextFlow:true});
+ for(const variant of schema.properties.steps.items.oneOf[1].oneOf){
+  assert.deepEqual(variant.properties.inputs.items.enum,['step:s1']);assert.equal(variant.properties.inputs.minItems,1);
+  assert.equal(variant.properties.params.properties.text,undefined);
+ }
+ const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
+ const request={text:'Primero formatea este JSON: {"a":1}. Después minifica ese resultado.',files:[]};
+ const first={id:'s1',tool_id:'json-format',params:{text:'{"a":1}'},inputs:[],dependsOn:[]};
+ for(const second of [
+  {id:'s2',tool_id:'json-minify',params:{text:'{"a":1}'},inputs:[],dependsOn:['s1']},
+  {id:'s2',tool_id:'json-minify',params:{text:'{"a":1}'},inputs:['step:s1'],dependsOn:['s1']}
+ ])await assert.rejects(planWithQueen(env,request,{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>({plan:{intent:'execute',message:'Plan preparado.',steps:[first,second]},usage:{inputTokens:10,outputTokens:10}})}),error=>error.code==='QUEEN_PLAN_REJECTED'&&/SEQUENTIAL_INPUT_REQUIRED|DEPENDENCY_TEXT_OVERRIDDEN/.test(error.diagnostics.trace[0].validationError));
 });
