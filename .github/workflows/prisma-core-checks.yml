@@ -126,5 +126,43 @@ jobs:
           if(!execution.verified||JSON.stringify(value)!==JSON.stringify(input))throw Error('LIVE_QUEEN_DATA_VERIFICATION_FAILED');
           console.log(JSON.stringify({executed:true,verified:true,stepCount:execution.results.length,outputMatches:true,source:'one-real-queen-plan-plus-real-json-engines'}));
           NODE
+      - name: One-shot real browser OCR, Excel and changed-file controls
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-ocr-once]'; then
+            echo "Real browser OCR control not requested by this commit."
+            exit 0
+          fi
+          tooling="$RUNNER_TEMP/queen-playwright"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export QUEEN_CHROMIUM
+          QUEEN_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma >"$RUNNER_TEMP/queen-local-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 2
+          done
+          export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-ocr-controls"
+          export QUEEN_OPERATIONS_CASES='scan-ocr,ocr-excel,changed-files'
+          node prisma/neural-pilot/staging/browser-operations.cjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
+          const byId=Object.fromEntries(r.rows.map(x=>[x.id,x]));
+          for(const id of ['scan-ocr','ocr-normalization','ocr-excel','changed-files']){
+            const row=byId[id];
+            console.log(JSON.stringify({case:id,ok:row?.ok??false,error:row?.error||null,realInference:row?.realInference??false,verified:row?.execution?.verified??null,evidence:row?.evidence||null}));
+            if(!row?.ok)throw Error('REAL_BROWSER_CONTROL_FAILED:'+id);
+          }
+          if(!byId['ocr-excel'].evidence?.exactCells)throw Error('EXCEL_CELLS_NOT_VERIFIED');
+          if(r.realInference!==false||r.failures?.length)throw Error('BROWSER_CONTROL_PROVENANCE_ERROR');
+          console.log('Real browser OCR and XLSX cell controls passed; no neural inference claimed.');
+          NODE
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v
