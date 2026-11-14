@@ -1,0 +1,617 @@
+{
+  "schemaVersion": 2,
+  "curatedAt": "2026-11-14T01:07:54.716389+00:00",
+  "transferScope": {
+    "documentationAndEvidenceOnly": true,
+    "newInference": false,
+    "serverMutation": false,
+    "deployment": false,
+    "development": false,
+    "recordScope": "Preservation snapshot before commit; final publication verified against remote branch after push"
+  },
+  "history": [
+    {
+      "description": "Unmodified prior verification; describes earlier transfer/checkpoint, not latest deployment state",
+      "verification": {
+        "sourceCheckpoint": "732bce69297a092008b68f1a0439592cb90173ed",
+        "initialLocalCheckpoint": "66731248dcefd464aa7bb5817f366c452fc61449",
+        "initialWorkingTreeClean": true,
+        "recoveryMethod": "git fetch and ancestry-checked fast-forward; no reset/rebase",
+        "pr": {
+          "url": "https://github.com/AndresYepez23/PRISMA/pull/125",
+          "state": "open",
+          "draft": true,
+          "merged": false,
+          "sourceHead": "732bce69297a092008b68f1a0439592cb90173ed"
+        },
+        "sourceCi": {
+          "name": "Prisma Core checks",
+          "runId": 43487676034,
+          "number": 539,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/AndresYepez23/PRISMA/actions/runs/43487676034",
+          "otherChecks": [
+            {
+              "name": "Redirect rules - herenciadivina01",
+              "status": "completed",
+              "conclusion": "failure",
+              "url": "https://app.netlify.com/projects/herenciadivina01/deploys/6af75dbb2a0ffe283bd3e424"
+            },
+            {
+              "name": "Header rules - herenciadivina01",
+              "status": "completed",
+              "conclusion": "failure",
+              "url": "https://app.netlify.com/projects/herenciadivina01/deploys/6af75dbb2a0ffe283bd3e424"
+            },
+            {
+              "name": "Pages changed - herenciadivina01",
+              "status": "completed",
+              "conclusion": "failure",
+              "url": "https://app.netlify.com/projects/herenciadivina01/deploys/6af75dbb2a0ffe283bd3e424"
+            },
+            {
+              "name": "core-regressions",
+              "status": "completed",
+              "conclusion": "success",
+              "url": "https://github.com/AndresYepez23/PRISMA/actions/runs/43487676034/job/132100332998"
+            }
+          ]
+        },
+        "resources": {
+          "prismaspace": {
+            "id": "c89b887d-199c-4a60-b9b5-58f743cc69dd",
+            "productionBranch": "main",
+            "canonicalId": "67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08",
+            "canonicalEnvironment": "production",
+            "canonicalTrigger": {
+              "type": "github:push",
+              "metadata": {
+                "branch": "main",
+                "commit_hash": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
+                "commit_message": "Publish Google AdSense ads.txt\n\nAdd the supplied AdSense publisher record to the Cloudflare Pages output and guard it with a build regression test.",
+                "commit_dirty": false
+              }
+            }
+          },
+          "prisma-queen-staging": {
+            "id": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+            "productionBranch": "feature/prisma-neural-genixnode-qwen35-pilot",
+            "canonicalId": "16436df0-3d50-4e89-9165-b875be731d3f",
+            "canonicalEnvironment": "production",
+            "canonicalTrigger": {
+              "type": "ad_hoc",
+              "metadata": {
+                "branch": "feature/prisma-neural-genixnode-qwen35-pilot",
+                "commit_hash": "ed94e25b9f38645a484c740f9f2e3ac3063f3a4f",
+                "commit_message": "Queen: preserved clean continuity snapshot and restored private operator access",
+                "commit_dirty": false
+              }
+            },
+            "productionD1": {
+              "PRISMA_RATE_DB": {
+                "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+              }
+            },
+            "secretPresence": {
+              "QUEEN_ACCESS_CLIENT_ID": {
+                "present": true,
+                "type": "secret_text"
+              },
+              "QUEEN_ACCESS_CLIENT_SECRET": {
+                "present": true,
+                "type": "secret_text"
+              },
+              "QUEEN_API_KEY": {
+                "present": true,
+                "type": "secret_text"
+              },
+              "QUEEN_STAGING_KEY_SHA256": {
+                "present": true,
+                "type": "secret_text"
+              }
+            }
+          }
+        },
+        "transferScope": {
+          "documentationOnly": true,
+          "newInferences": 0,
+          "newVpsReads": 0,
+          "sshUsed": false,
+          "serverChanges": false,
+          "sqlWrites": false,
+          "historicalBatteriesRerunLocally": false,
+          "newHardwareHypothesesApplied": false,
+          "isolatedDeploymentsCreated": 0,
+          "productionDeploymentsCreated": 0
+        },
+        "portability": {
+          "codeChangesPendingBeforeTransfer": 0,
+          "previouslyUnpublished2b8fc19NowRecovered": true,
+          "relevantEvidenceInRepository": true,
+          "privateValuesExcluded": [
+            "operator key",
+            "OAuth/API tokens",
+            "SSH identity",
+            "env files"
+          ],
+          "privateRecoveryDocumented": true
+        },
+        "publication": {
+          "transferCommit": "Resolve from git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md and PR125; exact SHA recorded after push in PR/final delivery",
+          "newCommitCi": "Recorded in PR after publication",
+          "ownPreviewCleanup": "Recorded in PR with exact SHA and guarded canonical checks after push",
+          "automaticPrimaryPreview": "Push may create a queued own-branch Preview despite skip prefix; guarded cleanup and exact event recorded in PR, never production/canonical or other work"
+        },
+        "documentChecks": {
+          "relativeLinksChecked": 97,
+          "missingLinks": [],
+          "historicalContinuityBodyPreserved": true,
+          "projectRuntimeOrVpsTestsExecutedLocally": false
+        }
+      }
+    }
+  ],
+  "latestEvidenceFacts": {
+    "sourceCommit": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+    "existingChecks": {
+      "node": {
+        "tests": 293,
+        "pass": 293,
+        "fail": 0
+      },
+      "static": {
+        "tests": 131,
+        "pass": 131,
+        "fail": 0
+      }
+    },
+    "productionNeuralUi": {
+      "report": "24dd33d-production-ui-failure.json",
+      "ok": false,
+      "httpStatus": 422,
+      "responseBodyError": "PLAN_RESPONSE_BODY_DEADLINE",
+      "dispatchedQueenRequests": 1,
+      "confirmedQueenInferences": null,
+      "unresolvedDispatchedRequests": 1,
+      "continuousPerformanceOrGeneralQualityProven": false
+    },
+    "screenshotLimitation": "24dd33d-production-synthetic-ui.png shows completed local operations, while matching neural report failed; screenshot is not proof of successful Queen inference.",
+    "stagingNeuralPdfWord": {
+      "report": "1a7c97c-staging-neural-pdf-word.json",
+      "ok": true,
+      "inferences": 1,
+      "inputTokens": 536,
+      "outputTokens": 122,
+      "docxContainsRequestedPageOnly": true,
+      "executionLedgerFinalStatus": "verification-pending",
+      "limitation": "Harness separately checked DOCX content; browser execution ledger retained partial content-verification state. Staging success does not establish production success."
+    },
+    "vpsObservationLimitation": "Cache recovery involved container recreation and two cache settings together; only 3 post-trial samples. Do not attribute causal effect to one setting or claim sustained performance.",
+    "benchmarkTemporalSeparation": "ed94e25, 17a4f4a and c280fda evaluations are historical and are not evaluations of latest source24dd33d.",
+    "deploymentIdentityNote": "Deployment metadata and current canonical mapping belong in root-owned handoff documents; asset cache reports alone do not establish canonical deployment."
+  },
+  "evidence": {
+    "vps-cache-trial-observed-success.json": {
+      "sourcePath": "/workspace/work/queen-recovery/cache-trial-observed-success.json",
+      "bytes": 3245,
+      "sha256": "1fec741db076968a3a9b5dba3036fdf2897e48d3b031bb7f55f95e2e15a7512f",
+      "provenance": "user-provided VPS trial; short observation window, no long-term quality proof",
+      "copiedWithoutModification": true
+    },
+    "vps-cache-trial-v3-publication.json": {
+      "sourcePath": "/workspace/work/queen-recovery/cache-trial-v3-publication.json",
+      "bytes": 709,
+      "sha256": "b481e55fa8250ba39856fa029027bbd04685004ee6d93588363c4150c35b14a3",
+      "provenance": "published recovery script identity, no script credentials",
+      "copiedWithoutModification": true
+    },
+    "ed94e25-original-eight-after-cache.json": {
+      "sourcePath": "/workspace/work/queen-recovery/queen-original-after-cache-20261113.json",
+      "bytes": 36135,
+      "sha256": "d101ab0a7bea9c86684493bd0226aea54176ce05c1b010357fdaac96afb3b7e4",
+      "provenance": "original eight-case suite after cache intervention, historical ed94 backend",
+      "copiedWithoutModification": true
+    },
+    "17a4f4a-original-quality.json": {
+      "sourcePath": "/workspace/work/queen-release-17a4f4a/original-quality-current.json",
+      "bytes": 39573,
+      "sha256": "93473ec590c857563926369e9e01123214d736eb8621c2b1ef2c2c842b6d36ba",
+      "provenance": "historical original-quality evaluation",
+      "copiedWithoutModification": true
+    },
+    "c280fda-original-quality.json": {
+      "sourcePath": "/workspace/work/queen-release-c280fda/original-quality.json",
+      "bytes": 37471,
+      "sha256": "d1ca45ebfad0614a689035d4ec39610bc1f6611b820a88805099365ee75fea94",
+      "provenance": "historical original-quality evaluation",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-staging-neural-pdf-word.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/browser-pdf/results.json",
+      "bytes": 9537,
+      "sha256": "85bfdf4be29877899add4cfc4bfd5a22b5177006906a097ea1afce5ca481f442",
+      "provenance": "real staging neural plan and browser engines; synthetic documents",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-staging-selected-page.docx": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/browser-pdf/digital-pdf-word-queen-three-pages-paginas-seleccionadas.docx",
+      "bytes": 7646,
+      "sha256": "2fc94037f523f216dcf854ccab8d89b3c60ccc807fcc4a4ab29c8529cd8f7ce1",
+      "provenance": "actual synthetic DOCX output, requested page 2",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-staging-selected-page.pdf": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/browser-pdf/digital-pdf-word-queen-three-pages-paginas-seleccionadas.pdf",
+      "bytes": 866,
+      "sha256": "40806e662605a4bb33cba342c8fb313455454c3f51745557e82480e4b866d617",
+      "provenance": "actual synthetic PDF output, requested page 2",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-staging-input-three-pages.pdf": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/browser-pdf/input-queen-three-pages.pdf",
+      "bytes": 1302,
+      "sha256": "d0f857bd9021b9bdcd97cb58fe3c7e95f14bc4cbd54120eb5b37e674f315095c",
+      "provenance": "synthetic input fixture; differs from later production fixture",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-production-ui-failure.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/production-queen-ui/results.json",
+      "bytes": 1633,
+      "sha256": "348782ae82eb0df840343b68f2649bc91c91af092c95dfb609a1850301a610a2",
+      "provenance": "production neural request failed; unresolved inference accounting retained",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-production-payload-capture.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/production-payload-capture/results.json",
+      "bytes": 1499,
+      "sha256": "5dc6aa096892c16c60b18f76820dc6438b51f8c2291ad713d5f99bdaabe5f388",
+      "provenance": "read-only captured synthetic request, zero dispatched requests",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-production-synthetic-request.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/production-payload-capture/captured-request.json",
+      "bytes": 413,
+      "sha256": "3ad81d2ef888aff1ac50b146df136cb32f32046575a6ed0da4d5d51ec6545219",
+      "provenance": "synthetic PDF request; no operator credentials",
+      "copiedWithoutModification": true
+    },
+    "24dd33d-production-ui-failure.json": {
+      "sourcePath": "/workspace/work/queen-release-local-context/production-queen-ui/results.json",
+      "bytes": 2937,
+      "sha256": "e4476b5d2a1612de86e819b09fcb961360d7134d5ce788683b777c9c43a5667f",
+      "provenance": "production neural HTTP422 and response-body deadline; unresolved inference, ok false",
+      "copiedWithoutModification": true
+    },
+    "24dd33d-production-synthetic-ui.png": {
+      "sourcePath": "/workspace/work/queen-release-local-context/production-queen-ui/browser.png",
+      "bytes": 251199,
+      "sha256": "e62599b9b62619203aa020e10299545d5f07372686d473540b3bbedb01a8fec6",
+      "provenance": "synthetic UI screenshot shows operation completion; DOES NOT prove neural success; matching report failed",
+      "copiedWithoutModification": true
+    },
+    "24dd33d-public-worker-metadata.json": {
+      "sourcePath": "/workspace/work/queen-release-local-context/public-worker-metadata.json",
+      "bytes": 331,
+      "sha256": "224f777e17b32266d77347830aab9048c7ac712db3918d9366231e14db72d5af",
+      "provenance": "built worker bytes/hash metadata, no worker source or credentials",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-credential-promotion-success-metadata.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/credential-promotion.json",
+      "bytes": 1654,
+      "sha256": "d02ad8aeb220ab6d5cb42019140781d72dd7540a8308fc7021bf572ccd08e13a",
+      "provenance": "successful secret promotion and cleanup metadata only; variable names, no values",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-production-transport415.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/transport415.json",
+      "bytes": 667,
+      "sha256": "29e9c429e6a2c804b18b2dd831fef232eca40763e86142987bc6902ab23c0fd8",
+      "provenance": "one transport-only invalid-content-type request, max inference zero; not model success",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-production-assets-verified.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/production-assets-verified.json",
+      "bytes": 352,
+      "sha256": "60797ba690f1c8bbbd81755382e22f70b637fbf9964e6eea317545619b5662d5",
+      "provenance": "historical canonical build stamp and ads response hashes",
+      "copiedWithoutModification": true
+    },
+    "1a7c97c-assets-upload.json": {
+      "sourcePath": "/workspace/work/queen-release-1a7c97c/assets-upload.json",
+      "bytes": 2726,
+      "sha256": "e7f639b9dc3e097b214416e785b9cb668362665e70b2f6df593867d11c2b4f1f",
+      "provenance": "asset cache verification; does not by itself prove deployment",
+      "copiedWithoutModification": true
+    },
+    "24dd33d-assets-upload.json": {
+      "sourcePath": "/workspace/work/queen-release-local-context/assets-upload.json",
+      "bytes": 797,
+      "sha256": "4182bbc1d1226c5353a81041efa7638a88992af8682aba5f87ddb7b627557b34",
+      "provenance": "444 assets verified, 441 reused and 3 new hashes already present; no deployment assertion",
+      "copiedWithoutModification": true
+    },
+    "24dd33d-production-ads.txt": {
+      "sourcePath": "/workspace/work/queen-release-local-context/production-ads.txt",
+      "bytes": 59,
+      "sha256": "3106f0692e8177e253a56188e6c9b828726732548666719b333be77885befb89",
+      "provenance": "public production ads artifact; canonical ads preservation",
+      "copiedWithoutModification": true
+    },
+    "24dd33d-node-tests-summary.txt": {
+      "sourcePath": "/workspace/work/queen-release-local-context/node-tests.log",
+      "sourceBytes": 28980,
+      "sourceSha256": "d9672937cba1c01d1978b22c4bb50fb41256183dda33813fe4f5923138aa30e2",
+      "sourceLines": {
+        "first": 311,
+        "last": 318
+      },
+      "bytes": 120,
+      "sha256": "466db0a1a638dabe945d68c98d36656ae4a0883d9fcf8caebd2ccdbc2f3e43e9",
+      "provenance": "Exact final summary copied from existing log; no tests rerun during handoff",
+      "copiedWithoutModification": false
+    },
+    "24dd33d-static-build-summary.txt": {
+      "sourcePath": "/workspace/work/queen-release-local-context/static-build.log",
+      "sourceBytes": 13716,
+      "sourceSha256": "524e721f31a6cbbc3adb8ff18af27dbb0d045ec88a4b03bd86cd50ed5f63ac6b",
+      "sourceLines": {
+        "first": 150,
+        "last": 157
+      },
+      "bytes": 120,
+      "sha256": "d9e4cb745132a9a32a0403ab27f812ec1a90163d0c7c695a67751dcb131c856f",
+      "provenance": "Exact final summary copied from existing log; no tests rerun during handoff",
+      "copiedWithoutModification": false
+    }
+  },
+  "excludedMaterial": [
+    "operator keys",
+    "auth directories",
+    "JWT/curl configurations",
+    "raw private Compose baseline/environment",
+    "private model/user files",
+    "credential ciphertext/capsules",
+    "unencrypted secret values"
+  ],
+  "integrityNote": "SHA-256 covers each preserved evidence file; trimmed check summaries additionally retain SHA-256 and byte size of the full workspace log. Original workspace paths establish provenance but may not exist in a fresh runtime.",
+  "sourceCodeCommit": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+  "transferCommitResolution": "git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md; exact published SHA in PR/final delivery",
+  "currentCloudflareResources": {
+    "at": "2026-11-14T01:05:42.264Z",
+    "resources": [
+      {
+        "project": "prismaspace",
+        "id": "c89b887d-199c-4a60-b9b5-58f743cc69dd",
+        "canonical": "6a41daae-1c35-4123-9761-cb99de2ca969",
+        "url": "https://6a41daae.prismaspace.pages.dev",
+        "stage": {
+          "name": "deploy",
+          "started_on": null,
+          "ended_on": "2026-11-14T00:53:38.054408Z",
+          "status": "success"
+        },
+        "sourceCommit": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+        "productionBranch": "main",
+        "compatibilityDate": "2026-11-08",
+        "compatibilityFlags": [
+          "nodejs_compat"
+        ],
+        "d1": {
+          "PRISMA_RATE_DB": {
+            "id": "e02104b5-0861-475a-a60f-7658439d4fe0"
+          },
+          "QUEEN_CONTROL_DB": {
+            "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+          }
+        },
+        "queenVars": {
+          "QUEEN_ACCESS_CLIENT_ID": {
+            "type": "secret_text"
+          },
+          "QUEEN_ACCESS_CLIENT_SECRET": {
+            "type": "secret_text"
+          },
+          "QUEEN_API_KEY": {
+            "type": "secret_text"
+          },
+          "QUEEN_BASE_URL": {
+            "type": "plain_text",
+            "value": "https://queen.prismaspace.space/v1"
+          },
+          "QUEEN_ENABLED": {
+            "type": "plain_text",
+            "value": "1"
+          },
+          "QUEEN_MODEL": {
+            "type": "plain_text",
+            "value": "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+          },
+          "QUEEN_STAGE": {
+            "type": "plain_text",
+            "value": "production"
+          }
+        }
+      },
+      {
+        "project": "prisma-queen-staging",
+        "id": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+        "canonical": "46506668-10ee-4ff7-998c-c64ef469f4ee",
+        "url": "https://46506668.prisma-queen-staging.pages.dev",
+        "stage": {
+          "name": "deploy",
+          "started_on": null,
+          "ended_on": "2026-11-14T00:38:07.467164Z",
+          "status": "success"
+        },
+        "sourceCommit": "1a7c97c954bf8b951059843c102b69a706b18526",
+        "productionBranch": "feature/prisma-neural-genixnode-qwen35-pilot",
+        "compatibilityDate": "2026-11-08",
+        "compatibilityFlags": [
+          "nodejs_compat"
+        ],
+        "d1": {
+          "PRISMA_RATE_DB": {
+            "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+          }
+        },
+        "queenVars": {
+          "QUEEN_ACCESS_CLIENT_ID": {
+            "type": "secret_text"
+          },
+          "QUEEN_ACCESS_CLIENT_SECRET": {
+            "type": "secret_text"
+          },
+          "QUEEN_API_KEY": {
+            "type": "secret_text"
+          },
+          "QUEEN_BASE_URL": {
+            "type": "plain_text",
+            "value": "https://queen.prismaspace.space/v1"
+          },
+          "QUEEN_ENABLED": {
+            "type": "plain_text",
+            "value": "1"
+          },
+          "QUEEN_MODEL": {
+            "type": "plain_text",
+            "value": "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+          },
+          "QUEEN_SOURCE_COMMIT": {
+            "type": "plain_text",
+            "value": "1a7c97c954bf8b951059843c102b69a706b18526"
+          },
+          "QUEEN_STAGE": {
+            "type": "plain_text",
+            "value": "staging"
+          },
+          "QUEEN_STAGING_DATABASE_ID": {
+            "type": "plain_text",
+            "value": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+          },
+          "QUEEN_STAGING_KEY_SHA256": {
+            "type": "secret_text"
+          }
+        }
+      }
+    ]
+  },
+  "latestState": {
+    "productionDeployment": "6a41daae-1c35-4123-9761-cb99de2ca969",
+    "productionCode": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+    "stagingDeployment": "46506668-10ee-4ff7-998c-c64ef469f4ee",
+    "stagingCode": "1a7c97c954bf8b951059843c102b69a706b18526",
+    "publicQueenValidated": false,
+    "latestNeuralHttpStatus": 422,
+    "diagnosticTraceObtained": false,
+    "queenClientErrorBodyFixImplemented": false,
+    "newStaging24dDeployed": false,
+    "diagnosticInferenceDispatched": false,
+    "mainCodeUnchanged": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
+    "prDraft": true,
+    "prMerged": false
+  },
+  "preservedEvidenceHashes": {
+    "17a4f4a-original-quality.json": {
+      "bytes": 39573,
+      "sha256": "93473ec590c857563926369e9e01123214d736eb8621c2b1ef2c2c842b6d36ba"
+    },
+    "1a7c97c-assets-upload.json": {
+      "bytes": 2726,
+      "sha256": "e7f639b9dc3e097b214416e785b9cb668362665e70b2f6df593867d11c2b4f1f"
+    },
+    "1a7c97c-credential-promotion-success-metadata.json": {
+      "bytes": 1654,
+      "sha256": "d02ad8aeb220ab6d5cb42019140781d72dd7540a8308fc7021bf572ccd08e13a"
+    },
+    "1a7c97c-production-assets-verified.json": {
+      "bytes": 352,
+      "sha256": "60797ba690f1c8bbbd81755382e22f70b637fbf9964e6eea317545619b5662d5"
+    },
+    "1a7c97c-production-payload-capture.json": {
+      "bytes": 1499,
+      "sha256": "5dc6aa096892c16c60b18f76820dc6438b51f8c2291ad713d5f99bdaabe5f388"
+    },
+    "1a7c97c-production-synthetic-request.json": {
+      "bytes": 413,
+      "sha256": "3ad81d2ef888aff1ac50b146df136cb32f32046575a6ed0da4d5d51ec6545219"
+    },
+    "1a7c97c-production-transport415.json": {
+      "bytes": 667,
+      "sha256": "29e9c429e6a2c804b18b2dd831fef232eca40763e86142987bc6902ab23c0fd8"
+    },
+    "1a7c97c-production-ui-failure.json": {
+      "bytes": 1633,
+      "sha256": "348782ae82eb0df840343b68f2649bc91c91af092c95dfb609a1850301a610a2"
+    },
+    "1a7c97c-staging-input-three-pages.pdf": {
+      "bytes": 1302,
+      "sha256": "d0f857bd9021b9bdcd97cb58fe3c7e95f14bc4cbd54120eb5b37e674f315095c"
+    },
+    "1a7c97c-staging-neural-pdf-word.json": {
+      "bytes": 9537,
+      "sha256": "85bfdf4be29877899add4cfc4bfd5a22b5177006906a097ea1afce5ca481f442"
+    },
+    "1a7c97c-staging-selected-page.docx": {
+      "bytes": 7646,
+      "sha256": "2fc94037f523f216dcf854ccab8d89b3c60ccc807fcc4a4ab29c8529cd8f7ce1"
+    },
+    "1a7c97c-staging-selected-page.pdf": {
+      "bytes": 866,
+      "sha256": "40806e662605a4bb33cba342c8fb313455454c3f51745557e82480e4b866d617"
+    },
+    "24dd33d-assets-upload.json": {
+      "bytes": 797,
+      "sha256": "4182bbc1d1226c5353a81041efa7638a88992af8682aba5f87ddb7b627557b34"
+    },
+    "24dd33d-node-tests-summary.txt": {
+      "bytes": 120,
+      "sha256": "466db0a1a638dabe945d68c98d36656ae4a0883d9fcf8caebd2ccdbc2f3e43e9"
+    },
+    "24dd33d-production-ads.txt": {
+      "bytes": 59,
+      "sha256": "3106f0692e8177e253a56188e6c9b828726732548666719b333be77885befb89"
+    },
+    "24dd33d-production-synthetic-ui.png": {
+      "bytes": 251199,
+      "sha256": "e62599b9b62619203aa020e10299545d5f07372686d473540b3bbedb01a8fec6"
+    },
+    "24dd33d-production-ui-failure.json": {
+      "bytes": 2937,
+      "sha256": "e4476b5d2a1612de86e819b09fcb961360d7134d5ce788683b777c9c43a5667f"
+    },
+    "24dd33d-public-worker-metadata.json": {
+      "bytes": 331,
+      "sha256": "224f777e17b32266d77347830aab9048c7ac712db3918d9366231e14db72d5af"
+    },
+    "24dd33d-static-build-summary.txt": {
+      "bytes": 120,
+      "sha256": "d9e4cb745132a9a32a0403ab27f812ec1a90163d0c7c695a67751dcb131c856f"
+    },
+    "c280fda-original-quality.json": {
+      "bytes": 37471,
+      "sha256": "d1ca45ebfad0614a689035d4ec39610bc1f6611b820a88805099365ee75fea94"
+    },
+    "ed94e25-original-eight-after-cache.json": {
+      "bytes": 36135,
+      "sha256": "d101ab0a7bea9c86684493bd0226aea54176ce05c1b010357fdaac96afb3b7e4"
+    },
+    "f258fd0-staging-pdf-timeout.json": {
+      "bytes": 3053,
+      "sha256": "5c11fea418538673ea6e6088b92a7e7ce3e5e2bd9feb889dbff6549efaae80c4"
+    },
+    "resources-current.json": {
+      "bytes": 3350,
+      "sha256": "deeef5d7edd9be393eea50055f7184324999217fd187ada7962b1926ff79ea3c"
+    },
+    "vps-cache-trial-observed-success.json": {
+      "bytes": 3245,
+      "sha256": "1fec741db076968a3a9b5dba3036fdf2897e48d3b031bb7f55f95e2e15a7512f"
+    },
+    "vps-cache-trial-v3-publication.json": {
+      "bytes": 709,
+      "sha256": "b481e55fa8250ba39856fa029027bbd04685004ee6d93588363c4150c35b14a3"
+    }
+  }
+}

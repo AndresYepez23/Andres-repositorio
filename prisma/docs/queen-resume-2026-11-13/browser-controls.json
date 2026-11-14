@@ -1,0 +1,167 @@
+{
+  "generatedAt": "2026-11-13T14:57:08.804Z",
+  "realBrowserEngines": true,
+  "realInference": false,
+  "selectedCases": [
+    "digital-pdf-word",
+    "changed-files"
+  ],
+  "fixtures": {
+    "digital": {
+      "name": "queen-three-pages.pdf",
+      "type": "application/pdf",
+      "size": 1308
+    },
+    "scan": {
+      "name": "queen-scan.csv.pdf",
+      "type": "application/pdf",
+      "size": 22153
+    }
+  },
+  "rows": [
+    {
+      "id": "digital-pdf-word",
+      "ok": true,
+      "realInferenceRequested": false,
+      "realInference": false,
+      "coordinationSource": "deterministic-control",
+      "neural": null,
+      "execution": {
+        "status": "verification-pending",
+        "verified": false,
+        "ledger": [
+          {
+            "id": "s1",
+            "status": "verified",
+            "attempts": 1
+          },
+          {
+            "id": "s2",
+            "status": "verification-pending",
+            "attempts": 1
+          }
+        ],
+        "results": [
+          {
+            "tool": "pdf-extract",
+            "verification": {
+              "status": "verified",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 869,
+                  "sha256": "528370a5347087e19b930e228c77a93ed17dc0df958a7c52e66bd2377ed6b08c",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "parsed-pdf",
+                    "requested-page-count"
+                  ],
+                  "pages": 1
+                }
+              ],
+              "unverified": []
+            }
+          },
+          {
+            "tool": "pdf-to-word",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 7647,
+                  "sha256": "d7cdf59b570d252b9195798dc16bdb2399f4a1509e822abba15da89a519e643d",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "archive-crc",
+                    "archive-structure"
+                  ],
+                  "entries": 20
+                }
+              ],
+              "unverified": [
+                "document-content-correspondence"
+              ]
+            }
+          }
+        ]
+      },
+      "evidence": {
+        "docxContentMatchesRequestedPage": true,
+        "absentOtherPages": true
+      },
+      "artifacts": [
+        {
+          "step": "s1",
+          "filename": "queen-three-pages-paginas-seleccionadas.pdf",
+          "type": "application/pdf",
+          "file": "digital-pdf-word-queen-three-pages-paginas-seleccionadas.pdf",
+          "bytes": 869,
+          "sha256": "528370a5347087e19b930e228c77a93ed17dc0df958a7c52e66bd2377ed6b08c"
+        },
+        {
+          "step": "s2",
+          "filename": "queen-three-pages-paginas-seleccionadas.docx",
+          "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "file": "digital-pdf-word-queen-three-pages-paginas-seleccionadas.docx",
+          "bytes": 7647,
+          "sha256": "d7cdf59b570d252b9195798dc16bdb2399f4a1509e822abba15da89a519e643d"
+        }
+      ],
+      "taskBudget": {
+        "id": "digital-pdf-word",
+        "objective": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+        "maxMs": 120000,
+        "maxInferences": 2,
+        "maxSteps": 8,
+        "durationMs": 19537,
+        "remainingMs": 100463,
+        "inferencesReservedOrObserved": 0,
+        "stepsReserved": 2,
+        "queenCalls": [],
+        "localActions": []
+      },
+      "durationMs": 19536
+    },
+    {
+      "id": "changed-files",
+      "ok": true,
+      "realInference": false,
+      "planSource": "deterministic control",
+      "sameTaskChangedInputRejected": true,
+      "newTaskExecuted": true,
+      "actualEngineCalls": 2,
+      "outputSha256": [
+        "f4447bbcf6e9fefca1071a24a3b68d4340b5e473c29f15c0d84f1664e7e0d2da",
+        "40ca82a624ec67ceb21c87d3c01800c717a174bf179678ad2c1287dd19f12546"
+      ],
+      "durationMs": 4782
+    }
+  ],
+  "inputFiles": [
+    {
+      "file": "input-queen-three-pages.pdf",
+      "bytes": 1308,
+      "sha256": "f6c961afea3abdbebb12d1b466b7e31cca045583d5da002f6835160b72e4bca8"
+    },
+    {
+      "file": "input-queen-scan.csv.pdf",
+      "bytes": 22153,
+      "sha256": "0bce007f23732022b636d6217f0c0c8dbae1a26d06b83ff8eabcd4e58af64eaa"
+    }
+  ],
+  "realInferenceRequested": false,
+  "base": null,
+  "failures": [],
+  "transportCalls": []
+}

@@ -1,3 +1,4 @@
+import {observeQueenProvider} from '../../_lib/queen-observations.js';
 import {checkLimits} from "../../_lib/limits.js";
 import {getProviderHold,setProviderHold} from "../../_lib/provider-health.js";
 import {getCredentialSlots,requestWithCredentialPool} from "../../_lib/credential-pool.js";
@@ -13,6 +14,7 @@ const MAX_AUDIO=12*1024*1024;
 const HEADERS={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"};
 const error=(message,status=400)=>Response.json({error:message},{status,headers:HEADERS});
 export async function onRequestPost({request,env}){
+ const queenObservedStart=Date.now();
  const origin=request.headers.get("Origin");
  if(origin!==new URL(request.url).origin)return error("Origen no autorizado.",403);
  if(Number(request.headers.get("Content-Length")||0)>MAX_BODY)return error("Solicitud demasiado grande.",413);
@@ -54,5 +56,6 @@ export async function onRequestPost({request,env}){
  if(declared>MAX_AUDIO)return error("El audio generado supera el tamaño permitido.",502);
  const raw=await res.arrayBuffer();
  if(!raw.byteLength||raw.byteLength>MAX_AUDIO)return error("No se pudo recibir un audio válido o su tamaño es excesivo.",502);
+ await observeQueenProvider(env,{provider:'pollinations',model,capability:'speech',status:200,durationMs:Date.now()-queenObservedStart});
  return new Response(raw,{headers:{...HEADERS,"Content-Type":type,"Content-Disposition":"attachment; filename=\"prisma-voz."+format+"\"","X-Prisma-Voice-Model":model}});
 }

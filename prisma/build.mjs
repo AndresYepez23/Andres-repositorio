@@ -8,6 +8,7 @@ import "./tests/conversation-history.test.mjs";
 import "./tests/provider-orchestration.test.mjs";
 import "./tests/core-intelligence-benchmark.test.mjs";
 import "./tests/developer-api.test.mjs";
+import "./tests/queen.test.mjs";
 import "./tests/cloudflare-whisper.test.mjs";
 import "./tests/welcome-email.test.mjs";
 import "./tests/settings-ui.test.mjs";

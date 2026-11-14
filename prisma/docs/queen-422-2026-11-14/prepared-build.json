@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "5ae1bbb257e20bb18f17357c50a6331a4fcf0dfd",
+  "artifactBytes": 780210,
+  "artifactSha256": "5e6bdb76216ffe02b1327325ba14b67860c08c512be7e510bc332ceebf1e194d",
+  "artifactLocalPath": "/workspace/work/queen-422-round2/worker.js",
+  "deployed": false,
+  "buildCommand": "QUEEN_TEST_TOOLING=/workspace/work/tooling QUEEN_STAGING_BUILD_OUTPUT=/workspace/work/queen-422-round2 WRANGLER_LOG_PATH=/workspace/work/queen-422-round2/wrangler.log node prisma/neural-pilot/staging/build.cjs",
+  "note": "Source and builder are published. The compiled file is local; next session should build a clean snapshot. No secrets are embedded."
+}

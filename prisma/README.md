@@ -2,6 +2,15 @@
 
 Prisma Space es una suite web de herramientas digitales, con prioridad en el procesamiento local, motores IA intercambiables y transparencia sobre límites, costes y licencias.
 
+## Continuidad de Queen
+
+- [Transferencia completa a otra cuenta de Codex](docs/QUEEN-HANDOFF.md).
+- [Estado vigente y registro histórico](docs/QUEEN-CONTINUITY.md).
+- [Índice de documentación, pruebas y evidencias](docs/QUEEN-INDEX.md).
+- [Instrucciones iniciales portátiles](docs/QUEEN-RESUME-PROMPT.md).
+
+Queen sigue en desarrollo en el PR #125 como borrador. Producción24dd33d está activada, pero Queen pública devolvióHTTP422. El handoff registra resultados, siguiente paso y autorizaciones previas. La transferencia actual solo preserva; no ejecutar despliegues ni intervenciones VPS por leer guías históricas.
+
 ## Catálogo
 
 - **143 herramientas registradas** en 13 categorías: 93 listas, 48 beta y 2 en preparación. Los estados del catálogo indican disponibilidad prevista, no sustituyen las pruebas funcionales de cada herramienta.

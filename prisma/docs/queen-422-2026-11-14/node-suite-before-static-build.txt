@@ -1,0 +1,393 @@
+✖ Google AdSense ads.txt is published at the site root (3.696545ms)
+Whisper regression: origin, allowlist, audio encoding and three-request D1 ceiling verified.
+✔ prisma/tests/cloudflare-whisper.test.mjs (114.933073ms)
+Prisma Core conversation history and clean-message regressions passed.
+Prisma Core PDF retry and history synchronization regressions passed.
+✔ prisma/tests/conversation-history.test.mjs (58.955884ms)
+Prisma credential metrics lookup db.prepare(...).bind(...).all is not a function
+Prisma credential metrics lookup db.prepare(...).bind(...).all is not a function
+Prisma credential metrics lookup db.prepare(...).bind(...).all is not a function
+Prisma credential metrics lookup db.prepare(...).bind(...).all is not a function
+Prisma credential metrics lookup db.prepare(...).bind(...).all is not a function
+Prisma Core agent: registry index, local actions and artifact compatibility verified.
+✔ prisma/tests/core-agent-routing.test.mjs (342.863897ms)
+✔ valid PDF, PNG, DOCX and WAV receive signature-only evidence (5.521553ms)
+✔ PDF claims cannot disguise ZIP payloads or random bytes (0.669068ms)
+✔ an image extension cannot disagree with the actual MIME or file signature (0.542797ms)
+✔ the planned output contract catches PDF-to-Word accidentally returning PDF (0.347543ms)
+✔ valid JSON outputs are parsed, corrupted JSON is rejected, plain text stays unchanged (1.068449ms)
+✔ multiple artifacts are checked independently and existing image checks survive (0.4783ms)
+✔ batch execution rejects false successful PDFs before they can become inputs (1.413868ms)
+✔ mobile Prisma Core composer stays a single row including attachment and actions (1.014387ms)
+✔ text area can shrink to share width without a second controls row (0.197668ms)
+✔ all composer controls remain in their existing DOM order and keep their IDs (0.220232ms)
+✔ new and existing Core conversations keep one full-width chat and composer layout (0.160842ms)
+✔ Create pane uses grouped model cards, not image-only dropdowns (1.386216ms)
+✔ Crear only shows images and audio with individual purposes (0.667375ms)
+✔ Image generation receives selected card model, not removed dropdown values (0.348434ms)
+✔ Unsupported creative media are informational, never sent to text chat as fake files (0.21264ms)
+✔ Gemini premium image is hidden in Crear without disabling Gemini chat (0.263657ms)
+✔ Crear selections keep model picker open until user dismisses it (0.797531ms)
+✔ touch and click propagation cannot dismiss Crear during model selection (0.194744ms)
+✔ Crear enables only Whisper models with actual API routes and feature flags (0.821807ms)
+✔ audio file is sent to the real transcribe endpoint and returned text shown (0.358901ms)
+✔ unsupported music/video models are not falsely activated (0.210206ms)
+✔ Crear exposes only Imágenes and Audio and keeps TTS in Audio (0.834416ms)
+✔ TTS selection routes through existing real audio pipeline (0.269446ms)
+✔ Crear replaces image-only picker without modifying composer controls (0.947716ms)
+✔ Crear shows only images and audio (0.535075ms)
+✔ dynamic creative catalogs remain separate from chat and free-priced (0.124057ms)
+✔ 150 labeled formulations: exact tool selection, no unexpected extra operations (37.897352ms)
+✔ parameter extraction, precise PDF splitting and data preservation (3.54682ms)
+✔ ambiguity, missing inputs, negation and unsupported subtasks never become false success (1.440339ms)
+✔ multistep image plan preserves dependencies and independent branch outputs (0.313261ms)
+✔ real local engines return correct transformed data with zero provider requests (18.89833ms)
+CORE BENCHMARK {"baselineRecognition":"28/150","recognition":"150/150","parameterCases":12,"realLocalExecutions":21,"providerCalls":0}
+✔ ten single-file inputs produce ten real hash outputs and ten downloadable cards (11.364178ms)
+✔ batch order, cancellation, incompatible input, false success and partial recovery (1.0694ms)
+✔ task memory: followups, new objective precedence, isolation, expiration and memory bound (1.555011ms)
+✔ real conversation regression: last PDF page followed by pending Word conversion (3.069952ms)
+✔ Prisma Developer uses current PDF intent and latest format after upload (34.139009ms)
+✔ real-user safety: questions and negative instructions never trigger PDF or image edits (37.602778ms)
+✔ exact PDF pages: relative, named and grouped ranges preserve user selections (49.807472ms)
+✔ natural singular-page references and video orientations route to their real tools (38.871057ms)
+✔ multi-step intent does not silently lose conversion or compression (7.896578ms)
+✔ protect explicit PDF exclusions and individual page selections (27.105034ms)
+✔ two-phase PDF requests preserve all operations and their order (22.03298ms)
+✔ telemetry rejects personal data fields and never exposes a read endpoint (21.304062ms)
+✔ benchmark summary reports measured scope, not production popularity (0.259882ms)
+✔ unseen regressions: URLs, inline JSON, direction and protected product behavior (2.646514ms)
+✔ arithmetic grammar and grounded knowledge never evaluate code (4.348897ms)
+✔ a normal generative request uses one inference; a real failure alone enables fallback (2.767015ms)
+✔ welcome SVG stays in normal flow above the heading in both markup and runtime (0.802959ms)
+✔ mobile and coarse-pointer welcome reserve a non-shrinking aspect-ratio box (0.191478ms)
+✔ welcome SVG is clipped rather than painted across text when the viewport contracts (0.302926ms)
+✔ automatic chats pin the first successful model and keep it for the conversation (1.240397ms)
+✔ automatic model pin is refreshed after 30 minutes without a user message (0.184178ms)
+✔ manual choice remains primary, fallback becomes sticky, and idle retries the manual preference (0.292741ms)
+✔ automatic mode clears a previous manual preference without changing other chat state (0.148233ms)
+✔ follow-up questions retain an older image exchange beyond the recent message window (3.76668ms)
+✔ short follow-ups retain the original task and answer after many intervening turns (1.668041ms)
+✔ explicit new tasks start with a clean context instead of importing an old photo (0.476427ms)
+✔ specialized audio, music, visual and moderation models are not chat options (0.794686ms)
+✔ suggested model is selected only from compatible provider options (0.307192ms)
+✔ a real fallback never replaces the manually selected model in the picker (0.380803ms)
+✔ web research is activated only by explicit research/search wording (1.225174ms)
+✔ research sources keep only valid HTTP(S) URLs and bound external text (0.275915ms)
+✔ catalog mirrors the live Prisma registry without exposing executable internals (9.961126ms)
+✔ catalog filters by category, mode and status (4.086332ms)
+✔ catalog search finds tools by Spanish names and descriptions (4.203468ms)
+✔ Core plan calls the actual smart-flow and offline-intelligence routers (25.549633ms)
+✔ Core plan refuses oversized or empty requests (0.283918ms)
+✔ catalog endpoint returns JSON (28.329548ms)
+✔ plan endpoint validates JSON and returns a Core plan (10.860831ms)
+✔ developer catalog exposes the ten original intelligent workflows (0.218088ms)
+✔ English dictionary covers all extracted user-facing source strings (1.576703ms)
+✔ English translations preserve all interpolation placeholders (1.932168ms)
+✔ all Spanish registry names, categories and descriptions have English equivalents (2.096126ms)
+✔ English requests are normalized without losing negative instructions or confusing questions with actions (4.487656ms)
+✔ English language selection respects explicit routes, saved preferences and regional Spanish browsers (7.813693ms)
+✔ Core and model prompts produce English responses when English is selected (3.249682ms)
+✔ app keeps legal/navigation links and PWA metadata in the selected language (1.457214ms)
+✔ language selection is exclusive to General settings inside the app (1.606589ms)
+✔ crop rejects pixel coordinates before any file processing (1.144794ms)
+✔ resize validates bounded dimensions and explicit boolean aspect ratio (0.224028ms)
+✔ contracts preserve other engines and reject unsupported image encodings (0.154793ms)
+✔ output verification rejects wrong dimensions and closes decoded resources (0.608717ms)
+✔ Prisma Mini ranks fresh requests while caching tool descriptions (1.463583ms)
+✔ changing a tool description invalidates only its cached vector (1.205234ms)
+✔ equivalent labels share cached embeddings; no prompts are cached (0.846855ms)
+✔ invalid embedding output fails safely without pretending to rank tools (0.468646ms)
+Prisma performance/layout regressions: Core canvas lifecycle, render budget and navigation overflow verified.
+✔ Core ambient canvas follows the active-view lifecycle (0.754105ms)
+✔ ambient canvas cannot become page content outside Prisma Core (0.368524ms)
+✔ decorative canvas uses a bounded render budget (0.175624ms)
+✔ sidebar categories scroll inside the sidebar without horizontal page overflow (0.272681ms)
+✔ Pollinations audio allowance scales with unique configured keys, max six (0.975479ms)
+✔ Speech tries independent credential slots on auth, quota and rate-limit errors (0.178148ms)
+Provider orchestration regressions passed.
+✔ prisma/tests/provider-orchestration.test.mjs (111.871825ms)
+✔ planning time is charged before any tool can start (7.20038ms)
+✔ resuming a task preserves its original deadline and completed artifacts (5.366389ms)
+✔ a rejected repair counts its attempt and cannot gain a third inference on resume (0.895258ms)
+✔ repair receives the remaining deadline, aborts on expiry and cannot execute a late response (1.398375ms)
+✔ two planning inferences leave no repair allowance (1.40823ms)
+✔ changed files never receive old outputs, including after the original deadline (7.217256ms)
+✔ changed plan parameters never receive old outputs, including after the original deadline (1.172114ms)
+✔ expired same-file same-plan task retains only its confirmed earlier artifacts (1.798478ms)
+✔ production Queen SQL uses the dedicated control database without accessing principal storage (30.815659ms)
+✔ staging retains its existing database binding when no dedicated Queen binding is configured (1.581897ms)
+✔ production and staging share one lease when their bindings point to the same isolated database (1.667216ms)
+✔ missing dedicated control tables fail closed instead of falling back to principal storage (1.453595ms)
+✔ an invalid explicit control binding cannot silently select the principal database (0.394272ms)
+✔ enabled production Queen checks the actual slot before either JSON or SSE completions (5.462691ms)
+✔ production idle preflight preserves authentication, output ceiling and request order (1.482469ms)
+✔ a dispatched production timeout retains the shared five-minute cooldown (1.100715ms)
+✔ production preflight failures release their lease and disabled observations leave providers untouched (1.060043ms)
+✔ promotion is absent without configuration and unrelated routes remain untouched (42.631308ms)
+✔ promotion rejects wrong methods and nonce before reading credentials or storage (3.815154ms)
+✔ promotion expires and refuses overlong or malformed destination configuration (4.865934ms)
+✔ real hybrid encryption promotes exactly the three credentials and binds its destination (7.183807ms)
+✔ retries and concurrent callers return one stored ciphertext without changing the model lease (6.321321ms)
+✔ promotion uses dedicated control storage and fails closed without source credentials (3.074752ms)
+✔ storage and cryptographic failures return fixed errors with no credential values (1.480165ms)
+✔ promotion requires the isolated staging environment and actual database identity before credentials (2.009721ms)
+✔ accepted maximum-length UTF-8 credentials still produce a usable encrypted capsule (6.471847ms)
+✔ tokenizer exhausting the inference allowance cannot launch a one-millisecond completion (33.374866ms)
+✔ an exhausted initial allowance sends no tokenizer or completion request (0.243306ms)
+✔ already-aborted inference and direct requests cannot dispatch transport (0.389996ms)
+✔ readiness exhausting the allowance stops before tokenize and releases the lease without cooldown (1.220274ms)
+✔ staging readiness timeout is capped by the total remaining allowance (0.880403ms)
+✔ readiness, tokenizer and dispatched completion share 55 seconds and uncertain POST keeps cooldown (1.098871ms)
+✔ compacting an oversized context cannot renew an exhausted inference allowance (0.890629ms)
+✔ cancellation during tokenizer preflight prevents the completion POST (0.836377ms)
+✔ SSE already-aborted or zero-budget requests do not dispatch metadata or completion (0.587663ms)
+✔ SSE readiness exhausting the total allowance releases the lease without a completion cooldown (0.65921ms)
+✔ SSE readiness and body share the 55-second cap and a dispatched timeout retains cooldown (1.374025ms)
+✔ SSE cancellation during readiness prevents any completion POST (0.54529ms)
+✔ evaluation labels never enter requests for original or new cases (1.879726ms)
+✔ historical intent success does not hide unrelated Word answer or cancellation reconfirmation (1.540085ms)
+✔ PDF composition requires requested page and intermediate artifact, not only tool IDs (0.339731ms)
+✔ embedded instructions remain literal JSON data and composition retains minification (1.090629ms)
+✔ new file references cannot reuse an earlier step and changed goals exclude old operations (0.499321ms)
+✔ unavailable provider case uses observed catalog IDs and never fabricates unavailability (0.270117ms)
+✔ timeouts preserve completed usage and unknown outcome rather than inventing lost tokens (0.729247ms)
+✔ offline evaluation requires neither credentials nor network and records no neural results (47.636377ms)
+✔ live runner emits only eight original plan payloads with one inference each, without expected labels (356.895881ms)
+✔ live runner saves first timeout and stops without requesting a second case or retry (119.384259ms)
+✔ compact grammar bounds live tool IDs and the application still rejects untyped file or parameter mistakes (15.283123ms)
+✔ commands, missing user data and informational questions have distinct permitted intents (3.221122ms)
+✔ invented resize dimensions are rejected even if a model bypasses the output grammar (30.019571ms)
+✔ explicit intermediate tool IDs survive file compatibility bias in retrieval (3.390696ms)
+✔ Spanish clitic verbs retrieve intermediate operations without interpreting quoted payloads as commands (3.178177ms)
+✔ a compound PDF request reaches Queen when the old local planner found only its final conversion (43.066172ms)
+✔ declaring a PDF dependency while consuming the original file is rejected before conversion (31.649352ms)
+✔ model edits to literal JSON data are rejected before any execution (13.405109ms)
+✔ an unavailable image specialist cannot be replaced by an unrelated chat provider (15.492456ms)
+✔ a requested spreadsheet cannot be satisfied by PDF metadata operations (17.268807ms)
+✔ a checkpoint may reduce the inference budget to one without losing rejected output usage (12.238795ms)
+✔ a proposed execution message cannot announce tool success before execution (0.217156ms)
+✔ same task cannot reuse results for changed file bytes even when names and sizes match (13.510738ms)
+✔ SSE requires a finish event and DONE, handles split chunks and retains both authentication layers (22.093989ms)
+✔ staging observes the real llama slot before sending another tokenize or completion request (0.630268ms)
+✔ PDF image archive handoff permits only bounded PNG members from the existing producer (0.630328ms)
+✔ OCR continuation keeps the original task deadline, inference and step ceilings (2.675301ms)
+✔ unknown transport outcomes retain the reserved calls and unknown token counts (0.290146ms)
+✔ completed validation failures count every reported attempt and keep partial token usage (0.204678ms)
+✔ task deadline aborts an outstanding request without retrying it (14.515047ms)
+✔ harness task limits cannot be raised by an operation option (0.723307ms)
+✔ expired and wrong-owner requests are rejected before any bridge dispatch (0.266571ms)
+✔ timeout usage retains completed subtotals without presenting them as total consumption (0.274142ms)
+✔ bridge failure is an unknown outcome even if the wrapper returned JSON (0.252619ms)
+✔ specialist proof is pinned to one provider with fallback disabled (0.85824ms)
+✔ uncertain completion evidence blocks further Queen calls across transport error types (0.695095ms)
+✔ explicit Spanish and English page ordinals preserve extraction before conversion (15.079866ms)
+✔ information-only wording after a negation does not authorize an edit (0.46539ms)
+✔ Queen sees explicit ordinal-derived parameters and both operations without an answer fixture (75.655587ms)
+✔ numeric-looking select options are canonicalized without changing literal JSON (22.819359ms)
+✔ canonicalization never accepts a select value outside its declared choices (20.067122ms)
+✔ an echoed information request uses a bounded model repair instead of fabricated prose (12.378967ms)
+✔ cancellation is not followed by another permission request and the single-call cap is respected (23.878001ms)
+✔ the last available inference cannot request a retrieval that requires another model call (12.265126ms)
+✔ unavailable specialist capabilities are explicit model data without claiming execution (13.260481ms)
+✔ the message instruction permits an actual answer rather than five future-tense words (3.657678ms)
+✔ the file-plan grammar requires source references and all known operation slots (30.939375ms)
+✔ a model cannot silently omit conversion even when its first extraction is valid (34.521569ms)
+✔ explicit prohibitions filter both direct and indirect resizing tools from alternatives (21.420647ms)
+✔ an affirmative explanation cannot turn an explicitly forbidden action into the goal (14.905074ms)
+✔ an unavailable requested specialist cannot ask for style as if generation were ready (13.378879ms)
+✔ a prose response cut at the grammar boundary is rejected instead of counted as quality (12.298636ms)
+✔ a delegation label cannot hide a request for options of an unavailable capability (10.473262ms)
+✔ an explicit sequential file task cannot become two independent original-file operations (33.714786ms)
+✔ each step grammar permits only original files and preceding IDs, never own or future references (2.415571ms)
+✔ literal-text grammar keeps first inputs and dependencies empty without an invalid empty enum (2.499958ms)
+✔ generic or longer planning stays compact and delegates graph correctness to validation (2.843965ms)
+✔ execution grammar reserves output for the plan instead of replaceable prose or search (2.3419ms)
+✔ retrieval keeps its search field without expanding mixed non-execution grammar (2.523553ms)
+✔ a complete local file flow omits unrelated provider menus and empty UI preferences from the model only (33.953525ms)
+✔ a complete local flow retains meaningful procedure and manual preference context (35.33362ms)
+✔ staging rejects the production database even if the environment label says staging (7.973014ms)
+✔ staging verifies actual database identity rather than trusting Wrangler names (0.790539ms)
+✔ unauthorized staging requests never touch a database or inference endpoint (18.527599ms)
+✔ operator authorization uses a digest and does not return credentials (2.274589ms)
+✔ isolated Wrangler configuration does not reference any production D1 (0.722686ms)
+✔ staging runs actual existing tools and exports a structurally verified JSON artifact without model credentials (9.740501ms)
+✔ staging guard fixtures exercise actual validators and identify themselves as fixtures (0.643627ms)
+✔ the server-only evaluation option can request actual neural planning for a deterministic case (38.582412ms)
+✔ staging Wrangler activates Queen only in the isolated Production environment, keeping Preview disabled (0.463828ms)
+✔ diagnostic classification never copies upstream messages or authentication values (2.90745ms)
+✔ staging cannot increase the production token ceiling through the diagnostic option (2.188379ms)
+✔ Queen contracts mirror all 150 current registry entries and existing field definitions (9.110003ms)
+✔ Queen parameters reject invention, malformed values, missing data and canvas abuse (0.79143ms)
+✔ Queen validates a typed DAG and sorts forward references before execution (3.750888ms)
+✔ unknown IDs, cycles, missing dependencies, duplicate actions and incompatible files fail closed (0.684099ms)
+✔ a question or clarification never carries executable steps (0.206751ms)
+✔ every auxiliary and inference route carries BOTH Access headers and the llama API key (21.599485ms)
+✔ missing credentials and invalid config never send upstream requests (1.248877ms)
+✔ redirects and raw upstream errors are never exposed or followed (2.31468ms)
+✔ bounded JSON reading rejects chunked bodies larger than the limit (0.655456ms)
+✔ one timeout covers receiving the upstream body, not just response headers (10.481354ms)
+✔ llama tokenizer preflight refuses context overflow without running completion (1.846616ms)
+✔ Queen disables thinking, uses structured bounded output and records actual usage (1.324941ms)
+✔ truncated model output cannot be accepted as a plan (1.129638ms)
+✔ D1 lease serializes concurrent requests across independent callers and releases on errors (2.74803ms)
+✔ missing migration or database refuses inference without isolate-local locks (0.195514ms)
+✔ a real completion timeout leaves a five-minute staging cooldown instead of immediately queuing another request (0.701264ms)
+✔ public planner rate limits are enforced by SQLite without storing raw IPs (6.321532ms)
+✔ protected staging evaluations cannot consume the public planner request budget (2.99383ms)
+✔ Queen planner keeps unambiguous local operations off the VPS (22.789505ms)
+✔ semantic planning repairs one invalid proposal and never performs a tool action (16.174151ms)
+✔ semantic query expansion searches the real catalog once within the total inference budget (13.110636ms)
+✔ repeated malformed plans stop after exactly two proposals (11.115577ms)
+✔ question wording cannot be promoted into tool execution by a model (13.347482ms)
+✔ origin, content type and missing auth are safe explicit failures at the public endpoint (1.379333ms)
+✔ provider registry distinguishes advertised, executable and observed capabilities and excludes discarded vendors (0.545089ms)
+✔ independent verifier detects formatted JSON with changed input data (0.516597ms)
+✔ independent verifier checks numeric line ordering through the real local engine (3.350056ms)
+✔ generated prose remains verification-pending even when the model says succeeded (0.095914ms)
+✔ DAG executes real local JSON transforms, hands off text and verifies without network (1.793436ms)
+✔ completed DAG steps are idempotent, changed params cannot reuse their records (0.553532ms)
+✔ failure preserves completed steps and never executes dependent steps (0.706692ms)
+✔ a previously validated label cannot hide corrupt artifact bytes (0.604549ms)
+✔ DAG rejects unapproved external operations, cancellation and time exhaustion (6.65279ms)
+✔ bounded local recovery only changes the failed step parameters and does not replay predecessors (0.663157ms)
+✔ verification failure cannot trigger another execution or spend an external quota (0.411799ms)
+✔ browser client sends only metadata and procedure references, with no files or conversation dumps (0.500442ms)
+✔ browser client aborts non-success responses so unread error bodies are cancelled (0.348884ms)
+✔ provider observations persist model and modality evidence without promoting unrelated capabilities (1.026032ms)
+✔ modality validation never accepts a chat model for image generation (0.23299ms)
+✔ resume after a failed step uses existing completion evidence without replaying its dependency (0.703368ms)
+✔ task memory cancels the previous objective and retains same-format procedures only for follow-ups (2.101769ms)
+✔ new task IDs cannot inherit another task completion ledger (0.493151ms)
+✔ live confidence stays unknown until actual model cases are measured (0.213691ms)
+✔ approved specialist delegation can execute after server capability validation while prose stays unverified (0.39902ms)
+✔ context compaction rechecks actual tokens without increasing context or generation concurrency (0.999723ms)
+✔ ordinary online tools do not require an unrelated AI provider delegation (13.096305ms)
+✔ archive resource limits reject oversized expansion before running ZIP decompression (0.437448ms)
+✔ an uncertain external result cannot be retried when resuming the same task (0.570567ms)
+Prisma research: Tavily unavailable; trying Jina { code: 'TAVILY_LIMIT', status: 429 }
+Prisma research: Tavily unavailable; trying Jina { code: 'TAVILY_NOT_CONFIGURED', status: null }
+✔ Tavily is preferred and returns normalized cited sources (24.498248ms)
+✔ Jina is used when Tavily is unavailable and returns markdown SERP sources (5.875531ms)
+✔ Tavily rotates credentials only after key authentication failures (1.151501ms)
+✔ research rejects cross-origin requests and missing search credentials (0.989477ms)
+✔ Tavily credentials can be consolidated into one encrypted JSON binding (0.743568ms)
+✔ Jina can be tested independently without calling Tavily (1.622689ms)
+✔ Tavily can be tested independently without silently falling back to Jina (0.947815ms)
+✔ catalogue scales without a fixed batch size and preserves original pages (4.375256ms)
+✔ invalid catalogue entries fail before writing HTML (0.525931ms)
+✔ every preset matches the app allowlist and only supported URL fields are emitted (1.74982ms)
+✖ rendered pages have one H1, unique metadata, valid JSON-LD and real CTA (3.734534ms)
+✖ directory categories and sitemap expose exactly the current URLs (1.996211ms)
+✖ SEO category, solution and guide hubs are useful, canonical and internally connected (0.880413ms)
+✔ the entire registry is accounted for with no undocumented omissions (2.031653ms)
+✔ new landing tools expose actual input fields and format selectors (2.08272ms)
+✔ local advertised operations produce expected outputs through the real dispatcher (13.247482ms)
+✔ previously excluded multiline and formatter issues remain repaired (0.588905ms)
+node:internal/fs/promises:1345
+  return new FileHandle(await PromisePrototypeThen(
+                        ^
+
+Error: ENOENT: no such file or directory, open '/workspace/work/PRISMA-queen-422/prisma/dist/sitemap.xml'
+    at async open (node:internal/fs/promises:1345:25)
+    at async readFile (node:internal/fs/promises:2003:14)
+    at async file:///workspace/work/PRISMA-queen-422/prisma/tests/seo-international.test.mjs:16:15 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/workspace/work/PRISMA-queen-422/prisma/dist/sitemap.xml'
+}
+
+Node.js v24.22.1
+✖ prisma/tests/seo-international.test.mjs (37.777893ms)
+Prisma account/settings regressions: compact menu, non-dimming surface, preferences, help and send shortcut verified.
+✔ profile menu stays compact and does not dim the workspace (1.014785ms)
+✔ settings panel exposes real sections and help destinations (0.472951ms)
+✔ appearance preferences are persisted and applied to the interface (0.206861ms)
+✔ message send shortcut is configurable without changing Shift+Enter behavior (0.189135ms)
+✔ mobile settings have a safe-area toolbar and a true grouped home (0.415044ms)
+✔ mobile back moves to settings home and close exits the dialog (0.126029ms)
+✔ help links align consistently and preserve real destinations (0.164317ms)
+✔ starting screen preference is stored and restored at startup (0.127461ms)
+✔ guests see visible entry points once session resolution identifies them as guests (0.277477ms)
+✔ guest buttons open the requested authentication screen without an extra intro step (0.227201ms)
+✔ login and signup tabs both show a working Google entry point (0.27941ms)
+✔ registration does not require avatar selection, but profile editing retains it (0.219439ms)
+✔ multi-operation PDF plans retain downstream Word and explicit file order (10.154613ms)
+✔ cancellation and format changes cannot revive pending split across conversations (5.353847ms)
+✔ conditional and cancelled file operations do not execute (0.329496ms)
+✔ downstream operations cannot revive a forbidden conversion (0.428213ms)
+Prisma welcome provider status: 500
+Prisma Aurora welcome email regressions passed.
+✔ prisma/tests/welcome-email.test.mjs (60.424514ms)
+ℹ tests 290
+ℹ suites 0
+ℹ pass 285
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4873.679666
+
+✖ failing tests:
+
+test at prisma/tests/ads-txt.test.mjs:5:1
+✖ Google AdSense ads.txt is published at the site root (3.696545ms)
+  Error: ENOENT: no such file or directory, open '/workspace/work/PRISMA-queen-422/prisma/dist/ads.txt'
+      at async open (node:internal/fs/promises:1345:25)
+      at async readFile (node:internal/fs/promises:2003:14)
+      at async TestContext.<anonymous> (file:///workspace/work/PRISMA-queen-422/prisma/tests/ads-txt.test.mjs:6:19)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/workspace/work/PRISMA-queen-422/prisma/dist/ads.txt'
+  }
+
+test at prisma/tests/seo-build.test.mjs:44:1
+✖ rendered pages have one H1, unique metadata, valid JSON-LD and real CTA (3.734534ms)
+  Error: ENOENT: no such file or directory, open '/workspace/work/PRISMA-queen-422/prisma/dist/herramientas/pdf-a-word/index.html'
+      at async open (node:internal/fs/promises:1345:25)
+      at async readFile (node:internal/fs/promises:2003:14)
+      at async TestContext.<anonymous> (file:///workspace/work/PRISMA-queen-422/prisma/tests/seo-build.test.mjs:47:70)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/workspace/work/PRISMA-queen-422/prisma/dist/herramientas/pdf-a-word/index.html'
+  }
+
+test at prisma/tests/seo-build.test.mjs:71:1
+✖ directory categories and sitemap expose exactly the current URLs (1.996211ms)
+  Error: ENOENT: no such file or directory, open '/workspace/work/PRISMA-queen-422/prisma/dist/herramientas/index.html'
+      at async open (node:internal/fs/promises:1345:25)
+      at async readFile (node:internal/fs/promises:2003:14)
+      at async TestContext.<anonymous> (file:///workspace/work/PRISMA-queen-422/prisma/tests/seo-build.test.mjs:72:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/workspace/work/PRISMA-queen-422/prisma/dist/herramientas/index.html'
+  }
+
+test at prisma/tests/seo-build.test.mjs:93:1
+✖ SEO category, solution and guide hubs are useful, canonical and internally connected (0.880413ms)
+  Error: ENOENT: no such file or directory, open '/workspace/work/PRISMA-queen-422/prisma/dist/categorias/index.html'
+      at async open (node:internal/fs/promises:1345:25)
+      at async readFile (node:internal/fs/promises:2003:14)
+      at async checkPage (file:///workspace/work/PRISMA-queen-422/prisma/tests/seo-build.test.mjs:96:14)
+      at async TestContext.<anonymous> (file:///workspace/work/PRISMA-queen-422/prisma/tests/seo-build.test.mjs:113:22)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/workspace/work/PRISMA-queen-422/prisma/dist/categorias/index.html'
+  }
+
+test at prisma/tests/seo-international.test.mjs:1:1
+✖ prisma/tests/seo-international.test.mjs (37.777893ms)
+  'test failed'

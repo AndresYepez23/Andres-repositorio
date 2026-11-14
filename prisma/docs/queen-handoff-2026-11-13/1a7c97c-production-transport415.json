@@ -1,0 +1,26 @@
+{
+  "at": "2026-11-14T00:51:56.927Z",
+  "base": "https://prismaspace.space",
+  "kind": "single-real-browser-transport-control",
+  "tlsVerification": "environment-proxy-context-exception",
+  "request": {
+    "method": "POST",
+    "path": "/api/core/plan",
+    "contentType": "text/plain",
+    "body": {
+      "text": "",
+      "files": []
+    }
+  },
+  "maximumModelInferences": 0,
+  "postsDispatched": 1,
+  "httpStatus": 415,
+  "bodyReadCompleted": true,
+  "ok": true,
+  "dispatchedAt": "2026-11-14T00:51:57.957Z",
+  "responseHeadersAt": "2026-11-14T00:51:58.209Z",
+  "bodyBytes": 42,
+  "code": "INVALID_CONTENT_TYPE",
+  "durationMs": 265,
+  "nextHopProtocol": "h2"
+}

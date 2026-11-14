@@ -1,0 +1,31 @@
+{
+  "at": "2026-11-14T07:37:52.273Z",
+  "base": "https://2e3bdf32.prisma-queen-staging.pages.dev",
+  "route": "plan",
+  "clientDurationMs": 55440,
+  "httpStatus": 422,
+  "body": {
+    "ok": false,
+    "code": "QUEEN_TRUNCATED_PLAN",
+    "diagnostics": {
+      "finishReason": "length",
+      "preflightInputTokens": 456,
+      "contextLimit": 2048,
+      "maxOutputTokens": 256,
+      "reasoningContentPresent": false,
+      "thinkingTagsPresent": false,
+      "observedInputTokens": 468,
+      "observedOutputTokens": 256,
+      "generationTokensPerSecond": 6.545694026846278,
+      "promptTokensPerSecond": 34.138003023109825,
+      "completedInputTokens": 0,
+      "completedOutputTokens": 0,
+      "completedInferences": 0,
+      "inferencesAttempted": 1,
+      "trace": []
+    },
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "durationMs": 55276
+  }
+}

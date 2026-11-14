@@ -1,3 +1,5 @@
+import {assessQwenCorePlanCoverage} from './qwen-core-plan-coverage.js';
+import {toolContract} from './queen-contracts.js';
 import { planCapabilityRequest, isInformationalIntent } from './core-capabilities.js';
 import { planFileConversion } from './file-conversions.js';
 import { tools, categories } from "./registry.js";
@@ -34,7 +36,8 @@ function publicTool(tool) {
     multiple: Boolean(tool.multiple),
     maxFiles: tool.maxFiles || null,
     accept: tool.accept || null,
-    tag: tool.tag || null
+    tag: tool.tag || null,
+    contract: toolContract(tool)
   };
 }
 
@@ -176,6 +179,12 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
     };
   });
 
+  // A tool may be relevant without satisfying every explicit objective.
+  // Incomplete deterministic proposals must go to semantic planning instead
+  // of being presented as completed, executable workflows.
+  const coverage=assessQwenCorePlanCoverage(request,steps);
+  const incomplete=selected?.type==='ready'&&coverage.needsSemanticReview;
+
   return {
     ok: true,
     request,
@@ -185,10 +194,11 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
     counts: counts(tools),
     matches,
     planner: {
-      source: selected?.source || "prisma-core-catalog",
-      type: selected?.type || "needs-planning",
-      message: selected?.message || "Prisma Core no encontró un flujo determinista de alta confianza para esta solicitud. Se requiere planificación semántica adicional.",
-      steps
+      source: incomplete ? "qwen-core-goal-review" : selected?.source || "prisma-core-catalog",
+      type: incomplete ? "needs-planning" : selected?.type || "needs-planning",
+      message: incomplete ? "El plan local no cubre todas las condiciones de la solicitud. Se requiere una planificación más completa." : selected?.message || "Prisma Core no encontró un flujo determinista de alta confianza para esta solicitud. Se requiere planificación semántica adicional.",
+      steps: incomplete ? [] : steps,
+      ...(incomplete ? {goalCoverage:coverage} : {})
     },
     execution: {
       executed: false,

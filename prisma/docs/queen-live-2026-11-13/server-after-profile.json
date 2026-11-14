@@ -1,0 +1,29 @@
+{
+  "route": "server",
+  "httpStatus": 200,
+  "clientDurationMs": 1255,
+  "body": {
+    "ok": true,
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "observations": {
+      "props": {
+        "available": true,
+        "totalSlots": 1,
+        "contextTokens": 2048
+      },
+      "slots": {
+        "available": true,
+        "slots": [
+          {
+            "id": 0,
+            "contextTokens": 2048,
+            "isProcessing": false
+          }
+        ]
+      }
+    },
+    "physicalRamCpuMeasured": false,
+    "note": "API slot/context state does not measure physical VPS RAM or CPU."
+  }
+}

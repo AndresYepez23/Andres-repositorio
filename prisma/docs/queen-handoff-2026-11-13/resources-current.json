@@ -1,0 +1,119 @@
+{
+  "at": "2026-11-14T01:05:42.264Z",
+  "resources": [
+    {
+      "project": "prismaspace",
+      "id": "c89b887d-199c-4a60-b9b5-58f743cc69dd",
+      "canonical": "6a41daae-1c35-4123-9761-cb99de2ca969",
+      "url": "https://6a41daae.prismaspace.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-11-14T00:53:38.054408Z",
+        "status": "success"
+      },
+      "sourceCommit": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+      "productionBranch": "main",
+      "compatibilityDate": "2026-11-08",
+      "compatibilityFlags": [
+        "nodejs_compat"
+      ],
+      "d1": {
+        "PRISMA_RATE_DB": {
+          "id": "e02104b5-0861-475a-a60f-7658439d4fe0"
+        },
+        "QUEEN_CONTROL_DB": {
+          "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+        }
+      },
+      "queenVars": {
+        "QUEEN_ACCESS_CLIENT_ID": {
+          "type": "secret_text"
+        },
+        "QUEEN_ACCESS_CLIENT_SECRET": {
+          "type": "secret_text"
+        },
+        "QUEEN_API_KEY": {
+          "type": "secret_text"
+        },
+        "QUEEN_BASE_URL": {
+          "type": "plain_text",
+          "value": "https://queen.prismaspace.space/v1"
+        },
+        "QUEEN_ENABLED": {
+          "type": "plain_text",
+          "value": "1"
+        },
+        "QUEEN_MODEL": {
+          "type": "plain_text",
+          "value": "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+        },
+        "QUEEN_STAGE": {
+          "type": "plain_text",
+          "value": "production"
+        }
+      }
+    },
+    {
+      "project": "prisma-queen-staging",
+      "id": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+      "canonical": "46506668-10ee-4ff7-998c-c64ef469f4ee",
+      "url": "https://46506668.prisma-queen-staging.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-11-14T00:38:07.467164Z",
+        "status": "success"
+      },
+      "sourceCommit": "1a7c97c954bf8b951059843c102b69a706b18526",
+      "productionBranch": "feature/prisma-neural-genixnode-qwen35-pilot",
+      "compatibilityDate": "2026-11-08",
+      "compatibilityFlags": [
+        "nodejs_compat"
+      ],
+      "d1": {
+        "PRISMA_RATE_DB": {
+          "id": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+        }
+      },
+      "queenVars": {
+        "QUEEN_ACCESS_CLIENT_ID": {
+          "type": "secret_text"
+        },
+        "QUEEN_ACCESS_CLIENT_SECRET": {
+          "type": "secret_text"
+        },
+        "QUEEN_API_KEY": {
+          "type": "secret_text"
+        },
+        "QUEEN_BASE_URL": {
+          "type": "plain_text",
+          "value": "https://queen.prismaspace.space/v1"
+        },
+        "QUEEN_ENABLED": {
+          "type": "plain_text",
+          "value": "1"
+        },
+        "QUEEN_MODEL": {
+          "type": "plain_text",
+          "value": "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+        },
+        "QUEEN_SOURCE_COMMIT": {
+          "type": "plain_text",
+          "value": "1a7c97c954bf8b951059843c102b69a706b18526"
+        },
+        "QUEEN_STAGE": {
+          "type": "plain_text",
+          "value": "staging"
+        },
+        "QUEEN_STAGING_DATABASE_ID": {
+          "type": "plain_text",
+          "value": "980bad8f-0356-48b9-87bc-56bcf363f69a"
+        },
+        "QUEEN_STAGING_KEY_SHA256": {
+          "type": "secret_text"
+        }
+      }
+    }
+  ]
+}

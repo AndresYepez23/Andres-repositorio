@@ -1,0 +1,421 @@
+{
+  "date": "2026-11-13T12:22:49.457Z",
+  "base": "https://6dfc22a1.prisma-queen-staging.pages.dev",
+  "mode": "live",
+  "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "productionModified": false,
+  "modelCompletionsObserved": 2,
+  "modelRequestsWithUnknownOutcome": 9,
+  "realVpsRamCpuMeasurement": false,
+  "rows": [
+    {
+      "id": "question-not-permission",
+      "status": "failed",
+      "httpStatus": 422,
+      "clientDurationMs": 38915,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_RETRIEVAL_REJECTED",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 38769
+      }
+    },
+    {
+      "id": "negation",
+      "status": "failed",
+      "httpStatus": 503,
+      "clientDurationMs": 56461,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 56313
+      }
+    },
+    {
+      "id": "missing-parameter",
+      "status": "failed",
+      "httpStatus": 422,
+      "clientDurationMs": 46385,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_RETRIEVAL_REJECTED",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 46270
+      }
+    },
+    {
+      "id": "multi-step-pdf",
+      "status": "failed",
+      "httpStatus": 503,
+      "clientDurationMs": 55953,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 55824
+      }
+    },
+    {
+      "id": "json-payload",
+      "status": "failed",
+      "httpStatus": 422,
+      "clientDurationMs": 41851,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_RETRIEVAL_REJECTED",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 41504
+      }
+    },
+    {
+      "id": "cancel",
+      "status": "failed",
+      "httpStatus": 422,
+      "clientDurationMs": 36412,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_RETRIEVAL_REJECTED",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 36252
+      }
+    },
+    {
+      "id": "specialist-image",
+      "status": "failed",
+      "httpStatus": 422,
+      "clientDurationMs": 50865,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_RETRIEVAL_REJECTED",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 50710
+      }
+    },
+    {
+      "id": "unsupported-pdf-ocr-chain",
+      "status": "failed",
+      "httpStatus": 503,
+      "clientDurationMs": 56395,
+      "body": {
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "diagnostics": null,
+        "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+        "environment": "staging",
+        "durationMs": 56216
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "truncated-output",
+      "expectedCode": "QUEEN_TRUNCATED_PLAN",
+      "passed": true,
+      "result": {
+        "httpStatus": 422,
+        "clientDurationMs": 2372,
+        "body": {
+          "ok": false,
+          "code": "QUEEN_TRUNCATED_PLAN",
+          "diagnostics": {
+            "finishReason": "length",
+            "preflightInputTokens": 64,
+            "contextLimit": 2048,
+            "maxOutputTokens": 8,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 76,
+            "observedOutputTokens": 8,
+            "generationTokensPerSecond": 6.706696061157404,
+            "promptTokensPerSecond": 14.403099547022519
+          },
+          "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+          "environment": "staging",
+          "durationMs": 2224
+        }
+      }
+    }
+  ],
+  "status": "evaluated",
+  "health": {
+    "httpStatus": 200,
+    "clientDurationMs": 358,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "queenEnabled": true,
+      "missingSecrets": [],
+      "sourceCommit": "a9c6fc9ebb7e69fb7196cc6f954622c4f43e8aef"
+    }
+  },
+  "localTools": {
+    "httpStatus": 200,
+    "clientDurationMs": 165,
+    "body": {
+      "ok": true,
+      "realInference": false,
+      "planSource": "deterministic-test-fixture",
+      "executed": true,
+      "verified": true,
+      "toolIds": [
+        "json-format",
+        "json-minify"
+      ],
+      "text": "{\"prisma\":true,\"valor\":7}",
+      "durationMs": 0,
+      "artifact": {
+        "status": "verified",
+        "evidence": [
+          {
+            "check": "artifact",
+            "passed": true,
+            "bytes": 25,
+            "sha256": "ad343fada0903d30d6b5f72b395924c174c21b2fe25cbf54d7e8ec80ab2a4b6c",
+            "checks": [
+              "exists",
+              "nonempty",
+              "sha256",
+              "parsed-json",
+              "parsed-json"
+            ]
+          }
+        ],
+        "unverified": []
+      },
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging"
+    }
+  },
+  "guards": {
+    "httpStatus": 200,
+    "clientDurationMs": 320,
+    "body": {
+      "ok": true,
+      "realInference": false,
+      "planSource": "adversarial-test-fixtures",
+      "checks": [
+        {
+          "id": "unknown-tool",
+          "rejected": true
+        },
+        {
+          "id": "cycle",
+          "rejected": true
+        },
+        {
+          "id": "question-with-actions",
+          "rejected": true
+        },
+        {
+          "id": "invalid-parameters",
+          "rejected": true
+        }
+      ],
+      "corruptJsonRejected": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging"
+    }
+  },
+  "models": {
+    "httpStatus": 200,
+    "clientDurationMs": 1224,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "models": [
+        "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
+      ],
+      "tokenize": {
+        "ok": true,
+        "tokens": 7
+      },
+      "durationMs": 1067
+    }
+  },
+  "server": {
+    "httpStatus": 200,
+    "clientDurationMs": 1427,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "observations": {
+        "props": {
+          "available": true,
+          "totalSlots": 1,
+          "contextTokens": 2048
+        },
+        "slots": {
+          "available": true,
+          "slots": [
+            {
+              "id": 0,
+              "contextTokens": 2048,
+              "isProcessing": false
+            }
+          ]
+        }
+      },
+      "physicalRamCpuMeasured": false,
+      "note": "API slot/context state does not measure physical VPS RAM or CPU."
+    }
+  },
+  "smoke": {
+    "httpStatus": 200,
+    "clientDurationMs": 14816,
+    "body": {
+      "ok": true,
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "realInference": true,
+      "plan": {
+        "taskId": "7167048f-e358-4423-9833-e720ab025eee",
+        "objective": "Formatea {\"prisma\":true}",
+        "intent": "execute",
+        "message": "JSON formateado correctamente.",
+        "steps": [
+          {
+            "id": "s1",
+            "tool_id": "json-format",
+            "params": {
+              "text": "{\"prisma\":true}"
+            },
+            "dependsOn": [],
+            "inputs": [],
+            "status": "planned"
+          }
+        ],
+        "constraints": [
+          "catalog-only",
+          "existing-permissions",
+          "verify-before-success"
+        ],
+        "status": "validated",
+        "needs_clarification": false,
+        "question": "",
+        "execution": {
+          "executed": false,
+          "verified": false
+        }
+      },
+      "metrics": {
+        "inputTokens": 76,
+        "outputTokens": 91,
+        "externalCostUsd": 0,
+        "durationMs": 14687,
+        "finishReason": "stop",
+        "preflightInputTokens": 64,
+        "contextLimit": 2048,
+        "maxOutputTokens": 256,
+        "reasoningContentPresent": false,
+        "thinkingTagsPresent": false,
+        "observedInputTokens": 76,
+        "observedOutputTokens": 91,
+        "generationTokensPerSecond": 6.810315903313491,
+        "promptTokensPerSecond": 14.037944564156916
+      },
+      "execution": {
+        "status": "verified",
+        "executed": true,
+        "verified": true,
+        "results": [
+          {
+            "tool": "json-format",
+            "text": "{\n  \"prisma\": true\n}",
+            "verification": {
+              "status": "verified",
+              "evidence": [
+                {
+                  "check": "parsed-json",
+                  "passed": true
+                },
+                {
+                  "check": "input-data-preserved",
+                  "passed": true
+                },
+                {
+                  "check": "nonempty-text",
+                  "passed": true
+                }
+              ],
+              "unverified": []
+            }
+          }
+        ]
+      },
+      "artifact": {
+        "status": "verified",
+        "evidence": [
+          {
+            "check": "artifact",
+            "passed": true,
+            "bytes": 20,
+            "sha256": "61a7b00c2d484940ed1fe38e9337a8434dc3fc393cc0c794b362f364b5bf984b",
+            "checks": [
+              "exists",
+              "nonempty",
+              "sha256",
+              "parsed-json",
+              "parsed-json"
+            ]
+          }
+        ],
+        "unverified": []
+      }
+    }
+  },
+  "composition": {
+    "httpStatus": 422,
+    "clientDurationMs": 42426,
+    "body": {
+      "ok": false,
+      "code": "QUEEN_TRUNCATED_PLAN",
+      "diagnostics": {
+        "finishReason": "length",
+        "preflightInputTokens": 577,
+        "contextLimit": 2048,
+        "maxOutputTokens": 256,
+        "reasoningContentPresent": false,
+        "thinkingTagsPresent": false,
+        "observedInputTokens": 589,
+        "observedOutputTokens": 256,
+        "generationTokensPerSecond": 6.60688001620888,
+        "promptTokensPerSecond": 27.35011317476832
+      },
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "durationMs": 42228
+    }
+  },
+  "reportedTokenTotals": {
+    "inputTokens": 152,
+    "outputTokens": 99,
+    "complete": false
+  },
+  "selection": {
+    "requestedCases": 8,
+    "validatedNeuralResponses": 0,
+    "attemptedCases": 8,
+    "correct": null,
+    "correctAmongValidatedPercent": null,
+    "endToEndPassPercent": 0,
+    "note": "Blocked/not-requested cases are never counted as failures of Qwen. Selection does not prove artifact verification."
+  }
+}

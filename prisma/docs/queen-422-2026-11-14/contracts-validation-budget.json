@@ -1,0 +1,17 @@
+{
+  "purpose": "Single controlled validation of authoritative short-flow contracts after two known truncations",
+  "authorization": "Latest explicit authorization to complete Queen; bounded sequential validation, no retry of uncertain requests",
+  "allowedModelInferences": 1,
+  "inferencesDispatched": 1,
+  "attemptReserved": true,
+  "sourceCommit": "1b06ec1b44ebf4788a3edd873e7f83efc5f3191f",
+  "deploymentId": "f407d7d7-fdee-4a37-b4d4-8927f1ca97c2",
+  "payloadSha256": "db7f24773e8b4dece594f14bed55f265c5c04be2ebe176e0e42956494facbc4d",
+  "reservedAt": "2026-11-14T07:55:12.034984+00:00",
+  "maxInferences": 1,
+  "rawGeneratedContentPrivate": true,
+  "modelInferencesObserved": 1,
+  "httpStatus": 422,
+  "resultCode": "QUEEN_PLAN_REJECTED",
+  "repeatProhibited": true
+}

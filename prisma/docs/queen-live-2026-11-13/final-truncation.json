@@ -1,0 +1,20 @@
+{
+  "route": "truncation",
+  "httpStatus": 503,
+  "clientDurationMs": 55421,
+  "body": {
+    "ok": false,
+    "code": "QUEEN_TIMEOUT",
+    "diagnostics": {
+      "preflightInputTokens": 64,
+      "contextLimit": 2048,
+      "maxOutputTokens": 8,
+      "completionTransportAttempted": true,
+      "durationMs": 55000,
+      "cooldownUntil": 1794578593242
+    },
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "durationMs": 55276
+  }
+}

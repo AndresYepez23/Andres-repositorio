@@ -1,0 +1,11 @@
+test_delegated_mount_does_not_claim_invisible_ancestors_complete (test_inspect_vps_residency.ResidencyTests.test_delegated_mount_does_not_claim_invisible_ancestors_complete) ... ok
+test_docker_reads_use_empty_config_local_socket_and_no_inherited_env (test_inspect_vps_residency.ResidencyTests.test_docker_reads_use_empty_config_local_socket_and_no_inherited_env) ... ok
+test_missing_nonroot_control_is_unknown_not_unlimited (test_inspect_vps_residency.ResidencyTests.test_missing_nonroot_control_is_unknown_not_unlimited) ... ok
+test_parent_limits_count_and_absent_v2_root_controls_are_not_failures (test_inspect_vps_residency.ResidencyTests.test_parent_limits_count_and_absent_v2_root_controls_are_not_failures) ... ok
+test_selects_llama_not_tini_and_preserves_partial_report (test_inspect_vps_residency.ResidencyTests.test_selects_llama_not_tini_and_preserves_partial_report) ... ok
+test_smaps_aggregates_residency_without_paths_or_guessed_kv (test_inspect_vps_residency.ResidencyTests.test_smaps_aggregates_residency_without_paths_or_guessed_kv) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.004s
+
+OK

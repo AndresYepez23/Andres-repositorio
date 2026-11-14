@@ -1,0 +1,21 @@
+{
+  "project": "prisma-queen-staging",
+  "pagesEnvironment": "production",
+  "deploymentId": "2368e044-b65a-446e-87e5-b0a910cac9f2",
+  "url": "https://2368e044.prisma-queen-staging.pages.dev",
+  "branch": "feature/prisma-neural-genixnode-qwen35-pilot",
+  "deploymentCommitMetadata": "a9c6fc9ebb7e69fb7196cc6f954622c4f43e8aef",
+  "commitDirty": true,
+  "sourceNote": "Built from the working tree whose code is preserved by this handoff. Deployment still records the previous published SHA; no deployment was made after the user prioritized preservation.",
+  "workerBytes": 747763,
+  "workerSha256": "dccd715b8d2f4ba100d28df611e664c5efe4295676e5d8b4fe103bae7a2eb779",
+  "d1": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "contextTokens": 2048,
+  "slots": 1,
+  "maxOutputTokens": 256,
+  "mainSha": "42dade166714c6eaaff210fe0377cfba68da8d9c",
+  "primaryProductionModified": false,
+  "primaryConfigurationModified": false,
+  "implementationPreservedInCommit": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+  "mainShaIsSessionBaseline": true
+}

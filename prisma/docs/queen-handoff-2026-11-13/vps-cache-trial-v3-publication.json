@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "blob": "ff88c3c467a738e8b3a2352debd444adade749ce",
+  "sha256": "ec69c89a352dca04bfb0a34175855da672f469335a28f9df7326320adfeb57ee",
+  "bytes": 51684,
+  "offlineTestsPassed": 51,
+  "vpsExecutedByCodex": false,
+  "observedV2": {
+    "recreated": true,
+    "oldContainerId": "da9f1c7b7e0d66dfc5e720a034cca90cf4266184dea3b0c47f055d751555831c",
+    "createdContainerId": "51b5710534195359bd095e40acadfd6a981d43acb34bed91dd1e9e83c3f58b1f",
+    "completionAttempted": false,
+    "errorCode": "TRIAL_CHECK_FAILED",
+    "stagePrinted": "3/4 waiting-readiness",
+    "exactExceptionUnknown": true
+  },
+  "nextMode": "--resume",
+  "preservesOriginalControllerSnapshotAndCompletionReservation": true
+}

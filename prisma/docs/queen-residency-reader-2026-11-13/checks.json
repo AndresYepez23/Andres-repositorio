@@ -1,0 +1,17 @@
+{
+  "startingCommit": "25a9c9e878b7895b3f1150eb133c7b48c0f07b1b",
+  "readerSha256": "d5fca69ce2b5059cb006625757520304b0024cbc23411eaa795ed41824b96c33",
+  "targetedOfflineTestsPassed": 6,
+  "testsUseFixtures": true,
+  "realVpsReads": 0,
+  "generationRequests": 0,
+  "sshIdentityAvailable": false,
+  "shellBlockSyntax": "passed; not executed",
+  "cliHelp": "passed; capture not invoked",
+  "changesRequireUserApproval": true,
+  "manualIntervention": "One SSH block, one sanitized evidence archive. No model request.",
+  "runtimeCodeChanged": false,
+  "priorNodeBaseline": 236,
+  "priorPythonTests": 19,
+  "priorBatteriesRerunLocally": false
+}

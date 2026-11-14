@@ -1,0 +1,77 @@
+{
+  "sourceCommit": "1a7c97c954bf8b951059843c102b69a706b18526",
+  "project": "prismaspace",
+  "startedAt": "2026-11-14T00:33:10.760Z",
+  "status": "complete",
+  "scope": "Pages immutable asset cache only; no deployment or configuration changes",
+  "manifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+  "manifestGzipSha256": "ab8c26f659564b2aafbaaf2c774183eb777f4543d4ebe482b60a16e5ce57e3d0",
+  "assetCount": 444,
+  "buckets": [
+    {
+      "bucket": 0,
+      "assets": 28,
+      "uploaded": 0,
+      "alreadyPresent": 28,
+      "remainingMissing": 0,
+      "compressedSha256": "f527300654a6c4c28cac84a2f477a9df78faeb83f261a698c6de20b242eb63df",
+      "manifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+      "integrityVerified": true,
+      "cacheVerified": true
+    },
+    {
+      "bucket": 1,
+      "assets": 158,
+      "uploaded": 0,
+      "alreadyPresent": 158,
+      "remainingMissing": 0,
+      "compressedSha256": "23e0441bfd5b79e422f268fcc5a21cb8fdfe68be2ec4b46c312fd2667df8cdb0",
+      "manifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+      "integrityVerified": true,
+      "cacheVerified": true
+    },
+    {
+      "bucket": 2,
+      "assets": 153,
+      "uploaded": 0,
+      "alreadyPresent": 153,
+      "remainingMissing": 0,
+      "compressedSha256": "f6f3853d9e038cb2aeb8b5cf296bcb90794116e937a2bc4443e62a4710f69e82",
+      "manifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+      "integrityVerified": true,
+      "cacheVerified": true
+    },
+    {
+      "bucket": 3,
+      "assets": 82,
+      "uploaded": 0,
+      "alreadyPresent": 82,
+      "remainingMissing": 0,
+      "compressedSha256": "a13bda75a478612eff7f4a735aded29250a90f02a2eed175482e6096e6436d64",
+      "manifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+      "integrityVerified": true,
+      "cacheVerified": true
+    },
+    {
+      "bucket": 4,
+      "assets": 23,
+      "uploaded": 0,
+      "alreadyPresent": 23,
+      "remainingMissing": 0,
+      "compressedSha256": "7c3b1555e9e14fab89b7bb668111450c61ec220b2e350c86ef7d4e15088ebbcf",
+      "manifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+      "integrityVerified": true,
+      "cacheVerified": true
+    }
+  ],
+  "uploaded": 0,
+  "alreadyPresent": 444,
+  "verifiedAssets": 444,
+  "finishedAt": "2026-11-14T00:33:19.234Z",
+  "credentialTransport": "RSA-OAEP/AES-GCM encrypted scoped JWT; private0600curl configuration",
+  "credentialFilesRemoved": true,
+  "preservation": {
+    "adsTxtMatchesCanonical": true,
+    "canonicalGitBlob": "e8d3c8009452232e25a344822e7763f16552391d"
+  }
+}

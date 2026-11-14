@@ -1,0 +1,19 @@
+{
+  "project": "prisma-queen-staging",
+  "projectId": "4d1eca8d-7adb-4b5e-aa46-d39165633679",
+  "deploymentId": "2e3bdf32-4786-4ace-900d-4756c1e67700",
+  "url": "https://2e3bdf32.prisma-queen-staging.pages.dev",
+  "sourceCommit": "614bc06c82b006b33660506635a54eaaeba40434",
+  "environment": "production",
+  "logicalEnvironment": "staging",
+  "status": "success",
+  "endedOn": "2026-11-14T07:37:11.119107Z",
+  "workerSha256": "01cab3aced9993524b3a2801e81f039ebfbfcf9b7df72404f2d795304c44667d",
+  "workerBytes": 766316,
+  "d1": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+  "operatorSecretRenewed": true,
+  "queenSecretsChanged": false,
+  "principalProjectModified": false,
+  "genixNodeModified": false,
+  "metadataWarning": "health.sourceCommit came from stale QUEEN_SOURCE_COMMIT=1a7c97c; deployment source and built artifact identify 614bc06."
+}

@@ -1,0 +1,116 @@
+{
+  "generatedAt": "2026-11-14T00:17:57.115Z",
+  "realBrowserEngines": true,
+  "realInference": false,
+  "selectedCases": [
+    "digital-pdf-word"
+  ],
+  "fixtures": {
+    "digital": {
+      "name": "queen-three-pages.pdf",
+      "type": "application/pdf",
+      "size": 1305
+    },
+    "scan": {
+      "name": "queen-scan.csv.pdf",
+      "type": "application/pdf",
+      "size": 22153
+    }
+  },
+  "rows": [
+    {
+      "id": "digital-pdf-word",
+      "ok": false,
+      "realInferenceRequested": true,
+      "realInference": false,
+      "coordinationSource": "neural-plan",
+      "neural": {
+        "ok": false,
+        "code": "QUEEN_TIMEOUT",
+        "fallback": true,
+        "execution": {
+          "executed": false,
+          "verified": false
+        }
+      },
+      "error": "QUEEN_TIMEOUT",
+      "artifacts": [],
+      "execution": null,
+      "taskBudget": {
+        "id": "digital-pdf-word",
+        "objective": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+        "maxMs": 120000,
+        "maxInferences": 2,
+        "maxSteps": 8,
+        "durationMs": 57366,
+        "remainingMs": 62634,
+        "inferencesReservedOrObserved": 2,
+        "stepsReserved": 0,
+        "queenCalls": [
+          {
+            "label": "digital-pdf-word",
+            "reservedInferences": 2,
+            "startedMs": 10,
+            "status": "outcome-unknown",
+            "inputTokens": null,
+            "outputTokens": null,
+            "completedInputTokens": null,
+            "completedOutputTokens": null,
+            "usageComplete": false,
+            "code": "QUEEN_TIMEOUT",
+            "durationMs": 57356
+          }
+        ],
+        "localActions": []
+      },
+      "durationMs": 57366
+    }
+  ],
+  "inputFiles": [
+    {
+      "file": "input-queen-three-pages.pdf",
+      "bytes": 1305,
+      "sha256": "00ad41b0e7ab9958347f3d8ea78d87b9329d9c9f86a94d9e26178ac2926a63a3"
+    },
+    {
+      "file": "input-queen-scan.csv.pdf",
+      "bytes": 22153,
+      "sha256": "245076f7a6206c1ef921eecac4b23a18d1672ee91587c28010b61942e9227d27"
+    }
+  ],
+  "realInferenceRequested": true,
+  "base": "https://81435fc0.prisma-queen-staging.pages.dev",
+  "failures": [],
+  "transportCalls": [
+    {
+      "kind": "provider-metadata",
+      "path": "/api/providers/status",
+      "task": null,
+      "dispatched": false,
+      "at": "2026-11-14T00:17:50.304Z",
+      "status": "not-dispatched",
+      "httpStatus": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "code": "TASK_OWNERSHIP_REQUIRED",
+      "durationMs": 7
+    },
+    {
+      "kind": "queen",
+      "path": "/api/core/plan",
+      "task": "digital-pdf-word",
+      "dispatched": true,
+      "at": "2026-11-14T00:17:57.161Z",
+      "status": "responded",
+      "httpStatus": 503,
+      "inputTokens": null,
+      "outputTokens": null,
+      "completedInputTokens": null,
+      "completedOutputTokens": null,
+      "usageComplete": false,
+      "inferences": null,
+      "code": "QUEEN_TIMEOUT",
+      "durationMs": 57349
+    }
+  ]
+}

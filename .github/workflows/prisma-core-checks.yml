@@ -21,13 +21,252 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
       - name: Run Prisma Core provider and workflow regressions
-        run: node --test prisma/tests/core-agent-routing.test.mjs prisma/tests/core-model-session.test.mjs prisma/tests/conversation-history.test.mjs prisma/tests/provider-orchestration.test.mjs prisma/tests/research-providers.test.mjs prisma/tests/core-create-model-groups.test.mjs prisma/tests/core-composer-single-row.test.mjs prisma/tests/core-creative-catalog.test.mjs prisma/tests/core-create-transcription.test.mjs prisma/tests/core-create-tts.test.mjs prisma/tests/core-create-picker-open.test.mjs prisma/tests/pollinations-audio-multikey.test.mjs
+        run: node --test prisma/tests/qwen-core-plan-coverage.test.mjs prisma/tests/qwen-core-client.test.mjs prisma/tests/qwen-core-interpreter.test.mjs prisma/tests/qwen-core-hybrid-benchmark.test.mjs prisma/tests/queen-integration.test.mjs prisma/tests/queen-staging.test.mjs prisma/tests/queen.test.mjs prisma/tests/core-agent-routing.test.mjs prisma/tests/core-model-session.test.mjs prisma/tests/conversation-history.test.mjs prisma/tests/provider-orchestration.test.mjs prisma/tests/research-providers.test.mjs prisma/tests/core-create-model-groups.test.mjs prisma/tests/core-composer-single-row.test.mjs prisma/tests/core-creative-catalog.test.mjs prisma/tests/core-create-transcription.test.mjs prisma/tests/core-create-tts.test.mjs prisma/tests/core-create-picker-open.test.mjs prisma/tests/pollinations-audio-multikey.test.mjs
       - name: Build Prisma and test SEO output
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
+      - name: Real Qwen Core inference quality sample on isolated staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
+        timeout-minutes: 6
+        env:
+          QWEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          const url = "https://prisma-queen-staging.pages.dev/api/core/qwen-interpret";
+          const expectedCommit = process.env.QWEN_STAGING_EXPECTED_COMMIT;
+          const cases = [
+            {name:"pdf_extract_then_word",text:"Extrae la segunda página del PDF y conviértela a Word",files:[{name:"smoke-test.pdf",type:"application/pdf",size:1024}],expected:["pdf-extract","pdf-to-word"]},
+            {name:"pdf_word_without_compression",text:"No comprimas el PDF; conviértelo a Word",files:[{name:"smoke-test.pdf",type:"application/pdf",size:1024}],expected:["pdf-to-word"],forbidden:["pdf-compress"]},
+            {name:"informational_question",text:"¿Cómo puedo extraer una página de un PDF?",files:[],expected:[],intent:"question"},
+            {name:"image_metadata_then_webp",text:"Quita los metadatos de esta foto y conviértela a WebP",files:[{name:"smoke-test.jpg",type:"image/jpeg",size:1024}],expected:["image-strip-metadata","image-convert"]}
+          ];
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          let ready=false;
+          for(let attempt=1;attempt<=20;attempt++){
+            try{
+              const response=await fetch(url,{method:"GET",signal:AbortSignal.timeout(10000)});
+              if(response.ok){
+                const probe=await response.json();
+                if(probe.ready===true&&probe.deploymentCommit===expectedCommit){ready=true;break;}
+              }
+            }catch{}
+            await sleep(15000);
+          }
+          if(!ready)throw new Error("The isolated staging deployment did not match the expected commit.");
+          for(const item of cases){
+            const response=await fetch(url,{method:"POST",headers:{Origin:"https://prisma-queen-staging.pages.dev","Content-Type":"application/json"},
+              body:JSON.stringify({text:item.text,files:item.files}),signal:AbortSignal.timeout(40000)});
+            if(!response.ok)throw new Error(item.name+": HTTP "+response.status);
+            const result=await response.json();
+            if(result.ok!==true||result.source!=="qwen-core"||result.deploymentCommit!==expectedCommit||
+              !["tools","question","clarify"].includes(result.intent)||!Array.isArray(result.tool_ids)||result.tool_ids.length>3)
+              throw new Error(item.name+": invalid structured result "+String(result.code||"INVALID_RESULT"));
+            const missing=item.expected.filter(id=>!result.tool_ids.includes(id));
+            const forbidden=(item.forbidden||[]).filter(id=>result.tool_ids.includes(id));
+            console.log(JSON.stringify({case:item.name,intent:result.intent,tool_ids:result.tool_ids,expected:item.expected,missing,forbidden,durationMs:result.metrics?.durationMs??null,inferences:result.metrics?.inferences??null}));
+            if(missing.length)throw new Error(item.name+": omitted requested operations: "+missing.join(","));
+            if(item.intent&&result.intent!==item.intent)throw new Error(item.name+": expected intent "+item.intent);
+            if(forbidden.length)throw new Error(item.name+": prohibited tool suggested: "+forbidden.join(","));
+          }
+          NODE
+      - name: One-shot real Queen planner and verified JSON engines on isolated staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 6
+        env:
+          QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-live-once]'; then
+            echo "One-shot live inference not requested by this commit; no VPS calls."
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          import {executeQueenDAG} from './prisma/src/queen-execution.js';
+          import {runTool} from './prisma/src/engines.js';
+          const origin='https://prisma-queen-staging.pages.dev';
+          const expectedCommit=process.env.QUEEN_STAGING_EXPECTED_COMMIT;
+          const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          let ready=false;
+          for(let attempt=0;attempt<20;attempt++){
+            try{
+              const response=await fetch(origin+'/api/core/qwen-interpret',{method:'GET',signal:AbortSignal.timeout(10000)});
+              if(response.ok){
+                const probe=await response.json();
+                if(probe.ready===true&&probe.deploymentCommit===expectedCommit){ready=true;break;}
+              }
+            }catch{}
+            await sleep(15000);
+          }
+          if(!ready)throw Error('STAGING_BUILD_NOT_VERIFIED; model inference NOT sent');
+          const input={etapa:2,correcto:true};
+          const body={text:'Primero formatea este JSON: {"etapa":2,"correcto":true}. Después minifica ese resultado sin modificar los datos.',files:[],maxInferences:1};
+          // Exactly one request. Never retry an uncertain response.
+          const response=await fetch(origin+'/api/core/plan',{
+            method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},
+            body:JSON.stringify(body),signal:AbortSignal.timeout(110000)
+          });
+          const result=await response.json().catch(()=>null);
+          if(!response.ok||result?.ok!==true||result?.source!=='queen'){
+            console.log(JSON.stringify({status:response.status,code:result?.code||'UNREADABLE_PLAN',fallback:result?.fallback??null}));
+            throw Error('LIVE_QUEEN_PLAN_NOT_ACCEPTED; do not retry automatically');
+          }
+          const ids=result.plan?.steps?.map(s=>s.tool_id)||[];
+          console.log(JSON.stringify({source:result.source,intent:result.plan?.intent,tools:ids,inferences:result.metrics?.inferences,inputTokens:result.metrics?.inputTokens,outputTokens:result.metrics?.outputTokens,durationMs:result.metrics?.durationMs}));
+          if(result.plan.intent!=='execute'||JSON.stringify(ids)!==JSON.stringify(['json-format','json-minify']))
+            throw Error('LIVE_QUEEN_MISSING_JSON_OPERATIONS');
+          const execution=await executeQueenDAG(result.plan,[],{run:runTool,initialInferences:result.metrics.inferences,maxMs:30000});
+          const value=JSON.parse(execution.results.at(-1)?.result?.text||'null');
+          if(!execution.verified||JSON.stringify(value)!==JSON.stringify(input))throw Error('LIVE_QUEEN_DATA_VERIFICATION_FAILED');
+          console.log(JSON.stringify({executed:true,verified:true,stepCount:execution.results.length,outputMatches:true,source:'one-real-queen-plan-plus-real-json-engines'}));
+          NODE
+      - name: One-shot real browser OCR, Excel and changed-file controls
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-ocr-once]'; then
+            echo "Real browser OCR control not requested by this commit."
+            exit 0
+          fi
+          tooling="$RUNNER_TEMP/queen-playwright"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export QUEEN_CHROMIUM
+          QUEEN_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma >"$RUNNER_TEMP/queen-local-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 2
+          done
+          export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-ocr-controls"
+          export QUEEN_OPERATIONS_CASES='scan-ocr,ocr-excel,changed-files'
+          node prisma/neural-pilot/staging/browser-operations.cjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
+          const byId=Object.fromEntries(r.rows.map(x=>[x.id,x]));
+          for(const id of ['scan-ocr','ocr-normalization','ocr-excel','changed-files']){
+            const row=byId[id];
+            console.log(JSON.stringify({case:id,ok:row?.ok??false,error:row?.error||null,realInference:row?.realInference??false,verified:row?.execution?.verified??null,evidence:row?.evidence||null}));
+            if(!row?.ok)throw Error('REAL_BROWSER_CONTROL_FAILED:'+id);
+          }
+          if(!byId['ocr-excel'].evidence?.exactCells)throw Error('EXCEL_CELLS_NOT_VERIFIED');
+          if(r.realInference!==false||r.failures?.length)throw Error('BROWSER_CONTROL_PROVENANCE_ERROR');
+          console.log('Real browser OCR and XLSX cell controls passed; no neural inference claimed.');
+          NODE
+      - name: One-shot Queen hybrid OCR-to-Excel complete objective in staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 12
+        env:
+          QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-hybrid-ocr-once]'; then
+            echo "No full hybrid OCR control requested by this commit."
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          const base='https://prisma-queen-staging.pages.dev';
+          const expected=process.env.QUEEN_STAGING_EXPECTED_COMMIT;
+          let ready=false;
+          for(let i=0;i<20;i++){
+            try{
+              const r=await fetch(base+'/api/core/qwen-interpret',{signal:AbortSignal.timeout(10000)});
+              if(r.ok){
+                const body=await r.json();
+                if(body.ready===true&&body.deploymentCommit===expected){ready=true;break;}
+              }
+            }catch{}
+            await new Promise(resolve=>setTimeout(resolve,15000));
+          }
+          if(!ready)throw Error('STAGING_PROVENANCE_UNVERIFIED: no inference attempted');
+          NODE
+          tooling="$RUNNER_TEMP/queen-playwright"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export QUEEN_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma >"$RUNNER_TEMP/queen-local-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 2
+          done
+          export QUEEN_PUBLIC_STAGING_URL='https://prisma-queen-staging.pages.dev/'
+          export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-neural-ocr-once"
+          export QUEEN_OPERATIONS_CASES='scan-excel-full-objective'
+          node prisma/neural-pilot/staging/browser-operations.cjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
+          const item=r.rows.find(x=>x.id==='scan-excel-full-objective');
+          console.log(JSON.stringify({case:item?.id,ok:item?.ok||false,error:item?.error||null,source:item?.neural?.source||null,realInference:item?.realInference||false,inferences:item?.neural?.metrics?.inferences??null,tools:item?.neural?.plan?.steps?.map(s=>s.tool_id)||[],exactCells:item?.evidence?.exactCells??false}));
+          if(!item?.ok||item.realInference||item.neural?.source!=='queen-hybrid-local'||item.neural?.metrics?.inferences!==0||!item.evidence?.exactCells)throw Error('QUEEN_HYBRID_OCR_CHAIN_NOT_VERIFIED');
+          const excel=item?.execution?.results?.at(-1);
+          console.log(JSON.stringify({lastTool:excel?.tool||null,verification:excel?.verification?.status||null,contentEvidence:excel?.verification?.evidence?.filter(x=>x.check==='xlsx-rows-and-columns')||[]}));
+          if(excel?.tool!=='json-xlsx'||excel?.verification?.status!=='verified'||
+            !excel.verification.evidence.some(x=>x.check==='xlsx-rows-and-columns'&&x.rows===2&&x.columns===3))
+            throw Error('XLSX_INDEPENDENT_CELL_VERIFICATION_FAILED');
+          if(r.failures?.length)throw Error('BROWSER_DEPENDENCY_FAILURE');
+          NODE
+      - name: One-shot Queen repair with genuine engine failure in staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 12
+        env:
+          QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-recovery-once]'; then
+            echo "Queen live repair trial not requested by this commit."
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          const base='https://prisma-queen-staging.pages.dev',expected=process.env.QUEEN_STAGING_EXPECTED_COMMIT;
+          let ready=false;
+          for(let attempt=0;attempt<20;attempt++){
+            try{
+              const r=await fetch(base+'/api/core/qwen-interpret',{signal:AbortSignal.timeout(10000)});
+              if(r.ok){const body=await r.json();if(body.ready===true&&body.deploymentCommit===expected){ready=true;break;}}
+            }catch{}
+            await new Promise(resolve=>setTimeout(resolve,15000));
+          }
+          if(!ready)throw Error('STAGING_PROVENANCE_UNVERIFIED: no inference attempted');
+          NODE
+          tooling="$RUNNER_TEMP/queen-playwright"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export QUEEN_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma >"$RUNNER_TEMP/queen-local-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 2
+          done
+          export QUEEN_PUBLIC_STAGING_URL='https://prisma-queen-staging.pages.dev/'
+          export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-repair-trial"
+          export QUEEN_OPERATIONS_CASES='real-parameter-recovery'
+          echo 'One strictly budgeted recovery task: real planner, injected JSON engine error, one repair, preserved data.'
+          node prisma/neural-pilot/staging/browser-operations.cjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
+          const x=r.rows.find(x=>x.id==='real-parameter-recovery');
+          console.log(JSON.stringify({case:x?.id,ok:x?.ok??false,error:x?.error||null,realInference:x?.realInference||false,initial:x?.initial?.plan?.steps?.map(s=>s.tool_id)||[],correction:x?.correction?.plan?.steps?.map(s=>s.tool_id)||[],initialInferences:x?.initial?.metrics?.inferences??null,correctionInferences:x?.correction?.metrics?.inferences??null,engineCalls:x?.engineCalls??null,verified:x?.verified??false,metrics:x?.metrics||null}));
+          if(!x?.ok||!x.realInference||!x.verified||x.initial?.source!=='queen'||x.correction?.source!=='queen'||x.engineCalls<2||x.metrics?.repairs!==1)
+            throw Error('QUEEN_REAL_PARAMETER_RECOVERY_NOT_VERIFIED');
+          NODE
+      - name: Check Queen VPS readers offline
+        run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v

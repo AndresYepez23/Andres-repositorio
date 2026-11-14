@@ -1,0 +1,71 @@
+{
+  "at": "2026-11-14T07:55:12.101Z",
+  "base": "https://f407d7d7.prisma-queen-staging.pages.dev",
+  "route": "plan",
+  "clientDurationMs": 29407,
+  "httpStatus": 422,
+  "body": {
+    "ok": false,
+    "code": "QUEEN_PLAN_REJECTED",
+    "diagnostics": {
+      "inputTokens": 482,
+      "outputTokens": 86,
+      "inferences": 1,
+      "trace": [
+        {
+          "intent": "execute",
+          "search": null,
+          "toolIds": [
+            "pdf-extract",
+            "pdf-to-word"
+          ],
+          "steps": [
+            {
+              "id": "s1",
+              "parameterTypes": {
+                "pages": "string"
+              },
+              "inputs": [
+                "file:0"
+              ],
+              "dependsOn": []
+            },
+            {
+              "id": "s2",
+              "parameterTypes": {},
+              "inputs": [
+                "file:0"
+              ],
+              "dependsOn": [
+                "s1"
+              ]
+            }
+          ],
+          "usage": {
+            "inputTokens": 482,
+            "outputTokens": 86,
+            "externalCostUsd": 0
+          },
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 470,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 482,
+            "observedOutputTokens": 86,
+            "generationTokensPerSecond": 6.370877564400017,
+            "promptTokensPerSecond": 35.909440860205436,
+            "responseCharacters": 254,
+            "responseWhitespaceCharacters": 16
+          },
+          "validationError": "DEPENDENCY_INPUT_REQUIRED:s2:s1"
+        }
+      ]
+    },
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "durationMs": 29078
+  }
+}

@@ -1,18 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
+import {renderToolFields} from '../src/tool-fields.js';
 import {runTool} from '../src/engines.js';
 import {tools} from '../src/registry.js';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const {pages}=JSON.parse(read('../seo/pages.json'));
 const audit=JSON.parse(read('../seo/audit.json'));
 const main=read('../src/main.js');
-const fields=main.slice(main.indexOf('function buildFields(t)'),main.indexOf('\nfunction base64Url'));
-const build=vm.runInNewContext(fields+';buildFields',{
+const build=t=>renderToolFields(t,{
  field:(label,name)=>'<input name="'+name+'">',textareaField:(label,name)=>'<textarea name="'+name+'"></textarea>',
  selectField:(label,name,options)=>'<select name="'+name+'">'+options.map(([v])=>'<option value="'+v+'">').join('')+'</select>',
- textStudioModelSettings:()=>'',pollinationsAuthFields:()=>'',Date
+ textStudioModelSettings:()=>'',pollinationsAuthFields:()=>''
 });
 test('the entire registry is accounted for with no undocumented omissions',()=>{
  assert.deepEqual(audit.inventory.map(t=>t.tool),tools.map(t=>t.id));

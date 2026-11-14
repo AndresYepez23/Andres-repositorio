@@ -1,0 +1,430 @@
+# QUEEN — continuidad vigente y registro histórico
+
+## PAUSA SOLICITADA — estado final guardado, 14/11/2026 UTC
+
+**El usuario pidió guardar todo y continuar más tarde. No iniciar pruebas, inferencias ni despliegues hasta que solicite reanudar.**
+
+- Último código publicado: **`5ae1bbb257e20bb18f17357c50a6331a4fcf0dfd`**, rama `feature/prisma-neural-genixnode-qwen35-pilot`. PR #125 abierto y borrador, sin fusionar. El commit documental posterior se identifica con `git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md`.
+- Último staging desplegado/verificado: **`c7918ef7-d9bb-4fee-bf82-4a846e420a46`**, fuente **`62aafd539c36e722e7f5de1191fa8d29ad2dee7c`**, https://c7918ef7.prisma-queen-staging.pages.dev. Las correcciones posteriores de `5ae1bbb` están publicadas y compiladas, **todavía no desplegadas**.
+- Ya demostrado: inferencia real y cadena `pdf-extract → pdf-to-word`, contenido de la página 2 correcto y páginas 1/3 ausentes, **33.142 s** en total. Una inferencia: 482 tokens de entrada, 87 de salida, 29.556 s backend, 6.108419 tokens/s informados.
+- Verificador autónomo nuevo: comprueba texto seleccionable ordenado y saltos de página de PDF a Word, sin afirmar fidelidad de maquetación. Sobre los bytes reales guardados dio **verified** para el PDF intermedio correcto y **DOCUMENT_TEXT_MISMATCH** para el original de tres páginas. Cero inferencias y cero motores adicionales en esa reverificación. Escaneos, gráficos, anotaciones y casos ambiguos permanecen `partial`. El ledger histórico no se reescribió.
+- Evaluación real conservada: 13/19 solicitudes, 7 rúbricas aprobadas; originales **6/8 (75%)** aceptados con calidad. Intención/herramientas visibles 8/8 incluye dos mensajes rechazados y **no es éxito operativo**. Un timeout tiene consumo/salida desconocidos; seis casos no ejecutados. El runner se detuvo y no reintentó automáticamente. [Resultados individuales](queen-422-2026-11-14/QUALITY-ROUND-1.md).
+- Correcciones posteriores a esa evaluación: sinónimos de tamaño y página singular, preguntas con prefacios como «Antes de decidir:», mensajes acotados/completos e inicio declarativo neutral solo para preguntas binarias; parámetros/referencias y validadores conservados. **No hay una nueva puntuación neuronal de estas correcciones.**
+- Últimas comprobaciones: **327/327 pruebas Node y 139/139 del build estático**, más reverificación de artefactos reales positiva y negativa. Las pruebas deterministas no se contabilizan como inferencias. [Registros](queen-422-2026-11-14/node-suite-next.txt), [build](queen-422-2026-11-14/static-build-next.txt), [reverificación](queen-422-2026-11-14/saved-artifact-reverification.json).
+- Tras el timeout se respetó el cooldown. La lectura API posterior confirmó un slot libre, contexto 2048 y `isProcessing:false`; **no recupera los tokens perdidos ni mide RAM/CPU**. [Lectura guardada](queen-422-2026-11-14/server-after-timeout.json).
+- GenixNode, modelo, contexto, concurrencia, Docker y proveedores sin cambios en esta sesión. Producción principal sigue `6a41daae` / `24dd33d`, main remoto observado `4b24fe6d6f74375a337936aafe1199df9b1e9072`, D1 principal sin cambios. No se trabajó en Prisma Developer ni el plugin.
+- Secretos Queen intactos. El operador privado renovado está fuera de Git en `/workspace/work/queen-422-operator/operator-key` (0600); no solicitarlo por chat ni publicarlo. Otro workspace no recibe automáticamente ese archivo ni OAuth/SSH.
+
+**Punto exacto al pausar:** código y evidencias preservados; paquete privado nuevo compilado en `/workspace/work/queen-422-round2/worker.js`, sin subir. Ningún lote neuronal en ejecución. El servidor HTTP local de comprobación se cerró. No hay una inferencia pendiente enviada por Codex.
+
+**Siguiente paso al reanudar:** leer este bloque, comprobar HEAD/cambios y PR draft; desplegar un snapshot limpio del código nuevo **solo en `prisma-queen-staging`** usando el constructor oficial `prisma/neural-pilot/staging/build.cjs` y el cliente `request.mjs`. Verificar metadata de fuente, D1 aislada, cooldown y slot libre antes de una validación controlada. No repetir ciegamente el caso incierto ni reutilizar sus métricas como conocidas. Después corregir/revalidar calidad, completar los casos restantes y las cadenas OCR→Excel, recuperación y delegación. No publicar capacidades no demostradas ni fusionar/main/D1 principal. Queen **no está terminada**.
+
+Los bloques inferiores conservan la historia y quedan subordinados a este estado de pausa.
+
+
+## Registro previo — generación y cadena real recuperadas, 14/11/2026 UTC
+
+Continuación de `614bc06`, sin reinstalar ni modificar GenixNode. **Queen todavía no está terminada.** El HTTP 422 reproducido en staging se identificó y se corrigió progresivamente con respuestas reales; no repetir la sonda histórica del VPS.
+
+- Código publicado: `62aafd539c36e722e7f5de1191fa8d29ad2dee7c`, rama `feature/prisma-neural-genixnode-qwen35-pilot`; PR #125 abierto y borrador, sin fusión.
+- Staging activo y verificado: `c7918ef7-d9bb-4fee-bf82-4a846e420a46`, https://c7918ef7.prisma-queen-staging.pages.dev. Production del proyecto **aislado** `prisma-queen-staging`, `QUEEN_ENABLED=1`, D1 `980bad8f-0356-48b9-87bc-56bcf363f69a`, tres secretos presentes. No confundirlo con la producción principal.
+- Cuatro inferencias reales, una por solicitud y sin reintentos inciertos: dos `length` a 256 tokens; después JSON completo de 86 tokens rechazado por `DEPENDENCY_INPUT_REQUIRED:s2:s1`; finalmente plan válido de 87 tokens, 482 de entrada, 29.556 s de backend y 6.108419 tokens/s informados.
+- Con el último plan se ejecutaron los motores reales `pdf-extract → pdf-to-word` sobre el PDF real de tres páginas. DOCX inspeccionado: texto de página 2 presente, páginas 1/3 ausentes. Total desde la solicitud neuronal: **33.142 s**, una inferencia, sin reparación. Son bytes reales con contenido de control sintético; no son respuestas de modelo simuladas.
+- El ledger genérico conserva `verification-pending` para Word: la comprobación externa del contenido **no equivale a verificación autónoma ya implementada**. Se trabaja en cerrar esa diferencia sin aceptar escaneos o contenido gráfico como verificados por una simple coincidencia de texto.
+- Evaluación auténtica de19 casos **detenida automáticamente tras13**: originales6/8(75%) con calidad/aceptación; total7/13 aprobados, un timeout con consumo desconocido y seis no ejecutados. Informe permanente [calidad real](queen-422-2026-11-14/QUALITY-ROUND-1.md). No reenviar el caso incierto; respetar cooldown y verificar slot libre antes de nuevas solicitudes distintas.
+- Verificaciones locales actuales: **308 pruebas Node** y **132 del build estático**. El primer intento amplio falló por falta de `dist`; se generó el build local y la suite posterior pasó. Son controles deterministas, no inferencias.
+- Los cinco commits correctivos conservan límites de 2048/256 tokens, concurrencia1 y plazos55s/120s. Restringen parámetros pequeños, entrada única y referencias intermedias explícitas; preservan solicitudes sobre el PDF completo/original, observadores y casos genéricos. Validadores, motores y proveedores se conservan.
+- Solo se renovó el operador privado `QUEEN_STAGING_KEY_SHA256`, autorizado por el usuario, y se actualizó la metadata de fuente de staging. Clave privada local: `/workspace/work/queen-422-operator/operator-key`, fuera de Git,0600. No copiar secretos Queen ni reactivar el puente antiguo.
+- Producción principal se conserva: `prismaspace` canonical `6a41daae-1c35-4123-9761-cb99de2ca969`, código `24dd33d612c1e56876b703de6f7dcbb2084947e6`; main remoto observado `4b24fe6d6f74375a337936aafe1199df9b1e9072`; D1 principal `e02104b5-0861-475a-a60f-7658439d4fe0`. Sin escrituras/migraciones allí ni cambios del VPS. La autorización más reciente permite completar y preparar la publicación, pero estos cambios todavía no se promovieron a producción.
+
+Leer [diagnóstico y comparación real](queen-422-2026-11-14/DIAGNOSIS.md), [matriz de aceptación](queen-422-2026-11-14/ACCEPTANCE.md), [respuesta aceptada](queen-422-2026-11-14/sequential-validation-response.json) y [artefactos](queen-422-2026-11-14/real-pdf-word/results.json). Reproducir la inspección guardada, sin nuevas inferencias: `python3 prisma/docs/queen-422-2026-11-14/verify-evidence.py`.
+
+Siguiente paso exacto: terminar y conservar el informe de 19 casos, corregir/repetir únicamente los fallidos con consumo conocido y detenerse ante incertidumbre. Completar verificación autónoma del DOCX y cadenas OCR→Excel, recuperación y delegación reales antes de declarar Queen terminada. No fusionar PR ni escribir main; no cambiar parámetros del VPS.
+
+<details>
+<summary>Checkpoint anterior íntegro: registro histórico, no instrucciones vigentes</summary>
+
+## Estado de transferencia final — 14/11/2026 UTC
+
+**Leer primero [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md), [PROMPT MAESTRO](QUEEN-RESUME-PROMPT.md) y [verificación/evidencia](queen-handoff-2026-11-13/verification.json).** Desarrollo, pruebas nuevas de modelo y despliegues detenidos por orden de preservar.
+
+- Rama feature/prisma-neural-genixnode-qwen35-pilot; PR125 abierto/draft/sin fusionar. Código de aplicación24dd33d612c1e56876b703de6f7dcbb2084947e6. El commit posterior de conservación no es otro despliegue.
+- Producción REAL confirmada: canonical6a41daae-1c35-4123-9761-cb99de2ca969, fuente24dd33d, deploy success. prismaspace.space sirve ese build; ads/layout conservados. Git main sigue4b24fe6d6f74375a337936aafe1199df9b1e9072, sin fusión.
+- Staging REAL: canonical46506668-10ee-4ff7-998c-c64ef469f4ee, fuente1a7c97c954bf8b951059843c102b69a706b18526. Staging24d se compiló pero NO se desplegó ni se lanzó su diagnóstico.
+- Usuario autorizó recuperación y activación pública, tres secretos cifrados, nodejs_compat y QUEEN_CONTROL_DB980bad8f compartida. D1 principal e02104b5 conservada, sin migraciones Queen. Promoción completa; puente/sobre/archivos privados eliminados y mismo nonce404. No repetir promoción.
+- VPS YA recuperado: mismo Qwen3.5-2B/imagen/contexto2048/concurrencia1; CACHE_RAM=0/CTX_CHECKPOINTS=0, una recreación. Sonda16entrada8salida/1961ms, cgroup1.713GiB, disponible2.697GiB, tres muestras; no carga pública. /metrics501/TTFTdesconocido. No repetir monitor/sonda/resetear completionReserved.
+- Staging1a: una inferencia536entrada122salida, PDFpágina2→DOCX real, contenido específico correcto;39.581s. Ledger general todavía verification-pending.
+- Producción: JSONlocal pasó. Primera1a HTTP503/timeout, consumo desconocido. Última24d HTTP422 y cuerpo no leído: una petición, cantidad de inferencias/tokens desconocida. Screenshot muestra DOCX por respaldo local, NO éxito neuronal; ese DOCX público no se inspeccionó.
+- Punto exacto: queen-client.js retorna null ante !response.ok sin consumir/cancelar body. Arreglo NO implementado; relación CDP es hipótesis. Motivo422 NO obtenido. Próxima reanudación: manejo de body dirigido y UNA traza protegida __queen/plan maxInferences=1 con payload sintético guardado, staging limpio actualizado; no relajar validadores ni inventar planes.
+- Cambios5ccacf9→24dd33d: plazos reales, evaluador1inferencia/caso, ControlDB, semántica/negaciones/operaciones/JSON literal, intermediarios reales, gramática compacta y prompt−29% sin proveedores ajenos/contexto vacío.
+- 293Node/131build pasaron en24d. 51checks históricos del helper preservados con loaders adaptados, solo sintaxis/hash tras copia. Lotes originales reales ed94 3/8,17a6/8,c2806/8 automáticos; NO19/19/calidad general.
+- Todo se conserva en carpetas existentes, incluido browser-production.cjs, helper públicoV3 y preparación de assets; claves/SSH/OAuth/operador/baseline privado excluidos deliberadamente.
+
+El handoff detalla arquitectura, IDs, configuración privada, resultados/hipótesis, accesos y presupuestos55s/120s/8pasos/2inferencias/cooldown5min. Los bloques anteriores siguientes son HISTORIA y no órdenes vigentes.
+
+<details>
+<summary>Continuidad anterior conservada: instrucciones y estados históricos superados</summary>
+
+## Actualización posterior: recuperación y promoción pública autorizadas
+
+
+Los bloques que siguen conservan su contexto histórico. Sus antiguas afirmaciones de «sin intervención», «generación bloqueada» y «no desplegar prismaspace» no revocan las autorizaciones posteriores. La recuperación breve del VPS tampoco acredita calidad ni carga pública sostenida; la primera prueba pública agotó su plazo y su resultado incierto se conserva.
+
+## Transferencia completa a otra cuenta de Codex — 13/11/2026
+
+**Entrada principal: [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md).** Esta transferencia conserva el desarrollo y la misión de finalización; no declara Queen terminada ni abandona el proyecto. [Índice](QUEEN-INDEX.md), [prompt portátil](QUEEN-RESUME-PROMPT.md).
+
+### Estado real recuperado y publicación
+
+- Repositorio `AndresYepez23/PRISMA`, rama `feature/prisma-neural-genixnode-qwen35-pilot`, PR [#125](https://github.com/AndresYepez23/PRISMA/pull/125) **open, draft=true, merged=false**.
+- El workspace estaba limpio en `6673124`; la rama remota ya estaba en **`732bce69297a092008b68f1a0439592cb90173ed`** y se recuperó por fast-forward, incluyendo todos los avances intermedios. El antiguo commit local `2b8fc19` ya está publicado y conservado, no hay que rescatarlo otra vez. No hubo reset/rebase ni cambios en main.
+- Este checkpoint solo añade/actualiza documentación de transferencia e índice/README. Su SHA se obtiene con `git log -1 --format='%H %s' -- prisma/docs/QUEEN-HANDOFF.md`; la entrega y el PR lo registran de forma exacta tras el push. No se inventa un hash propio dentro del archivo.
+- CI del estado importado: [Prisma Core checks #539, success](https://github.com/AndresYepez23/PRISMA/actions/runs/43487676034), SHA732bce6. Tres checks automáticos Netlify de herenciadivina01 fallan y quedan fuera de esta misión. El PR registra CI y cualquier incidente de Preview del nuevo checkpoint documental; no afirmar todos los checks verdes.
+- Último despliegue aislado **verificado por metadatos durante la transferencia**: `16436df0-3d50-4e89-9165-b875be731d3f`, snapshot **ed94e25 limpio**, Production de `prisma-queen-staging`. No representa el HEAD corregido. No se desplegó ni se ejecutó SQL durante esta operación.
+
+### Hallazgos y misión que no deben perderse
+
+- Las capturas físicas y de residencia **ya fueron recibidas**. No volver a pedir ni ejecutar el bloque pasivo, monitor o sonda histórica. Informes vigentes: [residencia](queen-genix-residency-2026-11-13.md) y [episodio de E/S](queen-genix-diagnosis-2026-11-13.md); originales, hashes y análisis en sus directorios enlazados por el índice.
+- RAM física3.82428GiB; anónimoQwen2.91505GiB; RSS3.14177GiB; disponible mínimo pasivo436.55MiB; mapa candidato1.18267GiB con RSS/PSS228.98MiB e identidad GGUF no confirmada. No se observó memory.max/high finito que levantar. Contadores históricos:26,241,301 refaults,83,210 fallos mayores,54,820,431 pgscan,26,556,371 pgsteal; no son deltas del timeout.
+- El intento local histórico venció a55,060ms; el episodio de E/S muestra iowait56–81% y ~5.792GiB leídos del host. El reposo pasivo posterior tiene deltasQwen0. **Los acumulados históricos no demuestran por sí solos causalidad/cronología.** Se conservan supuestos, cobertura y datos desconocidos en el handoff, sin confundir RSS del mapa con caché completa o calcular una ampliación mínima ficticia.
+- **Primero después del traslado:** preparar intervención concreta para recuperar Qwen conservando modelo/calidad, con configuración, recursos/consumo estimados, coste si procede, riesgos, reversión y criterio de comprobación. Pedir aprobación expresa antes de tocar GenixNode; no otra captura pasiva ni recrear el timeout por rutina. No se aplicó intervención ni se demostró mejora.
+- Tras recuperación y prueba autorizadas: snapshot limpio solo en staging aislado, 19 casos preparados (8+11) y cadenas neuronales PDF→Word, escaneo→OCR→extracción→Excel, JSON, reparación, delegación y calidad/seguridad/estabilidad/autonomía. El 8/8 histórico de intención y los controles deterministas no equivalen a finalización.
+- Pruebas conservadas en checkpoints anteriores:236Node,130embebidas del build,19Pythonoffline de lectores y6Pythondirigidas posteriores, con alcance separado. No se reejecutaron manualmente baterías, benchmarks o reproductores para esta transferencia; se revisan documentos/enlaces y estado remoto. El CI automático del nuevo commit se registra aparte en el PR.
+
+### Restricciones y acceso al migrar
+
+Mantener modelo `unsloth/Qwen3.5-2B-GGUF:Q4_K_M`, contexto2048, salida256, concurrencia1, inferencia55s, tarea120s, ocho pasos/dos inferencias Queen; sin checkpoints artificiales ni reducir calidad por una cifra de latencia. Ninguna inferencia adicional durante la transferencia. Ningún reinicio, ajuste, reinstalación o cambio de modelo/VPS sin aprobación correspondiente. No fusionar PR, escribir main, desplegar/configurar prismaspace ni escribir/migrar D1principal `e02104b5-0861-475a-a60f-7658439d4fe0`. No trabajar en Developer/plugin. Conservar motores, proveedores, pruebas y evidencia fallida.
+
+Production de `prisma-queen-staging`, D1aislada `980bad8f-0356-48b9-87bc-56bcf363f69a`, mantiene los tres secretos Queen y el digest del operador; presencia comprobada por metadata, sin valores. No pedir duplicarlos en Preview ni repetir migraciones/aprovisionamiento. La clave local del operador permanece en `/workspace/work/queen-operator/operator-key`,0600, excluida de Git; OAuth/SSH/tokens tampoco se transfieren al clonar. Recuperar por canal privado autorizado o seguir el procedimiento aislado del handoff en su momento, sin rotación durante este traslado y sin solicitar secretos por chat.
+
+Comprobar conexiones GitHub/Cloudflare de la nueva cuenta y los IDs exactos, no suponer permisos heredados. Antes/después de push controlar solo el Preview automático propio rama/SHA, nunca canonical/producción/trabajo ajeno. El prefijo no garantiza omisión. No se cambió configuración principal; canonical observado `67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08`/main4b24fe6. El usuario conserva SSH manual; no se utilizó SSH en esta operación.
+
+**Todo lo que sigue es registro histórico conservado. Sus instrucciones de captura, inferencia, publicación pendiente o «leer primero» no son órdenes vigentes. Usar el handoff y el bloque de arriba para decidir el siguiente paso.**
+
+<details>
+<summary>Historial completo de las continuaciones anteriores; no ejecutar sus bloques sin revisar el estado vigente</summary>
+
+
+## Evidencia pasiva de residencia recibida y comparada — 13/11/2026
+
+**Estado más reciente:** ya se recibió `queen-residency-evidence.tar.gz`; no volver a solicitar ni ejecutar el bloque pasivo anterior. [Diagnóstico actualizado](queen-genix-residency-2026-11-13.md), [evidencia y reproducción](queen-residency-evidence-2026-11-13/). Lector idéntico al publicado en `2fd9008`, hash d5fca69c…, exit 0, identidad estable; código adjunto no ejecutado por Codex. Separación pasiva 5.157847642 s. Se continuó desde árbol limpio `2fd9008fc21f6716ef49b85e70b6dd4ee7ae2824`.
+
+- Anónimo de Qwen 2.91505 GiB; RSS 3.14177 GiB; disponible mínimo host 436.55 MiB. Candidato opaco de modelo 1.18267 GiB virtuales, 228.98 MiB RSS (18.9073%), sin identidad GGUF confirmada. RSS no representa toda la caché de archivo.
+- **Presupuesto condicional:** conservar todo el anónimo actual y todo ese candidato residente suma 4,399,894,528 B, supera la RAM física por 280.01 MiB antes de kernel/otros. No es un tamaño de ampliación calculado ni prueba de que todo el anónimo sea imprescindible/todo el mapeo sea necesario.
+- Sin memory.max/high explícitos en contenedor y padre, eventos high/max/oom cero; io.max vacío y sin Bps/IOPS Docker. No hay un límite de memoria visible que levantar. Faltan otras políticas IO y restricciones del proveedor para descartar toda QoS.
+- **Nuevo respaldo histórico de reclaim:** cgroup Qwen acumula 26,241,301 refaults de archivo, pgscan 54,820,431, pgsteal 26,556,371, pgmajfault 83,210 y rbytes 109,034,700,800. Son acumulados sin fechas, no deltas del episodio de 60 s. Refuerzan presión/relectura histórica pero no cierran su cronología causal.
+- En la ventana pasiva Qwen no incrementa lecturas/refault/scan/steal/fallos/PSI memoria-IO. Host VM sí muestra 25 refaults y mínima PSI IO; dos writes 48KiB, sin lecturas. No sumar vda y vda1 ni interpretar readAwait=null como latencia 0.
+
+**Lo que falta está acotado:** atribución numérica del anónimo a KV/estado recurrente/compute/cachés/heap, identidad/conjunto de trabajo del candidato, y deltas sincronizados de residencia/refault/reclaim/fallos/PSI/rbytes junto con await/cola del dispositivo durante trabajo futuro explícitamente autorizado. Añadir políticas/condiciones del volumen ya existentes. Otra foto en reposo no resuelve la brecha temporal. No generar para obtenerla sin autorización; no reiniciar, cambiar flags ni comprar/ampliar RAM sin presentar intervención y riesgos.
+
+Se actualizaron análisis, evidencia y documentación; no runtime ni lector ni pruebas nuevas. Cero SSH, lecturas nuevas de VPS, inferencias, reinicios, cambios de parámetros o despliegues aislados. PR #125 draft, infraestructura aislada y producción/main/D1 principal conservados. El registro final del PR identifica el checkpoint publicado y la gestión de su Preview automático. Los 8+11 casos y cadenas neuronales siguen pendientes; no se convierten estas capturas en pruebas de generación.
+
+## Captura única de residencia preparada desde `25a9c9e` — 13/11/2026
+
+Se leyeron los dos documentos solicitados y se continuó exactamente el checkpoint publicado, con árbol inicial limpio. No se encontró una identidad SSH disponible en la configuración declarada del entorno actual; no se abrieron ni leyeron claves, entornos o credenciales. **Única intervención manual pendiente:** ejecutar el bloque consolidado de [VPS-RESIDENCY.md](../neural-pilot/staging/VPS-RESIDENCY.md) dentro de la SSH de GenixNode y adjuntar `queen-residency-evidence.tar.gz`. El PR conserva la versión fijada al commit. No repetir monitor/sonda anterior ni pedir más bloques de diagnóstico generales.
+
+El lector `inspect-vps-residency.py` reúne dos observaciones pasivas separadas por cinco segundos (plazo global 45 s): PID real de llama-server, smaps/RSS/PSS anon-file/GGUF y candidatos de grandes mapas con nombres opacos, límites Docker filtrados y cgroups v1/v2 con ancestros/montajes reales, memory.high/max, eventos/refault/fallos, io.max/estadísticas y dispositivos. Solo guarda metadata; no lee contenidos de archivos mapeados, env, cmdline, claves o logs. Docker usa socket local y configuración temporal vacía para evitar credenciales/contextos heredados. Conserva campos parciales ante error y no presenta lecturas ausentes como ilimitadas o cero.
+
+Seis comprobaciones offline dirigidas del nuevo lector aprobadas; ayudan a que una única captura sea útil y segura. No se repitieron las 236 pruebas Node ni las 19 Python previas manualmente, ni se añadió evaluación neuronal/offline de Queen. Los tests nuevos se incorporan al descubrimiento Python existente de CI. [Evidencia](queen-residency-reader-2026-11-13/checks.json).
+
+**Límite de interpretación:** estas lecturas no separan KV/compute/cache dentro de la memoria anónima. Esos campos son desconocidos, no cero. Un GGUF no visible por nombre puede estar mapeado con un hash de caché o cargado sin mmap; se conservan los grandes mapas de archivo sin rutas para no perder esa información. Las observaciones pasivas y los contadores acumulados no se atribuyen retrospectivamente al timeout histórico.
+
+**Puerta de aprobación explícita del usuario:** no tocar el VPS hasta presentar intervención y riesgos y recibir su aprobación. Cuando lleguen los datos, elegir la corrección mínima basada en memoria/limitación/almacenamiento, manteniendo Qwen3.5-2B y contexto. Solo después de aplicar una corrección aprobada se autoriza una generación controlada, con TTFT/tokens/s/recursos, distinta de la sonda anterior. Luego pruebas operativas, 8+11 casos y snapshot limpio de staging. No ejecutar lotes mientras siga bloqueado. Preparar incorporación a producción sin fusionar o desplegar main/prismaspace/D1 principal. No hubo solicitudes a Qwen, SSH, cambio de parámetros, reinstalación, rotación de secretos ni nuevo despliegue aislado en esta continuación.
+
+## Evidencia real de GenixNode recibida — 13/11/2026
+
+**Leer este bloque primero.** El usuario entregó `queen-evidence.tar.gz`; ya no faltan las mediciones físicas originales. [Diagnóstico completo](queen-genix-diagnosis-2026-11-13.md), [resultados preservados](queen-genix-evidence-2026-11-13/), [análisis reproducible](queen-genix-evidence-2026-11-13/analysis.json). Los tres scripts adjuntos coinciden con `6673124`; no se ejecutó el código adjunto. Se conservaron todas las correcciones locales de `2b8fc198dd0ef3287c4ef2d995d4577decca0ae3`.
+
+- **Hallazgo demostrado:** durante la sonda local Qwen lee varios GB; el episodio temprano de vmstat tiene 12 intervalos de cinco segundos con iowait 56–81%, media 72.667%, y aproximadamente 5.792 GiB leídos. El contenedor pasa de BlockIO 103GB a 109GB. La media global de CPU excluye iowait y diluye el episodio con reposo; no demuestra capacidad libre durante la generación.
+- **Causa más probable, todavía por confirmar:** pesos/páginas de archivo que no permanecen residentes y deben releerse, con RAM ajustada. Faltan smaps GGUF, anon/file, refault/major-fault y configuración efectiva de cgroup/dispositivo para distinguir memoria de un límite de almacenamiento u otros contribuyentes. No se afirma fuga de RAM ni se elige un flag sin ese desglose.
+- **Datos reales:** 120 muestras, 750.123 s, 2 vCPU, RAM disponible mínima 438,898,688 bytes. Swap total cero; ningún OOMKilled, reinicio o error de monitor observado. PSI es un snapshot exportado unos veinte minutos después del intento, no una serie de presión durante él. Journal sin eventos coincidentes y sin stderr, dentro de sus límites de retención.
+- **Sonda anterior:** 55,060 ms, GENERATION_DEADLINE, sin completion, uso/timings/TTFT desconocidos. Fue contra 127.0.0.1:7860, sin Access/Tunnel; su fallo local no se explica por esas capas. `/metrics` 501 es indisponibilidad de métricas, no cola cero.
+- **Corrección mínima recomendada:** recuperar residencia de pesos conservando modelo/calidad; primero identificar el componente de memoria o límite de disco. El informe prepara lecturas exactas de proceso/cgroup sin inferencia. No hay una mejora aplicada ni medida todavía. No alargar timeout o modificar Docker/modelo/contexto/concurrencia como sustituto del diagnóstico.
+- **Verificación nueva:** los ocho archivos de resultados conservan sus hashes; todos los valores del summary original se reprodujeron offline. No se inventó el exit code del monitor. Las 19 pruebas Python del checkpoint y 236 Node publicadas siguen conservadas; no se repitieron baterías sin cambios de runtime.
+- **Acceso/publicación:** Cloudflare volvió a responder en una consulta dirigida; canonical principal sigue en 67b3e7e7/main4b24fe6. Esto sustituye el bloqueo de conexión del apartado anterior. Publicar el checkpoint nuevo de esta rama con control de su Preview automático, sin cambiar configuración principal. El PR registra el SHA y la retirada, si procede.
+
+**Restricción actual explícita:** no repetir la sonda ni ejecutar nuevos lotes. No hubo nueva inferencia, SSH, reinicio, cambio de parámetros o despliegue aislado en esta continuación. La siguiente sesión debe leer el diagnóstico antes de generar: obtener únicamente el desglose de residencia/cgroup usando la SSH manual del usuario o una identidad operativa autorizada. Después seleccionar una intervención reversible fundada en esos datos; los ensayos de generación requieren levantar la pausa expresa del usuario. OCR→extracción→Excel neuronal completo, calidad de 8+11 casos, reparación y delegación siguen pendientes. PR #125 draft, sin main/producción/D1 principal. El SHA exacto del checkpoint que contiene esta sección se obtiene del PR y `git log -1`; no confundirlo con el último despliegue 16436df0/ed94e25, que no cambia.
+
+## Continuación de mediciones desde `6673124` — 13/11/2026
+
+Se recuperó por fast-forward el checkpoint `66731248dcefd464aa7bb5817f366c452fc61449`, sin rebase, cambios en main ni repetición de aprovisionamiento. El usuario compartió el procedimiento SSH; **no se recibieron sus archivos de medición** en este workspace. No hay identidad SSH, agente ni VPN configurados en el entorno actual. No se ejecutó ningún lector ni sonda contra GenixNode y no se hicieron nuevas solicitudes a Qwen.
+
+Se corrigieron tres impedimentos concretos del procedimiento:
+
+- Descargas con errores que podían permitir continuar: la [guía](../neural-pilot/staging/VPS-MEASUREMENTS.md) ahora usa guardas explícitas por comando, archivos `.part`, manifiesto `VPS-SCRIPTS.sha256` de los tres lectores y compilación antes de marcar `scripts.verified`. No confiar solo en `set -e` dentro de una condición de Bash.
+- Capturas parciales: `analyze-vps.py` conserva muestras válidas y reporta filas inválidas, número esperado, salida del monitor y cobertura por señal. `capture.complete` no significa generación sana ni ausencia de OOM histórico. También resume swap usado/libre; la actividad requiere `vmstat`. Los recuentos de reinicio booleanos, negativos o desconocidos no acreditan estabilidad completa.
+- Sonda que podía quedarse leyendo metadatos: cada lectura tiene plazo de pared; el plazo global es 100 s, **la generación sigue limitada a 55 s y ocho tokens, una sola solicitud, sin reintentos**. Los temporizadores anidados no renuevan el plazo. No se imprime la clave ni el texto generado.
+
+**Validación nueva: 19 pruebas Python offline aprobadas**, incluidos fallos de descarga, checksum, respuestas que gotean y preservación del plazo; [evidencia](queen-vps-readers-2026-11-13/checks.json). No son mediciones ni inferencias reales. Se integró ese test en CI para cuando se publique; la línea base Node publicada sigue siendo 236, no se repitió porque su código no cambió.
+
+**Publicación pendiente:** el conector Cloudflare devuelve repetidamente la solicitud de autenticación en vez de ejecutar la lectura, incluso para listar cuentas. Se conserva el checkpoint local; no se hace push que pueda crear un Preview automático principal sin poder retirarlo. Reconectar Cloudflare y comprobar acceso antes del push. No son los tres secretos de Queen y no se cambiaron. El PR remoto conocido sigue draft en `6673124`; este bloque no debe interpretarse como código ya publicado o aplicado al VPS.
+
+**Siguiente paso:** recibir `summary.json`, `host.jsonl`, `qwen-probe.json`, `vmstat.txt`, `kernel-oom.txt` y su archivo de errores; si existen, `pressure.txt`, `uptime.txt` y `monitor-exit-code.txt`. Si el usuario ya ejecutó los lectores del commit `6673124`, analizar esos archivos tal cual: **no repetir la inferencia solo por actualizar scripts**. Si no se ejecutaron, usar la versión publicada adecuada sin mezclar opciones nuevas con scripts antiguos. Tras interpretar datos reales, decidir la corrección del servicio y las pruebas operativas pendientes.
+
+El último despliegue conocido sigue siendo `16436df0`, snapshot limpio de `ed94e25`; ni las correcciones de presupuesto posteriores ni estos lectores han creado otro despliegue. No se tocaron Prisma Developer, plugin de ChatGPT, motores, herramientas, proveedores, proyectos ajenos, D1 ni configuración de producción.
+
+## Continuación en el workspace nuevo — 13/11/2026
+
+**Mediciones manuales del VPS:** [guía de transferencia y ejecución](../neural-pilot/staging/VPS-MEASUREMENTS.md). Los scripts originales `monitor-vps.py` y `analyze-vps.py` ya estaban publicados en `686d6d4`; no se instalaron automáticamente en GenixNode. Se añade una sonda manual `probe-qwen.py`, máximo una completion de ocho tokens/55 s, con credencial existente solo en memoria del VPS y contadores de cola únicamente si `/metrics` ya está habilitado. No es un despliegue ni una medición realizada desde Codex. El usuario tiene SSH manual y ejecutará allí los lectores; las métricas siguen pendientes hasta recibir sus resultados.
+
+**Leer este bloque antes del cierre histórico de abajo.** Se recuperó exactamente `ed94e25b9f38645a484c740f9f2e3ac3063f3a4f`, PR #125 abierto y draft, sin cambios locales previos. Informe nuevo: [queen-resume-2026-11-13.md](queen-resume-2026-11-13.md), [evidencias](queen-resume-2026-11-13/).
+
+- **Bloqueo actual comprobado:** una única nueva prueba de ocho tokens volvió a terminar en `QUEEN_TIMEOUT`, 55 000 ms de inferencia, 57 614 ms cliente, preflight real 64 tokens; [solicitud exacta](queen-resume-2026-11-13/short-generation.json). No se recibió completion ni se estiman sus tokens. No se lanzaron otros lotes después del fallo.
+- **Último despliegue real:** `16436df0-3d50-4e89-9165-b875be731d3f`, https://16436df0.prisma-queen-staging.pages.dev, Production aislado, snapshot limpio **ed94e25**, `commit_dirty=false`. [Manifest](queen-resume-2026-11-13/restored-deployment.json). Sustituye al anterior `2368e044`; las correcciones nuevas de presupuesto/evaluación de esta continuación **no están desplegadas**. Crear snapshot limpio del nuevo HEAD cuando se recupere generación.
+- Los tres secretos de Queen siguen presentes. Solo se rotó el digest de operador `QUEEN_STAGING_KEY_SHA256` y se actualizó la metadata `QUEEN_SOURCE_COMMIT`. **Clave local nueva:** `/workspace/work/queen-operator/operator-key`, 0600, fuera del repo; el archivo anterior no se transfirió. Usar esta ruta en `QUEEN_STAGING_OPERATOR_KEY_FILE`. Su ausencia futura se resuelve con el procedimiento histórico de rotación; no pedir otra vez los tres secretos.
+- No hay identidad SSH ni socket de agente SSH en este entorno. Se solicitó acceso seguro o muestras de los monitores; no se han recibido mediciones del VPS. RAM, CPU física, swap, OOM, reinicios y causa del bloqueo siguen desconocidos. No atribuir métricas locales al VPS.
+- **Código nuevo:** el presupuesto absoluto incluye planificación y reanudaciones; las reparaciones reservan su intento antes de enviarse, reciben cancelación y no ejecutan respuestas tardías. Los parciales solo se adjuntan tras comprobar mismos bytes y parámetros. Nuevas regresiones cubren plazos, intentos inciertos y pertenencia de resultados. Ver [checks](queen-resume-2026-11-13/checks.json) y el commit que contiene este bloque; su SHA exacto se obtiene con `git log -1`, sin autorreferencia ficticia.
+- **Harness:** límite compartido para OCR/normalización/Excel y registro separado de Queen/especialistas; fases identificadas como controles. Caso optativo de un único objetivo `QUEEN_OPERATIONS_CASES=scan-excel-full-objective`. No acredita coordinación completa hasta ejecutarse y verificar celdas con Queen.
+- **Calidad:** 11 casos nuevos y comparación de los 8 originales, con expectativas solo en el evaluador. [Guía](../neural-pilot/staging/quality-evaluation.md). Los 19 están preparados offline, **cero evaluados con Qwen** en esta continuación. El 8/8 histórico conserva sus límites semánticos.
+- **Controles reales nuevos:** backend conserva ruta local; JSON format→minify real con plan determinista; Chromium verifica contenido exclusivo de la página 2 en DOCX y rechazo de bytes nuevos bajo la tarea anterior. No se cuentan como inferencias. Kilo sigue anunciado disponible para chat, sin llamada al especialista demostrada.
+- Proyecto principal y D1 principal fuera de las mutaciones, salvo retirar un Preview automático de este propio SHA si se cumplen todas las comprobaciones autorizadas. El registro del checkpoint indica cualquier incidente; no confiar en los prefijos de omisión.
+
+**Siguiente paso exacto:** ejecutar `monitor-vps.py` y `analyze-vps.py` directamente en GenixNode mediante el acceso operativo existente; comprobar generación local y recuperar completions sin cambiar parámetros por intuición. Mantener 2048/256/1, timeout55s, tarea120s, ocho pasos y dos inferencias. Después subir snapshot limpio del HEAD nuevo únicamente a staging, probar una inferencia corta, PDF→página solicitada→DOCX, objetivo completo escaneo→Excel, reparación y delegación reales; luego los ocho casos y once nuevos. Conservar todo fallo y consumo desconocido. No repetir un timeout sin información nueva. No hay prueba neuronal ni lote activo al guardar este checkpoint.
+
+Estado conservado el **13/11/2026, UTC**, por solicitud de migración a otra cuenta de ChatGPT. **No reiniciar la misión ni repetir una auditoría general.** El objetivo inmediato del cierre es preservar código, evidencia y pendientes; Queen todavía no está terminada.
+
+## 1. Identidad, ramas y despliegue
+
+- Repositorio: `AndresYepez23/PRISMA`.
+- Rama remota: **`feature/prisma-neural-genixnode-qwen35-pilot`**.
+- PR existente: **https://github.com/AndresYepez23/PRISMA/pull/125**, mantener **draft**, sin fusionar.
+- Base publicada al retomar: `a9c6fc9ebb7e69fb7196cc6f954622c4f43e8aef`. Commit de implementación y evidencias del cierre: **`6da757ba5d7aa4ca10d97a8adcb71836cf472d26`**, ya publicado y verificado en GitHub.
+- Historial que debe conservarse: `3d3da5e19ec40f32d3b4f96f0aff51380dc3e634` (integración central), `bb38210d4fd687894dcef05ae0730001455d5b22` (staging aislado), `a9c6fc9...` (evidencia previa).
+- Último despliegue **verificado** del proyecto aislado: **`2368e044-b65a-446e-87e5-b0a910cac9f2`**, https://2368e044.prisma-queen-staging.pages.dev, entorno Pages **Production**, lógico `staging`.
+- Ese despliegue se construyó desde el árbol de trabajo que se conserva en este cierre: sus metadatos todavía dicen `a9c6fc9...`, **`commit_dirty=true`**. No fingir que ya corresponde a un nuevo commit limpio. Hash y tamaño exactos del paquete: [deployment-manifest.json](queen-live-2026-11-13/deployment-manifest.json).
+- Al solicitar el cierre, no se generó otro despliegue: la prioridad pasó a guardar y publicar en GitHub.
+
+**Trabajo concurrente en main:** el remoto era `42dade166714c6eaaff210fe0377cfba68da8d9c` al inicio y se observó `4b24fe6d6f74375a337936aafe1199df9b1e9072` antes del push de cierre. Pages principal ya apuntaba a ese último SHA, despliegue `67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08`. Es trabajo externo a esta sesión: aquí no se escribió main, no se rebasó la rama ni se desplegó el proyecto principal. No resolver ni mezclar ese trabajo automáticamente.
+
+## 2. Restricciones que siguen vigentes
+
+1. No fusionar el PR ni publicar Queen para usuarios de producción.
+2. No modificar ni desplegar en el proyecto principal **`prismaspace`**; no escribir en su D1.
+3. No modificar main. No eliminar proveedores ni herramientas. Los motores, registro y campos de herramientas no se cambiaron respecto a `a9c6fc9` en esta fase.
+4. Usar exclusivamente **Production de `prisma-queen-staging`**, autorizado por el usuario. No volver a pedir duplicar los secretos en Preview.
+5. No reinstalar Qwen, recrear el túnel o cambiar contexto/concurrencia por intuición.
+6. **No trabajar en Prisma Developer ni en el plugin de ChatGPT.** Esas integraciones se desarrollan por separado. La referencia existente a `developer-api.js` se reutiliza como fuente del planificador local; no es una nueva misión sobre Developer.
+7. No declarar éxito operativo porque los ocho casos mínimos de intención hayan pasado.
+
+El proyecto principal tiene previews automáticos para todas las ramas. Se utilizó el prefijo documentado **`[CF-Pages-Skip]`**, pero **no bastó para evitar que esta cuenta crease un Preview encolado**. No tratar ese prefijo como garantía: verificar los eventos después del push y no permitir una publicación principal. Para el commit final solo de documentación se usa `[CI Skip] [CF-Pages-Skip]`; el CI del código ya pasó. No cambiar la configuración de prismaspace sin autorización. Referencia oficial: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/#skipping-a-build-via-a-commit-message.
+
+## 3. Recursos y secretos
+
+Cuenta Cloudflare: `26c2a31382f903f4ce4f5f7bafbd6820`.
+
+| Recurso | Identidad | Estado |
+| --- | --- | --- |
+| Pages principal | `prismaspace`, ID `c89b887d-199c-4a60-b9b5-58f743cc69dd` | Fuera de las mutaciones de esta sesión |
+| D1 principal | `e02104b5-0861-475a-a60f-7658439d4fe0` | No aplicar migraciones ni escribir datos |
+| Pages aislado | `prisma-queen-staging`, ID `4d1eca8d-7adb-4b5e-aa46-d39165633679` | Production para validación privada |
+| D1 aislada | `980bad8f-0356-48b9-87bc-56bcf363f69a` | Binding `PRISMA_RATE_DB`; marcador comprobado por el backend |
+| Configuración local aislada | `prisma/wrangler.staging.toml` | Queen activa en ámbito raíz, Preview desactivado; UUID aislado en ambos |
+
+El esquema previo vacío y las migraciones 0002, 0003 y 0004 ya se aplicaron **solamente en la D1 nueva**. No repetirlas. El marcador `queen_staging_identity` impide confiar únicamente en nombres de bindings. `prisma/wrangler.toml` y las migraciones existentes no se modificaron en esta fase.
+
+Los tres secretos de Queen están **presentes como `secret_text` en Production del proyecto aislado**, confirmados en Cloudflare y por inferencias auténticas:
+
+- `QUEEN_ACCESS_CLIENT_ID`
+- `QUEEN_ACCESS_CLIENT_SECRET`
+- `QUEEN_API_KEY`
+
+**No falta ninguno de esos tres secretos.** La generación bloqueada al final no debe diagnosticarse como otra falta de credenciales. Si en el futuro realmente falta uno, introducirlo únicamente en **Cloudflare → Workers & Pages → prisma-queen-staging → Settings → Variables and Secrets → Production → Secret/Encrypt** y crear otro snapshot aislado. No compartir valores en el chat, GitHub, `.env` versionados, argumentos de comandos o logs.
+
+Variables no secretas conservadas: `QUEEN_ENABLED=1`, `QUEEN_STAGE=staging`, `QUEEN_BASE_URL=https://queen.prismaspace.space/v1`, `QUEEN_MODEL=unsloth/Qwen3.5-2B-GGUF:Q4_K_M`, `QUEEN_STAGING_DATABASE_ID` igual al UUID aislado. `QUEEN_SOURCE_COMMIT` del despliegue actual todavía es `a9c6fc9...`; es metadata, no evidencia de un commit limpio.
+
+### Acceso del operador al migrar de cuenta
+
+Todas las rutas aisladas exigen `X-Queen-Staging-Key`. El backend compara su SHA-256 con el secreto `QUEEN_STAGING_KEY_SHA256`; sin clave devuelve 404 antes de consultar D1.
+
+La clave actual vive **solo** en un archivo privado del workspace de esta sesión: `/workspace/work/queen-staging/operator-key`, modo 0600. **No se publica ni se incorpora a esta documentación.** No presumir que ese archivo será accesible desde la otra cuenta. La ausencia de esa clave local no significa que falten los tres secretos de Queen.
+
+Si el workspace se conserva, usar ese archivo sin imprimirlo. Si no se conserva, crear una clave nueva:
+
+```sh
+python3 prisma/neural-pilot/staging/create-operator-key.py \
+  --directory /RUTA_PRIVADA/queen-operator
+```
+
+El helper genera `operator-key` y `operator-key.sha256`, ambos privados, sin imprimir valores. Guardar **solo el digest** como `QUEEN_STAGING_KEY_SHA256` en Production del proyecto aislado mediante el conector Cloudflare o su dashboard. No reemplazar los otros secretos con valores redacted de un GET. Se necesita otro despliegue aislado para activar el nuevo hash. Mantener `operator-key` local; no enviarlo al modelo, al navegador ni al repositorio. No se rotó esta clave durante el cierre.
+
+La otra cuenta necesita conectar sus herramientas GitHub/Cloudflare con permiso sobre este mismo repositorio y cuenta. Clonar el código no transfiere permisos, claves de operador ni una identidad SSH.
+
+## 4. Arquitectura real
+
+### Qwen, GenixNode, Tunnel y Access
+
+Qwen vive en GenixNode, no en el navegador. El objetivo documentado es Nova VPS x4, Ubuntu 24.04 x86_64, 2 vCPU/4 GB RAM y CPU sin GPU. `compose.yaml` declara un contenedor `prisma-neural-qwen`, puerto `127.0.0.1:7860`, dos hilos, contexto 2048, un slot y máximo 256 tokens. Esa configuración del host **no se verificó por SSH en esta sesión**; sí se observaron por API un slot y contexto 2048.
+
+El dominio `queen.prismaspace.space` llega por Cloudflare Tunnel al servidor llama.cpp. Access usa token de servicio y llama.cpp su propia API key. Ambas autenticaciones se adjuntan también a `/tokenize`, `/props` y `/slots`, fuera de `/v1`. No se cambió el túnel ni se habilitaron shell, agentes o MCP dentro de llama.cpp.
+
+Metadata útil, sin valores de credenciales: aplicación Access `80da9841-e95e-4c1d-a852-49343363ec94`, política de servicio `8252dee9-8c08-41cc-90f6-13c8a0f9bcf6`, token de servicio `a06aea3f-812e-49e7-8b0d-f33ba5e16564`. No se registró un ID de túnel; no inventarlo.
+
+### Backend y planificador
+
+- `functions/_lib/queen.js`: configuración server-only, Access + Bearer, redirects manuales, JSON acotado, `/tokenize` real antes de inferir, thinking desactivado, límite de respuesta 256, contexto 2048 y reserva de framing 128. Timeout de inferencia 55 s; presupuesto total de tarea 120 s.
+- El lease D1 serializa solicitudes entre isolates. El límite público sigue en 5/min y 30/día; el operador privado tiene 12/min y 96/día en un namespace separado, para que las pruebas no agoten el presupuesto público.
+- Tras un timeout de inferencia incierta, staging conserva una pausa de cinco minutos. Antes de volver a inferir consulta el slot real. Esto limita acumulaciones; un slot inactivo **no prueba** que el servicio de generación esté sano.
+- `functions/api/core/plan.js`: origen/contenido válidos, archivos solo como metadatos (20 y 50 MB agregados), atajo local para operaciones simples y Queen para semántica/composición. No omitir Queen en un compuesto solo porque el planificador antiguo detectó una única conversión final.
+- Catálogo proyectado desde `registry.js` y los mismos campos de Explore, con recuperación de herramientas, formas como «minifícalo» y operaciones identificadas por cláusulas. Las etiquetas esperadas del benchmark no entran en el prompt.
+- `queen-schema.js` acota estructura, IDs e intención; los parámetros tipados, entradas, dependencias y restricciones se validan en la aplicación. La gramática extensa anterior queda como recurso histórico offline en `staging/profiling-grammar.js`; el endpoint de perfil pesado fue retirado.
+- Máximo ocho pasos DAG, dos inferencias por tarea y una reparación. Se puede reducir a una inferencia por checkpoint del harness; no aumentar el techo global.
+
+### Proveedores y coordinación
+
+`queen-providers.js` proyecta los proveedores, catálogos, cuotas, salud, límites y preferencias existentes. `queen-observations.js` distingue capacidades anunciadas de observaciones upstream; no promueve chat a generación de imágenes ni una operación no verificada a resultado verificado. Se conservan los mecanismos de respaldo y la preferencia manual.
+
+En staging se observó Kilo disponible para chat anónimo y ningún proveedor de imagen ejecutable. **No se demostró una delegación externa real en la ronda operativa:** el plan falló antes de invocar al especialista. No copiar credenciales de producción para rellenar esa prueba ni interpretar `available` como inferencia ya realizada.
+
+### Memoria, ejecución y recuperación
+
+- `queen-client.js` envía solo metadatos y un contexto procedimental acotado; no vuelca archivos o conversaciones privadas. `core.js` conserva el runtime, memoria de tareas, almacenamiento, conversaciones y permisos existentes.
+- El contexto incluye últimas operaciones y preferencias; los datos anteriores no autorizan repetir una operación sobre un archivo nuevo. La identidad de ejecución incluye SHA-256 de los bytes, además de nombre y tamaño.
+- `queen-execution.js` ejecuta mediante `runToolBatch` y los motores existentes; traspasa artefactos y texto entre pasos, conserva resultados parciales y evita repetir resultados completos o llamadas externas de resultado incierto.
+- Una corrección local previa a obtener resultado puede consumir la inferencia restante. No repetir pasos anteriores ni reintentar automáticamente operaciones externas o fallos de verificación.
+- `queen-handoff.js` adapta únicamente ZIP PNG de `pdf-to-image` para `image-ocr`: CRC, nombres seguros, hasta 10 imágenes, expansión 20 MB y cuatro millones de píxeles por imagen. No se creó una herramienta ficticia de OCR de PDF.
+
+### Verificación
+
+`queen-verifier.js` comprueba contenido/estructura independientemente de que el modelo diga «éxito»: JSON, firmas, hashes, PDF, páginas/rotación, imágenes, ZIP/Office y presupuestos. El backend compara también los datos JSON literales originales con los propuestos por el modelo.
+
+Un DOCX o XLSX estructuralmente válido puede conservar verificación parcial de contenido. El harness añade comprobaciones contra el contenido conocido de los archivos de prueba. No convertir estados parciales en éxito global ni aceptar un paso que declara dependencia pero consume el PDF original cuando debe consumir el resultado intermedio.
+
+## 5. Resultados reales y límites
+
+Leer primero [el informe completo](queen-live-2026-11-13.md) y [summary.json](queen-live-2026-11-13/summary.json).
+
+- Primera inferencia auténtica: plan `json-format`, ejecución real y JSON verificado. 76 tokens de entrada, 91 de salida, 17.495 s backend y 6.716 tokens/s de generación.
+- Access y API key comprobados con solicitudes positivas y controles negativos reales HTTP 401 por capa. `/models` y `/tokenize` respondieron desde Prisma.
+- Ambos formatos de schema impusieron una constante contraria al prompt en el control real. La hipótesis de schemas ignorados no se confirmó.
+- Última ronda completa de ocho casos: **8/8 bajo las aserciones mínimas de intención/herramientas**, 4711 tokens entrada y 442 salida. Mediana 24.574 s; rango 15.461–43.204 s; generación observada 5.942–6.748 tokens/s. No es precisión universal.
+- Hubo respuestas poco pertinentes: consulta Word→pregunta sobre columnas, y cancelación→solicitud de confirmación. **La calidad no está aprobada** por ese 8/8.
+- Se conservan las siete rondas: 0/8, 3/8, 3/8, 6/8, 5/8, 6/8, 8/8. No borrar las regresiones intermedias.
+- Operación neuronal PDF→Word: el DOCX falló la prueba de contenido porque `s2` consumió `file:0` en vez de `step:s1`. Se corrigió la validación; falta repetirla con el código final.
+- Operación neuronal escaneo→OCR: timeout. Excel quedó bloqueado. La reparación neuronal no se llegó a probar porque falló la inferencia inicial. La composición JSON omitió minificación; ahora se corrige su recuperación verbal y su operación requerida.
+- Cadena **con plan determinista de control** sí ejecutó los motores reales hasta Excel y comprobó todas las celdas. Sus artefactos están conservados. **No contar ese resultado como planificación neuronal completa.**
+- Control real de archivos nuevos: aprobado; rechaza otro contenido para el mismo taskId y ejecuta una tarea nueva sin reutilizar el resultado anterior.
+- Después cayó la generación observada a ~1.3 tokens/s en dos respuestas y comenzaron timeouts. El perfil A/B quedó inconcluso: ambas variantes agotaron 55 s. También falló SSE sin schema; no hay TTFT medido.
+- Tras cinco minutos de pausa, incluso el control de **ocho tokens** volvió a agotar 55 s. Última evidencia: [final-truncation.json](queen-live-2026-11-13/final-truncation.json). Su pausa registrada expiraba el 13/11/2026 a las 14:03:13 UTC; consultar D1/estado actual, no asumir que sigue vigente.
+- Control de contexto real: `/tokenize` devolvió 2503 tokens y se rechazó la inferencia antes de completions por superar contexto 2048. Error de conexión inducido devolvió HTTP upstream 530 y el timeout inducido de metadata fue reconocido. No se confunden con una caída demostrada de Qwen.
+
+**No se midieron RAM, CPU física, swap, OOM ni reinicios del VPS; no hubo SSH disponible.** No atribuir a GenixNode las métricas de Chromium, Cloudflare o el workspace. No se efectuaron ajustes de hardware. La causa de la generación detenida sigue abierta.
+
+## 6. Pruebas y reproducción
+
+Se conservaron 192 pruebas históricas; ahora **210 Node pasan**, build estático aprobado (130 pruebas embebidas) y paquete aislado compilado. [checks.json](queen-live-2026-11-13/checks.json) y [log local](queen-live-2026-11-13/local-tests.txt). Los mocks de transporte y planes deterministas de tests no cuentan como inferencias reales.
+
+Desde la raíz del repositorio:
+
+```sh
+node --test prisma/tests/*.test.mjs
+node prisma/build.mjs
+```
+
+Tooling usado fuera del repositorio: Node 24.22.1 local, Node 22 en CI, Wrangler 4.161.0, esbuild 0.28.2, Playwright 1.62.1 y Chromium del sistema. No requiere reinstalar nada en el VPS.
+
+```sh
+QUEEN_TEST_TOOLING=/RUTA/tooling \
+QUEEN_STAGING_BUILD_OUTPUT=work/queen-staging-build \
+node prisma/neural-pilot/staging/build.cjs
+```
+
+El builder **no despliega ni ejecuta SQL**. El proyecto es Direct Upload; no se puede convertir in situ a integración Git. Subir el paquete como `_worker.js` únicamente al proyecto aislado, rama del PR, SHA real y `commit_dirty` honesto. Verificar bindings antes/después. Un nuevo despliegue también es necesario si se rota el hash del operador; no cambiar los tres secretos de Queen por ello.
+
+Consultas privadas reproducibles sin imprimir credenciales:
+
+```sh
+export QUEEN_STAGING_URL=https://prisma-queen-staging.pages.dev
+export QUEEN_STAGING_OPERATOR_KEY_FILE=/RUTA_PRIVADA/queen-operator/operator-key
+node prisma/neural-pilot/staging/request.mjs --route=health --output=work/health.json
+node prisma/neural-pilot/staging/request.mjs --route=server --output=work/server.json
+```
+
+**No lanzar otro lote neuronal mientras la generación esté detenida.** Tras recuperar/medir el servidor:
+
+```sh
+node prisma/neural-pilot/staging/evaluate.mjs --live \
+  --base=https://VERSION.prisma-queen-staging.pages.dev \
+  --output=work/queen-live-nueva-ronda.json
+```
+
+El runner no sobrescribe archivos. `--resume-from=...` solo recupera un informe reciente de la **misma versión inmutable**; no mezclar resultados de otro código como si fueran una nueva ronda. Los tokens perdidos permanecen desconocidos.
+
+Operaciones reales con archivos generados de contenido conocido:
+
+```sh
+python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma
+# Otra terminal, con las dos variables anteriores:
+QUEEN_TEST_BASE_URL=http://127.0.0.1:4173 \
+QUEEN_OPERATIONS_OUTPUT=work/queen-operaciones-nueva-ronda \
+node prisma/neural-pilot/staging/browser-operations.cjs
+```
+
+Con `QUEEN_STAGING_URL`, el puente remite solicitudes reales al backend; no simula respuestas. PDF→Word usa además el endpoint normal `/api/core/plan`. Sin esa variable, son controles deterministas identificados. Se guardan entradas, progreso, artefactos y fallos. La limpieza de espacios del OCR es una regla local explícita del escenario; no una reconstrucción general de tablas. No contar las tres fases como una tarea de dos inferencias si los contadores reales superan ese presupuesto.
+
+## 7. Siguiente paso técnico exacto
+
+**Primero medir/recuperar el servicio de generación en GenixNode.** Los secretos ya están disponibles; no repetir el aprovisionamiento de Pages, D1, Access o Qwen. No seguir disparando solicitudes de 55 s ni repetir el perfil histórico pesado. El endpoint de ese perfil fue retirado de la versión final.
+
+Desde una máquina que tenga la identidad SSH existente, sustituir `USUARIO@HOST_GENIXNODE`:
+
+```sh
+scp prisma/neural-pilot/staging/monitor-vps.py \
+    prisma/neural-pilot/staging/analyze-vps.py \
+    USUARIO@HOST_GENIXNODE:/tmp/
+ssh USUARIO@HOST_GENIXNODE
+# Dentro del VPS:
+docker ps --format '{{.Names}}'
+python3 /tmp/monitor-vps.py --container prisma-neural-qwen \
+  --samples 120 --interval 5 --output /tmp/queen-vps-continuidad.jsonl
+python3 /tmp/analyze-vps.py /tmp/queen-vps-continuidad.jsonl
+```
+
+Si Docker exige privilegios, usar `sudo python3` para el monitor. Confirmar el nombre del contenedor mostrado. Elegir otro nombre de salida en cada repetición. Son lecturas de `/proc` y estadísticas/estado de Docker: no leen claves, variables de entorno o prompts ni reinician servicios. Obtener también estado local de generación según la configuración real del administrador; no inferirlo de un `/slots` inactivo.
+
+Sin SSH, solicitar al propietario las muestras de estos scripts o acceso operativo por el canal adecuado, **no claves en el chat**. No inventar la causa ni ajustar hilos, RAM, swap, contexto o concurrencia sin medición. No se autorizó trabajar en otros proyectos para resolverlo.
+
+Después de recuperar inferencia:
+
+1. Crear un snapshot limpio desde el commit remoto de esta rama, solo en staging aislado.
+2. Repetir el control corto, ocho casos y revisión cualitativa; conservar cada resultado.
+3. Repetir PDF→Word comprobando contenido y traspaso `step:s1`.
+4. Completar con Queen escaneo→OCR→extracción→Excel y validar celdas; no sustituirlo por el control determinista.
+5. Probar composición JSON, reparación real de parámetros y una delegación ejecutada y verificada.
+6. Medir streaming/TTFT, tokens/s, contexto, estabilidad y RAM/CPU en el VPS. Mantener los límites hasta tener evidencia.
+
+## 8. Punto exacto de interrupción y archivos prioritarios
+
+Al pedir el usuario el cierre para migrar de cuenta, se acababa de recibir un nuevo timeout de ocho tokens **después de una pausa de cinco minutos**. Se habían terminado las correcciones de dataflow/JSON y protecciones, 210 pruebas y ambos builds. No se continuaron experimentos neuronales; se pasó a conservar, publicar y verificar GitHub. No se presupone que se hayan agotado créditos: este es el punto efectivo de cierre solicitado.
+
+Leer, en este orden:
+
+1. Este archivo `prisma/docs/QUEEN-CONTINUITY.md`.
+2. `prisma/docs/queen-live-2026-11-13.md` y su directorio de evidencia, especialmente `summary.json`, `round-7.json`, `operations-real-1.json`, `operations-deterministic.json`, `final-truncation.json`, `deployment-manifest.json`.
+3. `prisma/neural-pilot/staging/README.md` para operación y aislamiento.
+4. `prisma/docs/queen-architecture.md` para la arquitectura anterior; sus estados históricos pueden preceder la inferencia real y deben leerse junto al informe nuevo.
+5. `prisma/functions/_lib/queen.js`, `prisma/functions/api/core/plan.js` y `prisma/src/queen-{contracts,schema,plan,execution,handoff,verifier,client}.js`.
+6. `prisma/tests/queen.test.mjs`, `queen-staging.test.mjs`, `queen-integration.test.mjs` y `prisma/neural-pilot/queen-cases.json`.
+7. `prisma/neural-pilot/staging/{evaluate.mjs,browser-operations.cjs,request.mjs,monitor-vps.py,analyze-vps.py}`.
+
+Las evidencias válidas del workspace se trasladaron al repositorio; no depender de `/workspace/work/queen-live` en otra cuenta. El archivo de clave de operador constituye la excepción de seguridad deliberada y se recupera/rota como se explica arriba. Los antiguos scripts `verify-queen-browser.cjs` y `verify-queen-runtime.cjs` incluyen fixtures de respuesta; **no usarlos para inflar resultados neuronales**.
+
+## Registro del cierre remoto
+
+El primer push de este cierre contiene implementación, evidencias y este documento. El siguiente commit de documentación registra su SHA y la comprobación remota. Para el SHA del propio documento, consultar el historial/permalink en GitHub o ejecutar `git log -1`; un archivo no puede incluir el hash de su propio commit sin cambiarlo. El informe final al usuario aporta ese último SHA verificable.
+
+### Verificación remota del cierre
+
+- Código, evidencia y primera versión de continuidad: [`6da757ba5d7aa4ca10d97a8adcb71836cf472d26`](https://github.com/AndresYepez23/PRISMA/commit/6da757ba5d7aa4ca10d97a8adcb71836cf472d26).
+- GitHub Actions del código: **success**, [Prisma Core checks #533](https://github.com/AndresYepez23/PRISMA/actions/runs/43440104293). Las 210 pruebas completas también constan en el log local conservado.
+- Se leyeron desde GitHub por SHA el documento, el resumen y código del coordinador. El blob XLSX remoto `089c409eecf5a083e3d3b73383f0501cc2f1a854` coincide con `git hash-object` local.
+- PR #125 actualizado, **open, draft=true, merged=false**.
+- Producción principal: canonical `67b3e7e7-16b2-43ec-9fc0-cb85a8adbc08`, main `4b24fe6...`; Queen desactivada allí, binding original conservado, consulta de solo lectura: **cero tablas queen_%**.
+- Cloudflare creó automáticamente el Preview **encolado** `dc237372-9a3a-4da4-b0a0-205bdcec9c14` para el push `6da757b`, pese al prefijo. Se verificó que era exclusivamente Preview de esta rama/SHA y que no era canonical, y se retiró antes de comenzar el build. No se cambió configuración del proyecto, main ni su D1. Esta limpieza es la única mutación correctiva sobre un objeto Preview principal durante el cierre; no ocultarla ni afirmar que el webhook no ocurrió.
+
+Si ocurre otra vez en la continuidad: consultar proyecto y despliegue; comprobar `environment=preview`, rama Queen, SHA del propio push e ID diferente del canonical; solo entonces cancelar/retirar **ese Preview automático**, nunca el canonical, un despliegue main o trabajo de otra rama. El prefijo no sustituye esa comprobación.
+
+</details>
+
+</details>
+
+</details>

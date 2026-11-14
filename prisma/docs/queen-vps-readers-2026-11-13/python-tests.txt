@@ -1,0 +1,24 @@
+test_complete_capture_requires_count_exit_status_and_signal_coverage (test_analyze_vps.CoverageTests.test_complete_capture_requires_count_exit_status_and_signal_coverage) ... ok
+test_docker_permission_errors_are_missing_coverage_not_zero_usage (test_analyze_vps.CoverageTests.test_docker_permission_errors_are_missing_coverage_not_zero_usage) ... ok
+test_empty_capture_does_not_establish_stability (test_analyze_vps.CoverageTests.test_empty_capture_does_not_establish_stability) ... ok
+test_interrupted_or_truncated_capture_keeps_valid_measurements (test_analyze_vps.CoverageTests.test_interrupted_or_truncated_capture_keeps_valid_measurements) ... ok
+test_invalid_restart_counts_do_not_establish_stability_coverage (test_analyze_vps.CoverageTests.test_invalid_restart_counts_do_not_establish_stability_coverage) ... ok
+test_nonfinite_cpu_is_unknown_and_json_stays_standard (test_analyze_vps.CoverageTests.test_nonfinite_cpu_is_unknown_and_json_stays_standard) ... ok
+test_old_cli_compatible_data_does_not_assume_monitor_success (test_analyze_vps.CoverageTests.test_old_cli_compatible_data_does_not_assume_monitor_success) ... ok
+test_restart_between_samples_is_observed_even_with_false_restarting (test_analyze_vps.CoverageTests.test_restart_between_samples_is_observed_even_with_false_restarting) ... ok
+test_busy_slot_and_missing_key_never_post (test_probe_qwen.ProbeTests.test_busy_slot_and_missing_key_never_post) ... ok
+test_dribbling_metadata_has_wall_deadline_and_never_posts (test_probe_qwen.ProbeTests.test_dribbling_metadata_has_wall_deadline_and_never_posts) ... ok
+test_generation_has_its_own_shorter_deadline_and_no_retry (test_probe_qwen.ProbeTests.test_generation_has_its_own_shorter_deadline_and_no_retry) ... ok
+test_longer_nested_deadline_does_not_renew_generation_limit (test_probe_qwen.ProbeTests.test_longer_nested_deadline_does_not_renew_generation_limit) ... ok
+test_metrics_read_is_bounded_and_probe_still_posts_once (test_probe_qwen.ProbeTests.test_metrics_read_is_bounded_and_probe_still_posts_once) ... ok
+test_nested_deadline_restores_remaining_outer_time_and_handler (test_probe_qwen.ProbeTests.test_nested_deadline_restores_remaining_outer_time_and_handler) ... ok
+test_outer_probe_deadline_is_not_swallowed_by_metrics (test_probe_qwen.ProbeTests.test_outer_probe_deadline_is_not_swallowed_by_metrics) ... ok
+test_success_posts_once_with_existing_generation_limits (test_probe_qwen.ProbeTests.test_success_posts_once_with_existing_generation_limits) ... ok
+test_bad_checksum_never_marks_sources_verified (test_vps_download.DownloadTests.test_bad_checksum_never_marks_sources_verified) ... ok
+test_failed_first_download_stops_before_other_scripts (test_vps_download.DownloadTests.test_failed_first_download_stops_before_other_scripts) ... ok
+test_verified_sources_compile_without_running_the_probe (test_vps_download.DownloadTests.test_verified_sources_compile_without_running_the_probe) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.686s
+
+OK

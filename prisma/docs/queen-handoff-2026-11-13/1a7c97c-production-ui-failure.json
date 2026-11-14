@@ -1,0 +1,63 @@
+{
+  "at": "2026-11-14T00:39:57.036Z",
+  "base": "https://prismaspace.space",
+  "mode": "actual-production-ui",
+  "mockedResponses": 0,
+  "stagingReroutes": 0,
+  "maximumQueenInferences": 2,
+  "localOnly": false,
+  "tlsVerification": "environment-proxy-context-exception",
+  "requests": [
+    {
+      "kind": "queen-plan",
+      "path": "/api/core/plan",
+      "repair": false,
+      "at": "2026-11-14T00:40:02.872Z",
+      "dispatched": true,
+      "finished": true,
+      "httpStatus": 503,
+      "responseReadFailed": true
+    }
+  ],
+  "blockedRequests": [],
+  "aggregateTelemetrySuppressed": 0,
+  "pageErrorCount": 0,
+  "cases": {
+    "localJson": {
+      "ok": true,
+      "uiFlow": true,
+      "actualEngineOutput": true,
+      "formatted": true,
+      "dataUnchanged": true,
+      "queenRequests": 0,
+      "realInference": false
+    }
+  },
+  "ok": false,
+  "browserTelemetrySuppressed": 1,
+  "fixture": {
+    "file": "input-three-pages.pdf",
+    "pages": 3,
+    "bytes": 1155,
+    "sha256": "40ccb82ba40b6e62c747c59d351c4a5e777ba31af3f09d7d3143bbcf0630ea9c",
+    "type": "digital-selectable-text"
+  },
+  "dependencyPreflight": {
+    "ok": true,
+    "libraryImportsOnly": true,
+    "workerHttpAvailable": true,
+    "engineExecutionProven": false
+  },
+  "error": "PLAN_RESPONSE_UNREADABLE",
+  "errorDetails": {
+    "name": "Error",
+    "message": "PLAN_RESPONSE_UNREADABLE",
+    "phase": "neural",
+    "step": "pdf-word-submit"
+  },
+  "screenshotUnavailable": true,
+  "dispatchedQueenRequests": 1,
+  "confirmedQueenInferences": null,
+  "unresolvedDispatchedRequests": 1,
+  "continuousPerformanceOrGeneralQualityProven": false
+}

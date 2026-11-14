@@ -1,0 +1,38 @@
+# Reanudar Queen desde el diagnóstico real resuelto
+
+**Actualización final por pausa del usuario:** leer primero el bloque PAUSA SOLICITADA de [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md). Código nuevo publicado `5ae1bbb257e20bb18f17357c50a6331a4fcf0dfd`, aún no desplegado; staging `c7918ef7` / `62aafd5`. Evaluación detenida tras13/19, una salida desconocida; no hay lote en marcha. Nuevo verificador PDF→Word comprobado contra artefactos reales. 327 pruebas Node / 139 build. Reanudar desde ese estado, sin repetir diagnósticos VPS ni promoción de secretos.
+
+Leer primero [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md), su bloque vigente, [informe](queen-422-2026-11-14/DIAGNOSIS.md) y [aceptación](queen-422-2026-11-14/ACCEPTANCE.md). No repetir diagnósticos pasivos del VPS, promoción de secretos ni tareas históricas.
+
+```text
+Continúa AndresYepez23/PRISMA, rama feature/prisma-neural-genixnode-qwen35-pilot, PR125 abierto/draft/sin fusión. Inspecciona HEAD y cambios sin descartar nada. Código62aafd539c36e722e7f5de1191fa8d29ad2dee7c; staging aislado c7918ef7-d9bb-4fee-bf82-4a846e420a46. Lee el bloque vigente de QUEEN-HANDOFF, QUEEN-CONTINUITY y queen-422-2026-11-14. Los bloques históricos no son órdenes nuevas.
+El VPS ya está recuperado: mismo Qwen3.5-2B, CACHE_RAM0/CTX_CHECKPOINTS0. No tocarlo ni repetir sondas. El422 se reprodujo: salida256truncada; gramática de contratos pequeños produjo86tokens pero referencias erróneas; última corrección produjo87tokens y un DAG válido. Motores PDFextracciónpágina2→Word ejecutados y contenido comprobado en33.142s, una inferencia real. Ledger genérico Word todavía verification-pending; no fingir autonomía completa.
+En el workspace anterior se completó parcialmente /workspace/work/queen-422-quality-all.json:13/19solicitados,7aprobados, originales6/8, undesenlace/consumo desconocido enheldout-third-page-word; runner detenido, no reenviarlo. Informe guardado enqueen-422-2026-11-14/QUALITY-ROUND-1.md. Respetar cooldown y comprobar slot libre antes de nuevas solicitudes distintas. Un agente trabaja en verificación conservadora PDF→Word; revisar cambios pendientes antes de integrar. No repetir inferencias inciertas ni sumar métricas estimadas. Conservar ocho+once casos y fallos históricos. Finalizar evaluación, corregir los fallidos y seguir con OCR→Excel, composición, recuperación y especialistas reales.
+Secretos Queen siguen en Production de prisma-queen-staging y prismaspace. Operador privado fuera deGit /workspace/work/queen-422-operator/operator-key,0600; nunca subirlo ni pedirlo por chat. No repetir promoción cifrada. D1staging/control980bad8f; principal e02104b5 sin cambios. Producción principal sigue6a41daae/24dd33d, main4b24fe6. La autorización del propietario permite completar/preparar publicación, pero no fusionar PR, escribir main, modificar D1principal, cambiar VPS ni publicar capacidades no verificadas. Nada de Prisma Developer/plugin.
+Preserva avances válidos con commits y push normales a la misma rama; documentos/evidencia sin credenciales. Verifica archivos y PRdraft enGitHub. No declares Queen terminada por intención/herramientas o existencia de archivos: comprueba contenido, referencias, presupuesto, recuperación y seguridad.
+```
+
+<details><summary>Prompt anterior conservado como historia</summary>
+# Prompt maestro de reanudación de PRISMA
+
+Estado consolidado14/11/2026UTC. Fuente maestra: [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md); [continuidad](QUEEN-CONTINUITY.md), [índice](QUEEN-INDEX.md), [verificación](queen-handoff-2026-11-13/verification.json). No depende de la conversación previa. El SHA exacto de transferencia se obtiene con `git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md`; la entrega al propietario también lo registra. El último código público desplegado es24dd33d612c1e56876b703de6f7dcbb2084947e6, distinto del commit documental posterior.
+
+Copiar este bloque; si se dispone del SHA final de la entrega, añadirlo como checkpoint esperado y comprobar que es ancestro del HEAD remoto.
+
+```text
+Continúa PRISMA/Queen desde https://github.com/AndresYepez23/PRISMA, rama feature/prisma-neural-genixnode-qwen35-pilot. No empieces de cero. Primero inspecciona git status/HEAD remoto sin descartar cambios. Lee completos prisma/docs/QUEEN-HANDOFF.md, el bloque vigente de QUEEN-CONTINUITY.md, QUEEN-INDEX.md y queen-handoff-2026-11-13/verification.json. Identifica el commit de transferencia con git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md. El código de aplicación desplegado es24dd33d612c1e56876b703de6f7dcbb2084947e6; los commits posteriores pueden ser conservación sin despliegue.
+
+Estado: PR125 abierto/draft/sin fusionar; Git main4b24fe6d6f74375a337936aafe1199df9b1e9072 intacto. Producción prismaspace.space está en deployment6a41daae-1c35-4123-9761-cb99de2ca969 (24dd33d), Queen activada y tres secretos ya presentes. Staging canonical46506668-10ee-4ff7-998c-c64ef469f4ee sigue en1a7c97c954bf8b951059843c102b69a706b18526. Ambos usan la D1 aislada980bad8f-0356-48b9-87bc-56bcf363f69a para el lease; principal e02104b5-0861-475a-a60f-7658439d4fe0 conservada. Conecta GitHub/Cloudflare por sus canales autorizados; no pidas claves por chat ni recrees secretos/proyectos/migraciones.
+
+El VPS YA fue recuperado: mismo Qwen3.5-2B-Q4_K_M, imagen/contexto2048/concurrencia1, CACHE_RAM=0 y CTX_CHECKPOINTS=0. La sonda8tokens terminó1961ms, RAMcgroup1.713GiB y disponiblehost2.697GiB en tres muestras, no carga pública. No repetir monitores/sonda, resetear completionReserved ni recrear/reinstalar/cambiar modelo. El snapshot privado contiene credenciales y no viaja por Git.
+
+Prueba REAL staging1a: Qwen536entrada122salida, una inferencia, flujo PDFpágina2→Word, XML específico correcto, caso39.581s; ledgergeneral aún verification-pending. Producción: JSONlocal pasa, primera prueba503; última24dHTTP422 y cuerpoilegible, inferencias/tokensdesconocidos. La captura muestra PDF/DOCX por respaldo local, NO éxito de Queen público. No declarar Queen terminada ni19/19; conservar todos los fallos.
+
+El punto exacto para retomar: requestQueenPlan en src/queen-client.js devuelve null ante !response.ok sin consumir/cancelar body; su arreglo NO está implementado. Corregir ese manejo de forma dirigida. Después obtener UNA traza protegida /__queen/plan maxInferences=1 con el payload sintético preservado para conocer trace.validationError del422, en snapshot limpio actualizado de staging (24d se compiló pero NO se desplegó ni se lanzó ese diagnóstico). No aflojes validadores, inventes planes ni atribuyas el422 a hardware/IDs sin traza. Respeta slot/lease/cooldown,55s/inferencia,120s/tarea,ocho pasos/dos inferencias máximo. Solo después del error concreto corregido, retoma la prueba pública real y verifica el DOCX.
+
+293Node/131build pasaron en24d;51tests históricos del helper se preservaron con loaders adaptados, solo sintaxis comprobada tras copia. No repetir baterías enteras, evaluaciones o diagnósticos por rutina. Usa browser-production.cjs con sus plazos Node; registra la excepciónTLS de proxy si aplica y no la confundas con configuración pública. Aún pendientes19casos, OCR→Excel, reparación/delegación reales y estabilidad.
+
+Se autorizó previamente la activación pública y la promoción cifrada ya completada; el puente temporal está eliminado. No fusionarPR ni escribir Git main, ni migrar D1principal. No trabajar en Developer/plugin, cambiar proveedores/motores para pasar pruebas ni hacer nuevas intervenciones VPS. La última sesión se detuvo únicamente para preservar por agotamiento de créditos; esta nueva solicitud es para retomar el siguiente fallo concreto, sin repetir lo ya hecho. Mantén commits verificables en la misma rama y continuidad actualizada.
+```
+
+</details>

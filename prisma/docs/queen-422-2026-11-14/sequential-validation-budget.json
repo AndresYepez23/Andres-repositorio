@@ -1,0 +1,19 @@
+{
+  "purpose": "One real inference and immediate real tools under original120s deadline after known DAG correction",
+  "authorization": "Latest explicit authorization to complete Queen; no automatic retry of uncertain requests",
+  "allowedModelInferences": 1,
+  "inferencesDispatched": 1,
+  "attemptReserved": true,
+  "sourceCommit": "62aafd539c36e722e7f5de1191fa8d29ad2dee7c",
+  "deploymentId": "c7918ef7-d9bb-4fee-bf82-4a846e420a46",
+  "payloadSha256": "1f3d863c0d61cb686e968dfa70597f70b7d1bdf70aeeb851b8f81aa47e507037",
+  "reservedAt": "2026-11-14T08:10:27.239220+00:00",
+  "maxInferences": 1,
+  "inputFileSha256": "d0f857bd9021b9bdcd97cb58fe3c7e95f14bc4cbd54120eb5b37e674f315095c",
+  "inputFileBytes": 1302,
+  "rawGeneratedContentPrivate": true,
+  "modelInferencesObserved": 1,
+  "httpStatus": 200,
+  "resultCode": null,
+  "repeatProhibited": true
+}

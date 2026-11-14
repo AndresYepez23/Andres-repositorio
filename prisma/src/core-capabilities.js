@@ -120,7 +120,7 @@ export function fileKind(f){const n=String(f?.name||'').toLowerCase(),t=String(f
 export const CAPABILITIES = [
  ['image-bg','image',/quitar?\w*.*fondo|elimin\w*.*fondo|borr\w*.*fondo|retir\w*.*fondo|sin fondo|fondo.*desapare|dej\w*.*transparen|(?:solo|solamente) el objeto|solo (?:la persona|el sujeto)|aislar? el sujeto|recorta el sujeto.*detras|conserva el objeto/],
  ['image-strip-metadata','image',/(?:quit|borr|elimin|limpi|retir)\w*.*(?:metadatos|exif|ubicacion|gps)/],
- ['image-resize','image',/redimension|\b\d{2,4}\s*[x×]\s*\d{2,4}\b|cambia(?:r)? (?:las )?dimensiones/],
+ ['image-resize','image',/redimension|\b\d{2,4}\s*[x×]\s*\d{2,4}\b|(?:cambia(?:r)?|ajusta(?:r)?) (?:(?:el|las) )?(?:dimensiones|tamano(?! del archivo))/],
  ['image-compress','image',/comprim|pese menos|baja\w* el peso|reduce.*peso|ocupe menos espacio|mas ligera|tamano del archivo|cargue mas rapido|optimiz|debajo de \d|menos de \d/],
  ['image-convert','image',/(?:conviert|convert|pasa|export|guarda|cambia|transforma|necesito|quiero|version|de jpg).*(?:png|jpe?g|webp)/],
  ['image-palette','image',/(?:extra|saca|obten|identifica|muestra|detecta).*colores|paleta de colores|colores dominantes/],
@@ -138,8 +138,9 @@ export const CAPABILITIES = [
  ['pdf-to-word','pdf',/(?:a|en|como) word|a docx/],
  ['pdf-metadata-clean','pdf',/(?:quita|limpia|borra|elimina).*metadatos/],
  ['json-format','text',/(?:organiza|formatea|embellece|ordena|indenta|sangria|legible|valida|mal formado|sintaxis|comprueba).*json|json bonito|formatear json|json.*mal formado/],
- ['json-minify','text',/(?:minifica|comprime).*json/],
+ ['json-minify','text',/(?:minifica|comprime).*json|json.*(?:minifica|minificar)|\bminifica\s+(?:(?:el|la|este|esta|ese|esa|dicho|dicha)\s+)?(?:resultado|salida)\b/],
  ['csv-json','text',/(?:csv|tabla).*(?:a|en|como|por) json|json (?:desde|del) (?:este )?csv/],
+ ['json-xlsx','text',/(?:json|csv).*(?:a|en|como)\s+(?:excel|xlsx)|(?:crea|genera|exporta|convierte|transforma).*\b(?:excel|xlsx)\b/],
  ['json-csv','text',/json.*(?:a|en|como) csv/],
  ['qr','text',/\bqr\b/],
  ['word-count','text',/(?:cuenta|cuantas|contar|numero|recuenta|conteo|contador|total).*palabras/],
@@ -155,15 +156,53 @@ export const CAPABILITY_WORKFLOWS=workflowCatalog.map(flow=>({...flow}));
 export function extractPayload(raw){
  const s=String(raw||'');const fenced=s.match(/```[^\n]*\n([\s\S]*?)\n?```/);if(fenced)return {instruction:s.slice(0,fenced.index),text:fenced[1]};
  const label=s.match(/(?:texto|contenido|datos|lista|text|content|data|list)\s*:\s*([\s\S]*)$/i);if(label)return {instruction:s.slice(0,label.index),text:label[1]};
- const json=s.search(/[\[{]/);if(json>=0&&/json/i.test(s.slice(0,json)))return {instruction:s.slice(0,json),text:s.slice(json)};
+ const json=s.search(/[\[{]/);
+ if(json>=0&&/json/i.test(s.slice(0,json))){
+  // A JSON literal can sit between two instructions. Never promote strings
+  // contained INSIDE the literal into executable user instructions.
+  const stack=[];let quoted=false,escaped=false;
+  for(let i=json;i<s.length;i++){
+   const ch=s[i];
+   if(quoted){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')quoted=false;continue;}
+   if(ch==='"'){quoted=true;continue;}
+   if(ch==='{'||ch==='[')stack.push(ch);
+   else if(ch==='}'||ch===']'){
+    const previous=stack.pop();
+    if(previous!==(ch==='}'?'{':'['))break;
+    if(!stack.length){
+     const literal=s.slice(json,i+1);
+     try{
+      JSON.parse(literal);
+      const prefix=s.slice(0,json).trim().replace(/[:\s]+$/,'');
+      const trailing=s.slice(i+1).trim().replace(/^[.;,:\s]+/,'');
+      return {instruction:trailing?prefix+'. '+trailing:prefix,text:literal};
+     }catch{/* Preserve existing behavior for invalid JSON. */}
+     break;
+    }
+   }
+  }
+  return {instruction:s.slice(0,json),text:s.slice(json)};
+ }
  const colon=s.search(/:(?!\/\/)/);if(colon>=0)return {instruction:s.slice(0,colon),text:s.slice(colon+1).replace(/^\s/, '')};
  const quote=s.match(/[“"]([^”"]+)[”"]\s*$/);if(quote)return {instruction:s.slice(0,quote.index),text:quote[1]};
  return {instruction:s,text:''};
 }
 // Questions and explanations are NOT permission to modify an uploaded file.
 // Keep this guard shared by Core chat and Prisma Developer's MCP planner.
+const SPANISH_QUESTION_START=/^(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|puedo|podemos|me puedes|me podrias|es posible|sera posible|se puede|se podria)\b/;
+function informationalInstruction(raw){
+ let {instruction}=extractPayload(raw);
+ // A conversational preface can use a colon without introducing data. Only
+ // unwrap it when an actual question follows; quoted/fenced payloads and
+ // commands such as "Por favor, convierte..." keep their existing meaning.
+ let candidate=String(raw||'').trim(),prefixed=false;
+ const intro=/^(?:por\s+favor|antes\s+de\s+(?:decidir|empezar|comenzar|hacerlo|continuar)|(?:tengo\s+)?(?:una\s+)?(?:consulta|pregunta))(?:\s*[:,]\s*|\s+(?=¿))/i;
+ while(intro.test(candidate)){candidate=candidate.replace(intro,'');prefixed=true;}
+ if(prefixed&&SPANISH_QUESTION_START.test(normalizeIntent(candidate).replace(/^[¿\s]+/,'')))instruction=extractPayload(candidate).instruction;
+ return instruction;
+}
 export function isInformationalIntent(raw){
- const {instruction}=extractPayload(raw);
+ const instruction=informationalInstruction(raw);
  const q=normalizeIntent(instruction).trim().replace(/^[¿¡\s]+/,'');
  // A direct English request such as "Can you compress this PDF?" is an
  // action request, not an informational question. Do not block execution.
@@ -174,8 +213,35 @@ export function isInformationalIntent(raw){
  if(/^how\b|^what\b|^why\b|^which\b|^where\b|^when\b|^(?:can|could|would)\s+you\s+(?:explain|tell me|show me)\b|^tell me how\b/.test(original))return true;
  if(/^cuant[ao]s?\s+(?:palabras|letras|caracteres)\b/.test(q)&&
     /(?:texto|contenido|datos|lista|text|content|data|list)\s*:/i.test(String(raw||'')))return false;
- return /^(?:(?:como|cual(?:es)?|cuant[ao]s?|que|por que|para que|puedes|podrias|me puedes|me podrias|es posible|sera posible)\b)/.test(q)||
+ if(/\b(?:solo|solamente|unicamente)\s+(?:quiero|necesito)\s+(?:saber|conocer|entender)\b/.test(q))return true;
+ return SPANISH_QUESTION_START.test(q)||
   /^(?:(?:solo|solamente|unicamente)\s+)?(?:explica|explicame|describe|informame|dime\s+(?:como|por\s+que|para\s+que))\b/.test(q);
+}
+// This describes the question's form, never whether a capability is available.
+// Queen must still choose a truthful affirmative, negative or conditional reply.
+export function isBinaryCapabilityQuestion(raw){
+ if(!isInformationalIntent(raw))return false;
+ const q=normalizeIntent(informationalInstruction(raw)).replace(/^[¿¡\s]+/,'');
+ return /^(?:puedes|puedo|podemos|se puede|es posible)\b/.test(q);
+}
+
+// Explicit prohibitions constrain both operation selection and explanations.
+// Match only instruction text: quoted JSON/text payloads cannot remove tools.
+export function excludedCapabilityIds(raw,files=[]){
+ const instruction=normalizeIntent(extractPayload(raw).instruction);
+ const image=files.length?files.every(f=>fileKind(f)==='image'):/\b(?:imagen|imagenes|foto|fotografia)\b/.test(instruction);
+ if(!image)return [];
+ const negative='(?:\\bno\\s+(?:(?:quiero|necesito)\\s+(?:que\\s+)?)?|\\bni\\s+|\\bsin\\s+)';
+ const excluded=new Set();
+ const effects=[
+  ['recort\\w*',['image-crop','image-social-kit']],
+  ['(?:redimension\\w*|cambi\\w*\\s+(?:(?:el|la|las|de)\\s+)?(?:tamano|dimensiones))',['image-resize','image-crop','image-social-kit','image-favicon','image-collage']],
+  ['comprim\\w*',['image-compress']],
+  ['(?:gir|rot)\\w*',['image-rotate']],
+  ['(?:quit|borr|elimin)\\w*\\s+(?:los\\s+)?(?:metadatos|exif|gps)',['image-strip-metadata']]
+ ];
+ for(const [action,ids] of effects)if(new RegExp(negative+action+'\\b').test(instruction))for(const id of ids)if(tools.some(t=>t.id===id))excluded.add(id);
+ return [...excluded];
 }
 
 function positiveClauses(original) {
@@ -191,8 +257,19 @@ function positiveClauses(original) {
 }
 const need=message=>({type:'needs-input',message,steps:[],confidence:0});
 const mime=q=>/\bwebp\b/.test(q)?'image/webp':/\bpng\b/.test(q)?'image/png':/\bjpe?g\b/.test(q)?'image/jpeg':'';
+// Normalize only explicit page ordinals in the instruction, never quoted data.
+// Relative references and an unspecified page count remain execution-time facts.
+const PAGE_ORDINALS=Object.freeze({primer:1,primero:1,primera:1,first:1,segundo:2,segunda:2,second:2,
+ tercer:3,tercero:3,tercera:3,third:3,cuarto:4,cuarta:4,fourth:4,quinto:5,quinta:5,fifth:5,
+ sexto:6,sexta:6,sixth:6,septimo:7,septima:7,seventh:7,octavo:8,octava:8,eighth:8,
+ noveno:9,novena:9,ninth:9,decimo:10,decima:10,tenth:10});
+const ordinalWords=Object.keys(PAGE_ORDINALS).join('|');
+function explicitPageOrdinals(q){
+ return q.replace(new RegExp('\\b('+ordinalWords+')\\s+(pagina|hoja)\\b','g'),(_,word,noun)=>noun+' '+PAGE_ORDINALS[word])
+  .replace(new RegExp('\\b(pagina|hoja)\\s+('+ordinalWords+')\\b','g'),(_,noun,word)=>noun+' '+PAGE_ORDINALS[word]);
+}
 function resolveCapabilityRequest(raw,files=[],task=null){
- let {instruction,text}=extractPayload(raw);let q=normalizeIntent(instruction).trim();
+ let {instruction,text}=extractPayload(raw);let q=explicitPageOrdinals(normalizeIntent(instruction).trim());
  // In file-edit instructions, a colon may introduce page ranges rather than
  // content payload: "Divide el PDF en dos: páginas 1-3 y 4-6".
  if(/^(?:divide|dividir|separa|separar|extrae|extraer|quita|elimina|gira|rota)\b/.test(q)&&
@@ -205,7 +282,7 @@ function resolveCapabilityRequest(raw,files=[],task=null){
  if(positive.negated)q=positive.value;
  if(positive.negated&&/^(?:explica|describe|dime|indica|informa)\b/.test(q))
   return need('No modificaré el archivo: has solicitado información, no una transformación.');
- q=q.replace(/\bsin cambiar (?:las )?dimensiones\b/g,'conservando dimensiones');
+ q=q.replace(/\bsin (?:cambiar|ajustar) (?:(?:las )?dimensiones|(?:el )?tamano(?! del archivo))\b/g,'conservando dimensiones');
  if(task?.text&&!text&&/^(?:ahora|tambien|mejor|con menos)/.test(q))text=task.text;
  if(task&&/^ahora al contrario[.!\s]*$/.test(q)){
   const last=task.steps?.at(-1)?.tool_id;
@@ -216,7 +293,7 @@ function resolveCapabilityRequest(raw,files=[],task=null){
  if(task?.text&&/^ahora (?:a|en) csv/.test(q))q='json a csv';
  if(task?.text&&/^ahora (?:a|en) json/.test(q))q='csv a json';
  if(!q||/^(?:que es|como funciona|para que sirve|explica|por que)\b/.test(q))return null;
- if(/^(?:hazlo|continua|tambien eso|todas|la segunda|el segundo|repite el proceso(?: con este archivo)?)[.!\s]*$/.test(q)&&task?.steps?.length){
+ if(/^(?:hazlo|continua|tambien eso|todas|la segunda|el segundo|haz lo mismo(?: con este(?: otro)? archivo)?|repite el proceso(?: con este archivo)?)[.!\s]*$/.test(q)&&task?.steps?.length){
   return {type:'ready',message:'Retomo las operaciones de esta tarea.',steps:task.steps.map(s=>({...s,params:{...s.params}})),confidence:1};
  }
  if(/^(?:mejor en|ahora (?:en|a)|con menos calidad|conserva las dimensiones|utiliza el mismo formato|dejala|dejalas)/.test(q)&&task?.steps?.length){
@@ -325,10 +402,22 @@ function resolveCapabilityRequest(raw,files=[],task=null){
   return {type:'ready',confidence:1,message:'Comprimiré el vídeo conservando su duración y su pista de audio.',steps:[{tool_id:'video-compress',params:{quality:'balanced'},reason:'Compresión sin recorte de duración'}]};
  }
  if(kind==='image'&&/a pdf|en pdf|como pdf/.test(q))return null;
- if(kind==='pdf'&&/divid|separ|partir|fragment|troce/.test(q)&&!/(?:paginas|hojas)\s*\d/.test(q))return buildSmartLocalFlow(raw,files,[]);
+ if(kind==='pdf'&&/divid|separ|partir|fragment|troce/.test(q)&&!/(?:paginas?|hojas?)\s*\d/.test(q))return buildSmartLocalFlow(raw,files,[]);
  if(kind==='image'&&/reduce (?:su |el )?tamano/.test(q)&&!/(?:archivo|peso|dimensiones|\d+\s*[x×])/.test(q))return need('¿Quieres reducir el peso del archivo o sus dimensiones en píxeles?');
  if(/(?:sin|no uses|no utilizar).*?(?:ia|inteligencia artificial)/.test(q)&&/\b(?:genera|inventa|escribe).*(?:cuento|ensayo|cancion)/.test(q))return need('Esa creación requiere un motor generativo. Puedo hacer transformaciones locales de un texto que proporciones.');
  let found=CAPABILITIES.filter(c=>(c.kind===kind||c.kind==='text'&&!files.length)&&c.pattern.test(q));
+ // Keep CSV→JSON→Excel on the original engines. XLSX accepts JSON rows;
+ // insert the parsing step only if an actual CSV payload is present.
+ if(found.some(c=>c.id==='json-xlsx')&&!found.some(c=>c.id==='csv-json')){
+  const payload=extractPayload(raw).text.trim();let jsonRows=false;
+  try{jsonRows=Array.isArray(JSON.parse(payload));}catch{}
+  if(!jsonRows){
+   if(/\bcsv\b/.test(q)&&payload.includes('\n')&&payload.includes(',')){
+    const csv=CAPABILITIES.find(c=>c.id==='csv-json');if(csv)found=[csv,...found];
+   }else return need('Para crear el Excel adjunta un CSV o pega una lista JSON válida.');
+  }
+ }
+
  if(!found.length)return null;
  // Negation is not authorization, and unsupported clauses may not disappear.
  // Explicit negative clauses were removed before matching; positive steps may proceed.

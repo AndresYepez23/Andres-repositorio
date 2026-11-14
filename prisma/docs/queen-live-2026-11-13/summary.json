@@ -1,0 +1,181 @@
+{
+  "date": "2026-11-13T13:22:38.701Z",
+  "lastCompleteEvaluation": "round-7.json",
+  "evaluationDeployment": "https://a27c015c.prisma-queen-staging.pages.dev",
+  "criteria": "original fixed intention/tool-selection assertions, not universal comprehension or artifact success",
+  "methodology": "real authenticated Qwen requests with deterministic safety gates and catalog grammar; expected case labels absent from prompts",
+  "correctDecisions": 8,
+  "evaluatedCases": 8,
+  "decisionSelectionPercent": 100,
+  "fullyValidatedOperationalGoal": false,
+  "cases": [
+    {
+      "id": "question-not-permission",
+      "intent": "question",
+      "tools": [],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 25567,
+      "inputTokens": 604,
+      "outputTokens": 36,
+      "inferences": 1,
+      "message": "¿Qué columnas desea extraer del PDF?"
+    },
+    {
+      "id": "negation",
+      "intent": "clarify",
+      "tools": [],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 23580,
+      "inputTokens": 636,
+      "outputTokens": 31,
+      "inferences": 1,
+      "message": "¿Qué alternativas deseas conocer?"
+    },
+    {
+      "id": "missing-parameter",
+      "intent": "clarify",
+      "tools": [],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 29060,
+      "inputTokens": 631,
+      "outputTokens": 51,
+      "inferences": 1,
+      "message": "Indica ancho y alto en píxeles, por ejemplo 1080 × 720."
+    },
+    {
+      "id": "multi-step-pdf",
+      "intent": "execute",
+      "tools": [
+        "pdf-extract",
+        "pdf-to-word"
+      ],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 43204,
+      "inputTokens": 625,
+      "outputTokens": 148,
+      "inferences": 1,
+      "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar."
+    },
+    {
+      "id": "json-payload",
+      "intent": "execute",
+      "tools": [
+        "json-format"
+      ],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 34700,
+      "inputTokens": 565,
+      "outputTokens": 94,
+      "inferences": 1,
+      "message": "Plan preparado para 1 operación(es); los resultados se comprobarán después de ejecutar."
+    },
+    {
+      "id": "cancel",
+      "intent": "question",
+      "tools": [],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 17958,
+      "inputTokens": 438,
+      "outputTokens": 20,
+      "inferences": 1,
+      "message": "¿Desea cancelar la tarea?"
+    },
+    {
+      "id": "specialist-image",
+      "intent": "delegate",
+      "tools": [],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 17626,
+      "inputTokens": 595,
+      "outputTokens": 34,
+      "inferences": 1,
+      "message": "Consultar especialista en generación de imágenes"
+    },
+    {
+      "id": "unsupported-pdf-ocr-chain",
+      "intent": "delegate",
+      "tools": [],
+      "passedOriginalDecisionCriteria": true,
+      "clientLatencyMs": 15461,
+      "inputTokens": 617,
+      "outputTokens": 28,
+      "inferences": 1,
+      "message": "delegar a especialista"
+    }
+  ],
+  "caseTokenTotals": {
+    "inputTokens": 4711,
+    "outputTokens": 442
+  },
+  "caseLatencyMs": {
+    "min": 15461,
+    "median": 24573.5,
+    "max": 43204
+  },
+  "lastCompleteBatchReportedTokens": {
+    "inputTokens": 5431,
+    "outputTokens": 630,
+    "complete": true
+  },
+  "qualityLimitations": [
+    "Word capability question received an irrelevant question about columns",
+    "Cancellation asked for confirmation instead of acknowledging it",
+    "Benchmark checks decisions; actual PDF content test failed due to using original file at step 2",
+    "Neural JSON composition omitted minification"
+  ],
+  "physicalVpsMetrics": {
+    "ramBytes": null,
+    "cpuPercent": null,
+    "sshAvailable": false
+  },
+  "hardwareChanges": false,
+  "contextTokens": 2048,
+  "maxOutputTokens": 256,
+  "maxConcurrentModelInferences": 1,
+  "baselineTests": 192,
+  "currentTests": 210,
+  "mainModified": false,
+  "primaryD1Modified": false,
+  "prDraft": true,
+  "laterGenerationState": "After a five-minute quiet period, 8-token inference again timed out after 55 seconds; all three Queen secrets remain available. No further neural trials before the requested handoff.",
+  "finalCodeNeuralRegression": "Pending restoration of completion generation; 210 local tests and both builds pass. Eight-case round 7 is preserved as an earlier real result, not relabeled.",
+  "finalQuietPeriodProbe": {
+    "route": "truncation",
+    "httpStatus": 503,
+    "clientDurationMs": 55421,
+    "body": {
+      "ok": false,
+      "code": "QUEEN_TIMEOUT",
+      "diagnostics": {
+        "preflightInputTokens": 64,
+        "contextLimit": 2048,
+        "maxOutputTokens": 8,
+        "completionTransportAttempted": true,
+        "durationMs": 55000,
+        "cooldownUntil": 1794578593242
+      },
+      "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+      "environment": "staging",
+      "durationMs": 55276
+    }
+  },
+  "closureReason": "User requested preservation and migration to another ChatGPT account; stopped new inference experiments.",
+  "mainBaselineSha": "42dade166714c6eaaff210fe0377cfba68da8d9c",
+  "mainObservedBeforeHandoffPush": "4b24fe6d6f74375a337936aafe1199df9b1e9072",
+  "mainWrittenByThisSession": false,
+  "mainConcurrentChangesNote": "Remote main advanced externally; this session did not push main, rebase or deploy prismaspace.",
+  "primaryPagesConfigurationModified": false,
+  "primaryPagesProductionModified": false,
+  "automaticQueenPreviewCleanup": {
+    "deploymentId": "dc237372-9a3a-4da4-b0a0-205bdcec9c14",
+    "stateBeforeRemoval": "queued, no build started",
+    "triggerSha": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+    "removed": true,
+    "reason": "Unexpected automatic preview despite CF-Pages-Skip; prevent publication while preserving canonical production"
+  },
+  "implementationCommit": "6da757ba5d7aa4ca10d97a8adcb71836cf472d26",
+  "codeCiRun": {
+    "id": 43440104293,
+    "conclusion": "success"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "samples": 120,
+  "first": "2026-11-13T16:58:58.264869+00:00",
+  "last": "2026-11-13T17:11:28.387732+00:00",
+  "hostVcpus": 2,
+  "dockerCpuPercentOfOneCore": {
+    "mean": 1.2495833333333333,
+    "max": 32.09
+  },
+  "hostCpuPercent": {
+    "mean": 2.88626855177444,
+    "max": 29.483568075117372
+  },
+  "restartCountIncrease": 0,
+  "containerRamBytes": {
+    "mean": 3277068995,
+    "max": 3426310160
+  },
+  "minimumHostAvailableRamBytes": 438898688,
+  "oomKilledObserved": false,
+  "containerRestartsObserved": false,
+  "monitorErrors": 0,
+  "hardwareOrModelChanged": false
+}

@@ -1,0 +1,39 @@
+{
+  "at": "2026-11-13T15:59:11.843013+00:00",
+  "startingCommit": "66731248dcefd464aa7bb5817f366c452fc61449",
+  "scope": "VPS measurement readers and manual procedure only",
+  "offlinePythonTests": {
+    "passed": 19,
+    "failed": 0,
+    "command": "python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v",
+    "usesFixtures": true,
+    "realVpsMeasurements": false,
+    "realInferenceRequests": 0
+  },
+  "shellGuide": {
+    "blocksSyntaxChecked": 5,
+    "downloadFailureAndChecksumTests": 3,
+    "vpsCommandsExecuted": false
+  },
+  "nodeBaseline": {
+    "lastPublishedPassed": 236,
+    "nodeRuntimeCodeChanged": false,
+    "rerunThisContinuation": false
+  },
+  "probeLimits": {
+    "wholeProbeSeconds": 100,
+    "httpMetadataSeconds": 5,
+    "generationSeconds": 55,
+    "maxOutputTokens": 8,
+    "maxCompletionRequests": 1,
+    "retry": false
+  },
+  "scriptsSha256": "a53b9de028f693f826fd113f1e60ce524cb8282f8e2daec5e033f74f06c3ff0a  monitor-vps.py\ncfcf3cd57d937ec93c2b7b84a19e939896e63307665e341417897d489c913fd5  analyze-vps.py\n503b704910ac2f0b97c71b0b1ecd0df6224714a520c1b6112a104ea2b538998f  probe-qwen.py\n",
+  "access": {
+    "configuredSshIdentity": false,
+    "sshAgent": false,
+    "workspaceVpsResultsAvailable": false,
+    "cloudflareConnector": "Repeated authentication handoff instead of executing even GET /accounts; no endpoint response obtained."
+  },
+  "publication": "Pending connector recovery; no push while unable to control automatic primary Preview. No deployment or server change."
+}

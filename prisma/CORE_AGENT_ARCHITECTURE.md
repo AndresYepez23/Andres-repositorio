@@ -1,5 +1,7 @@
 # Prisma Core — agente centralizado y arquitectura de herramientas
 
+> Los principios permanecen; cifras de herramientas/proveedores son snapshots históricos. Consultar registry/estado real sin certificar todo el catálogo. [Continuidad vigente](docs/QUEEN-HANDOFF.md).
+
 **Objetivo permanente:** Prisma Core es el agente conversacional central de Prisma Space. Debe reconocer, comparar, combinar y ejecutar las capacidades registradas sin obligar al usuario a memorizar nombres de herramientas ni gastar inferencia para tareas mecánicas.
 
 ## Principios

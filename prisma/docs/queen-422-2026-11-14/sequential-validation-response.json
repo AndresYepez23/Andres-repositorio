@@ -1,0 +1,141 @@
+{
+  "at": "2026-11-14T08:10:27.297Z",
+  "base": "https://c7918ef7.prisma-queen-staging.pages.dev",
+  "route": "plan",
+  "clientDurationMs": 31059,
+  "httpStatus": 200,
+  "body": {
+    "ok": true,
+    "source": "queen",
+    "plan": {
+      "taskId": "f32838f0-eece-4da5-87a8-51245f93f7b0",
+      "objective": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+      "intent": "execute",
+      "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar.",
+      "steps": [
+        {
+          "id": "s1",
+          "tool_id": "pdf-extract",
+          "params": {
+            "pages": "2"
+          },
+          "dependsOn": [],
+          "inputs": [
+            "file:0"
+          ],
+          "status": "planned"
+        },
+        {
+          "id": "s2",
+          "tool_id": "pdf-to-word",
+          "params": {},
+          "dependsOn": [
+            "s1"
+          ],
+          "inputs": [
+            "step:s1"
+          ],
+          "status": "planned"
+        }
+      ],
+      "constraints": [
+        "catalog-only",
+        "existing-permissions",
+        "verify-before-success"
+      ],
+      "status": "validated",
+      "needs_clarification": false,
+      "question": "",
+      "execution": {
+        "executed": false,
+        "verified": false
+      }
+    },
+    "decision": {
+      "schemaValid": true,
+      "catalogValid": true,
+      "parametersValid": true,
+      "semanticConfidence": null,
+      "calibration": "requires-authenticated-evaluation",
+      "requiresApproval": false
+    },
+    "delegate": null,
+    "metrics": {
+      "inputTokens": 482,
+      "outputTokens": 87,
+      "externalCostUsd": 0,
+      "inferences": 1,
+      "repairs": 0,
+      "retrievals": 0,
+      "diagnostics": {
+        "finishReason": "stop",
+        "preflightInputTokens": 470,
+        "contextLimit": 2048,
+        "maxOutputTokens": 256,
+        "reasoningContentPresent": false,
+        "thinkingTagsPresent": false,
+        "observedInputTokens": 482,
+        "observedOutputTokens": 87,
+        "generationTokensPerSecond": 6.1084191844422255,
+        "promptTokensPerSecond": 34.90584907608852,
+        "responseCharacters": 252,
+        "responseWhitespaceCharacters": 13
+      },
+      "trace": [
+        {
+          "intent": "execute",
+          "search": null,
+          "toolIds": [
+            "pdf-extract",
+            "pdf-to-word"
+          ],
+          "steps": [
+            {
+              "id": "s1",
+              "parameterTypes": {
+                "pages": "string"
+              },
+              "inputs": [
+                "file:0"
+              ],
+              "dependsOn": []
+            },
+            {
+              "id": "s2",
+              "parameterTypes": {},
+              "inputs": [
+                "step:s1"
+              ],
+              "dependsOn": [
+                "s1"
+              ]
+            }
+          ],
+          "usage": {
+            "inputTokens": 482,
+            "outputTokens": 87,
+            "externalCostUsd": 0
+          },
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 470,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 482,
+            "observedOutputTokens": 87,
+            "generationTokensPerSecond": 6.1084191844422255,
+            "promptTokensPerSecond": 34.90584907608852,
+            "responseCharacters": 252,
+            "responseWhitespaceCharacters": 13
+          }
+        }
+      ],
+      "durationMs": 29556
+    },
+    "databaseId": "980bad8f-0356-48b9-87bc-56bcf363f69a",
+    "environment": "staging",
+    "realInference": true
+  }
+}
