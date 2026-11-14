@@ -90,3 +90,20 @@ test('isolated staging is allowed only on its own Pages project and dedicated br
  }
  assert.equal(invoked,1);
 });
+
+test('Qwen Core restores every explicit PDF step when the small model omits extraction',async()=>{
+ const result=await interpretWithQwenCore({}, {text:'Extrae la segunda página del PDF y conviértela a Word',files:pdf},{
+  lease:(_env,fn)=>fn(),
+  infer:async()=>({plan:{intent:'tools',tool_ids:['pdf-to-word']},usage:{inputTokens:20,outputTokens:10}})
+ });
+ assert.deepEqual(result.tool_ids,['pdf-extract','pdf-to-word']);
+ assert.equal(result.metrics.coverageGuardApplied,true);
+});
+test('Qwen Core does not spend an inference or suggest a tool for a clear informational question',async()=>{
+ let calls=0;
+ const result=await interpretWithQwenCore({}, {text:'¿Cómo puedo extraer una página de un PDF?',files:[]},{
+  lease:(_env,fn)=>fn(),infer:async()=>{calls++;throw Error('must not infer');}
+ });
+ assert.equal(result.intent,'question');assert.deepEqual(result.tool_ids,[]);
+ assert.equal(result.metrics.inferences,0);assert.equal(calls,0);
+});
