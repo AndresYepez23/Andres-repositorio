@@ -29,6 +29,14 @@ test('assessment does not hijack commands, negation, payloads or ordinary conver
  assert.equal(planFileAssessment('No conviertas todavía, identifica su tipo',metadata).type,'assessment');
 });
 
+test('a specified destination can continue after inspection, while advice and deferral stay read-only',()=>{
+ const command='Identifica el tipo del archivo y conviértelo a HTML';
+ assert.equal(planFileAssessment(command,metadata).continueConversion,true);
+ assert.equal(planFileConversion(command,metadata,[],{assessmentComplete:true}).steps[0].tool_id,'docx-html');
+ for(const text of ['No conviertas a PDF todavía, identifica su tipo','Antes de decidir, explica qué formato conserva mejor el contenido: PDF o HTML','¿Qué formato conserva mejor el contenido al convertir a PDF?'])
+  assert.equal(planFileAssessment(text,metadata).continueConversion,false,text);
+});
+
 test('compatibility and executors share routes rather than advertising unsupported targets',()=>{
  const byExt={docx:['pdf','txt','html'],pdf:['docx','png','jpg','txt'],txt:['docx','pdf','txt','html'],csv:['csv','json','xlsx'],xlsx:['csv','json','xlsx']};
  for(const [ext,expected] of Object.entries(byExt)){

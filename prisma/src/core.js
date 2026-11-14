@@ -1893,16 +1893,24 @@ async function requestPlan(userText){
   // Read-only prerequisites must finish before a tool matcher can turn a
   // mentioned format into an executable conversion or a missing-target reply.
   const assessment=planFileAssessment(coreRequest,resolvedTask.files);
+  let fileAssessmentCompleted=false;
   if(assessment){
     if(assessment.type==='needs-input'){
       taskMemory.wait(activeConversationId,coreRequest,resolvedTask.files);
       addMessage('assistant',assessment.message);return;
     }
-    const reply=await assessFileConversions(resolvedTask.files,{run:runTool,progress:message=>status(message)});
+    let compatible=true;
+    const reply=await assessFileConversions(resolvedTask.files,{run:runTool,progress:message=>status(message),
+      askTarget:!assessment.continueConversion,onInspection:result=>{compatible=compatible&&result.compatible;}});
     attachments=resolvedTask.files;renderAttachments();
-    taskMemory.wait(activeConversationId,'Convierte el archivo'+(assessment.destination?' a '+assessment.destination:''),attachments);
     addMessage('assistant',reply,{engine:'prisma-core-local'});
-    status('Tipo y conversiones evaluados localmente. El archivo original sigue disponible.','success');return;
+    if(!assessment.continueConversion||!compatible){
+      if(compatible)taskMemory.wait(activeConversationId,'Convierte el archivo'+(assessment.destination?' a '+assessment.destination:''),attachments);
+      status('Tipo y conversiones evaluados localmente. El archivo original sigue disponible.','success');return;
+    }
+    // Keep the full original request: later planners must still account for
+    // extraction, compression or other transformations as well as conversion.
+    fileAssessmentCompleted=true;
   }
   const capabilityPlan=planCapabilityRequest(coreRequest,resolvedTask.files,resolvedTask.task);
   // Grounded scanned CSV pipelines use the existing five-step backend graph,
@@ -2108,7 +2116,7 @@ async function requestPlan(userText){
   if(speechIntent(userText)){await fulfillSpeechRequest(userText);return;}
   // Explicit conversions take priority over generic chat or PDF edit heuristics.
   const previousTexts=messages.slice(-9,-1).filter(message=>message.role==='user').map(message=>message.content);
-  const fileConversion=planFileConversion(coreRequest,resolvedTask.files,previousTexts);
+  const fileConversion=planFileConversion(coreRequest,resolvedTask.files,previousTexts,{assessmentComplete:fileAssessmentCompleted});
   if(fileConversion&&!(fileConversion.type==='ready'&&assessQwenCorePlanCoverage(userText,fileConversion.steps).needsSemanticReview)){
     if(fileConversion.type!=='ready'){
       // Preserve the conversion objective while asking for format or source file.

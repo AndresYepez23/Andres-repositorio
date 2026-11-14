@@ -66,6 +66,16 @@ const server=http.createServer((req,res)=>{
   assert.match(html,/Café, contenido verificable 2026 &amp; total 123\./);
   assert.match(html,/<table>/);assert.match(html,/>Producto</);assert.match(html,/>42</);
   report.cases.push({name:'docx-to-html-followup-download',filename:download.suggestedFilename(),textPreserved:true,tablePreserved:true});
+  await page.waitForFunction(()=>!document.querySelector('#core-send').disabled);
+  await page.locator('#core-file-input').setInputFiles({name:fixture.name,mimeType:fixture.mimeType,buffer});
+  const count=await page.locator('.core-result-download').count();
+  await page.locator('#core-input').fill('Identifica el tipo del archivo y conviértelo a HTML');await page.locator('#core-send').click();
+  await page.waitForFunction(expected=>document.querySelectorAll('.core-result-download').length>expected,count);
+  const directDownload=page.waitForEvent('download');
+  await page.locator('.core-result-download button').filter({hasText:/^Descargar$/}).last().click();
+  await (await directDownload).saveAs(out+'/informe-destino-explicito.html');
+  assert.match(fs.readFileSync(out+'/informe-destino-explicito.html','utf8'),/>Producto</);
+  report.cases.push({name:'inspection-then-explicit-target-without-extra-clarification',tablePreserved:true});
   const controls=await page.evaluate(async()=>{
    const {runTool}=await import('/src/engines.js');
    const {assessFileConversions,planFileConversion}=await import('/src/file-conversions.js');

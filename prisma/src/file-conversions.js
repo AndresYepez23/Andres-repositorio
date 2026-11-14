@@ -1,6 +1,6 @@
 // Capability-based conversion planning: only route to actual Prisma executors.
 // Plans are deterministic and require no AI credits.
-import {extractPayload} from './core-capabilities.js';
+import {extractPayload,isInformationalIntent} from './core-capabilities.js';
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const ext=file=>String(file?.name||'').split('.').pop().toLowerCase();
 const sourceKind=file=>{
@@ -71,8 +71,12 @@ export function planFileAssessment(text,files=[]){
  const preservation=/\b(?:formatos?|conversiones?|conversions?|formats?|convertir|convert)\b/.test(q)&&/\b(?:cual|que|compara\w*|explica\w*|recomienda\w*|which|compare|explain|recommend)\b.{0,90}\b(?:conserv\w*|preserv\w*|pierde|perdida|fidelidad|contenido|estructura|retains?|preserves?|fidelity)\b/.test(q);
  if(!(identify||compatible||preservation)||!(files.length||/\b(?:archivo|documento|adjunto|pdf|docx|conversion|convertir|file|document|attachment|convert)\b/.test(q)))return null;
  if(!files.length)return warning('Adjunta el archivo para identificar su tipo y explicar las conversiones compatibles antes de elegir un destino.');
+ const destination=getTarget(q);
+ const execute=/\b(?:convierte\w*|transforma\w*|exporta\w*|pasalo|pasala|convert|transform|export)\b/.test(q);
+ const deferred=/\b(?:no\s+(?:lo\s+)?(?:conviert\w*|convertir|transform\w*|export\w*)|sin\s+convertir|antes de (?:decidir|elegir)|todavia no|do not convert|don't convert|without converting|before (?:deciding|choosing)|not yet)\b/.test(instruction);
  return {type:'assessment',message:'Inspeccionar el archivo y evaluar las conversiones locales antes de elegir un formato.',
-  steps:[step('file-inspector',{},'Identificar el archivo sin modificarlo')],destination:getTarget(q)};
+  steps:[step('file-inspector',{},'Identificar el archivo sin modificarlo')],destination,
+  continueConversion:!!destination&&execute&&!deferred&&!isInformationalIntent(text)};
 }
 const PRESERVATION={
  docx:'Para conservar texto y estructura semántica (títulos, tablas e imágenes compatibles), HTML suele ser la mejor opción local. Mammoth no reproduce exactamente la maquetación de Word. PDF usa esa misma vista HTML y requiere «Guardar como PDF» en la impresión del navegador; puede variar el diseño. TXT conserva solo texto: pierde imágenes, tablas como estructura y estilos. Conserva el DOCX original si necesitas fidelidad completa.',
@@ -85,7 +89,7 @@ const PRESERVATION={
  audio:'WAV evita una nueva compresión con pérdida; MP3 y OGG pueden perder detalle. Ningún formato recupera información ya perdida en el original.',
  video:'Estas rutas extraen audio o generan un GIF de un fragmento (máximo 12 segundos; por defecto 5): ninguna conserva todo el vídeo con su audio. Conserva el original para mantener todo su contenido.'
 };
-export async function assessFileConversions(files,{run,progress=()=>{}}={}){
+export async function assessFileConversions(files,{run,progress=()=>{},onInspection=()=>{},askTarget=true}={}){
  const reports=[];
  for(const file of files){
   progress('Inspeccionando '+file.name+'…');
@@ -94,12 +98,13 @@ export async function assessFileConversions(files,{run,progress=()=>{}}={}){
   if(!inspection)throw Error('La inspección no devolvió evidencia del tipo de archivo.');
   const kind=inspection.kind,declared=sourceKind(file);
   const routes=compatibleFileConversions(file,kind);
+  onInspection({file,kind,compatible:kind===declared&&routes.length>0});
   reports.push('**'+file.name+'**\n'+result.text+'\n\n'+
    (kind!==declared?'El contenido detectado no coincide con el tipo declarado o la extensión. Corrige el nombre o revisa el archivo antes de convertirlo.\n\n':'')+
    (routes.length?'**Conversiones locales compatibles:** '+routes.map(r=>r.target.toUpperCase()).join(', ')+'.\n\n'+(PRESERVATION[kind]||'Revisa el resultado y conserva el original.'):
     'No hay una conversión local confirmada para el tipo detectado. No elegiré una herramienta basándome solo en su nombre.'));
  }
- return reports.join('\n\n')+'\n\nLa evaluación es local y no ha convertido ni modificado los archivos. ¿Qué formato prefieres?';
+ return reports.join('\n\n')+'\n\nLa evaluación es local y no ha convertido ni modificado los archivos.'+(askTarget?' ¿Qué formato prefieres?':'');
 }
 function convert(source,target,files,query){
  const filename=files[0]?.name||'archivo';
@@ -136,8 +141,8 @@ function convert(source,target,files,query){
  }
  return warning('Puedo procesar «'+filename+'», pero aún no existe una conversión local segura a «'+target.toUpperCase()+'» para ese tipo de archivo. Conversiones disponibles: '+(LIMITS[source]||'revisa el explorador de herramientas')+'.','unsupported');
 }
-export function planFileConversion(text,files=[],previousTexts=[]){
- const assessment=planFileAssessment(text,files);if(assessment)return assessment;
+export function planFileConversion(text,files=[],previousTexts=[],{assessmentComplete=false}={}){
+ const assessment=assessmentComplete?null:planFileAssessment(text,files);if(assessment)return assessment;
  const latest=String(text||''),q=norm(latest),attached=files.length>0;
  const history=previousTexts.slice(-8).map(item=>String(item||''));
  const priorIndex=history.findLastIndex(item=>hasConversionIntent(item));
