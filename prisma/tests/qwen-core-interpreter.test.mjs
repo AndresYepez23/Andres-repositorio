@@ -57,8 +57,9 @@ test('staging flag enables the interpreter only in the isolated staging environm
  let invoked=0;
  const req=()=>new Request('https://example.com/api/core/qwen-interpret',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:JSON.stringify({text:'Convierte el PDF a Word',files:pdf})});
  const run=async env=>{const r=await onRequestPost({request:req(),env},{reserve:async()=>{invoked++;},interpret:async()=>({ok:true,source:'qwen-core',intent:'question',tool_ids:[]})});return r.json();};
- assert.equal((await run({QUEEN_STAGE:'staging',QUEEN_ENABLED:'1',QUEEN_ACCESS_CLIENT_ID:'test',QUEEN_ACCESS_CLIENT_SECRET:'test',QUEEN_API_KEY:'test',QUEEN_BASE_URL:'https://queen.example/v1'})).ok,true);
- assert.equal((await run({QUEEN_STAGE:'production',QUEEN_ENABLED:'1'})).available,false);
- assert.equal((await run({QUEEN_STAGE:'preview',QUEEN_ENABLED:'1'})).available,false);
+ const auth={QUEEN_ENABLED:'1',QUEEN_ACCESS_CLIENT_ID:'test',QUEEN_ACCESS_CLIENT_SECRET:'test',QUEEN_API_KEY:'test',QUEEN_BASE_URL:'https://queen.example/v1'};
+ assert.equal((await run({...auth,CF_PAGES_URL:'https://prisma-queen-staging.pages.dev'})).ok,true);
+ assert.equal((await run({...auth,CF_PAGES_URL:'https://prismaspace.pages.dev'})).available,false);
+ assert.equal((await run({...auth,CF_PAGES_URL:'https://prisma-queen-staging.pages.dev.evil.invalid'})).available,false);
  assert.equal(invoked,1);
 });

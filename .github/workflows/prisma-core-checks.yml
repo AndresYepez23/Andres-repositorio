@@ -31,5 +31,37 @@ jobs:
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
+      - name: Real Qwen Core inference on isolated staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          url="https://prisma-queen-staging.pages.dev/api/core/qwen-interpret"
+          body='{"text":"Extrae la segunda página del PDF y conviértela a Word","files":[{"name":"smoke-test.pdf","type":"application/pdf","size":1024}]}'
+          for attempt in $(seq 1 20); do
+            code="$(curl --silent --show-error --max-time 40 -o /tmp/qwen-core-smoke.json -w '%{http_code}' \
+              -X POST "$url" -H 'Origin: https://prisma-queen-staging.pages.dev' \
+              -H 'Content-Type: application/json' --data "$body" || true)"
+            if [ "$code" = "404" ] || [ "$code" = "405" ]; then
+              echo "Staging deployment not ready (HTTP $code), waiting..."
+              sleep 15
+              continue
+            fi
+            if [ "$code" != "200" ]; then
+              echo "Qwen staging inference failed (HTTP $code)."
+              exit 1
+            fi
+            node --input-type=module -e '
+              import fs from "node:fs";
+              const r=JSON.parse(fs.readFileSync("/tmp/qwen-core-smoke.json","utf8"));
+              if(r.ok!==true||r.source!=="qwen-core"||!["tools","question","clarify"].includes(r.intent)||!Array.isArray(r.tool_ids)||r.tool_ids.length>3) {
+                process.stderr.write("Qwen staging returned no valid inference result: "+String(r.code||"INVALID_RESULT")+"\n");process.exit(1);
+              }
+              console.log("Real Qwen Core inference passed: "+r.intent+", "+r.tool_ids.length+" grounded tool IDs, "+String(r.metrics?.durationMs??"unknown")+" ms.");
+            '
+            exit 0
+          done
+          echo "Timed out waiting for the isolated Qwen staging deployment."
+          exit 1
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v
