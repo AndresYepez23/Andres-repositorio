@@ -23,6 +23,7 @@ QUEEN_ENABLED = "1"
 QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
 QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
 QUEEN_STAGE = "staging"
+QUEEN_STAGING_DATABASE_ID = "6a3256b2-c016-4650-9759-79aca3b4446f"
 QWEN_CORE_STAGING_ENABLED = "1"
 
 [env.preview.vars]
@@ -30,6 +31,7 @@ QUEEN_ENABLED = "0"
 QUEEN_BASE_URL = "https://queen.prismaspace.space/v1"
 QUEEN_MODEL = "unsloth/Qwen3.5-2B-GGUF:Q4_K_M"
 QUEEN_STAGE = "staging"
+QUEEN_STAGING_DATABASE_ID = "6a3256b2-c016-4650-9759-79aca3b4446f"
 QWEN_CORE_STAGING_ENABLED = "0"
 
 [[env.preview.d1_databases]]

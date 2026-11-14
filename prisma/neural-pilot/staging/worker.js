@@ -8,7 +8,7 @@ import {verifyQueenResult} from '../../src/queen-verifier.js';
 import {runTool} from '../../src/engines.js';
 import cases from '../queen-cases.json' with {type:'json'};
 import {createCredentialPromotionHandler} from './credential-promotion.mjs';
-export const STAGING_DATABASE='980bad8f-0356-48b9-87bc-56bcf363f69a';
+export const STAGING_DATABASE='6a3256b2-c016-4650-9759-79aca3b4446f';
 const PRODUCTION_DATABASE='e02104b5-0861-475a-a60f-7658439d4fe0';
 const SECRET_NAMES=['QUEEN_ACCESS_CLIENT_ID','QUEEN_ACCESS_CLIENT_SECRET','QUEEN_API_KEY'];
 const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'};
