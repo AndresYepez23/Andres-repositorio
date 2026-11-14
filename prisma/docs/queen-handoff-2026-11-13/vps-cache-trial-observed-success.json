@@ -1,0 +1,95 @@
+{
+  "source": "User-provided manual SSH result; no inference executed by Codex",
+  "at": "2026-11-13T22:27:50.728881+00:00",
+  "scriptVersion": 3,
+  "scriptBlob": "ff88c3c467a738e8b3a2352debd444adade749ce",
+  "scriptSha256": "ec69c89a352dca04bfb0a34175855da672f469335a28f9df7326320adfeb57ee",
+  "containerId": "51b5710534195359bd095e40acadfd6a981d43acb34bed91dd1e9e83c3f58b1f",
+  "imageId": "sha256:998e17af1ae710081e5a6e6db962f29dd81db31b33eccf281f1767ff0f7729c7",
+  "model": "unsloth/Qwen3.5-2B-GGUF:Q4_K_M",
+  "outcome": "minimal-generation-received",
+  "completionAttempted": true,
+  "completionReserved": true,
+  "cacheEnvironmentApplied": true,
+  "resumedExistingContainer": true,
+  "recreationPerformedThisRun": false,
+  "elapsedMs": 1961,
+  "usage": {
+    "prompt_tokens": 16,
+    "completion_tokens": 8,
+    "total_tokens": 24
+  },
+  "timings": {
+    "prompt_n": 16,
+    "prompt_ms": 877.56,
+    "prompt_per_second": 18.232371575732714,
+    "predicted_n": 8,
+    "predicted_ms": 1074.903,
+    "predicted_per_second": 6.512215520842346
+  },
+  "finishReason": "length",
+  "ttftMs": null,
+  "queueBefore": {
+    "metricsAvailable": false,
+    "httpStatus": 501,
+    "counters": null
+  },
+  "queueAfter": {
+    "metricsAvailable": false,
+    "httpStatus": 501,
+    "counters": null
+  },
+  "samples": 3,
+  "hostMemAvailableMinBytes": 2896269312,
+  "hostSwapUsedMaxBytes": 0,
+  "hostCpuBusyPercentMax": 98.6842105263158,
+  "hostIowaitPercentMax": 0.0,
+  "hostVmDelta": {
+    "oom_kill": 0,
+    "pgmajfault": 6,
+    "pswpin": 0,
+    "pswpout": 0
+  },
+  "container": {
+    "memoryPeakBytes": 1839640576,
+    "anonPeakBytes": 662810624,
+    "swapPeakBytes": 0,
+    "cpuPercentOfOneCoreMax": 160.29916592018435,
+    "ioDeviceDeltas": {
+      "253:0": {
+        "rbytes": 131072,
+        "wbytes": 0
+      }
+    },
+    "memoryEventsDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "high": 0,
+      "max": 0
+    },
+    "oomObservedWithinCoverage": false,
+    "unexpectedRestartDelta": 0
+  },
+  "beforeObservation": {
+    "source": "V2 pre-recreation sample",
+    "at": "2026-11-13T22:16:24.744468+00:00",
+    "memoryBytes": 3302195200,
+    "anonBytes": 3130195968,
+    "hostMemAvailableMinBytes": 432971776
+  },
+  "qualityValidated": false,
+  "limits": [
+    "Eight output tokens terminated by length; no response content or task-quality verification.",
+    "Three samples are sampled extrema, not continuous maxima or long-task evidence.",
+    "Recreation and disabling two caches were coupled; causal savings per flag are not isolated.",
+    "Queue counters and TTFT remain unknown.",
+    "One approved completion is consumed; no rerun, marker reset or further generation without authorization."
+  ],
+  "currentComposeFiles": [
+    "/root/queen-cache-trial-20261113/baseline.private.json",
+    "/root/queen-cache-trial-20261113/image-pin.json",
+    "/root/queen-cache-trial-20261113/cache-off.json"
+  ],
+  "operationalNote": "Keep current container/configuration. Original repository compose.yaml does not yet include effective env overrides; plain future compose up may revert them.",
+  "deploymentNote": "VPS recovery uses same installed image. Existing staging snapshot ed94e25; local backend deadline commit5ccacf9 remains undeployed."
+}

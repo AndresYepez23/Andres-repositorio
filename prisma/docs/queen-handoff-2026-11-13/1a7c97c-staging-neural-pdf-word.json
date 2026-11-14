@@ -1,0 +1,324 @@
+{
+  "generatedAt": "2026-11-14T00:28:07.992Z",
+  "realBrowserEngines": true,
+  "realInference": true,
+  "selectedCases": [
+    "digital-pdf-word"
+  ],
+  "fixtures": {
+    "digital": {
+      "name": "queen-three-pages.pdf",
+      "type": "application/pdf",
+      "size": 1302
+    },
+    "scan": {
+      "name": "queen-scan.csv.pdf",
+      "type": "application/pdf",
+      "size": 22152
+    }
+  },
+  "rows": [
+    {
+      "id": "digital-pdf-word",
+      "ok": true,
+      "realInferenceRequested": true,
+      "realInference": true,
+      "coordinationSource": "neural-plan",
+      "neural": {
+        "ok": true,
+        "source": "queen",
+        "plan": {
+          "taskId": "372fdad2-258b-49a1-84d6-bd6271374854",
+          "objective": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+          "intent": "execute",
+          "message": "Plan preparado para 2 operación(es); los resultados se comprobarán después de ejecutar.",
+          "steps": [
+            {
+              "id": "s1",
+              "tool_id": "pdf-extract",
+              "params": {
+                "pages": "2"
+              },
+              "dependsOn": [],
+              "inputs": [
+                "file:0"
+              ],
+              "status": "planned"
+            },
+            {
+              "id": "s2",
+              "tool_id": "pdf-to-word",
+              "params": {},
+              "dependsOn": [
+                "s1"
+              ],
+              "inputs": [
+                "step:s1"
+              ],
+              "status": "planned"
+            }
+          ],
+          "constraints": [
+            "catalog-only",
+            "existing-permissions",
+            "verify-before-success"
+          ],
+          "status": "validated",
+          "needs_clarification": false,
+          "question": "",
+          "execution": {
+            "executed": false,
+            "verified": false
+          }
+        },
+        "decision": {
+          "schemaValid": true,
+          "catalogValid": true,
+          "parametersValid": true,
+          "semanticConfidence": null,
+          "calibration": "requires-authenticated-evaluation",
+          "requiresApproval": false
+        },
+        "delegate": null,
+        "metrics": {
+          "inputTokens": 536,
+          "outputTokens": 122,
+          "externalCostUsd": 0,
+          "inferences": 1,
+          "repairs": 0,
+          "retrievals": 0,
+          "diagnostics": {
+            "finishReason": "stop",
+            "preflightInputTokens": 524,
+            "contextLimit": 2048,
+            "maxOutputTokens": 256,
+            "reasoningContentPresent": false,
+            "thinkingTagsPresent": false,
+            "observedInputTokens": 536,
+            "observedOutputTokens": 122,
+            "generationTokensPerSecond": 6.601364802166644,
+            "promptTokensPerSecond": 35.897458908627506
+          },
+          "trace": [
+            {
+              "intent": "execute",
+              "search": null,
+              "toolIds": [
+                "pdf-extract",
+                "pdf-to-word"
+              ],
+              "steps": [
+                {
+                  "id": "s1",
+                  "parameterTypes": {
+                    "pages": "string"
+                  },
+                  "inputs": [
+                    "file:0"
+                  ],
+                  "dependsOn": []
+                },
+                {
+                  "id": "s2",
+                  "parameterTypes": {},
+                  "inputs": [
+                    "step:s1"
+                  ],
+                  "dependsOn": [
+                    "s1"
+                  ]
+                }
+              ],
+              "usage": {
+                "inputTokens": 536,
+                "outputTokens": 122,
+                "externalCostUsd": 0
+              },
+              "diagnostics": {
+                "finishReason": "stop",
+                "preflightInputTokens": 524,
+                "contextLimit": 2048,
+                "maxOutputTokens": 256,
+                "reasoningContentPresent": false,
+                "thinkingTagsPresent": false,
+                "observedInputTokens": 536,
+                "observedOutputTokens": 122,
+                "generationTokensPerSecond": 6.601364802166644,
+                "promptTokensPerSecond": 35.897458908627506
+              }
+            }
+          ],
+          "durationMs": 34050
+        }
+      },
+      "execution": {
+        "status": "verification-pending",
+        "verified": false,
+        "ledger": [
+          {
+            "id": "s1",
+            "status": "verified",
+            "attempts": 1
+          },
+          {
+            "id": "s2",
+            "status": "verification-pending",
+            "attempts": 1
+          }
+        ],
+        "results": [
+          {
+            "tool": "pdf-extract",
+            "verification": {
+              "status": "verified",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 866,
+                  "sha256": "40806e662605a4bb33cba342c8fb313455454c3f51745557e82480e4b866d617",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "parsed-pdf",
+                    "requested-page-count"
+                  ],
+                  "pages": 1
+                }
+              ],
+              "unverified": []
+            }
+          },
+          {
+            "tool": "pdf-to-word",
+            "verification": {
+              "status": "partial",
+              "evidence": [
+                {
+                  "check": "artifact",
+                  "passed": true,
+                  "bytes": 7646,
+                  "sha256": "2fc94037f523f216dcf854ccab8d89b3c60ccc807fcc4a4ab29c8529cd8f7ce1",
+                  "checks": [
+                    "exists",
+                    "nonempty",
+                    "sha256",
+                    "file-signature",
+                    "format-consistency",
+                    "archive-crc",
+                    "archive-structure"
+                  ],
+                  "entries": 20
+                }
+              ],
+              "unverified": [
+                "document-content-correspondence"
+              ]
+            }
+          }
+        ]
+      },
+      "evidence": {
+        "docxContentMatchesRequestedPage": true,
+        "absentOtherPages": true
+      },
+      "artifacts": [
+        {
+          "step": "s1",
+          "filename": "queen-three-pages-paginas-seleccionadas.pdf",
+          "type": "application/pdf",
+          "file": "digital-pdf-word-queen-three-pages-paginas-seleccionadas.pdf",
+          "bytes": 866,
+          "sha256": "40806e662605a4bb33cba342c8fb313455454c3f51745557e82480e4b866d617"
+        },
+        {
+          "step": "s2",
+          "filename": "queen-three-pages-paginas-seleccionadas.docx",
+          "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "file": "digital-pdf-word-queen-three-pages-paginas-seleccionadas.docx",
+          "bytes": 7646,
+          "sha256": "2fc94037f523f216dcf854ccab8d89b3c60ccc807fcc4a4ab29c8529cd8f7ce1"
+        }
+      ],
+      "taskBudget": {
+        "id": "digital-pdf-word",
+        "objective": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+        "maxMs": 120000,
+        "maxInferences": 2,
+        "maxSteps": 8,
+        "durationMs": 39581,
+        "remainingMs": 80419,
+        "inferencesReservedOrObserved": 1,
+        "stepsReserved": 2,
+        "queenCalls": [
+          {
+            "label": "digital-pdf-word",
+            "reservedInferences": 2,
+            "startedMs": 25,
+            "status": "completed",
+            "inputTokens": 536,
+            "outputTokens": 122,
+            "completedInputTokens": 536,
+            "completedOutputTokens": 122,
+            "usageComplete": true,
+            "observedInferences": 1,
+            "code": null,
+            "durationMs": 36393
+          }
+        ],
+        "localActions": []
+      },
+      "durationMs": 39581
+    }
+  ],
+  "inputFiles": [
+    {
+      "file": "input-queen-three-pages.pdf",
+      "bytes": 1302,
+      "sha256": "d0f857bd9021b9bdcd97cb58fe3c7e95f14bc4cbd54120eb5b37e674f315095c"
+    },
+    {
+      "file": "input-queen-scan.csv.pdf",
+      "bytes": 22152,
+      "sha256": "0624870f47f6f35d39cd2f2322d9f3c645a19cb2727717fc8d67669260e94578"
+    }
+  ],
+  "realInferenceRequested": true,
+  "base": "https://f53f1d6f.prisma-queen-staging.pages.dev",
+  "failures": [],
+  "transportCalls": [
+    {
+      "kind": "provider-metadata",
+      "path": "/api/providers/status",
+      "task": null,
+      "dispatched": false,
+      "at": "2026-11-14T00:28:04.647Z",
+      "status": "not-dispatched",
+      "httpStatus": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "code": "TASK_OWNERSHIP_REQUIRED",
+      "durationMs": 12
+    },
+    {
+      "kind": "queen",
+      "path": "/api/core/plan",
+      "task": "digital-pdf-word",
+      "dispatched": true,
+      "at": "2026-11-14T00:28:08.082Z",
+      "status": "responded",
+      "httpStatus": 200,
+      "inputTokens": 536,
+      "outputTokens": 122,
+      "completedInputTokens": 536,
+      "completedOutputTokens": 122,
+      "usageComplete": true,
+      "inferences": 1,
+      "code": null,
+      "durationMs": 36382
+    }
+  ]
+}

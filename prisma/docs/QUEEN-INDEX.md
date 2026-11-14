@@ -1,5 +1,11 @@
 # Queen: índice de continuidad, pruebas y evidencias
 
+**Estado vigente14/11/2026UTC: [HANDOFF MAESTRO](QUEEN-HANDOFF.md) y [PROMPT](QUEEN-RESUME-PROMPT.md). Producción24dd33d está desplegada pero Queen pública fallaHTTP422. No repetir recuperación VPS.**
+
+Evidencia nueva en la carpeta existente [queen-handoff-2026-11-13/](queen-handoff-2026-11-13/), con [hashes/procedencia](queen-handoff-2026-11-13/verification.json): [éxito neuronal específico staging](queen-handoff-2026-11-13/1a7c97c-staging-neural-pdf-word.json), [DOCX](queen-handoff-2026-11-13/1a7c97c-staging-selected-page.docx), [fallo público24d](queen-handoff-2026-11-13/24dd33d-production-ui-failure.json), [payload exacto](queen-handoff-2026-11-13/1a7c97c-production-synthetic-request.json), [recuperación VPS](queen-handoff-2026-11-13/vps-cache-trial-observed-success.json), [recursos actuales](queen-handoff-2026-11-13/resources-current.json), [293Node](queen-handoff-2026-11-13/24dd33d-node-tests-summary.txt) y [131build](queen-handoff-2026-11-13/24dd33d-static-build-summary.txt).
+
+**El inventario restante es HISTÓRICO desde732bce6; afirmaciones como sin intervención/cero evaluaciones/generación bloqueada describen esa fase, no el estado actual.**
+
 Inventario preparado desde el estado conservado en `732bce6`, sin ejecutar pruebas, inferencias ni nuevas lecturas del VPS. Queen sigue pendiente de recuperación de generación y demostración operativa. Rama `feature/prisma-neural-genixnode-qwen35-pilot`, [PR #125](https://github.com/AndresYepez23/PRISMA/pull/125), que permanece como borrador.
 
 ## Orden de lectura para retomar

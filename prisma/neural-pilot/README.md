@@ -1,5 +1,7 @@
 # Prisma Neural Engine — GenixNode Qwen pilot
 
+> Estado14/11/2026UTC: Queen conectada a Core y activada públicamente, validación neuronal públicaHTTP422 pendiente. Piloto inicial histórico: no repetir instalación/benchmark. Leer [handoff](../docs/QUEEN-HANDOFF.md).
+
 **Status:** isolated VPS pilot; not connected to Prisma Core or production.  
 **Branch:** `feature/prisma-neural-genixnode-qwen35-pilot`  
 **Host target:** GenixNode Nova VPS x4, Ubuntu 24.04 x86_64, 2 vCPU, 4 GB RAM.  

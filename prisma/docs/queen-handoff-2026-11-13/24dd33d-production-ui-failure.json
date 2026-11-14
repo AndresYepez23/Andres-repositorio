@@ -1,0 +1,104 @@
+{
+  "at": "2026-11-14T00:55:09.219Z",
+  "base": "https://prismaspace.space",
+  "mode": "actual-production-ui",
+  "mockedResponses": 0,
+  "stagingReroutes": 0,
+  "maximumQueenInferences": 2,
+  "localOnly": false,
+  "tlsVerification": "environment-proxy-context-exception",
+  "requests": [
+    {
+      "kind": "queen-plan",
+      "path": "/api/core/plan",
+      "repair": false,
+      "at": "2026-11-14T00:55:32.874Z",
+      "dispatched": true,
+      "finished": true,
+      "httpStatus": 422,
+      "requestPayload": {
+        "text": "Extrae la segunda página de este PDF y después convierte esa página a Word",
+        "textLength": 74,
+        "repair": false,
+        "files": [
+          {
+            "name": "queen-three-pages.pdf",
+            "type": "application/pdf",
+            "size": 1155
+          }
+        ],
+        "context": {
+          "previousGoal": "",
+          "previousTools": [],
+          "procedureCount": 0,
+          "preferences": {
+            "mode": "auto",
+            "provider": "",
+            "model": ""
+          }
+        },
+        "omittedUnknownFieldCount": 0
+      },
+      "requestBodySha256": "12ec422c9b41d968fbe7b53c5badf48fd55b9409a060bd76f973b2a9eddb6a71",
+      "responseHeadersAt": "2026-11-14T00:56:31.874Z",
+      "responseReadFailed": true,
+      "responseError": {
+        "name": "Error",
+        "message": "PLAN_RESPONSE_BODY_DEADLINE",
+        "phase": "neural",
+        "step": "pdf-word-submit"
+      },
+      "finishedAt": "2026-11-14T00:56:41.879Z"
+    }
+  ],
+  "blockedRequests": [],
+  "aggregateTelemetrySuppressed": 0,
+  "pageErrorCount": 0,
+  "cases": {
+    "localJson": {
+      "ok": true,
+      "uiFlow": true,
+      "actualEngineOutput": true,
+      "formatted": true,
+      "dataUnchanged": true,
+      "queenRequests": 0,
+      "realInference": false
+    }
+  },
+  "ok": false,
+  "browserTelemetrySuppressed": 1,
+  "activeSubmit": {
+    "step": "pdf-word-submit",
+    "startedAt": "2026-11-14T00:55:32.769Z",
+    "deadlineAt": "2026-11-14T00:57:37.769Z",
+    "timeoutMs": 125000,
+    "status": "failed",
+    "finishedAt": "2026-11-14T00:56:41.882Z"
+  },
+  "fixture": {
+    "file": "input-three-pages.pdf",
+    "pages": 3,
+    "bytes": 1155,
+    "sha256": "40ccb82ba40b6e62c747c59d351c4a5e777ba31af3f09d7d3143bbcf0630ea9c",
+    "type": "digital-selectable-text"
+  },
+  "dependencyPreflight": {
+    "ok": true,
+    "libraryImportsOnly": true,
+    "workerHttpAvailable": true,
+    "engineExecutionProven": false
+  },
+  "error": "PLAN_RESPONSE_UNREADABLE",
+  "errorDetails": {
+    "name": "Error",
+    "message": "PLAN_RESPONSE_UNREADABLE",
+    "phase": "neural",
+    "step": "pdf-word-submit"
+  },
+  "cleanupStartedAt": "2026-11-14T00:56:41.883Z",
+  "dispatchedQueenRequests": 1,
+  "confirmedQueenInferences": null,
+  "unresolvedDispatchedRequests": 1,
+  "continuousPerformanceOrGeneralQualityProven": false,
+  "cleanupFinishedAt": "2026-11-14T00:56:42.388Z"
+}

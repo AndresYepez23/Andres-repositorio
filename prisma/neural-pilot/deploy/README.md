@@ -1,5 +1,7 @@
 # Deploy Qwen on GenixNode (Ubuntu 24.04 x86_64)
 
+> Guía HISTÓRICA de instalación inicial. VPS/Tunnel/Access/modelo ya existen y fueron recuperados. No reinstalar, crear claves ni ejecutar compose up por esta guía; [estado y overrides privados actuales](../../docs/QUEEN-HANDOFF.md).
+
 This guide deploys the isolated Prisma Neural pilot. It does not change Prisma Space production.
 
 ## 1. Verify the VPS

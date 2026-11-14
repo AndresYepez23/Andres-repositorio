@@ -1,0 +1,21 @@
+{
+  "sourceCommit": "24dd33d612c1e56876b703de6f7dcbb2084947e6",
+  "project": "prismaspace",
+  "startedAt": "2026-11-14T00:52:55.602Z",
+  "status": "complete",
+  "manifestSha256": "f0ea419149c132a93522a0b2c8ff5405b595331b267c69b43459f516e43cf379",
+  "assetCount": 444,
+  "uniqueAssets": 444,
+  "previousProof": "/workspace/work/queen-release-1a7c97c/assets-upload.json",
+  "previousManifestSha256": "0f78b3e6affcc9790187e6f8bfb912c6cce4a1030faf1f13292210936844878f",
+  "reusedVerifiedAssets": 441,
+  "newHashesChecked": 3,
+  "uploaded": 0,
+  "alreadyPresentNew": 3,
+  "verifiedAssets": 444,
+  "scope": "Pages asset cache delta only; no deploy/config/model requests",
+  "remainingMissingNew": 0,
+  "adsCanonical": true,
+  "credentialFilesRemoved": true,
+  "finishedAt": "2026-11-14T00:52:57.177Z"
+}

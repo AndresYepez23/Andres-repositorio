@@ -1,5 +1,31 @@
 # QUEEN — continuidad vigente y registro histórico
 
+## Estado de transferencia final — 14/11/2026 UTC
+
+**Leer primero [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md), [PROMPT MAESTRO](QUEEN-RESUME-PROMPT.md) y [verificación/evidencia](queen-handoff-2026-11-13/verification.json).** Desarrollo, pruebas nuevas de modelo y despliegues detenidos por orden de preservar.
+
+- Rama feature/prisma-neural-genixnode-qwen35-pilot; PR125 abierto/draft/sin fusionar. Código de aplicación24dd33d612c1e56876b703de6f7dcbb2084947e6. El commit posterior de conservación no es otro despliegue.
+- Producción REAL confirmada: canonical6a41daae-1c35-4123-9761-cb99de2ca969, fuente24dd33d, deploy success. prismaspace.space sirve ese build; ads/layout conservados. Git main sigue4b24fe6d6f74375a337936aafe1199df9b1e9072, sin fusión.
+- Staging REAL: canonical46506668-10ee-4ff7-998c-c64ef469f4ee, fuente1a7c97c954bf8b951059843c102b69a706b18526. Staging24d se compiló pero NO se desplegó ni se lanzó su diagnóstico.
+- Usuario autorizó recuperación y activación pública, tres secretos cifrados, nodejs_compat y QUEEN_CONTROL_DB980bad8f compartida. D1 principal e02104b5 conservada, sin migraciones Queen. Promoción completa; puente/sobre/archivos privados eliminados y mismo nonce404. No repetir promoción.
+- VPS YA recuperado: mismo Qwen3.5-2B/imagen/contexto2048/concurrencia1; CACHE_RAM=0/CTX_CHECKPOINTS=0, una recreación. Sonda16entrada8salida/1961ms, cgroup1.713GiB, disponible2.697GiB, tres muestras; no carga pública. /metrics501/TTFTdesconocido. No repetir monitor/sonda/resetear completionReserved.
+- Staging1a: una inferencia536entrada122salida, PDFpágina2→DOCX real, contenido específico correcto;39.581s. Ledger general todavía verification-pending.
+- Producción: JSONlocal pasó. Primera1a HTTP503/timeout, consumo desconocido. Última24d HTTP422 y cuerpo no leído: una petición, cantidad de inferencias/tokens desconocida. Screenshot muestra DOCX por respaldo local, NO éxito neuronal; ese DOCX público no se inspeccionó.
+- Punto exacto: queen-client.js retorna null ante !response.ok sin consumir/cancelar body. Arreglo NO implementado; relación CDP es hipótesis. Motivo422 NO obtenido. Próxima reanudación: manejo de body dirigido y UNA traza protegida __queen/plan maxInferences=1 con payload sintético guardado, staging limpio actualizado; no relajar validadores ni inventar planes.
+- Cambios5ccacf9→24dd33d: plazos reales, evaluador1inferencia/caso, ControlDB, semántica/negaciones/operaciones/JSON literal, intermediarios reales, gramática compacta y prompt−29% sin proveedores ajenos/contexto vacío.
+- 293Node/131build pasaron en24d. 51checks históricos del helper preservados con loaders adaptados, solo sintaxis/hash tras copia. Lotes originales reales ed94 3/8,17a6/8,c2806/8 automáticos; NO19/19/calidad general.
+- Todo se conserva en carpetas existentes, incluido browser-production.cjs, helper públicoV3 y preparación de assets; claves/SSH/OAuth/operador/baseline privado excluidos deliberadamente.
+
+El handoff detalla arquitectura, IDs, configuración privada, resultados/hipótesis, accesos y presupuestos55s/120s/8pasos/2inferencias/cooldown5min. Los bloques anteriores siguientes son HISTORIA y no órdenes vigentes.
+
+<details>
+<summary>Continuidad anterior conservada: instrucciones y estados históricos superados</summary>
+
+## Actualización posterior: recuperación y promoción pública autorizadas
+
+
+Los bloques que siguen conservan su contexto histórico. Sus antiguas afirmaciones de «sin intervención», «generación bloqueada» y «no desplegar prismaspace» no revocan las autorizaciones posteriores. La recuperación breve del VPS tampoco acredita calidad ni carga pública sostenida; la primera prueba pública agotó su plazo y su resultado incierto se conserva.
+
 ## Transferencia completa a otra cuenta de Codex — 13/11/2026
 
 **Entrada principal: [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md).** Esta transferencia conserva el desarrollo y la misión de finalización; no declara Queen terminada ni abandona el proyecto. [Índice](QUEEN-INDEX.md), [prompt portátil](QUEEN-RESUME-PROMPT.md).
@@ -352,5 +378,7 @@ El primer push de este cierre contiene implementación, evidencias y este docume
 - Cloudflare creó automáticamente el Preview **encolado** `dc237372-9a3a-4da4-b0a0-205bdcec9c14` para el push `6da757b`, pese al prefijo. Se verificó que era exclusivamente Preview de esta rama/SHA y que no era canonical, y se retiró antes de comenzar el build. No se cambió configuración del proyecto, main ni su D1. Esta limpieza es la única mutación correctiva sobre un objeto Preview principal durante el cierre; no ocultarla ni afirmar que el webhook no ocurrió.
 
 Si ocurre otra vez en la continuidad: consultar proyecto y despliegue; comprobar `environment=preview`, rama Queen, SHA del propio push e ID diferente del canonical; solo entonces cancelar/retirar **ese Preview automático**, nunca el canonical, un despliegue main o trabajo de otra rama. El prefijo no sustituye esa comprobación.
+
+</details>
 
 </details>

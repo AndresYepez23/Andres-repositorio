@@ -1,5 +1,7 @@
 # Queen: validación real en el proyecto aislado
 
+> Este README contiene estados históricos anteriores. Autoridad actual: [QUEEN-HANDOFF.md](../../docs/QUEEN-HANDOFF.md). Producción ya activada; ControlDB aislada compartida con staging y D1principal conservada. Métricas VPS ya recibidas. NO repetir secretos/migraciones/monitores ni inferencias durante transferencia.
+
 PR #125, rama `feature/prisma-neural-genixnode-qwen35-pilot`. El historial anterior, incluido el informe que tenía las inferencias bloqueadas, se conserva en `prisma/docs/queen-staging-2026-11-13.json`.
 
 ## Aislamiento vigente

@@ -1,0 +1,13 @@
+{
+  "prisma-build.json": {
+    "status": "200 0",
+    "sha256": "b1122427b58eb5eafaadb42fd9cc89f5e2af962642f556afc5e83f28ef420044",
+    "bytes": 91,
+    "build": "1a7c97c954bf8b951059843c102b69a706b18526"
+  },
+  "ads.txt": {
+    "status": "200 0",
+    "sha256": "3106f0692e8177e253a56188e6c9b828726732548666719b333be77885befb89",
+    "bytes": 59
+  }
+}

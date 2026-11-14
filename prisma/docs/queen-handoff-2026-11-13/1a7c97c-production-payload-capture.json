@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-14T00:45:07.106Z",
+  "base": "https://prismaspace.space",
+  "mode": "actual-production-ui",
+  "mockedResponses": 0,
+  "stagingReroutes": 0,
+  "maximumQueenInferences": 2,
+  "localOnly": false,
+  "tlsVerification": "environment-proxy-context-exception",
+  "requests": [],
+  "blockedRequests": [],
+  "aggregateTelemetrySuppressed": 0,
+  "pageErrorCount": 0,
+  "cases": {
+    "localJson": {
+      "ok": true,
+      "uiFlow": true,
+      "actualEngineOutput": true,
+      "formatted": true,
+      "dataUnchanged": true,
+      "queenRequests": 0,
+      "realInference": false
+    }
+  },
+  "ok": false,
+  "browserTelemetrySuppressed": 1,
+  "fixture": {
+    "file": "input-three-pages.pdf",
+    "pages": 3,
+    "bytes": 1155,
+    "sha256": "40ccb82ba40b6e62c747c59d351c4a5e777ba31af3f09d7d3143bbcf0630ea9c",
+    "type": "digital-selectable-text"
+  },
+  "dependencyPreflight": {
+    "ok": true,
+    "libraryImportsOnly": true,
+    "workerHttpAvailable": true,
+    "engineExecutionProven": false
+  },
+  "capturedQueenRequest": {
+    "path": "/api/core/plan",
+    "dispatched": false,
+    "bodyFile": "captured-request.json"
+  },
+  "error": "READ_ONLY_PAYLOAD_CAPTURE_COMPLETE",
+  "errorDetails": {
+    "name": "Error",
+    "message": "READ_ONLY_PAYLOAD_CAPTURE_COMPLETE",
+    "phase": "neural",
+    "step": "pdf-word-submit"
+  },
+  "dispatchedQueenRequests": 0,
+  "confirmedQueenInferences": 0,
+  "unresolvedDispatchedRequests": 0,
+  "continuousPerformanceOrGeneralQualityProven": false
+}

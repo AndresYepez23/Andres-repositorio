@@ -9,7 +9,7 @@ Prisma Space es una suite web de herramientas digitales, con prioridad en el pro
 - [Índice de documentación, pruebas y evidencias](docs/QUEEN-INDEX.md).
 - [Instrucciones iniciales portátiles](docs/QUEEN-RESUME-PROMPT.md).
 
-Queen sigue en desarrollo en el PR #125 como borrador; estos documentos no autorizan cambios en producción ni en GenixNode.
+Queen sigue en desarrollo en el PR #125 como borrador. Producción24dd33d está activada, pero Queen pública devolvióHTTP422. El handoff registra resultados, siguiente paso y autorizaciones previas. La transferencia actual solo preserva; no ejecutar despliegues ni intervenciones VPS por leer guías históricas.
 
 ## Catálogo
 

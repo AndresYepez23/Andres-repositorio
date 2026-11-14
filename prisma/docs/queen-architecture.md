@@ -1,5 +1,7 @@
 # Queen: integración central sobre Prisma Core
 
+> Arquitectura inicial HISTÓRICA: cifras, no activación y cero inferencias de abajo describen esa fase. Producción24dd33d activada, HTTP422 pendiente; [handoff vigente](QUEEN-HANDOFF.md) prevalece.
+
 Estado: implementación en la rama `feature/prisma-neural-genixnode-qwen35-pilot`, PR #125. No fusionada ni activada en producción.
 
 ## Recorrido de una solicitud
