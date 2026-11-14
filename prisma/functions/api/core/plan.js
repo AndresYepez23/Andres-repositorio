@@ -105,8 +105,14 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
    return {tool_id:s.tool_id,params:canonicalEnumParameters(Object.fromEntries(Object.entries(s.params||{}).filter(([k])=>contract?.parameters.properties[k])),contract)};
   })};
  const requiredContracts=queenToolCatalog().filter(c=>requiredIds.includes(c.id)&&!excludedIds.has(c.id));
- let contracts=[...requiredContracts,...retrieveQueenTools(text,files,excludedIds.size?9:3).filter(c=>!requiredIds.includes(c.id)&&!excludedIds.has(c.id))].slice(0,Math.max(3,requiredContracts.length));
+ let contracts=closedFlowLimit<8?requiredContracts:[...requiredContracts,...retrieveQueenTools(text,files,excludedIds.size?9:3).filter(c=>!requiredIds.includes(c.id)&&!excludedIds.has(c.id))].slice(0,Math.max(3,requiredContracts.length));
  const providers=await loadProviders(env);
+ // A complete local flow cannot invoke specialists. Keep the actual registry
+ // for validation, but do not spend model context on unrelated provider menus.
+ const promptProviders=closedFlowLimit<8?[]:providers;
+ const emptyContext=!context.previousGoal&&!context.procedure?.length&&!context.previousTools?.length&&!context.failedStep&&
+  (!context.preferences||context.preferences.mode==='auto'&&!context.preferences.provider&&!context.preferences.model);
+ const promptContext=closedFlowLimit<8&&emptyContext?{}:context;
  const start=Date.now(),taskId=crypto.randomUUID();
  return withQueenLease(env,async()=>{
   let repair='',inputTokens=0,outputTokens=0,repairs=0,retrievals=0;const trace=[];
@@ -117,9 +123,9 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
    const executable=contracts.filter(c=>c.mode!=='byok'||selectQueenDelegate(providers,{kind:capabilityFor(c.id)}));
    const requestedSpecialist=contracts[0]?.mode==='byok'&&!informational?capabilityFor(contracts[0].id):null;
    const specialistUnavailable=requestedSpecialist&&!selectQueenDelegate(providers,{kind:requestedSpecialist,manual:context.preferences});
-   const intents=(specialistUnavailable?['delegate']:queenIntentOptions(text,localAnalysis)).filter(i=>(i!=='retrieve'||attempt+1<inferenceLimit)&&(i!=='execute'||executable.some(c=>!c.inputs.file||files.length)&&(!requestedWorkbook||executable.some(workbookProducer))));
-   const analysis={...localAnalysis,retrievalAvailable:attempt+1<inferenceLimit,unavailableCapabilities:[...new Set(contracts.filter(c=>c.mode==='byok'&&!selectQueenDelegate(providers,{kind:capabilityFor(c.id)})).map(c=>capabilityFor(c.id)))]};
-   try{result=await infer(env,queenMessages({text,files,context,contracts,providers,localAnalysis:analysis,repair}),queenCatalogSchema(executable,files,intents,{requiredToolIds:requiredIds,maxSteps:closedFlowLimit}),{signal,compactMessages:()=>{contracts=contracts.slice(0,Math.max(3,requiredContracts.length));return queenMessages({text,files,context,contracts,providers,localAnalysis:analysis,repair,compact:true});},remainingMs:Math.min(55000,QUEEN_LIMITS.taskMs-(Date.now()-start))});}
+   const intents=(specialistUnavailable?['delegate']:queenIntentOptions(text,localAnalysis)).filter(i=>(i!=='retrieve'||closedFlowLimit===8&&attempt+1<inferenceLimit)&&(i!=='execute'||executable.some(c=>!c.inputs.file||files.length)&&(!requestedWorkbook||executable.some(workbookProducer))));
+   const analysis={...localAnalysis,retrievalAvailable:closedFlowLimit===8&&attempt+1<inferenceLimit,unavailableCapabilities:[...new Set(contracts.filter(c=>c.mode==='byok'&&!selectQueenDelegate(providers,{kind:capabilityFor(c.id)})).map(c=>capabilityFor(c.id)))]};
+   try{result=await infer(env,queenMessages({text,files,context:promptContext,contracts,providers:promptProviders,localAnalysis:analysis,repair}),queenCatalogSchema(executable,files,intents,{requiredToolIds:requiredIds,maxSteps:closedFlowLimit}),{signal,compactMessages:()=>{contracts=contracts.slice(0,Math.max(3,requiredContracts.length));return queenMessages({text,files,context:promptContext,contracts,providers:promptProviders,localAnalysis:analysis,repair,compact:true});},remainingMs:Math.min(55000,QUEEN_LIMITS.taskMs-(Date.now()-start))});}
    catch(error){if(error instanceof QueenError)error.diagnostics={...error.diagnostics,completedInputTokens:inputTokens,completedOutputTokens:outputTokens,completedInferences:trace.length,inferencesAttempted:trace.length+(error.diagnostics?.completionTransportAttempted||Number.isFinite(error.diagnostics?.observedOutputTokens)?1:0),trace};throw error;}
    trace.push({intent:['execute','question','clarify','delegate','retrieve'].includes(result.plan?.intent)?result.plan.intent:'invalid',search:typeof result.plan?.search==='string'?result.plan.search.slice(0,160):null,toolIds:(result.plan?.steps||[]).map(s=>/^[a-z0-9_-]{1,80}$/.test(s.tool_id)?s.tool_id:'invalid'),steps:(result.plan?.steps||[]).slice(0,8).map(s=>({id:String(s.id).slice(0,12),parameterTypes:Object.fromEntries(Object.entries(s.params||{}).slice(0,20).filter(([k])=>/^[A-Za-z][A-Za-z0-9_]{0,40}$/.test(k)).map(([k,v])=>[k,Array.isArray(v)?'array':typeof v])),inputs:(s.inputs||[]).slice(0,8).map(v=>/^file:\d+$|^step:s[1-8]$/.test(v)?v:'invalid'),dependsOn:(s.dependsOn||[]).slice(0,8).map(v=>/^s[1-8]$/.test(v)?v:'invalid')})),usage:result.usage,diagnostics:result.diagnostics||null});
    inputTokens+=result.usage.inputTokens||0;outputTokens+=result.usage.outputTokens||0;

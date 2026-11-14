@@ -227,3 +227,32 @@ test('generic or longer planning stays compact and delegates graph correctness t
  assert.deepEqual(clarify.properties.steps.items,{type:'object'});
  assert.ok(JSON.stringify(schema).length<2000);
 });
+
+test('a complete local file flow omits unrelated provider menus and empty UI preferences from the model only',async()=>{
+ const providers=Array.from({length:9},(_,i)=>({id:'configured-provider-'+i,available:true,capabilities:[{kind:'chat',executable:true,models:[{id:'model-'+i}]}]}));
+ let observed=false;
+ const response=await planWithQueen(env(),{text:'Extrae la segunda página de este PDF y después convierte esa página a Word',files:pdf,
+  context:{previousGoal:'',procedure:[],previousTools:[],preferences:{mode:'auto',provider:'',model:''}}},{
+  forceNeural:true,maxInferences:2,loadProviders:async()=>{observed=true;return providers;},infer:async(_env,messages,schema)=>{
+   assert.equal(observed,true);
+   assert.deepEqual(JSON.parse(messages[1].content).context,{});
+   const catalog=JSON.parse(messages[0].content.split('\n').find(line=>line.startsWith('CATALOGO:')).slice(9));
+   assert.deepEqual(catalog.map(tool=>tool.id).sort(),['pdf-extract','pdf-to-word']);
+   assert.ok(messages[0].content.includes('ESPECIALISTAS DISPONIBLES:[]'));
+   assert.equal(messages[0].content.includes('configured-provider-'),false);
+   assert.equal(intents(schema).includes('retrieve'),false);
+   return result({intent:'execute',message:'Prepararé la página solicitada.',steps:[step('s1','pdf-extract',{pages:'2'},['file:0']),step('s2','pdf-to-word',{},['step:s1'],['s1'])]});
+  }
+ });
+ assert.equal(response.source,'queen');assert.equal(response.metrics.inferences,1);
+});
+
+test('a complete local flow retains meaningful procedure and manual preference context',async()=>{
+ const context={previousGoal:'Preparar un informe',procedure:[{tool_id:'pdf-rotate',params:{degrees:90}}],previousTools:['pdf-rotate'],preferences:{mode:'manual',provider:'chosen-provider',model:'chosen-model'}};
+ await planWithQueen(env(),{text:'Extrae la tercera página de este PDF y después conviértela a Word',files:pdf,context},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,messages)=>{
+  const sent=JSON.parse(messages[1].content).context;
+  assert.equal(sent.previousGoal,context.previousGoal);assert.equal(sent.previousTools[0],'pdf-rotate');
+  assert.equal(sent.preferences.mode,'manual');assert.equal(sent.preferences.provider,'chosen-provider');
+  return result({intent:'execute',message:'Prepararé la página solicitada.',steps:[step('s1','pdf-extract',{pages:'3'},['file:0']),step('s2','pdf-to-word',{},['step:s1'],['s1'])]});
+ }});
+});
