@@ -21,6 +21,13 @@ test('original input and fresh attachments remain distinct from generated output
  for(const query of ['Convierte ese resultado a PDF','Convierte el original a PDF'])assert.deepEqual(completed().resolve('chat',query,[fresh]).files,[fresh]);
 });
 
+test('negated sources are excluded and two explicit references do not silently lose an input',()=>{
+ for(const query of ['No uses el original; convierte ese resultado a TXT','Ignora el original y convierte ese resultado a TXT','Sin usar el original, convierte ese resultado a TXT'])
+  assert.deepEqual(completed().resolve('chat',query).files,[result],query);
+ assert.deepEqual(completed().resolve('chat','Compara el original y ese resultado').files,[source,result]);
+ assert.deepEqual(completed().resolve('chat','Convierte el archivo original a TXT sin usar ese resultado').files,[source]);
+});
+
 test('references cannot cross conversations, expiration, cancellation or new goals',()=>{
  assert.deepEqual(completed().resolve('other','Convierte ese resultado a TXT').files,[]);
  let now=0;const memory=completed({ttl:10,now:()=>now});now=11;
