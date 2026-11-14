@@ -63,3 +63,26 @@ test('staging flag enables the interpreter only in the isolated staging environm
  assert.equal((await run({...auth,CF_PAGES_URL:'https://prisma-queen-staging.pages.dev.evil.invalid'})).available,false);
  assert.equal(invoked,1);
 });
+
+test('isolated staging is allowed only on its own Pages project and dedicated branch',async()=>{
+ const base={QUEEN_ENABLED:'1',QUEEN_STAGE:'staging',CF_PAGES_BRANCH:'feature/qwen-core-hybrid',
+  CF_PAGES_URL:'https://d5e9a521.prisma-queen-staging.pages.dev',
+  QUEEN_ACCESS_CLIENT_ID:'staging-client',QUEEN_ACCESS_CLIENT_SECRET:'staging-secret',QUEEN_API_KEY:'staging-key'};
+ const make=env=>new Request('https://d5e9a521.prisma-queen-staging.pages.dev/api/core/qwen-interpret',{method:'POST',
+  headers:{Origin:'https://d5e9a521.prisma-queen-staging.pages.dev','Content-Type':'application/json'},
+  body:JSON.stringify({text:'Selecciona la página 2 y conviértela a Word',files:[{name:'doc.pdf',type:'application/pdf',size:10}]})});
+ let invoked=0;
+ const deps={interpret:async()=>{invoked++;return {ok:true,source:'qwen-core',intent:'tools',tool_ids:['pdf-extract']};},reserve:async()=>{}};
+ const ok=await onRequestPost({request:make(base),env:base},deps);
+ assert.equal(ok.status,200);assert.equal((await ok.json()).source,'qwen-core');assert.equal(invoked,1);
+ for(const env of [
+  {...base,CF_PAGES_BRANCH:'main'},
+  {...base,CF_PAGES_URL:'https://evil.prismaspace.space'},
+  {...base,QUEEN_STAGE:'production'},
+  {...base,CF_PAGES_URL:'https://prisma-queen-staging.pages.dev.attacker.invalid'}
+ ]){
+  const r=await onRequestPost({request:make(env),env},deps);
+  assert.equal((await r.json()).available,false);
+ }
+ assert.equal(invoked,1);
+});
