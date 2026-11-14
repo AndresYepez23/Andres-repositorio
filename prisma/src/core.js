@@ -2337,7 +2337,7 @@ async function executeQueenPlan(){
         if(response?.source!=='queen'||response.plan.steps.length!==1)throw Error('REPAIR_UNAVAILABLE');
         return response.plan.steps[0];
       },
-      progress:(p,message)=>{status(message||'Ejecutando herramientas seleccionadas por Queen…');setProgress(p,message||'Ejecutando…');}
+      progress:(p,message)=>{status(message||'Ejecutando herramientas seleccionadas por Qwen…');setProgress(p,message||'Ejecutando…');}
     });
     const cards=outcome.results.flatMap((entry,i)=>executionCards(tools.find(t=>t.id===entry.tool_id)?.name||entry.tool_id,entry.verification.status,entry.result,i));
     await persistGeneratedResults(cards);
@@ -2357,7 +2357,7 @@ async function executeQueenPlan(){
     const {queenState:discardedState,...savedPlan}=plan;
     taskMemory.save(chatId,{files:(error.partialResults||[]).flatMap(r=>r.files),originals:sourceFiles,steps:plan.steps,
       execution:{plan:savedPlan,state,sourceFiles}});
-    if(chatId===activeConversationId)addMessage('assistant','Queen no pudo completar y verificar la tarea. '+queenFailureDescription(error)+' Se conservaron los resultados disponibles.',{results:cards,partial:true});
+    if(chatId===activeConversationId)addMessage('assistant','Qwen no pudo completar y verificar la tarea. '+queenFailureDescription(error)+' Se conservaron los resultados disponibles.',{results:cards,partial:true});
     recordCoreMetric('core','queen-failed');status('Tarea detenida; resultados parciales conservados.','error');
   }finally{executionActive=false;setBusy(false);renderAttachments();}
 }

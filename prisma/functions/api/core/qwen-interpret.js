@@ -24,7 +24,7 @@ export function qwenCoreCandidates(text,files=[]){
  return options.slice(0,QWEN_CORE_INTERPRET_LIMITS.candidates).map(t=>({id:t.id,name:t.name.slice(0,75),file:!!t.file,mode:t.mode}));
 }
 
-export async function interpretWithQwenCore(env,payload,{infer=inferQueen,lease=withQueenLease}={}){
+export async function interpretWithQwenCore(env,payload,{infer=inferQueen,lease=withQueenLease,signal}={}){
  const text=String(payload?.text||'').trim();
  if(text.length<2||text.length>4000||!Array.isArray(payload?.files)||payload.files.length>20)
   throw new QueenError('QWEN_CORE_INVALID_REQUEST',400);
@@ -42,7 +42,7 @@ export async function interpretWithQwenCore(env,payload,{infer=inferQueen,lease=
   {role:'user',content:JSON.stringify({request:text.slice(0,1200),files:files.map(f=>({type:f.type,name:f.name.slice(0,75)})),candidates})}
  ];
  const start=Date.now();
- const generated=await lease(env,()=>infer(env,messages,schema,{remainingMs:QWEN_CORE_INTERPRET_LIMITS.serverMs,maxOutputTokens:QWEN_CORE_INTERPRET_LIMITS.outputTokens}));
+ const generated=await lease(env,()=>infer(env,messages,schema,{remainingMs:QWEN_CORE_INTERPRET_LIMITS.serverMs,maxOutputTokens:QWEN_CORE_INTERPRET_LIMITS.outputTokens,signal}));
  const checked=validateQwenCoreInterpretation(generated.plan,allowed,[...excludedCapabilityIds(text,files)]);
  await recordQueenMetric(env,'qwen-core-interpreted',{durationMs:Date.now()-start,inputTokens:generated.usage?.inputTokens||0,outputTokens:generated.usage?.outputTokens||0});
  return {ok:true,source:'qwen-core',...checked,metrics:{durationMs:Date.now()-start,inferences:1}};
@@ -58,7 +58,7 @@ export async function onRequestPost({request,env},{interpret=interpretWithQwenCo
   const payload=await readBoundedJson(request,QWEN_CORE_INTERPRET_LIMITS.maxInputBytes);
   queenConfig(env);
   await reserve(env,request,Date.now(),{perMinute:4,perDay:25,namespace:'qwen-core-interpreter'});
-  const result=await interpret(env,payload);return json(result);
+  const result=await interpret(env,payload,{signal:request.signal});return json(result);
  }catch(error){
   await recordQueenMetric(env,'qwen-core-failed');
   const safe=error instanceof QueenError?error:new QueenError('QWEN_CORE_UNAVAILABLE');

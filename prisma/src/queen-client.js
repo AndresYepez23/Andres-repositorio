@@ -42,7 +42,7 @@ export function queenFailureDescription(error){
   EMPTY_RESULT:'La herramienta no produjo contenido comprobable.',
   EMPTY_ARTIFACT:'La herramienta produjo un archivo vacío.',
   SIZE_TARGET_MISMATCH:'El archivo supera el tamaño solicitado.',
-  REPAIR_UNAVAILABLE:'No fue posible obtener una corrección segura de Queen.',
+  REPAIR_UNAVAILABLE:'No fue posible obtener una corrección segura de Qwen.',
   UNSAFE_REPAIR:'La corrección propuesta cambia operaciones que requieren otro plan.'
  };
  return descriptions[error?.verificationCode||error?.message]||'La herramienta falló o su resultado no pasó la validación independiente.';
