@@ -203,6 +203,21 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
   throw rejected('QUEEN_PLAN_REJECTED');
  });
 }
+
+/**
+ * The synthetic operator's one-shot diagnostic uses the normal staging Pages
+ * endpoint without changing the public production inference budget.
+ * The Pages URL alone is insufficient: require the staging identity config.
+ */
+export function queenStagingSingleInferenceLimit(env,request,payload){
+ if(payload?.maxInferences!==1||env?.QUEEN_STAGE!=='staging'||
+    env?.QUEEN_STAGING_DATABASE_ID!=='6a3256b2-c016-4650-9759-79aca3b4446f')
+  return QUEEN_LIMITS.inferences;
+ let host;
+ try{host=new URL(request.url).hostname;}catch{return QUEEN_LIMITS.inferences;}
+ return /^(?:[a-f0-9]{8}\.)?prisma-queen-staging\.pages\.dev$/.test(host)?1:QUEEN_LIMITS.inferences;
+}
+
 export async function onRequestPost({request,env}){
  if(request.headers.get('Origin')!==new URL(request.url).origin)return json({ok:false,code:'INVALID_ORIGIN'},403);
  if(!request.headers.get('Content-Type')?.startsWith('application/json'))return json({ok:false,code:'INVALID_CONTENT_TYPE'},415);
@@ -210,7 +225,8 @@ export async function onRequestPost({request,env}){
   if(Number(request.headers.get('content-length')||0)>24000)throw new QueenError('REQUEST_TOO_LARGE',413);
   const payload=await readBoundedJson(request,24000);
   queenConfig(env);await reserveQueenRequest(env,request);
-  const result=await planWithQueen(env,payload,{signal:request.signal});return json(result);
+  const maxInferences=queenStagingSingleInferenceLimit(env,request,payload);
+  const result=await planWithQueen(env,payload,{signal:request.signal,maxInferences});return json(result);
  }catch(error){
   await recordQueenMetric(env,'failed');
   const safe=error instanceof QueenError?error:new QueenError('QUEEN_UNAVAILABLE');

@@ -75,5 +75,54 @@ jobs:
             if(forbidden.length)throw new Error(item.name+": prohibited tool suggested: "+forbidden.join(","));
           }
           NODE
+      - name: One-shot real Queen planner and verified JSON engines on isolated staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 6
+        env:
+          QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-live-once]'; then
+            echo "One-shot live inference not requested by this commit; no VPS calls."
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          import {executeQueenDAG} from './prisma/src/queen-execution.js';
+          import {runTool} from './prisma/src/engines.js';
+          const origin='https://prisma-queen-staging.pages.dev';
+          const expectedCommit=process.env.QUEEN_STAGING_EXPECTED_COMMIT;
+          const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          let ready=false;
+          for(let attempt=0;attempt<20;attempt++){
+            try{
+              const response=await fetch(origin+'/api/core/qwen-interpret',{method:'GET',signal:AbortSignal.timeout(10000)});
+              if(response.ok){
+                const probe=await response.json();
+                if(probe.ready===true&&probe.deploymentCommit===expectedCommit){ready=true;break;}
+              }
+            }catch{}
+            await sleep(15000);
+          }
+          if(!ready)throw Error('STAGING_BUILD_NOT_VERIFIED; model inference NOT sent');
+          const input={etapa:2,correcto:true};
+          const body={text:'Primero formatea este JSON: {"etapa":2,"correcto":true}. Después minifica ese resultado sin modificar los datos.',files:[],maxInferences:1};
+          // Exactly one request. Never retry an uncertain response.
+          const response=await fetch(origin+'/api/core/plan',{
+            method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},
+            body:JSON.stringify(body),signal:AbortSignal.timeout(110000)
+          });
+          const result=await response.json().catch(()=>null);
+          if(!response.ok||result?.ok!==true||result?.source!=='queen'){
+            console.log(JSON.stringify({status:response.status,code:result?.code||'UNREADABLE_PLAN',fallback:result?.fallback??null}));
+            throw Error('LIVE_QUEEN_PLAN_NOT_ACCEPTED; do not retry automatically');
+          }
+          const ids=result.plan?.steps?.map(s=>s.tool_id)||[];
+          console.log(JSON.stringify({source:result.source,intent:result.plan?.intent,tools:ids,inferences:result.metrics?.inferences,inputTokens:result.metrics?.inputTokens,outputTokens:result.metrics?.outputTokens,durationMs:result.metrics?.durationMs}));
+          if(result.plan.intent!=='execute'||JSON.stringify(ids)!==JSON.stringify(['json-format','json-minify']))
+            throw Error('LIVE_QUEEN_MISSING_JSON_OPERATIONS');
+          const execution=await executeQueenDAG(result.plan,[],{run:runTool,initialInferences:result.metrics.inferences,maxMs:30000});
+          const value=JSON.parse(execution.results.at(-1)?.result?.text||'null');
+          if(!execution.verified||JSON.stringify(value)!==JSON.stringify(input))throw Error('LIVE_QUEEN_DATA_VERIFICATION_FAILED');
+          console.log(JSON.stringify({executed:true,verified:true,stepCount:execution.results.length,outputMatches:true,source:'one-real-queen-plan-plus-real-json-engines'}));
+          NODE
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v

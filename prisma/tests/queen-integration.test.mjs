@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {queenCatalogSchema} from '../src/queen-schema.js';
 import {queenToolCatalog,retrieveQueenTools,queenInflectedOperations} from '../src/queen-contracts.js';
-import {queenIntentOptions,planWithQueen} from '../functions/api/core/plan.js';
+import {queenIntentOptions,planWithQueen,queenStagingSingleInferenceLimit} from '../functions/api/core/plan.js';
 import {measureQueenStream,inferQueen} from '../functions/_lib/queen.js';
 import {queenHandoffFiles} from '../src/queen-handoff.js';
 import {validateQueenPlan} from '../src/queen-plan.js';
@@ -107,4 +107,15 @@ test('PDF image archive handoff permits only bounded PNG members from the existi
  entry='../secret.png';await assert.rejects(queenHandoffFiles('pdf-to-image','image-ocr',[zipFile],{load}),/INVALID_MEMBER/);
  entry='pagina-001.png';v.setUint32(16,10000);v.setUint32(20,10000);await assert.rejects(queenHandoffFiles('pdf-to-image','image-ocr',[zipFile],{load}),/PIXEL_BUDGET/);
  assert.deepEqual(await queenHandoffFiles('untrusted','image-ocr',[zipFile],{load}),[zipFile]);
+});
+
+test('one-shot staging inference budget cannot reduce or modify public production planning',()=>{
+ const env={QUEEN_STAGE:'staging',QUEEN_STAGING_DATABASE_ID:'6a3256b2-c016-4650-9759-79aca3b4446f'};
+ const req=url=>new Request(url,{method:'POST'});
+ assert.equal(queenStagingSingleInferenceLimit(env,req('https://prisma-queen-staging.pages.dev/api/core/plan'),{maxInferences:1}),1);
+ assert.equal(queenStagingSingleInferenceLimit(env,req('https://abc12345.prisma-queen-staging.pages.dev/api/core/plan'),{maxInferences:1}),1);
+ assert.equal(queenStagingSingleInferenceLimit(env,req('https://prisma-queen-staging.pages.dev.attacker.invalid/api/core/plan'),{maxInferences:1}),2);
+ assert.equal(queenStagingSingleInferenceLimit({...env,QUEEN_STAGE:'production'},req('https://prisma-queen-staging.pages.dev/api/core/plan'),{maxInferences:1}),2);
+ assert.equal(queenStagingSingleInferenceLimit(env,req('https://prismaspace.space/api/core/plan'),{maxInferences:1}),2);
+ assert.equal(queenStagingSingleInferenceLimit(env,req('https://prisma-queen-staging.pages.dev/api/core/plan'),{}),2);
 });
