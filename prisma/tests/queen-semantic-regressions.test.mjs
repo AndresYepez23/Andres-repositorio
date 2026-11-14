@@ -130,7 +130,7 @@ test('the file-plan grammar requires source references and all known operation s
   forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,_messages,schema)=>{
    const execute=(schema.oneOf||[schema]).find(s=>s.properties.intent.enum.includes('execute'));
    assert.equal(execute.properties.steps.minItems,2);
-   for(const variant of execute.properties.steps.items.oneOf)assert.equal(variant.properties.inputs.minItems,1);
+   for(const slot of execute.properties.steps.items.oneOf)for(const variant of slot.oneOf||[slot])assert.equal(variant.properties.inputs.minItems,1);
    return result({intent:'execute',message:'Seleccionaré la página.',steps:[step('s1','pdf-extract',{pages:'3'},[])]});
   }
  }),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='MISSING_INPUT');
@@ -194,13 +194,60 @@ test('each step grammar permits only original files and preceding IDs, never own
  const variants=schema.properties.steps.items.oneOf;
  assert.equal(variants.length,3);
  for(let i=0;i<variants.length;i++){
-  const properties=variants[i].properties;
-  assert.deepEqual(properties.id.enum,['s'+(i+1)]);
-  assert.deepEqual(properties.inputs.items.enum,['file:0',...Array.from({length:i},(_,n)=>'step:s'+(n+1))]);
-  assert.equal(properties.inputs.minItems,1);
-  assert.equal(properties.dependsOn.maxItems,i);
-  if(i)assert.deepEqual(properties.dependsOn.items.enum,Array.from({length:i},(_,n)=>'s'+(n+1)));
-  else assert.equal(properties.dependsOn.items.enum,undefined);
+  assert.equal(variants[i].oneOf.length,contracts.length);
+  for(const variant of variants[i].oneOf){
+   const properties=variant.properties;
+   assert.deepEqual(properties.id.enum,['s'+(i+1)]);
+   assert.deepEqual(properties.inputs.items.enum,['file:0',...Array.from({length:i},(_,n)=>'step:s'+(n+1))]);
+   assert.equal(properties.inputs.minItems,1);
+   assert.equal(properties.dependsOn.maxItems,i);
+   if(i)assert.deepEqual(properties.dependsOn.items.enum,Array.from({length:i},(_,n)=>'s'+(n+1)));
+   else assert.equal(properties.dependsOn.items.enum,undefined);
+  }
+ }
+});
+
+test('a short PDF grammar forbids uncontracted or nested params and keeps Word params empty',()=>{
+ const contracts=queenToolCatalog().filter(c=>['pdf-extract','pdf-to-word'].includes(c.id));
+ const schema=queenCatalogSchema(contracts,pdf,['execute'],{requiredToolIds:['pdf-extract','pdf-to-word'],maxSteps:2});
+ for(const slot of schema.properties.steps.items.oneOf){
+  const variants=slot.oneOf.map(variant=>variant.properties);
+  const extract=variants.find(properties=>properties.tool_id.enum[0]==='pdf-extract');
+  assert.deepEqual(extract.tool_id.enum,['pdf-extract']);
+  assert.equal(extract.inputs.maxItems,1);
+  assert.deepEqual(extract.params,{type:'object',additionalProperties:false,properties:{pages:{type:'string'}},required:['pages']});
+  const word=variants.find(properties=>properties.tool_id.enum[0]==='pdf-to-word');
+  assert.deepEqual(word.tool_id.enum,['pdf-to-word']);
+  assert.equal(word.inputs.maxItems,1);
+  assert.deepEqual(word.params,{type:'object',additionalProperties:false,properties:{},required:[]});
+ }
+ const multi={...contracts[0],inputs:{...contracts[0].inputs,multiple:true}};
+ const multiSchema=queenCatalogSchema([multi],pdf,['execute'],{maxSteps:2});
+ assert.equal(multiSchema.properties.steps.items.oneOf[0].properties.inputs.maxItems,20);
+});
+
+test('small scalar contracts retain exact choices while dependency text remains optional only later',()=>{
+ const contracts=queenToolCatalog().filter(c=>c.id==='json-format');
+ const schema=queenCatalogSchema(contracts,[],['execute'],{maxSteps:2});
+ const [first,later]=schema.properties.steps.items.oneOf.map(variant=>variant.properties.params);
+ assert.deepEqual(first.required,['text']);assert.deepEqual(later.required,[]);
+ assert.deepEqual(first.properties.indent,{type:'string',enum:['2','4','tab']});
+ assert.deepEqual(first.properties.text,{type:'string'});
+ assert.equal(first.additionalProperties,false);
+});
+
+test('complex or larger bounded contracts keep the compact untyped parameter fallback',()=>{
+ const basic=queenToolCatalog().find(c=>c.id==='pdf-extract');
+ for(const contracts of [
+  [{...basic,parameters:{...basic.parameters,properties:{...basic.parameters.properties,details:{type:'object'}}}}],
+  [{...basic,parameters:{...basic.parameters,properties:{a:{type:'string'},b:{type:'string'},c:{type:'string'}}}}],
+  Array.from({length:4},(_,i)=>({...basic,id:'bounded-tool-'+i}))
+ ]){
+  const schema=queenCatalogSchema(contracts,pdf,['execute'],{maxSteps:2});
+  const first=schema.properties.steps.items.oneOf[0];
+  assert.equal(first.oneOf,undefined);
+  assert.deepEqual(first.properties.params,{type:'object'});
+  assert.deepEqual(first.properties.tool_id.enum,contracts.map(c=>c.id));
  }
 });
 
@@ -211,6 +258,7 @@ test('literal-text grammar keeps first inputs and dependencies empty without an 
  assert.equal(first.inputs.minItems,0);assert.equal(first.inputs.maxItems,0);
  assert.equal(first.inputs.items.enum,undefined);
  assert.equal(first.dependsOn.maxItems,0);assert.equal(first.dependsOn.items.enum,undefined);
+ assert.equal(schema.properties.steps.items.oneOf[1].properties.inputs.maxItems,20);
  const serialized=JSON.stringify(schema);
  assert.equal(serialized.includes('"enum":[]'),false);
 });
@@ -222,6 +270,8 @@ test('generic or longer planning stays compact and delegates graph correctness t
  assert.equal(execute.properties.steps.maxItems,8);
  assert.equal(execute.properties.steps.items.oneOf,undefined);
  assert.deepEqual(execute.properties.steps.items.properties.id.enum,Array.from({length:8},(_,i)=>'s'+(i+1)));
+ assert.deepEqual(execute.properties.steps.items.properties.params,{type:'object'});
+ assert.equal(execute.properties.steps.items.properties.inputs.maxItems,20);
  const clarify=schema.oneOf.find(v=>v.properties.intent.enum.includes('clarify'));
  assert.equal(clarify.properties.steps.maxItems,0);
  assert.deepEqual(clarify.properties.steps.items,{type:'object'});

@@ -96,6 +96,17 @@ test('truncated model output cannot be accepted as a plan',async()=>{
  });
  assert.equal(calls,1);
 });
+test('only a trusted diagnostic option retains partial output; it is never accepted',async()=>{
+ await assert.rejects(inferQueen(env(),[],{}, {capturePartialOutput:true,fetchImpl:async url=>
+  url.endsWith('/slots')?json([{id:0,is_processing:false}]):url.endsWith('/tokenize')?json({tokens:[1]}):json({choices:[{message:{content:'{"synthetic":'},finish_reason:'length'}]})
+ }),error=>error.code==='QUEEN_TRUNCATED_PLAN'&&error.diagnostics.partialOutput==='{"synthetic":');
+});
+test('an untrusted public payload cannot enable partial-output capture',async()=>{
+ await planWithQueen(env(),{text:'Formatea JSON: {}',files:[],capturePartialOutput:true},{forceNeural:true,loadProviders:async()=>[],infer:async(_env,_messages,_schema,options)=>{
+  assert.equal(options.capturePartialOutput,false);
+  return {plan:proposal([step('json-format',{text:'{}'})]),usage:{inputTokens:1,outputTokens:1}};
+ }});
+});
 test('D1 lease serializes concurrent requests across independent callers and releases on errors',async()=>{
  const e=env();let finish;const first=withQueenLease(e,()=>new Promise(resolve=>{finish=resolve;}));await new Promise(r=>setImmediate(r));
  await assert.rejects(withQueenLease(e,async()=>{}),/BUSY/);finish('ok');assert.equal(await first,'ok');

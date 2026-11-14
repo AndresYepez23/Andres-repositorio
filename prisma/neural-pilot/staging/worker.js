@@ -117,7 +117,7 @@ export function createQueenStagingWorker(pages,{credentialPromotion=null}={}){
    catch(error){return json({ok:error.code==='QUEEN_UNREACHABLE'||error.code==='QUEEN_UPSTREAM_ERROR'&&error.diagnostics?.upstreamStatus>=500,...identity,realTransportRequest:true,target:'reserved-invalid-domain',code:error.code,diagnostics:error.diagnostics||null});}
   }
   if(path==='/__queen/plan'){
-   const payload=await readBoundedJson(request,24000);const outcome=await planWithQueen(env,payload,{signal:request.signal,forceNeural:true,maxInferences:payload.maxInferences===1?1:2});return json({...outcome,...identity,realInference:outcome.source==='queen'});
+   const payload=await readBoundedJson(request,24000);const outcome=await planWithQueen(env,payload,{signal:request.signal,forceNeural:true,maxInferences:payload.maxInferences===1?1:2,capturePartialOutput:payload.capturePartialOutput===true});return json({...outcome,...identity,realInference:outcome.source==='queen'});
   }
   if(path==='/__queen/models'){
    const models=await queenRequest(env,'models',{signal:request.signal});

@@ -47,7 +47,7 @@ export async function queenRequest(env,path,{body,signal,fetchImpl=fetch,timeout
  }catch(error){if(error instanceof QueenError)throw error;throw new QueenError(controller.signal.aborted?'QUEEN_TIMEOUT':'QUEEN_UNREACHABLE');}
  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
 }
-export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,remainingMs=55000,compactMessages=null,maxOutputTokens=QUEEN_LIMITS.maxOutputTokens}={}){
+export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,remainingMs=55000,compactMessages=null,maxOutputTokens=QUEEN_LIMITS.maxOutputTokens,capturePartialOutput=false}={}){
  const config=queenConfig(env),started=Date.now();
  const deadlineAt=started+Math.min(55000,Math.max(0,Number(remainingMs)||0));
  const remaining=()=>{const ms=deadlineAt-Date.now();if(signal?.aborted||ms<=0)throw new QueenError('QUEEN_TIMEOUT');return ms;};
@@ -83,7 +83,9 @@ export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,rem
  const outputShape={responseCharacters:responseText?.length??null,responseWhitespaceCharacters:responseText===null?null:(responseText.match(/\s/g)||[]).length};
  const diagnostics={finishReason:['stop','length','tool_calls','content_filter','function_call'].includes(choice?.finish_reason)?choice.finish_reason:null,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,reasoningContentPresent:Boolean(choice?.message?.reasoning_content||choice?.message?.reasoning),thinkingTagsPresent:/<think>/i.test(String(choice?.message?.content||'')),observedInputTokens:Number.isFinite(result.usage?.prompt_tokens)?result.usage.prompt_tokens:null,observedOutputTokens:Number.isFinite(result.usage?.completion_tokens)?result.usage.completion_tokens:null,generationTokensPerSecond:Number(result.timings?.predicted_per_second)||null,promptTokensPerSecond:Number(result.timings?.prompt_per_second)||null};
  Object.assign(diagnostics,outputShape);
- if(choice?.finish_reason==='length')throw new QueenError('QUEEN_TRUNCATED_PLAN',422,diagnostics);
+ // Only the authenticated staging wrapper can opt into inspecting synthetic
+ // diagnostic output. Public planning never enables this trusted option.
+ if(choice?.finish_reason==='length')throw new QueenError('QUEEN_TRUNCATED_PLAN',422,{...diagnostics,...(capturePartialOutput&&responseText!==null?{partialOutput:responseText.slice(0,16000)}:{})});
  const text=choice?.message?.content;if(typeof text!=='string'||text.length>16000)throw new QueenError('QUEEN_INVALID_PLAN',422);
  let plan;try{plan=JSON.parse(text);}catch{throw new QueenError('QUEEN_INVALID_PLAN',422,diagnostics);}
  const finite=n=>Number.isFinite(Number(n))&&Number(n)>=0?Number(n):null;
