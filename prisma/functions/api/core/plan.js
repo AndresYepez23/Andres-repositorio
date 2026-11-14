@@ -5,7 +5,7 @@ import {validateQueenPlan,queenDecisionEvidence,QUEEN_LIMITS} from '../../../src
 import {planWithPrismaCore} from '../../../src/developer-api.js';
 import {isInformationalIntent,isBinaryCapabilityQuestion,extractPayload,excludedCapabilityIds} from '../../../src/core-capabilities.js';
 import {queenCatalogSchema} from '../../../src/queen-schema.js';
-import {requestedConversionFormat} from '../../../src/file-conversions.js';
+import {requestedConversionFormat,compatibleFileConversions} from '../../../src/file-conversions.js';
 import {OBSERVERS} from '../../../src/core-execution.js';
 
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
@@ -154,6 +154,10 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
  const informational=queenIntentOptions(text,{status:deterministic.planner?.type}).length===1&&queenIntentOptions(text,{status:deterministic.planner?.type})[0]==='question';
  const binaryCapabilityQuestion=informational&&isBinaryCapabilityQuestion(text);
  const requestedWorkbook=requestedConversionFormat(text)==='xlsx';
+ const outputFormat=requestedConversionFormat(instruction);
+ const localOutput=outputFormat&&files.some(file=>compatibleFileConversions(file).some(route=>route.target===outputFormat));
+ const semanticRequest=/\b(?:analiz\w*|interpret\w*|resum\w*|traduc\w*|redact\w*|escrib\w*|explic\w*|compar\w*|investig\w*|crea\w*|genera\w*)\b/.test(normalizedInstruction(instruction));
+ const localWorkflow=!semanticRequest&&(localOutput||deterministic.planner?.type==='ready'&&steps.every(s=>['local','browser'].includes(s.mode)));
  const workbookProducer=c=>c.id==='json-xlsx'||c.id==='table-file-convert';
  const localAnalysis={status:informational?'informational':deterministic.planner?.type||'needs-planning',
   requestKind:cancellationRequested(text)?'cancellation':informational?'information':'instruction',
@@ -182,7 +186,7 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
   for(let attempt=0;attempt<inferenceLimit;attempt++){
    let result;
    const executable=contracts.filter(c=>c.mode!=='byok'||selectQueenDelegate(providers,{kind:capabilityFor(c.id)}));
-   const localOnly=contracts.length>0&&contracts.every(c=>['local','browser'].includes(c.mode));
+   const localOnly=localWorkflow&&contracts.length>0&&contracts.every(c=>['local','browser'].includes(c.mode));
    const requestedSpecialist=contracts[0]?.mode==='byok'&&!informational?capabilityFor(contracts[0].id):null;
    const specialistUnavailable=requestedSpecialist&&!selectQueenDelegate(providers,{kind:requestedSpecialist,manual:context.preferences});
    const intents=(specialistUnavailable?['delegate']:queenIntentOptions(text,localAnalysis)).filter(i=>(i!=='delegate'||!localOnly)&&(i!=='retrieve'||closedFlowLimit===8&&attempt+1<inferenceLimit)&&(i!=='execute'||executable.some(c=>!c.inputs.file||files.length)&&(!requestedWorkbook||executable.some(workbookProducer))));

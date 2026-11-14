@@ -59,6 +59,16 @@ test('capabilities backed by an external provider retain the existing delegation
  assert.equal(result.delegate.provider,'cloudflare');assert.equal(result.delegate.capability,'image');
 });
 
+test('a file attachment does not suppress an actual semantic analysis provider request',async()=>{
+ const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
+ const providers=[{id:'cloudflare',available:true,capabilities:[{kind:'chat',executable:true,models:[{id:'chat-model'}]}]}];
+ const result=await planWithQueen(env,{text:'Analiza el contenido de este PDF y explica sus implicaciones.',files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>providers,infer:async(_env,_messages,schema)=>{
+  assert.equal(JSON.stringify(schema).includes('"delegate"'),true);
+  return {plan:{intent:'delegate',message:'Propongo analizar el texto con el motor disponible.',steps:[]},usage:{inputTokens:10,outputTokens:10}};
+ }});
+ assert.equal(result.delegate.provider,'cloudflare');assert.equal(result.delegate.capability,'chat');
+});
+
 test('measured incomplete clarifications are rejected while complete useful questions remain valid',async()=>{
  const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
  const request={text:'Cambia el tamaño de esta imagen.',files:[{name:'foto.png',type:'image/png',size:386}]};
