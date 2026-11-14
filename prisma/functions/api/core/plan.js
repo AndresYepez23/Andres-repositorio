@@ -119,29 +119,15 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
  queenConfig(env);
  const knownScan=knownScannedCsvExcelPlan(text,files);
  if(knownScan&&!payload.repair){
-  // Qwen decides whether the stated constraints permit execution. The
-  // deterministic planner, not the 2B model, grounds the complete 5-step DAG.
-  // The ordinary validators and execution permissions remain authoritative.
-  return withQueenLease(env,async()=>{
-   const started=Date.now();
-   const schema={type:'object',additionalProperties:false,required:['intent'],properties:{intent:{type:'string',enum:['execute','clarify']}}};
-   const messages=[
-    {role:'system',content:'You classify only the current action request. Reply JSON with one key, intent: execute or clarify. The user states this scanned PDF contains CSV text WITH HEADERS. Reading it via OCR reveals actual column names and values at execution time; do NOT demand column names in advance. Available local workflow: convert every PDF page to PNG, OCR English, remove only spaces immediately after commas, parse CSV with first row as headers, export JSON rows to XLSX. If information is sufficient to TRY this reversible on-device workflow choose execute. If the user omitted the CSV format or file choose clarify. Never claim OCR or Excel succeeded.'},
-    {role:'user',content:JSON.stringify({request:extractPayload(text).instruction.slice(0,1100),file:{name:files[0].name,type:files[0].type,size:files[0].size}})}
-   ];
-   const result=await infer(env,messages,schema,{signal,maxOutputTokens:40,remainingMs:55000});
-   const usage={inputTokens:result.usage?.inputTokens||0,outputTokens:result.usage?.outputTokens||0,externalCostUsd:0};
-   if(result.plan?.intent==='clarify'){
-    const safe=validateQueenPlan({intent:'clarify',message:'Confirma que el PDF contiene filas CSV con encabezados.',steps:[]},{files,objective:text});
-    await recordQueenMetric(env,'clarify',{durationMs:Date.now()-started,...usage});
-    return {ok:true,source:'queen',plan:safe,metrics:{...usage,inferences:1,planningMode:'qwen-intent-with-grounded-closed-ocr-csv',durationMs:Date.now()-started}};
-   }
-   if(result.plan?.intent!=='execute')throw new QueenError('QUEEN_PLAN_REJECTED',422,{inferences:1,completedInferences:1});
-   const plan=validateQueenPlan(knownScan,{files,objective:text,allowedToolIds:knownScan.steps.map(s=>s.tool_id)});
-   await recordQueenMetric(env,'planned',{durationMs:Date.now()-started,...usage});
-   return {ok:true,source:'queen',plan,decision:queenDecisionEvidence(plan),
-    metrics:{...usage,inferences:1,planningMode:'qwen-intent-with-grounded-closed-ocr-csv',generatedStepsByModel:false,verifyActualOcrCellsAtExecution:true,durationMs:Date.now()-started}};
-  });
+  // A fully specified, reversible file workflow is more reliable and cheaper
+  // when grounded in local contracts than a forced small-model decision.
+  // No model is invoked: keep provenance and inference count explicit.
+  const plan=validateQueenPlan(knownScan,{files,objective:text,allowedToolIds:knownScan.steps.map(s=>s.tool_id)});
+  await recordQueenMetric(env,'local');
+  return {ok:true,source:'queen-hybrid-local',plan,decision:queenDecisionEvidence(plan),
+   metrics:{inputTokens:0,outputTokens:0,externalCostUsd:0,inferences:0,
+    planningMode:'verified-closed-ocr-csv-local',
+    generatedStepsByModel:false,verifyActualOcrCellsAtExecution:true,durationMs:0}};
  }
  const context=payload.context&&typeof payload.context==='object'?{
   previousGoal:String(payload.context.previousGoal||'').slice(0,400),

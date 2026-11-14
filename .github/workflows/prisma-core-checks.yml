@@ -164,15 +164,15 @@ jobs:
           if(r.realInference!==false||r.failures?.length)throw Error('BROWSER_CONTROL_PROVENANCE_ERROR');
           console.log('Real browser OCR and XLSX cell controls passed; no neural inference claimed.');
           NODE
-      - name: One-shot Queen neural OCR-to-Excel complete objective in staging
+      - name: One-shot Queen hybrid OCR-to-Excel complete objective in staging
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
         timeout-minutes: 12
         env:
           QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          if ! git log -1 --pretty=%s | grep -Fq '[queen-neural-ocr-once]'; then
-            echo "No neural OCR inference requested by this commit."
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-hybrid-ocr-once]'; then
+            echo "No full hybrid OCR control requested by this commit."
             exit 0
           fi
           node --input-type=module <<'NODE'
@@ -212,7 +212,7 @@ jobs:
           const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
           const item=r.rows.find(x=>x.id==='scan-excel-full-objective');
           console.log(JSON.stringify({case:item?.id,ok:item?.ok||false,error:item?.error||null,source:item?.neural?.source||null,realInference:item?.realInference||false,inferences:item?.neural?.metrics?.inferences??null,tools:item?.neural?.plan?.steps?.map(s=>s.tool_id)||[],exactCells:item?.evidence?.exactCells??false}));
-          if(!item?.ok||!item.realInference||!item.evidence?.exactCells)throw Error('QUEEN_NEURAL_OCR_CHAIN_NOT_VERIFIED');
+          if(!item?.ok||item.realInference||item.neural?.source!=='queen-hybrid-local'||item.neural?.metrics?.inferences!==0||!item.evidence?.exactCells)throw Error('QUEEN_HYBRID_OCR_CHAIN_NOT_VERIFIED');
           if(r.failures?.length)throw Error('BROWSER_DEPENDENCY_FAILURE');
           NODE
       - name: Check Queen VPS readers offline

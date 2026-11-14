@@ -175,23 +175,15 @@ test('Queen narrowly recognizes stated CSV-in-scanned-PDF workflows and never gu
  assert.equal(knownScannedCsvExcelPlan(text,[{name:'file.png',type:'image/png',size:100}]),null);
  assert.equal(knownScannedCsvExcelPlan(text+' Envíalo por correo.',file),null);
 });
-test('a single real-shaped Qwen intent vote grounds the scanned CSV plan without model-synthesized steps',async()=>{
+test('a grounded closed OCR CSV workflow uses zero inferences and validates all five steps',async()=>{
  const text='Convierte el PDF escaneado adjunto en un Excel. El escaneo contiene texto CSV con encabezados. Reconoce el texto en inglés; elimina únicamente los espacios que aparezcan justo después de las comas antes de estructurar las filas. No inventes celdas ni contenido.';
  let calls=0;
  const result=await planWithQueen(env(),{text,files:[{name:'scan.pdf',type:'application/pdf',size:100}]},{
-  infer:async(_env,messages,schema,opts)=>{
-   calls++;assert.deepEqual(schema.properties.intent.enum,['execute','clarify']);
-   assert.equal(opts.maxOutputTokens,40);
-   return {plan:{intent:'execute'},usage:{inputTokens:93,outputTokens:7}};
-  }
+  infer:async()=>{calls++;throw Error('Known local workflow should not dispatch neural inference');}
  });
- assert.equal(calls,1);assert.equal(result.source,'queen');
+ assert.equal(calls,0);assert.equal(result.source,'queen-hybrid-local');
+ assert.equal(result.plan.status,'validated');
  assert.deepEqual(result.plan.steps.map(s=>s.tool_id),['pdf-to-image','image-ocr','text-replace','csv-json','json-xlsx']);
  assert.equal(result.metrics.generatedStepsByModel,false);
- assert.equal(result.metrics.inferences,1);
-});
-test('a model clarification remains a clarification; no five-step scan plan is executed',async()=>{
- const text='Convierte el PDF escaneado adjunto en un Excel. El escaneo contiene texto CSV con encabezados. Reconoce el texto en inglés; elimina únicamente los espacios que aparezcan justo después de las comas antes de estructurar las filas. No inventes celdas ni contenido.';
- const r=await planWithQueen(env(),{text,files:[{name:'scan.pdf',type:'application/pdf',size:100}]},{infer:async()=>({plan:{intent:'clarify'},usage:{inputTokens:20,outputTokens:5}})});
- assert.equal(r.plan.intent,'clarify');assert.deepEqual(r.plan.steps,[]);
+ assert.equal(result.metrics.inferences,0);
 });
