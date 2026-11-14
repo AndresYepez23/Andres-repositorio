@@ -538,14 +538,14 @@ assert.equal(selectTaskModel('cloudflare','planner','smart',CHAT_MODELS.cloudfla
 assert.ok(!CHAT_MODELS.cloudflare.some(m=>m.id.includes('deepseek-v4.1-flash')),
  'Do not offer a paid-only Workers AI model on the Workers Free deployment');
 const cfChatSource=readFileSync(new URL('../functions/api/ai/chat.js',import.meta.url),'utf8');
-assert.match(cfChatSource,/chat_template_kwargs:\\{enable_thinking:false\\}/,
+assert.match(cfChatSource,/chat_template_kwargs:\{enable_thinking:false\}/,
  'Gemma 4 needs visible answer tokens rather than thinking-only output');
 const reasoningEngineSource=readFileSync(new URL('../src/engines.js',import.meta.url),'utf8');
-assert.match(reasoningEngineSource,/task==='reasoning'&&p\\.length==='medium'\\?900/,
+assert.match(reasoningEngineSource,/task==='reasoning'&&p\.length==='medium'\?900/,
  'Short comparisons should not force a 1,900+ token generation');
-assert.match(reasoningEngineSource,/task==='reasoning'\\?30000:16000/,
+assert.match(reasoningEngineSource,/task==='reasoning'\?30000:16000/,
  'Reasoning requests need enough time to finish before fallback');
-assert.match(reasoningEngineSource,/length:id==='ai-compare-options'\\?\\(p\\.length\\|\\|'medium'\\):'long'/,
+assert.match(reasoningEngineSource,/length:id==='ai-compare-options'\?\(p\.length\|\|'medium'\):'long'/,
  'Comparative questions must preserve the requested response length');
 
 assert.equal(selectTaskModel('openrouter','general','fast',[{id:'openrouter/free'}]),'openrouter/free');
