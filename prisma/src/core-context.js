@@ -45,6 +45,8 @@ function attachmentNames(item){
  * explicit new tasks deliberately avoid importing unrelated old material.
  */
 export function buildConversationContext(history = [], query = '', options = {}) {
+  // Independent questions must not inherit completed file tasks or their assistant replies.
+  if (options.isolated === true) return [];
   const limit = Math.max(4, Math.min(16, Number(options.maxMessages) || 13));
   const budget = Math.max(2800, Math.min(22000, Number(options.maxChars) || 14000));
   const revision=/\b(?:cambia|corrige|reescribe|revisa|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|el anterior|la anterior|esa cancion|ese texto|ese codigo|el coro|la estrofa|la respuesta|otra version)\b/.test(fold(query));
@@ -139,7 +141,7 @@ export function chooseCoreContextOptions(task='conversation',text=''){
  if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
   return {maxMessages:15,maxChars:16000,newTask:false};
  if(newTask)return {maxMessages:4,maxChars:4500,newTask:true};
- if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500,newTask:false};
+ if(standalone&&q.length<180)return {maxMessages:3,maxChars:3500,newTask:true,isolated:true};
  if(['coding','reasoning'].includes(task))return {maxMessages:11,maxChars:11500,newTask:false};
  return {maxMessages:8,maxChars:7500,newTask:false};
 }
