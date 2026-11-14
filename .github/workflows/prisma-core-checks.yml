@@ -213,6 +213,11 @@ jobs:
           const item=r.rows.find(x=>x.id==='scan-excel-full-objective');
           console.log(JSON.stringify({case:item?.id,ok:item?.ok||false,error:item?.error||null,source:item?.neural?.source||null,realInference:item?.realInference||false,inferences:item?.neural?.metrics?.inferences??null,tools:item?.neural?.plan?.steps?.map(s=>s.tool_id)||[],exactCells:item?.evidence?.exactCells??false}));
           if(!item?.ok||item.realInference||item.neural?.source!=='queen-hybrid-local'||item.neural?.metrics?.inferences!==0||!item.evidence?.exactCells)throw Error('QUEEN_HYBRID_OCR_CHAIN_NOT_VERIFIED');
+          const excel=item?.execution?.results?.at(-1);
+          console.log(JSON.stringify({lastTool:excel?.tool||null,verification:excel?.verification?.status||null,contentEvidence:excel?.verification?.evidence?.filter(x=>x.check==='xlsx-rows-and-columns')||[]}));
+          if(excel?.tool!=='json-xlsx'||excel?.verification?.status!=='verified'||
+            !excel.verification.evidence.some(x=>x.check==='xlsx-rows-and-columns'&&x.rows===2&&x.columns===3))
+            throw Error('XLSX_INDEPENDENT_CELL_VERIFICATION_FAILED');
           if(r.failures?.length)throw Error('BROWSER_DEPENDENCY_FAILURE');
           NODE
       - name: One-shot Queen repair with genuine engine failure in staging
