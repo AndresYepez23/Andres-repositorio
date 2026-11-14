@@ -15,7 +15,7 @@ export const ROUTE_ORDER=Object.freeze(
 const MODEL_BY_TASK = Object.freeze({
   planner: {
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-20b",smart:"openai/gpt-oss-120b"},
-    cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/google/gemma-4-26b-a4b-it",smart:"@cf/deepseek-ai/deepseek-v4.1-flash-1017"},
+    cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/google/gemma-4-26b-a4b-it",smart:"@cf/google/gemma-4-26b-a4b-it"},
     gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.5-flash-lite",smart:"gemini-3.8-flash"},
     pollinations: {fast:"openai/gpt-5.4-nano",balanced:"openai/gpt-5.4-nano",smart:"deepseek/deepseek-v4-flash"},
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"openai/gpt-oss-20b:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
@@ -63,7 +63,7 @@ const MODEL_BY_TASK = Object.freeze({
   },
   reasoning: {
     gemini: {fast:"gemini-3.5-flash-lite",balanced:"gemini-3.5-flash-lite",smart:"gemini-3.8-flash"},
-    cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/deepseek-ai/deepseek-v4.1-flash-1017",smart:"@cf/deepseek-ai/deepseek-v4.1-flash-1017"},
+    cloudflare: {fast:"@cf/google/gemma-4-26b-a4b-it",balanced:"@cf/google/gemma-4-26b-a4b-it",smart:"@cf/google/gemma-4-26b-a4b-it"},
     groq: {fast:"openai/gpt-oss-20b",balanced:"openai/gpt-oss-120b",smart:"openai/gpt-oss-120b"},
     pollinations: {fast:"openai/gpt-5.4-nano",balanced:"deepseek/deepseek-v4-flash",smart:"deepseek/deepseek-v4-flash"},
     huggingface: {fast:"openai/gpt-oss-20b:cheapest",balanced:"deepseek-ai/DeepSeek-R1:cheapest",smart:"deepseek-ai/DeepSeek-R1:cheapest"},
