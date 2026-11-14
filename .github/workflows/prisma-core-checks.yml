@@ -34,6 +34,8 @@ jobs:
       - name: Real Qwen Core inference quality sample on isolated staging
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
         timeout-minutes: 6
+        env:
+          QWEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
         run: |
           node --input-type=module <<'NODE'
           const url = "https://prisma-queen-staging.pages.dev/api/core/qwen-interpret";
@@ -56,12 +58,14 @@ jobs:
               if ([404,405].includes(response.status)) { await sleep(15000); continue; }
               if (!response.ok) throw new Error(item.name+": HTTP "+response.status);
               const result=await response.json();
-              if (result.available===false) { await sleep(15000); continue; }
+              if (result.available===false || result.deploymentCommit!==process.env.QWEN_STAGING_EXPECTED_COMMIT) { await sleep(15000); continue; }
               if (result.ok!==true||result.source!=="qwen-core"||!["tools","question","clarify"].includes(result.intent)||!Array.isArray(result.tool_ids)||result.tool_ids.length>3)
                 throw new Error(item.name+": invalid structured result "+String(result.code||"INVALID_RESULT"));
               const missing=item.expected.filter(id=>!result.tool_ids.includes(id));
               const forbidden=(item.forbidden||[]).filter(id=>result.tool_ids.includes(id));
               console.log(JSON.stringify({case:item.name,intent:result.intent,tool_ids:result.tool_ids,expected:item.expected,missing,forbidden,durationMs:result.metrics?.durationMs??null,inferences:result.metrics?.inferences??null}));
+              if (missing.length) throw new Error(item.name+": omitted requested operations: "+missing.join(","));
+              if (item.name==='informational_question' && result.intent!=='question') throw new Error(item.name+": informational request was not classified as a question");
               if (forbidden.length) throw new Error(item.name+": prohibited tool suggested: "+forbidden.join(","));
               return;
             }

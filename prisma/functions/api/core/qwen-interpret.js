@@ -71,7 +71,7 @@ export async function onRequestPost({request,env},{interpret=interpretWithQwenCo
   const payload=await readBoundedJson(request,QWEN_CORE_INTERPRET_LIMITS.maxInputBytes);
   queenConfig(env);
   await reserve(env,request,Date.now(),{perMinute:4,perDay:25,namespace:'qwen-core-interpreter'});
-  const result=await interpret(env,payload,{signal:request.signal});return json(result);
+  const result=await interpret(env,payload,{signal:request.signal});return json(isolatedStaging?{...result,deploymentCommit:env.CF_PAGES_COMMIT_SHA||null}:result);
  }catch(error){
   await recordQueenMetric(env,'qwen-core-failed');
   const safe=error instanceof QueenError?error:new QueenError('QWEN_CORE_UNAVAILABLE');
