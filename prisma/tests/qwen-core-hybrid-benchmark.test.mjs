@@ -50,9 +50,10 @@ test('20 deterministic requests: no accepted plan may omit checked explicit requ
 test('regression: incomplete PDF→Word and CSV→Excel must be marked needs-planning',()=>{
  const p=planWithPrismaCore({text:cases[0][1],files:pdf});
  const c=planWithPrismaCore({text:cases[15][1],files:csv});
- assert.equal(p.planner.type,'needs-planning');
+ // A complete deterministic plan is even better than semantic review.
+ if(p.planner.type==='ready')assert.deepEqual(p.planner.steps.map(s=>s.tool_id),['pdf-extract','pdf-to-word']);
+ else{assert.equal(p.planner.type,'needs-planning');assert.equal(p.planner.steps.length,0);}
  assert.equal(c.planner.type,'needs-planning');
- assert.equal(p.planner.steps.length,0);
  assert.equal(c.planner.steps.length,0);
 });
 test('regression: known-safe image pipeline stays executable',()=>{

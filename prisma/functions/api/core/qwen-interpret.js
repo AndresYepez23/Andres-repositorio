@@ -3,6 +3,7 @@
 import {inferQueen,withQueenLease,reserveQueenRequest,readBoundedJson,QueenError,queenConfig,recordQueenMetric} from '../../_lib/queen.js';
 import {searchCoreTools} from '../../../src/core-tool-intelligence.js';
 import {excludedCapabilityIds} from '../../../src/core-capabilities.js';
+import {assessQwenCorePlanCoverage} from '../../../src/qwen-core-plan-coverage.js';
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export const QWEN_CORE_INTERPRET_LIMITS=Object.freeze({candidates:8,toolIds:3,outputTokens:96,serverMs:26000,maxInputBytes:6000});
@@ -20,7 +21,8 @@ export function validateQwenCoreInterpretation(value,allowed,excluded=[]){
 
 export function qwenCoreCandidates(text,files=[]){
  const excluded=new Set(excludedCapabilityIds(text,files));
- const options=searchCoreTools(text,files,12).filter(t=>['ready','beta'].includes(t.status)&&!excluded.has(t.id));
+ const options=searchCoreTools(text,files,12).filter(t=>['ready','beta'].includes(t.status)&&!excluded.has(t.id)&&
+  !assessQwenCorePlanCoverage(text,[{tool_id:t.id}]).missing.includes('forbidden-compression'));
  return options.slice(0,QWEN_CORE_INTERPRET_LIMITS.candidates).map(t=>({id:t.id,name:t.name.slice(0,75),file:!!t.file,mode:t.mode}));
 }
 
