@@ -31,44 +31,43 @@ jobs:
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
-      - name: Real Qwen Core inference on isolated staging
+      - name: Real Qwen Core inference quality sample on isolated staging
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
         timeout-minutes: 6
         run: |
-          set -euo pipefail
-          url="https://prisma-queen-staging.pages.dev/api/core/qwen-interpret"
-          body='{"text":"Extrae la segunda página del PDF y conviértela a Word","files":[{"name":"smoke-test.pdf","type":"application/pdf","size":1024}]}'
-          for attempt in $(seq 1 20); do
-            code="$(curl --silent --show-error --max-time 40 -o /tmp/qwen-core-smoke.json -w '%{http_code}' \
-              -X POST "$url" -H 'Origin: https://prisma-queen-staging.pages.dev' \
-              -H 'Content-Type: application/json' --data "$body" || true)"
-            if [ "$code" = "404" ] || [ "$code" = "405" ]; then
-              echo "Staging deployment not ready (HTTP $code), waiting..."
-              sleep 15
-              continue
-            fi
-            if [ "$code" != "200" ]; then
-              echo "Qwen staging inference failed (HTTP $code)."
-              exit 1
-            fi
-            result="$(node --input-type=module -e '
-              import fs from "node:fs";
-              const r=JSON.parse(fs.readFileSync("/tmp/qwen-core-smoke.json","utf8"));
-              if(r.available===false) { console.log("not-ready"); process.exit(0); }
-              if(r.ok!==true||r.source!=="qwen-core"||!["tools","question","clarify"].includes(r.intent)||!Array.isArray(r.tool_ids)||r.tool_ids.length>3) {
-                process.stderr.write("Qwen staging returned no valid inference result: "+String(r.code||"INVALID_RESULT")+"\\n");process.exit(1);
+          node --input-type=module <<'NODE'
+          const url = "https://prisma-queen-staging.pages.dev/api/core/qwen-interpret";
+          const cases = [
+            {name:"pdf_extract_then_word",text:"Extrae la segunda página del PDF y conviértela a Word",files:[{name:"smoke-test.pdf",type:"application/pdf",size:1024}],expected:["pdf-extract","pdf-to-word"]},
+            {name:"pdf_word_without_compression",text:"No comprimas el PDF; conviértelo a Word",files:[{name:"smoke-test.pdf",type:"application/pdf",size:1024}],expected:["pdf-to-word"],forbidden:["pdf-compress"]},
+            {name:"informational_question",text:"¿Cómo puedo extraer una página de un PDF?",files:[],expected:[]},
+            {name:"image_metadata_then_webp",text:"Quita los metadatos de esta foto y conviértela a WebP",files:[{name:"smoke-test.jpg",type:"image/jpeg",size:1024}],expected:["image-strip-metadata","image-convert"]}
+          ];
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          async function infer(item) {
+            for (let attempt=1; attempt<=20; attempt++) {
+              let response;
+              try {
+                response = await fetch(url,{method:"POST",headers:{Origin:"https://prisma-queen-staging.pages.dev","Content-Type":"application/json"},body:JSON.stringify({text:item.text,files:item.files}),signal:AbortSignal.timeout(40000)});
+              } catch (error) {
+                if (attempt===20) throw new Error(item.name+": staging request timed out");
+                await sleep(15000); continue;
               }
-              console.log("Real Qwen Core inference passed: "+r.intent+", "+r.tool_ids.length+" grounded tool IDs, "+String(r.metrics?.durationMs??"unknown")+" ms.");
-            ')"
-            if [ "$result" = "not-ready" ]; then
-              echo "The new isolated staging build is not active yet; waiting..."
-              sleep 15
-              continue
-            fi
-            echo "$result"
-            exit 0
-          done
-          echo "Timed out waiting for the isolated Qwen staging deployment."
-          exit 1
+              if ([404,405].includes(response.status)) { await sleep(15000); continue; }
+              if (!response.ok) throw new Error(item.name+": HTTP "+response.status);
+              const result=await response.json();
+              if (result.available===false) { await sleep(15000); continue; }
+              if (result.ok!==true||result.source!=="qwen-core"||!["tools","question","clarify"].includes(result.intent)||!Array.isArray(result.tool_ids)||result.tool_ids.length>3)
+                throw new Error(item.name+": invalid structured result "+String(result.code||"INVALID_RESULT"));
+              const missing=item.expected.filter(id=>!result.tool_ids.includes(id));
+              const forbidden=(item.forbidden||[]).filter(id=>result.tool_ids.includes(id));
+              console.log(JSON.stringify({case:item.name,intent:result.intent,tool_ids:result.tool_ids,expected:item.expected,missing,forbidden,durationMs:result.metrics?.durationMs??null,inferences:result.metrics?.inferences??null}));
+              if (forbidden.length) throw new Error(item.name+": prohibited tool suggested: "+forbidden.join(","));
+              return;
+            }
+            throw new Error(item.name+": staging deployment did not become ready");
+          }
+          for (const item of cases) await infer(item);
+          NODE
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v
