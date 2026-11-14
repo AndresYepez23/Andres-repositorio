@@ -33,6 +33,26 @@ jobs:
         run: |
           node prisma/build.mjs
           node --test prisma/tests/seo-build.test.mjs
+      - name: Real local DOCX assessment and conversion in Chromium
+        timeout-minutes: 4
+        run: |
+          tooling="$RUNNER_TEMP/prisma-browser"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export PRISMA_CHROMIUM
+          PRISMA_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          export PRISMA_FUNCTIONAL_OUTPUT="$RUNNER_TEMP/prisma-document-conversion"
+          node prisma/tests/functional/document-conversion.cjs
+      - name: Preserve real document conversion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: document-conversion-evidence
+          path: |
+            ${{ runner.temp }}/prisma-document-conversion/results.json
+            ${{ runner.temp }}/prisma-document-conversion/*.docx
+            ${{ runner.temp }}/prisma-document-conversion/*.html
       - name: Real Qwen Core inference quality sample on isolated staging
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/qwen-core-hybrid'
         timeout-minutes: 6

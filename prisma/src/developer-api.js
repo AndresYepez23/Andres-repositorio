@@ -1,7 +1,7 @@
 import {assessQwenCorePlanCoverage} from './qwen-core-plan-coverage.js';
 import {toolContract} from './queen-contracts.js';
 import { planCapabilityRequest, isInformationalIntent } from './core-capabilities.js';
-import { planFileConversion } from './file-conversions.js';
+import { planFileConversion, planFileAssessment } from './file-conversions.js';
 import { tools, categories } from "./registry.js";
 import {
   coreToolCatalog,
@@ -152,7 +152,8 @@ export function planWithPrismaCore({ text = "", files = [], history = [] } = {})
     ? {source:"prisma-core-capabilities",...capabilityPlan}
     : ready(conversionPlan)?{source:"prisma-conversion-routing",...conversionPlan}
     : ready(capabilityPlan)?{source:"prisma-core-capabilities",...capabilityPlan}:null;
-  const selected = bestReady || (capabilityPlan
+  const assessmentPlan=planFileAssessment(request,safeAttachments);
+  const selected = assessmentPlan ? {source:'prisma-file-assessment',...assessmentPlan} : bestReady || (capabilityPlan
     ? {source:"prisma-core-capabilities",...capabilityPlan}
     : conversionPlan
       ? {source:"prisma-conversion-routing",...conversionPlan}
