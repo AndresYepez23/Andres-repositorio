@@ -135,7 +135,7 @@ export function chooseCoreContextOptions(task='conversation',text=''){
  const q=fold(text).replace(/^[¿?¡!\s]+/,'').trim();
  const newTask=isCoreNewTask(q);
  const revision=/\b(?:eso|esa|ese|anterior|ultimo|ultima|cambia|corrige|reescribe|edita|ajusta|modifica|mejora|continua|sigue|hazlo|hazla|otra version|mismo|la letra|el coro|ese codigo|tu respuesta)\b/.test(q)||isCoreFollowUp(q);
- const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica brevemente)\b/.test(q)&&!isCoreFollowUp(q);
+ const standalone=/^(?:hola|buenas|buenos dias|buenas tardes|buenas noches|gracias|que es|quien es|cual es|para que sirve|cuanto es|define|explica|explicame|compara|comparame)\b/.test(q)&&!isCoreFollowUp(q);
  if(revision||task==='songwriting'&&/\b(?:revisa|cambia|edita|corrige|version)\b/.test(q))
   return {maxMessages:15,maxChars:16000,newTask:false};
  if(newTask)return {maxMessages:4,maxChars:4500,newTask:true};
