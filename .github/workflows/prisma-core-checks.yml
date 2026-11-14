@@ -164,5 +164,56 @@ jobs:
           if(r.realInference!==false||r.failures?.length)throw Error('BROWSER_CONTROL_PROVENANCE_ERROR');
           console.log('Real browser OCR and XLSX cell controls passed; no neural inference claimed.');
           NODE
+      - name: One-shot Queen neural OCR-to-Excel complete objective in staging
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/prisma-neural-genixnode-qwen35-pilot'
+        timeout-minutes: 12
+        env:
+          QUEEN_STAGING_EXPECTED_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if ! git log -1 --pretty=%s | grep -Fq '[queen-neural-ocr-once]'; then
+            echo "No neural OCR inference requested by this commit."
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          const base='https://prisma-queen-staging.pages.dev';
+          const expected=process.env.QUEEN_STAGING_EXPECTED_COMMIT;
+          let ready=false;
+          for(let i=0;i<20;i++){
+            try{
+              const r=await fetch(base+'/api/core/qwen-interpret',{signal:AbortSignal.timeout(10000)});
+              if(r.ok){
+                const body=await r.json();
+                if(body.ready===true&&body.deploymentCommit===expected){ready=true;break;}
+              }
+            }catch{}
+            await new Promise(resolve=>setTimeout(resolve,15000));
+          }
+          if(!ready)throw Error('STAGING_PROVENANCE_UNVERIFIED: no inference attempted');
+          NODE
+          tooling="$RUNNER_TEMP/queen-playwright"
+          npm install --prefix "$tooling" --no-audit --no-fund --silent playwright@1.62.1
+          node "$tooling/node_modules/playwright/cli.js" install --with-deps chromium
+          export NODE_PATH="$tooling/node_modules"
+          export QUEEN_CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory prisma >"$RUNNER_TEMP/queen-local-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 2
+          done
+          export QUEEN_PUBLIC_STAGING_URL='https://prisma-queen-staging.pages.dev/'
+          export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-neural-ocr-once"
+          export QUEEN_OPERATIONS_CASES='scan-excel-full-objective'
+          node prisma/neural-pilot/staging/browser-operations.cjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.QUEEN_OPERATIONS_OUTPUT+'/results.json','utf8'));
+          const item=r.rows.find(x=>x.id==='scan-excel-full-objective');
+          console.log(JSON.stringify({case:item?.id,ok:item?.ok||false,error:item?.error||null,source:item?.neural?.source||null,realInference:item?.realInference||false,inferences:item?.neural?.metrics?.inferences??null,tools:item?.neural?.plan?.steps?.map(s=>s.tool_id)||[],exactCells:item?.evidence?.exactCells??false}));
+          if(!item?.ok||!item.realInference||!item.evidence?.exactCells)throw Error('QUEEN_NEURAL_OCR_CHAIN_NOT_VERIFIED');
+          if(r.failures?.length)throw Error('BROWSER_DEPENDENCY_FAILURE');
+          NODE
       - name: Check Queen VPS readers offline
         run: python3 -m unittest discover -s prisma/neural-pilot/staging/tests -p 'test_*.py' -v

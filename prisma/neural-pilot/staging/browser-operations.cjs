@@ -1,9 +1,12 @@
 const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path'),{execFile}=require('node:child_process'),{promisify}=require('node:util'),crypto=require('node:crypto');
 const run=promisify(execFile),out=path.resolve(process.env.QUEEN_OPERATIONS_OUTPUT||'work/queen-browser-live');
-let base=process.env.QUEEN_STAGING_URL;
+const publicMode=!!process.env.QUEEN_PUBLIC_STAGING_URL;
+if(publicMode&&process.env.QUEEN_STAGING_URL)throw Error('STAGING_MODES_ARE_EXCLUSIVE');
+let base=process.env.QUEEN_STAGING_URL||process.env.QUEEN_PUBLIC_STAGING_URL;
 if(base){const u=new URL(base);if(u.protocol!=='https:'||!(u.hostname==='prisma-queen-staging.pages.dev'||u.hostname.endsWith('.prisma-queen-staging.pages.dev'))||u.username||u.password||u.search||u.hash||u.pathname!=='/')throw Error('STAGING_HOST_REQUIRED');base=u.origin;}
-const key=base?fs.readFileSync(process.env.QUEEN_STAGING_OPERATOR_KEY_FILE,'utf8').trim():null;if(base&&!/^[a-f0-9]{64}$/.test(key))throw Error('INVALID_OPERATOR_KEY_FILE');
+const key=base&&!publicMode?fs.readFileSync(process.env.QUEEN_STAGING_OPERATOR_KEY_FILE,'utf8').trim():null;
+if(base&&!publicMode&&!/^[a-f0-9]{64}$/.test(key))throw Error('INVALID_OPERATOR_KEY_FILE');
 if(fs.existsSync(out+'/results.json'))throw Error('OUTPUT_ALREADY_EXISTS');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(out+'/cdn',{recursive:true});
 const selected=(process.env.QUEEN_OPERATIONS_CASES||'').split(',').map(s=>s.trim()).filter(Boolean);
@@ -23,10 +26,10 @@ const transportCalls=[],taskBudgets=new Map();let activeBudgetId=null;
   }catch(e){failed.push({url,code:'DEPENDENCY_FETCH_FAILED'});await route.abort();}
  });
  if(base)await context.route(/\/(?:__queen-live\/plan|api\/(?:ai\/chat|providers\/status|core\/plan))$/,async route=>{
-  const path=new URL(route.request().url()).pathname,target=path==='/__queen-live/plan'?'/__queen/plan':path;
+  const path=new URL(route.request().url()).pathname,target=path==='/__queen-live/plan'?(publicMode?'/api/core/plan':'/__queen/plan'):path;
   const method=path==='/api/providers/status'?'GET':'POST';
   const call={kind:path==='/api/ai/chat'?'specialist':path==='/api/providers/status'?'provider-metadata':'queen',path:target,task:route.request().headers()['x-queen-task-id']||activeBudgetId,dispatched:false,at:new Date().toISOString(),status:'pending',httpStatus:null,inputTokens:null,outputTokens:null};transportCalls.push(call);const started=Date.now();
-  try{const declared=Number(route.request().headers()['x-queen-task-remaining-ms']);const r=await dispatchOperationRequest({taskId:call.task,budget:taskBudgets.get(call.task),remainingMs:declared},({timeoutSeconds})=>new Promise((resolve,reject)=>{const {spawn}=require('node:child_process');call.dispatched=true;const c=spawn('curl',['--silent','--show-error','--max-time',String(timeoutSeconds),'--config','-','--write-out','\n%{http_code}',base+target,'--request',method,'--header','Origin: '+base,'--header','Content-Type: application/json',...(method==='POST'?['--data',route.request().postData()||'{}']:[])],{stdio:['pipe','pipe','pipe']});let value='',bytes=0;c.stdout.on('data',b=>{bytes+=b.length;if(bytes>2*1024*1024)c.kill();else value+=b;});c.stderr.resume();c.on('error',reject);c.on('close',code=>{if(code)return reject(Error('REQUEST_FAILED'));const i=value.lastIndexOf('\n');resolve({body:value.slice(0,i),status:Number(value.slice(i+1))});});c.stdin.end('header = "X-Queen-Staging-Key: '+key+'"\n');}));
+  try{const declared=Number(route.request().headers()['x-queen-task-remaining-ms']);const r=await dispatchOperationRequest({taskId:call.task,budget:taskBudgets.get(call.task),remainingMs:declared},({timeoutSeconds})=>new Promise((resolve,reject)=>{const {spawn}=require('node:child_process');call.dispatched=true;const c=spawn('curl',['--silent','--show-error','--max-time',String(timeoutSeconds),'--config','-','--write-out','\n%{http_code}',base+target,'--request',method,'--header','Origin: '+base,'--header','Content-Type: application/json',...(method==='POST'?['--data',route.request().postData()||'{}']:[])],{stdio:['pipe','pipe','pipe']});let value='',bytes=0;c.stdout.on('data',b=>{bytes+=b.length;if(bytes>2*1024*1024)c.kill();else value+=b;});c.stderr.resume();c.on('error',reject);c.on('close',code=>{if(code)return reject(Error('REQUEST_FAILED'));const i=value.lastIndexOf('\n');resolve({body:value.slice(0,i),status:Number(value.slice(i+1))});});c.stdin.end(key?'header = "X-Queen-Staging-Key: '+key+'"\n':'');}));
    call.httpStatus=r.status;call.status='responded';let data;try{data=JSON.parse(r.body);}catch{}
    const usage=data?.metrics||data?.diagnostics||data?.usage||{};Object.assign(call,operationUsageEvidence(data));call.inferences=usage.inferencesAttempted??usage.inferences??null;call.code=data?.code||null;if(call.kind==='specialist'){call.provider=data?.provider||null;call.model=data?.model||null;}
    await route.fulfill({status:r.status,contentType:'application/json',body:r.body});
