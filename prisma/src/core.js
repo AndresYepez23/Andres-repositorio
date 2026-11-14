@@ -35,7 +35,7 @@ import { readConversationSnapshot, queueConversationSnapshot, clearConversationS
 import { createGeneratedFileKey, saveGeneratedFile, loadGeneratedFile, deleteGeneratedFilesForChat, clearGeneratedFiles } from './core-result-storage.js';
 import { validateAgentStepResult } from './core-agent-guard.js';
 import { buildConversationContext, chooseCoreReasoning, chooseCoreResponseLength, chooseCoreContextOptions } from './core-context.js';
-import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest } from './core-model-session.js';
+import { normalizeConversationModelSelection, beginConversationModelTurn, selectManualConversationModel, selectAutomaticConversationModel, pinConversationModel, conversationModelRequest, coreProviderPickerState } from './core-model-session.js';
 import { describeCoreModel, isCoreChatModel, suggestedCoreModel, displayedConversationPreference } from './core-model-experience.js';
 
 const $ = (selector, root=document) => root.querySelector(selector);
@@ -438,14 +438,16 @@ function renderChatModelOptions(){
  const providers=[...MODEL_PROVIDER_ORDER,...Object.keys(catalog).filter(p=>!MODEL_PROVIDER_ORDER.includes(p)).sort()];
  list.replaceChildren();let visible=0;
  for(const provider of providers){
-  if(!providerAvailability(provider,'chat').available)continue;
+  const availability=providerAvailability(provider,'chat');
   const models=(Array.isArray(catalog[provider])?catalog[provider]:[]).filter(isCoreChatModel);
-  if(!models.length)continue;
-  visible+=models.length;
+  const picker=coreProviderPickerState({available:availability.available,configured:centralConfigured?.[provider],
+   personal:provider==='pollinations'&&Boolean(readPollinationsToken()),reason:availability.reason,models});
+  if(!picker.visible)continue;
+  visible++;
   const suggested=suggestedCoreModel(provider,models),expanded=expandedModelProvider===provider;
   const currentProvider=chosen.provider===provider;
   const section=document.createElement('section');
-  section.className='core-model-provider'+(expanded?' is-expanded':'');
+  section.className='core-model-provider'+(expanded?' is-expanded':'')+(picker.selectable?'':' is-unavailable');
   const toggle=document.createElement('button');toggle.type='button';
   toggle.className='core-model-provider-toggle';
   toggle.setAttribute('aria-expanded',String(expanded));
@@ -453,12 +455,13 @@ function renderChatModelOptions(){
   const copy=document.createElement('span');copy.className='core-model-provider-copy';
   const title=document.createElement('strong');title.textContent=MODEL_PROVIDER_LABELS[provider]||provider;
   const subtitle=document.createElement('small');
-  subtitle.textContent=currentProvider?'Elegido: '+modelLabel(chosen.provider,chosen.model):
+  subtitle.textContent=!picker.selectable?picker.status+' · '+picker.reason:
+   currentProvider?'Elegido: '+modelLabel(chosen.provider,chosen.model):
    models.length+' modelos · sugerido: '+(suggested?.name||suggested?.id||'Automático');
   copy.append(title,subtitle);
   const trail=document.createElement('span');trail.className='core-model-provider-trailing';
   const state=document.createElement('span');state.className='core-model-provider-count';
-  state.textContent=currentProvider?'Elegido':String(models.length);
+  state.textContent=picker.selectable?(currentProvider?'Elegido':String(models.length)):picker.status;
   const chevron=document.createElement('span');chevron.className='core-model-chevron';chevron.textContent='⌄';
   trail.append(state,chevron);toggle.append(copy,trail);
   toggle.addEventListener('click',()=>{expandedModelProvider=expanded?'':provider;renderChatModelOptions();});
@@ -470,25 +473,28 @@ function renderChatModelOptions(){
     const meta=describeCoreModel(model);
     const row=document.createElement('button');row.type='button';
     row.className='core-model-option'+(selected?' is-current':'');
+    row.disabled=!picker.selectable;
     row.setAttribute('aria-pressed',String(selected));
+    if(!picker.selectable)row.title=picker.reason;
     const info=document.createElement('span');info.className='core-model-option-copy';
     const name=document.createElement('strong');name.textContent=model.name||model.id;
     const specialty=document.createElement('small');specialty.textContent=model.specialty||meta.description;
     const kind=document.createElement('span');kind.className='core-model-capability';kind.textContent=meta.label;
     info.append(name,specialty,kind);
     const action=document.createElement('span');action.className='core-model-option-state';
-    action.textContent=selected?'Elegido':model.id===suggested?.id?'Sugerido':'Elegir';
+    action.textContent=!picker.selectable?'No disponible':selected?'Elegido':model.id===suggested?.id?'Sugerido':'Elegir';
     row.append(info,action);
-    row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
+    if(picker.selectable)row.addEventListener('click',()=>chooseConversationModel(provider,model.id));
     options.append(row);
    }
+   if(!models.length){const note=document.createElement('p');note.className='core-model-empty';note.textContent=picker.reason;options.append(note);}
    section.append(options);
   }
   list.append(section);
  }
  if(!visible){
   const empty=document.createElement('p');empty.className='core-model-empty';
-  empty.textContent='No hay proveedores de chat disponibles por ahora. Los modelos no configurados se mantienen ocultos.';
+  empty.textContent='No se pudo obtener el catálogo de modelos. Comprueba la conexión e inténtalo de nuevo.';
   list.append(empty);
  }
  if(panel)panel.scrollTop=scrollTop;

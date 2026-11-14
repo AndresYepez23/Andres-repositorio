@@ -7,7 +7,8 @@ import {
   selectManualConversationModel,
   selectAutomaticConversationModel,
   pinConversationModel,
-  conversationModelRequest
+  conversationModelRequest,
+  coreProviderPickerState
 } from '../src/core-model-session.js';
 import {
   buildConversationContext,
@@ -168,4 +169,25 @@ test('a real fallback never replaces the manually selected model in the picker',
   assert.equal(displayed.model,'glm-4.7-flash');
   assert.equal(displayed.fallbackActive,true);
   assert.equal(conversationModelRequest(state).provider,'groq');
+});
+
+
+test('provider catalogue remains visible when upstream credentials are missing or temporarily paused',()=>{
+ const groq=[{id:'openai/gpt-oss-20b'}];
+ const available=coreProviderPickerState({available:true,configured:true,models:groq});
+ assert.deepEqual([available.visible,available.selectable,available.status],[true,true,'Disponible']);
+ const paused=coreProviderPickerState({available:false,configured:true,models:groq,reason:'Cuota temporalmente agotada'});
+ assert.deepEqual([paused.visible,paused.selectable,paused.status],[true,false,'Temporalmente no disponible']);
+ assert.match(paused.reason,/Cuota temporalmente/);
+ const missing=coreProviderPickerState({available:false,configured:false,models:groq,reason:'No hay credenciales configuradas.'});
+ assert.deepEqual([missing.visible,missing.selectable,missing.status],[true,false,'Sin configurar']);
+ const uncatalogued=coreProviderPickerState({available:false,configured:true,models:[]});
+ assert.deepEqual([uncatalogued.visible,uncatalogued.selectable],[true,false]);
+});
+
+test('provider picker does not affect automatic inference selection or its fallback',()=>{
+ const missing=coreProviderPickerState({available:false,configured:false,models:[{id:'gemini-3.5-flash-lite'}]});
+ assert.equal(missing.selectable,false);
+ assert.deepEqual(conversationModelRequest(selectAutomaticConversationModel({mode:'manual',provider:'kilo',model:'any'})),
+  {provider:'auto',model:'',allowFallback:true});
 });
