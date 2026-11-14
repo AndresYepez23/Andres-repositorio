@@ -34,9 +34,15 @@ test('the neural planner receives the candidate without a forced answer or speci
  const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
  const result=await planWithQueen(env,{text:measured,files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async(_env,messages,schema)=>{
   inferences++;assert.match(messages[0].content,/pdf-to-word/);assert.match(messages[0].content,/pdf-extract/);
+  assert.equal(JSON.stringify(schema).includes('"delegate"'),false,'a chat provider cannot substitute for local file executors');
   const user=JSON.parse(messages[1].content);assert.deepEqual(user.localAnalysis.knownOperations,[]);
   assert.equal(JSON.stringify(schema).includes('"enum":["2"]'),false,'page selection remains a model decision');
   return {plan:{intent:'execute',message:'Plan preparado.',steps},usage:{inputTokens:10,outputTokens:20}};
  }});
  assert.equal(inferences,1);assert.equal(result.source,'queen');assert.deepEqual(result.plan.steps.map(s=>s.tool_id),['pdf-extract','pdf-to-word']);
+});
+
+test('a model-proposed chat delegation cannot replace the available local file workflow',async()=>{
+ const env={QUEEN_ENABLED:'1',QUEEN_API_KEY:'unit',QUEEN_ACCESS_CLIENT_ID:'unit',QUEEN_ACCESS_CLIENT_SECRET:'unit',PRISMA_RATE_DB:{prepare:()=>({bind:(...values)=>({first:async()=>({owner:values[1]}),run:async()=>({})})})}};
+ await assert.rejects(planWithQueen(env,{text:measured,files:pdf},{forceNeural:true,maxInferences:1,loadProviders:async()=>[],infer:async()=>({plan:{intent:'delegate',message:'Necesito un especialista PDF.',steps:[]},usage:{inputTokens:10,outputTokens:10}})}),error=>error.code==='QUEEN_PLAN_REJECTED'&&error.diagnostics.trace[0].validationError==='INTENT_CONFLICT');
 });

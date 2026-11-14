@@ -74,6 +74,7 @@ export function queenMessages({text,files,context,contracts,providers,localAnaly
    localAnalysis?.requiredArtifact||contracts.some(c=>c.id==='image-ocr')?'pdf-to-image PNG ZIPs expand for image-ocr. OCR returns plain text, not a reconstructed table; Excel needs known columns or delimited text.': '',
   localAnalysis?.binaryCapabilityQuestion?'This is a binary capability question. Answer from the catalog: start with "Sí, ", "No, " or "Depende: " as appropriate, then explain briefly. Do not echo the question or propose execution. End in . ! or …; do not ask another question.':'',
   'If a requested capability has no executable provider, state that limit. Do not ask the user to choose an unavailable model or style. Delegation proposes a specialist; it does not claim the specialist ran.',
+  contracts.length&&contracts.every(c=>['local','browser'].includes(c.mode))?'These tools execute locally. Use them for the file operations, or clarify a missing input/capability; a chat specialist cannot perform these local file transformations.':'',
   'CATALOGO:'+JSON.stringify(catalog),
   'ESPECIALISTAS DISPONIBLES:'+JSON.stringify(compactProviders)
  ].join('\n')},{role:'user',content:JSON.stringify({current:text,files:files.map((f,i)=>({ref:'file:'+i,...f})),context,localAnalysis,...(repair?{validationError:repair}:{})})}];
@@ -172,9 +173,10 @@ export async function planWithQueen(env,payload,{infer=inferQueen,loadProviders=
   for(let attempt=0;attempt<inferenceLimit;attempt++){
    let result;
    const executable=contracts.filter(c=>c.mode!=='byok'||selectQueenDelegate(providers,{kind:capabilityFor(c.id)}));
+   const localOnly=contracts.length>0&&contracts.every(c=>['local','browser'].includes(c.mode));
    const requestedSpecialist=contracts[0]?.mode==='byok'&&!informational?capabilityFor(contracts[0].id):null;
    const specialistUnavailable=requestedSpecialist&&!selectQueenDelegate(providers,{kind:requestedSpecialist,manual:context.preferences});
-   const intents=(specialistUnavailable?['delegate']:queenIntentOptions(text,localAnalysis)).filter(i=>(i!=='retrieve'||closedFlowLimit===8&&attempt+1<inferenceLimit)&&(i!=='execute'||executable.some(c=>!c.inputs.file||files.length)&&(!requestedWorkbook||executable.some(workbookProducer))));
+   const intents=(specialistUnavailable?['delegate']:queenIntentOptions(text,localAnalysis)).filter(i=>(i!=='delegate'||!localOnly)&&(i!=='retrieve'||closedFlowLimit===8&&attempt+1<inferenceLimit)&&(i!=='execute'||executable.some(c=>!c.inputs.file||files.length)&&(!requestedWorkbook||executable.some(workbookProducer))));
    const analysis={...localAnalysis,retrievalAvailable:closedFlowLimit===8&&attempt+1<inferenceLimit,unavailableCapabilities:[...new Set(contracts.filter(c=>c.mode==='byok'&&!selectQueenDelegate(providers,{kind:capabilityFor(c.id)})).map(c=>capabilityFor(c.id)))]};
    const sequentialFileFlow=closedFlowLimit<8&&!originalRequested&&intermediateOutputRequested(instruction)&&executable.every(c=>c.inputs.file&&!c.inputs.multiple&&!OBSERVERS.has(c.id));
    try{result=await infer(env,queenMessages({text,files,context:promptContext,contracts,providers:promptProviders,localAnalysis:analysis,repair}),queenCatalogSchema(executable,files,intents,{requiredToolIds:requiredIds,maxSteps:closedFlowLimit,sequentialFileFlow,binaryCapabilityQuestion}),{signal,capturePartialOutput,compactMessages:()=>{contracts=contracts.slice(0,Math.max(3,requiredContracts.length));return queenMessages({text,files,context:promptContext,contracts,providers:promptProviders,localAnalysis:analysis,repair,compact:true});},remainingMs:Math.min(55000,QUEEN_LIMITS.taskMs-(Date.now()-start))});}
