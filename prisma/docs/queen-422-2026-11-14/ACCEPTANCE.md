@@ -1,5 +1,7 @@
 # Queen: matriz de aceptación vigente
 
+**Estado final por pausa:** código `5ae1bbb` publicado y compilado, no desplegado. 327 Node / 139 build aprobados. Nuevo verificador probado sobre el DOCX/PDF reales: correspondencia correcta verificada; PDF original incorrecto rechazado. Alcance texto seleccionable y saltos, no maquetación/gráficos. El ledger antiguo permanece intacto y la evaluación neuronal sigue en13/19; ninguna mejora de puntuación se presume. Leer el bloque vigente de [continuidad](../QUEEN-HANDOFF.md) antes de reanudar.
+
 Fecha: 14/11/2026 UTC. Código de la cadena real validada: 62aafd539c36e722e7f5de1191fa8d29ad2dee7c; despliegue aislado c7918ef7-d9bb-4fee-bf82-4a846e420a46. **Queen no está terminada.** El PR #125 sigue en borrador y esta corrección no se ha promovido a producción principal.
 
 Estados: **Aprobada** exige evidencia dentro del alcance indicado; **Fallida** conserva un resultado negativo observado; **Pendiente** señala validación o trabajo incompletos; **No ejecutada** indica que esta fase no realizó esa prueba. Una aprobación limitada no se extiende a las demás operaciones.

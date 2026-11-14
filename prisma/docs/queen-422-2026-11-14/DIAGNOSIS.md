@@ -1,5 +1,7 @@
 # Queen: HTTP 422 resuelto para la cadena PDF → Word
 
+**Estado final por pausa:** código `5ae1bbb` publicado y compilado, no desplegado. 327 Node / 139 build aprobados. Nuevo verificador probado sobre el DOCX/PDF reales: correspondencia correcta verificada; PDF original incorrecto rechazado. Alcance texto seleccionable y saltos, no maquetación/gráficos. El ledger antiguo permanece intacto y la evaluación neuronal sigue en13/19; ninguna mejora de puntuación se presume. Leer el bloque vigente de [continuidad](../QUEEN-HANDOFF.md) antes de reanudar.
+
 Estado: 14/11/2026 UTC. **Una planificación neuronal real y su ejecución PDF → extracción de página → Word ya funcionan en staging. Queen todavía no supera su aceptación completa.** Los fallos anteriores se conservan y la evaluación real de 19 casos está en ejecución, pendiente de consolidar.
 
 ## Cuatro rondas reales

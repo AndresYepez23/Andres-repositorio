@@ -1,6 +1,28 @@
 # Queen — transferencia maestra de PRISMA
 
-## Estado vigente — generación y cadena real recuperadas, 14/11/2026 UTC
+## PAUSA SOLICITADA — estado final guardado, 14/11/2026 UTC
+
+**El usuario pidió guardar todo y continuar más tarde. No iniciar pruebas, inferencias ni despliegues hasta que solicite reanudar.**
+
+- Último código publicado: **`5ae1bbb257e20bb18f17357c50a6331a4fcf0dfd`**, rama `feature/prisma-neural-genixnode-qwen35-pilot`. PR #125 abierto y borrador, sin fusionar. El commit documental posterior se identifica con `git log -1 --format=%H -- prisma/docs/QUEEN-HANDOFF.md`.
+- Último staging desplegado/verificado: **`c7918ef7-d9bb-4fee-bf82-4a846e420a46`**, fuente **`62aafd539c36e722e7f5de1191fa8d29ad2dee7c`**, https://c7918ef7.prisma-queen-staging.pages.dev. Las correcciones posteriores de `5ae1bbb` están publicadas y compiladas, **todavía no desplegadas**.
+- Ya demostrado: inferencia real y cadena `pdf-extract → pdf-to-word`, contenido de la página 2 correcto y páginas 1/3 ausentes, **33.142 s** en total. Una inferencia: 482 tokens de entrada, 87 de salida, 29.556 s backend, 6.108419 tokens/s informados.
+- Verificador autónomo nuevo: comprueba texto seleccionable ordenado y saltos de página de PDF a Word, sin afirmar fidelidad de maquetación. Sobre los bytes reales guardados dio **verified** para el PDF intermedio correcto y **DOCUMENT_TEXT_MISMATCH** para el original de tres páginas. Cero inferencias y cero motores adicionales en esa reverificación. Escaneos, gráficos, anotaciones y casos ambiguos permanecen `partial`. El ledger histórico no se reescribió.
+- Evaluación real conservada: 13/19 solicitudes, 7 rúbricas aprobadas; originales **6/8 (75%)** aceptados con calidad. Intención/herramientas visibles 8/8 incluye dos mensajes rechazados y **no es éxito operativo**. Un timeout tiene consumo/salida desconocidos; seis casos no ejecutados. El runner se detuvo y no reintentó automáticamente. [Resultados individuales](queen-422-2026-11-14/QUALITY-ROUND-1.md).
+- Correcciones posteriores a esa evaluación: sinónimos de tamaño y página singular, preguntas con prefacios como «Antes de decidir:», mensajes acotados/completos e inicio declarativo neutral solo para preguntas binarias; parámetros/referencias y validadores conservados. **No hay una nueva puntuación neuronal de estas correcciones.**
+- Últimas comprobaciones: **327/327 pruebas Node y 139/139 del build estático**, más reverificación de artefactos reales positiva y negativa. Las pruebas deterministas no se contabilizan como inferencias. [Registros](queen-422-2026-11-14/node-suite-next.txt), [build](queen-422-2026-11-14/static-build-next.txt), [reverificación](queen-422-2026-11-14/saved-artifact-reverification.json).
+- Tras el timeout se respetó el cooldown. La lectura API posterior confirmó un slot libre, contexto 2048 y `isProcessing:false`; **no recupera los tokens perdidos ni mide RAM/CPU**. [Lectura guardada](queen-422-2026-11-14/server-after-timeout.json).
+- GenixNode, modelo, contexto, concurrencia, Docker y proveedores sin cambios en esta sesión. Producción principal sigue `6a41daae` / `24dd33d`, main remoto observado `4b24fe6d6f74375a337936aafe1199df9b1e9072`, D1 principal sin cambios. No se trabajó en Prisma Developer ni el plugin.
+- Secretos Queen intactos. El operador privado renovado está fuera de Git en `/workspace/work/queen-422-operator/operator-key` (0600); no solicitarlo por chat ni publicarlo. Otro workspace no recibe automáticamente ese archivo ni OAuth/SSH.
+
+**Punto exacto al pausar:** código y evidencias preservados; paquete privado nuevo compilado en `/workspace/work/queen-422-round2/worker.js`, sin subir. Ningún lote neuronal en ejecución. El servidor HTTP local de comprobación se cerró. No hay una inferencia pendiente enviada por Codex.
+
+**Siguiente paso al reanudar:** leer este bloque, comprobar HEAD/cambios y PR draft; desplegar un snapshot limpio del código nuevo **solo en `prisma-queen-staging`** usando el constructor oficial `prisma/neural-pilot/staging/build.cjs` y el cliente `request.mjs`. Verificar metadata de fuente, D1 aislada, cooldown y slot libre antes de una validación controlada. No repetir ciegamente el caso incierto ni reutilizar sus métricas como conocidas. Después corregir/revalidar calidad, completar los casos restantes y las cadenas OCR→Excel, recuperación y delegación. No publicar capacidades no demostradas ni fusionar/main/D1 principal. Queen **no está terminada**.
+
+Los bloques inferiores conservan la historia y quedan subordinados a este estado de pausa.
+
+
+## Registro previo — generación y cadena real recuperadas, 14/11/2026 UTC
 
 Continuación de `614bc06`, sin reinstalar ni modificar GenixNode. **Queen todavía no está terminada.** El HTTP 422 reproducido en staging se identificó y se corrigió progresivamente con respuestas reales; no repetir la sonda histórica del VPS.
 

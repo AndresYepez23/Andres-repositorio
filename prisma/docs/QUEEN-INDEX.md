@@ -1,5 +1,7 @@
 # Queen: índice de continuidad, pruebas y evidencias
 
+**Pausa solicitada:** código publicado `5ae1bbb`; staging sigue `c7918ef7` / `62aafd5`. Ver [estado final](QUEEN-HANDOFF.md), [resultados reales](queen-422-2026-11-14/QUALITY-ROUND-1.md) y [nuevo verificador sobre artefactos reales](queen-422-2026-11-14/saved-artifact-reverification.json). 327 Node / 139 build aprobados; no nuevas inferencias hasta reanudar.
+
 **Actualización vigente:** [diagnóstico 422 y recuperación real](queen-422-2026-11-14/DIAGNOSIS.md), [aceptación](queen-422-2026-11-14/ACCEPTANCE.md), [respuesta neuronal aceptada](queen-422-2026-11-14/sequential-validation-response.json), [DOCX/PDF reales](queen-422-2026-11-14/real-pdf-word/), [reproducción sin inferencia](queen-422-2026-11-14/verify-evidence.py). Staging `c7918ef7` / código `62aafd5`. Evaluación de19 detenida tras13 (6/8 originales aprobados); [resultados individuales](queen-422-2026-11-14/QUALITY-ROUND-1.md). Word genérico todavía pendiente. Los estados inferiores describen checkpoints anteriores.
 
 **Estado vigente14/11/2026UTC: [HANDOFF MAESTRO](QUEEN-HANDOFF.md) y [PROMPT](QUEEN-RESUME-PROMPT.md). Producción24dd33d está desplegada pero Queen pública fallaHTTP422. No repetir recuperación VPS.**

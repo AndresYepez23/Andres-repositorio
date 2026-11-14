@@ -1,0 +1,40 @@
+{
+  "positive": {
+    "status": "verified",
+    "evidence": [
+      {
+        "check": "pdf-word-selectable-text-and-page-breaks",
+        "passed": true,
+        "pages": 1,
+        "characters": 22,
+        "scope": "ordered-selectable-text-and-explicit-page-breaks",
+        "layoutVerified": false
+      },
+      {
+        "check": "artifact",
+        "passed": true,
+        "bytes": 7649,
+        "sha256": "25d831123c90da3ae72d6033f3bd434958b69976db1b842340afd095446f5357",
+        "checks": [
+          "exists",
+          "nonempty",
+          "sha256",
+          "file-signature",
+          "format-consistency",
+          "archive-crc",
+          "archive-structure"
+        ],
+        "entries": 20
+      }
+    ],
+    "unverified": []
+  },
+  "wrongSource": {
+    "rejected": true,
+    "code": "DOCUMENT_TEXT_MISMATCH"
+  },
+  "newInferenceRequests": 0,
+  "toolExecutions": 0,
+  "verificationOfSavedBytes": true,
+  "originalExecutionLedgerUnmodified": true
+}

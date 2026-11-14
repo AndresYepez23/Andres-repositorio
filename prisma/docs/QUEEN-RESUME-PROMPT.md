@@ -1,5 +1,7 @@
 # Reanudar Queen desde el diagnóstico real resuelto
 
+**Actualización final por pausa del usuario:** leer primero el bloque PAUSA SOLICITADA de [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md). Código nuevo publicado `5ae1bbb257e20bb18f17357c50a6331a4fcf0dfd`, aún no desplegado; staging `c7918ef7` / `62aafd5`. Evaluación detenida tras13/19, una salida desconocida; no hay lote en marcha. Nuevo verificador PDF→Word comprobado contra artefactos reales. 327 pruebas Node / 139 build. Reanudar desde ese estado, sin repetir diagnósticos VPS ni promoción de secretos.
+
 Leer primero [QUEEN-HANDOFF.md](QUEEN-HANDOFF.md), su bloque vigente, [informe](queen-422-2026-11-14/DIAGNOSIS.md) y [aceptación](queen-422-2026-11-14/ACCEPTANCE.md). No repetir diagnósticos pasivos del VPS, promoción de secretos ni tareas históricas.
 
 ```text
