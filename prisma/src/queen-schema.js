@@ -22,7 +22,10 @@ export function queenCatalogSchema(contracts,files,intents,{requiredToolIds=[],m
   return stepVariant([id],previous,[...originals,...previous.map(value=>'step:'+value)]);
  })}:stepVariant(ids,ids,[...originals,...ids.map(value=>'step:'+value)]);
  const variant=(allowed,execute)=>({type:'object',additionalProperties:false,required:['intent','message','steps'],properties:{
-  intent:{type:'string',enum:allowed},message:{type:'string',maxLength:160},search:{type:'string',maxLength:160},
+  // Execute messages are replaced by the validated executor notice. Do not
+  // spend the fixed output budget generating prose or an inapplicable search.
+  intent:{type:'string',enum:allowed},message:execute?{type:'string',enum:['Plan preparado.']}:{type:'string',maxLength:160},
+  ...(allowed.includes('retrieve')?{search:{type:'string',maxLength:160}}:{}),
   steps:{type:'array',minItems:execute?Math.max(1,Math.min(limit,new Set(requiredToolIds.filter(id=>contracts.some(c=>c.id===id))).size)):0,maxItems:execute?limit:0,items:execute&&contracts.length?step:{type:'object'}}
  }});
  const choices=[];

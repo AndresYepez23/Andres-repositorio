@@ -228,6 +228,34 @@ test('generic or longer planning stays compact and delegates graph correctness t
  assert.ok(JSON.stringify(schema).length<2000);
 });
 
+test('execution grammar reserves output for the plan instead of replaceable prose or search',()=>{
+ const contracts=queenToolCatalog().filter(c=>['pdf-extract','pdf-to-word'].includes(c.id));
+ for(const maxSteps of [2,8]){
+  const schema=queenCatalogSchema(contracts,pdf,['execute','clarify'],{requiredToolIds:['pdf-extract','pdf-to-word'],maxSteps});
+  const execute=schema.oneOf.find(v=>v.properties.intent.enum.includes('execute'));
+  assert.deepEqual(execute.properties.message,{type:'string',enum:['Plan preparado.']});
+  assert.equal(execute.properties.search,undefined);
+  const clarify=schema.oneOf.find(v=>v.properties.intent.enum.includes('clarify'));
+  assert.deepEqual(clarify.properties.message,{type:'string',maxLength:160});
+  assert.equal(clarify.properties.search,undefined);
+ }
+ const messages=queenMessages({text:'Extrae la segunda página y después conviértela a Word',files:pdf,context:{},contracts,providers:[]});
+ assert.ok(messages[0].content.includes('Execute message: "Plan preparado."'));
+ assert.ok(messages[0].content.includes('omit search for other intents'));
+});
+
+test('retrieval keeps its search field without expanding mixed non-execution grammar',()=>{
+ const contracts=queenToolCatalog().filter(c=>c.id==='pdf-text');
+ const schema=queenCatalogSchema(contracts,pdf,['execute','question','clarify','retrieve']);
+ assert.equal(schema.oneOf.length,2);
+ const execute=schema.oneOf.find(v=>v.properties.intent.enum.includes('execute'));
+ assert.equal(execute.properties.search,undefined);
+ const other=schema.oneOf.find(v=>v.properties.intent.enum.includes('retrieve'));
+ assert.deepEqual(other.properties.intent.enum,['question','clarify','retrieve']);
+ assert.deepEqual(other.properties.search,{type:'string',maxLength:160});
+ assert.deepEqual(other.properties.message,{type:'string',maxLength:160});
+});
+
 test('a complete local file flow omits unrelated provider menus and empty UI preferences from the model only',async()=>{
  const providers=Array.from({length:9},(_,i)=>({id:'configured-provider-'+i,available:true,capabilities:[{kind:'chat',executable:true,models:[{id:'model-'+i}]}]}));
  let observed=false;

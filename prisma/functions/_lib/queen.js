@@ -77,7 +77,12 @@ export async function inferQueen(env,messages,schema,{fetchImpl=fetch,signal,rem
   chat_template_kwargs:{enable_thinking:false},response_format:{type:'json_object',schema}
  }});}catch(error){if(error instanceof QueenError)error.diagnostics={...error.diagnostics,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,completionTransportAttempted:error.diagnostics?.completionTransportAttempted!==false,durationMs:Date.now()-started};throw error;}
  const choice=result.choices?.[0];
+ // Shape only: diagnose output-budget failures without retaining a user's
+ // generated text, file names or parameter values in diagnostics.
+ const responseText=typeof choice?.message?.content==='string'?choice.message.content:null;
+ const outputShape={responseCharacters:responseText?.length??null,responseWhitespaceCharacters:responseText===null?null:(responseText.match(/\s/g)||[]).length};
  const diagnostics={finishReason:['stop','length','tool_calls','content_filter','function_call'].includes(choice?.finish_reason)?choice.finish_reason:null,preflightInputTokens:inputTokens,contextLimit:QUEEN_LIMITS.contextTokens,maxOutputTokens,reasoningContentPresent:Boolean(choice?.message?.reasoning_content||choice?.message?.reasoning),thinkingTagsPresent:/<think>/i.test(String(choice?.message?.content||'')),observedInputTokens:Number.isFinite(result.usage?.prompt_tokens)?result.usage.prompt_tokens:null,observedOutputTokens:Number.isFinite(result.usage?.completion_tokens)?result.usage.completion_tokens:null,generationTokensPerSecond:Number(result.timings?.predicted_per_second)||null,promptTokensPerSecond:Number(result.timings?.prompt_per_second)||null};
+ Object.assign(diagnostics,outputShape);
  if(choice?.finish_reason==='length')throw new QueenError('QUEEN_TRUNCATED_PLAN',422,diagnostics);
  const text=choice?.message?.content;if(typeof text!=='string'||text.length>16000)throw new QueenError('QUEEN_INVALID_PLAN',422);
  let plan;try{plan=JSON.parse(text);}catch{throw new QueenError('QUEEN_INVALID_PLAN',422,diagnostics);}

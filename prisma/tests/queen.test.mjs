@@ -81,7 +81,20 @@ test('Queen disables thinking, uses structured bounded output and records actual
  }});assert.equal(r.usage.inputTokens,5);assert.equal(r.usage.outputTokens,12);
 });
 test('truncated model output cannot be accepted as a plan',async()=>{
- let calls=0;await assert.rejects(inferQueen(env(),[],{}, {fetchImpl:async url=>url.endsWith('/slots')?json([{id:0,is_processing:false}]):calls++?json({choices:[{message:{content:'{}'},finish_reason:'length'}]}):json({tokens:[1]})}),/TRUNCATED/);
+ const content='{\n "message":"private-user-value"';let calls=0;
+ await assert.rejects(inferQueen(env(),[],{}, {fetchImpl:async url=>{
+  if(url.endsWith('/slots'))return json([{id:0,is_processing:false}]);
+  if(url.endsWith('/tokenize'))return json({tokens:[1]});
+  calls++;return json({choices:[{message:{content},finish_reason:'length'}],usage:{prompt_tokens:468,completion_tokens:256}});
+ }}),error=>{
+  assert.equal(error.code,'QUEEN_TRUNCATED_PLAN');
+  assert.equal(error.diagnostics.observedOutputTokens,256);
+  assert.equal(error.diagnostics.responseCharacters,content.length);
+  assert.equal(error.diagnostics.responseWhitespaceCharacters,2);
+  assert.equal(JSON.stringify(error.diagnostics).includes('private-user-value'),false);
+  return true;
+ });
+ assert.equal(calls,1);
 });
 test('D1 lease serializes concurrent requests across independent callers and releases on errors',async()=>{
  const e=env();let finish;const first=withQueenLease(e,()=>new Promise(resolve=>{finish=resolve;}));await new Promise(r=>setImmediate(r));
