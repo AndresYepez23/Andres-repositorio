@@ -258,6 +258,7 @@ jobs:
           export QUEEN_PUBLIC_STAGING_URL='https://prisma-queen-staging.pages.dev/'
           export QUEEN_OPERATIONS_OUTPUT="$RUNNER_TEMP/queen-repair-trial"
           export QUEEN_OPERATIONS_CASES='real-parameter-recovery'
+          echo 'One strictly budgeted recovery task: real planner, injected JSON engine error, one repair, preserved data.'
           node prisma/neural-pilot/staging/browser-operations.cjs
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
