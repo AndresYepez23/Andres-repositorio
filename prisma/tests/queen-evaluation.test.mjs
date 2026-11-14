@@ -110,7 +110,8 @@ process.stdin.on('end',()=>{
   plan:{intent:'question',message:'Respuesta fixture de transporte',steps:[],execution:{executed:false,verified:false}},
   metrics:{inferences:1,inputTokens:2,outputTokens:3}};
  else {status=404;response={ok:false,code:'UNEXPECTED_FIXTURE_ROUTE'};}
- process.stdout.write(JSON.stringify(response)+'\\n'+status);
+ // Write the complete curl response before this short-lived fixture exits.
+ fs.writeSync(1,JSON.stringify(response)+'\\n'+status);
 });
 `);
  chmodSync(curl,0o700);
