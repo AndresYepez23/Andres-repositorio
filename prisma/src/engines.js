@@ -855,7 +855,8 @@ async function generateText(p,cb){
   while(history.length&&history[0].role!=='user')history.shift();
   const conversationMessages=[{role:'system',content:system},...history,{role:'user',content:user}];
  const lengths={short:650,medium:1900,long:tier==='smart'?3400:2800};
- const standardTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):(lengths[p.length]||1200);
+ const standardTokens=task==='songwriting'?Math.max(lengths[p.length]||2400,3000):
+   task==='reasoning'&&p.length==='medium'?900:(lengths[p.length]||1200);
  // Only deliberate artifact creation may request an expanded bounded budget.
  const outputTokens=p.outputTokenBudget?Math.max(1000,Math.min(4400,Number(p.outputTokenBudget)||standardTokens)):standardTokens;
  const preferred=p.provider||'auto';
@@ -887,7 +888,9 @@ async function generateText(p,cb){
  });
  const startedAt=Date.now();
  const totalDeadline=task==='planner'?65000:task==='songwriting'?78000:65000;
- const individualDeadline=preferred==='sensenova'?48000:task==='planner'?11000:task==='songwriting'?22000:16000;
+ // Reasoning and comparisons can take longer than plain chat. The previous
+  // 16s deadline prematurely cancelled healthy models on these prompts.
+  const individualDeadline=preferred==='sensenova'?48000:task==='planner'?11000:task==='songwriting'?22000:task==='reasoning'?30000:16000;
  const modelFor=provider=>{
   let catalog=p.centralModelCatalog?.chat?.[provider]||[];
   if(provider==='kilo'&&preferred==='auto')catalog=catalog.filter(model=>
@@ -1536,7 +1539,7 @@ async function runSpecializedTextTool(id,p,cb){
  if(user.length<4)throw Error('Describe qué necesitas antes de ejecutar esta herramienta.');
  const result=await generateText({...p,prompt:spec.instruction+'\n\nPETICIÓN DEL USUARIO:\n'+user,
   task:spec.task,tone:spec.task==='reasoning'?'academic':'creative',
-  length:'long',reasoning:p.reasoning||'balanced'},cb);
+  length:id==='ai-compare-options'?(p.length||'medium'):'long',reasoning:p.reasoning||'balanced'},cb);
  return {...result,summary:spec.label+' · '+(result?.provider||'motor de IA')+'.'};
 }
 
