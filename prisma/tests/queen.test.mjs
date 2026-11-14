@@ -301,3 +301,26 @@ test('an uncertain external result cannot be retried when resuming the same task
  await assert.rejects(executeQueenDAG(p,[],options));
  await assert.rejects(executeQueenDAG(p,[],options),/EXTERNAL_OUTCOME_UNKNOWN/);assert.equal(calls,1);
 });
+
+test('XLSX verifier checks cell correspondence against JSON source, not just archive structure',async()=>{
+ const mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+ const bytes=new Uint8Array(72),view=new DataView(bytes.buffer);
+ bytes.set([80,75,3,4]);view.setUint32(4,0x02014b50,true);
+ view.setUint32(50,0x06054b50,true);view.setUint16(60,1,true);view.setUint32(66,4,true);
+ const input=[{producto:'Prisma',cantidad:'2',precio:'15'},{producto:'Queen',cantidad:'3',precio:'20'}];
+ const columns=['producto','cantidad','precio'];
+ let observed=[columns,...input.map(row=>columns.map(key=>row[key]))];
+ const loader=async url=>url.includes('jszip')?{default:{loadAsync:async()=>({
+  files:{'[Content_Types].xml':{},'xl/workbook.xml':{}},
+  file:name=>['[Content_Types].xml','xl/workbook.xml'].includes(name)?{}:null
+ })}}:{read:()=>({SheetNames:['Datos'],Sheets:{Datos:{}}}),utils:{sheet_to_json:()=>observed}};
+ const output={filename:'filas.xlsx',blob:new Blob([bytes],{type:mime})};
+ const step={tool_id:'json-xlsx',params:{text:JSON.stringify(input)}};
+ const verified=await verifyQueenResult(step,output,[],{load:loader});
+ assert.equal(verified.verification.status,'verified');
+ assert.ok(verified.verification.evidence.some(e=>e.check==='xlsx-rows-and-columns'&&e.rows===2&&e.columns===3));
+ observed=[columns,['Prisma','2','15'],['Queen','3','999']];
+ await assert.rejects(verifyQueenResult(step,output,[],{load:loader}),/XLSX_CELL_DATA_MISMATCH/);
+ const withoutSource=await verifyQueenResult({tool_id:'json-xlsx',params:{}},output,[],{load:loader});
+ assert.equal(withoutSource.verification.status,'partial');
+});

@@ -75,7 +75,38 @@ export async function verifyQueenResult(step,result,inputs=[],{load=moduleLoader
    const names=Object.keys(zip.files);if(!names.length)error('EMPTY_ARCHIVE');
    if(OFFICE[ext]&&(!zip.file('[Content_Types].xml')||!zip.file(OFFICE[ext])))error('INVALID_OFFICE_STRUCTURE');
    checks.push('archive-crc','archive-structure');details.entries=names.length;
-   if(ext==='docx'&&step.tool_id==='pdf-to-word'){
+   if(ext==='xlsx'&&step.tool_id==='json-xlsx'){
+    // Validate worksheet content independently against the parsed JSON rows
+    // from the previous step, not merely the ZIP/OOXML file signatures.
+    let expected;
+    try{expected=JSON.parse(String(step.params?.text||''));}catch{expected=null;}
+    if(!Array.isArray(expected)||!expected.length||expected.some(row=>!row||typeof row!=='object'||Array.isArray(row))){
+     unverified.push('xlsx-source-json-unavailable');
+    }else{
+     const columns=[...new Set(expected.flatMap(row=>Object.keys(row)))];
+     const scalar=value=>value==null||['string','number','boolean'].includes(typeof value);
+     if(columns.length>256||expected.length>50000||expected.some(row=>columns.some(key=>!scalar(row[key])))){
+      unverified.push('xlsx-complex-values');
+     }else{
+      let XLSX;
+      try{const imported=await load('https://esm.sh/xlsx@0.18.5');XLSX=imported.default||imported;}
+      catch{unverified.push('xlsx-parser-unavailable');}
+      if(XLSX){
+       let actual;
+       try{
+        const book=XLSX.read(new Uint8Array(bytes),{type:'array'});
+        if(book.SheetNames.length!==1)error('XLSX_SHEET_COUNT_MISMATCH');
+        actual=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,raw:true,defval:null});
+       }catch(e){if(e.verificationCode)throw e;error('INVALID_XLSX_CONTENT');}
+       const expectedCells=[columns,...expected.map(row=>columns.map(key=>row[key]??null))];
+       const strings=matrix=>matrix.map(row=>row.map(value=>value==null?'':String(value)));
+       if(JSON.stringify(strings(actual))!==JSON.stringify(strings(expectedCells)))error('XLSX_CELL_DATA_MISMATCH');
+       checks.push('worksheet-cell-correspondence');
+       evidence.push({check:'xlsx-rows-and-columns',passed:true,rows:expected.length,columns:columns.length});
+      }
+     }
+    }
+   }else    if(ext==='docx'&&step.tool_id==='pdf-to-word'){
     const content=await verifyQueenPdfWordContent(inputs,zip,{load,parseXml,signal});
     evidence.push(...content.evidence);unverified.push(...content.unverified);
    }else unverified.push(ext==='zip'?'archive-member-correspondence':'document-content-correspondence');
