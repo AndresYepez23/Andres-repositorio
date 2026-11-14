@@ -34,7 +34,7 @@ try {
     throw new Error("Use production deployment URLs for production comparisons");
   }
   const [good, next] = await Promise.all([status(baseline), status(candidate)]);
-  const lost = providers.filter(provider => good[provider] > 0 && next[provider] === 0);
+  const regressed = providers.filter(provider => next[provider] < good[provider]);
   console.log("Credential slot counts only (" + mode + "):");
   for (const provider of providers) console.log(provider + ": baseline=" + good[provider] + ", candidate=" + next[provider]);
   if (mode === "production" && providers.every(provider => good[provider] === 0)) {
@@ -44,7 +44,7 @@ try {
     console.error("FAIL: previously configured providers dropped to zero: " + lost.join(", "));
     process.exitCode = 1;
   } else {
-    console.log("PASS: no configured provider dropped to zero. This does NOT prove inference or key validity.");
+    console.log("PASS: configured credential counts did not decrease. This does NOT prove inference or key validity.");
   }
 } catch (error) {
   console.error("FAIL: " + String(error.message || error));
