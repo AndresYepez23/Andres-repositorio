@@ -1,0 +1,152 @@
+{
+  "method": "Read-only Cloudflare Pages project/deployment metadata and public build manifest; no production write or rollback performed by this task.",
+  "taskBaseMain": "238a33681cbc34e2d49e88771dc1adced29f9267",
+  "integratedMain": "1e33cf5026cb7988172697903e17283056ba4578",
+  "initialProduction": {
+    "id": "2673a2d4-ad10-4862-82c9-d568a63c3c4f",
+    "commit": "238a33681cbc34e2d49e88771dc1adced29f9267"
+  },
+  "laterProduction": {
+    "id": "17a6c338-ef6d-4cc1-8e71-44893bbec035",
+    "created_on": "2026-11-14T12:24:19.673966Z",
+    "modified_on": "2026-11-14T20:33:32.730422Z",
+    "url": "https://17a6c338.prismaspace.pages.dev",
+    "trigger": {
+      "type": "github:push",
+      "metadata": {
+        "branch": "main",
+        "commit_hash": "b8a4b6ea02f2d9941cada6b6c1a5e734d4fad887",
+        "commit_message": "Integrate validated Qwen Core hybrid pilot into Prisma Space\n\nQUEEN: planificación real, referencias de archivos y verificación de resultados",
+        "commit_dirty": false
+      }
+    },
+    "stage": {
+      "name": "deploy",
+      "started_on": "2026-11-14T12:24:42.896656Z",
+      "ended_on": "2026-11-14T12:24:49.196213Z",
+      "status": "success"
+    },
+    "environment": "production"
+  },
+  "publicBuild": {
+    "build": "b8a4b6ea02f2d9941cada6b6c1a5e734d4fad887",
+    "engineGeneration": "core-precision-v3"
+  },
+  "recentProductionDeployments": [
+    {
+      "id": "e92a39a9-45fd-4082-a89e-abc46b247ad4",
+      "created_on": "2026-11-14T20:13:04.771137Z",
+      "modified_on": "2026-11-14T20:13:45.042132Z",
+      "url": "https://e92a39a9.prismaspace.pages.dev",
+      "trigger": {
+        "type": "github:push",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "1e33cf5026cb7988172697903e17283056ba4578",
+          "commit_message": "fix(pages): use dashboard configuration for encrypted production secrets",
+          "commit_dirty": false
+        }
+      },
+      "stage": {
+        "name": "deploy",
+        "started_on": "2026-11-14T20:13:37.53687Z",
+        "ended_on": "2026-11-14T20:13:45.042132Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "id": "04a17d72-e1f8-488c-a59a-f072df944556",
+      "created_on": "2026-11-14T20:08:39.632533Z",
+      "modified_on": "2026-11-14T20:09:27.962049Z",
+      "url": "https://04a17d72.prismaspace.pages.dev",
+      "trigger": {
+        "type": "github:push",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "957f7d3ad1cfed334d51394854ed91ee4216a877",
+          "commit_message": "fix(core): show provider catalogue and preserve automatic routing\n\n* fix(core): distinguish visible provider catalogue from execution readiness\n\n* fix(core): display registered providers without enabling unavailable credentials\n\n* test(core): show disabled providers safely while preserving automatic inference",
+          "commit_dirty": false
+        }
+      },
+      "stage": {
+        "name": "deploy",
+        "started_on": "2026-11-14T20:09:19.848523Z",
+        "ended_on": "2026-11-14T20:09:27.962049Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "id": "2673a2d4-ad10-4862-82c9-d568a63c3c4f",
+      "created_on": "2026-11-14T14:19:46.688987Z",
+      "modified_on": "2026-11-14T14:20:20.952148Z",
+      "url": "https://2673a2d4.prismaspace.pages.dev",
+      "trigger": {
+        "type": "github:push",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "238a33681cbc34e2d49e88771dc1adced29f9267",
+          "commit_message": "Merge pull request #139 from AndresYepez23/fix/core-result-file-references\n\nFix Core losing references to generated files in follow-up requests",
+          "commit_dirty": false
+        }
+      },
+      "stage": {
+        "name": "deploy",
+        "started_on": "2026-11-14T14:20:12.494788Z",
+        "ended_on": "2026-11-14T14:20:20.952148Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "id": "05202f51-db3c-4d46-a2ea-83fe48cb29bd",
+      "created_on": "2026-11-14T14:10:52.838224Z",
+      "modified_on": "2026-11-14T14:11:33.725754Z",
+      "url": "https://05202f51.prismaspace.pages.dev",
+      "trigger": {
+        "type": "github:push",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "81cc06d2613847d2bfe4098f65ba20b1a88687e0",
+          "commit_message": "Merge pull request #138 from AndresYepez23/fix/core-document-preflight\n\nFix Core skipping file identification and conversion guidance",
+          "commit_dirty": false
+        }
+      },
+      "stage": {
+        "name": "deploy",
+        "started_on": "2026-11-14T14:11:25.248918Z",
+        "ended_on": "2026-11-14T14:11:33.725754Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "id": "33fd5ff5-a52c-4c79-a134-59642731f3b1",
+      "created_on": "2026-11-14T13:22:00.270578Z",
+      "modified_on": "2026-11-14T13:22:36.893126Z",
+      "url": "https://33fd5ff5.prismaspace.pages.dev",
+      "trigger": {
+        "type": "github:push",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "6dcdbe3b388f8450778e33f272ec26e259fff34e",
+          "commit_message": "Fix reasoning prompts failing on Workers Free and short inference deadlines (#137)\n\n* fix(routing): avoid Cloudflare paid-only DeepSeek fallback in free-plan reasoning\n\n* fix(catalog): hide Cloudflare DeepSeek model unavailable on Workers Free\n\n* fix(workers-ai): return visible chat output instead of exhausting budget on model thinking\n\n* fix(core): give reasoning sufficient response time and bounded comparison output\n\n* test(core): reproduce Qwen-vs-GPT reasoning fallback and prevent paid-model/time-budget regression\n\n* test(core): correct regex checks for actual inference budgeting and model parameters",
+          "commit_dirty": false
+        }
+      },
+      "stage": {
+        "name": "deploy",
+        "started_on": "2026-11-14T13:22:29.470623Z",
+        "ended_on": "2026-11-14T13:22:36.893126Z",
+        "status": "success"
+      },
+      "environment": "production"
+    }
+  ],
+  "attribution": "The metadata shows an older deployment is canonical. It does not identify who changed that pointer or why. No automatic restoration attempted.",
+  "productionMutationsByThisTask": 0,
+  "taskDeploymentProject": "prisma-queen-staging",
+  "taskDatabase": "6a3256b2-c016-4650-9759-79aca3b4446f",
+  "prMerged": false
+}
