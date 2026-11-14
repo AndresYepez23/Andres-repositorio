@@ -371,6 +371,11 @@ async function executeChatRequest({ request, env }, markReserved) {
     try {
       const data=await env.AI.run(model,{
         messages:normalized.openaiMessages,
+        // Gemma 4/Qwen 3.8 can spend the entire output budget on hidden
+        // reasoning and return no visible answer. Verified in Workers AI:
+        // disable that mode for interactive chat so Core gets actual text.
+        ...(["@cf/google/gemma-4-26b-a4b-it","@cf/qwen/qwen3.8-27b"].includes(model)
+          ? {chat_template_kwargs:{enable_thinking:false}} : {}),
         max_tokens:clamp(payload.maxOutputTokens,128,1700,900),
         temperature:0.6,
         stream:false
